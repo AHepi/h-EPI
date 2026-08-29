@@ -189,6 +189,7 @@ EXPECTED_FORMAL_PACKAGE = {
     "formal/CREIB/Core/Model.lean": "7a56c781e785f8ddba704f07dc785c9677179646f1250329ead39fbb0d35dd0a",
     "formal/CREIB/Pilot/TH3.lean": "ef9096ff0fe7ef133757ccb57ba3fc52a41638b339539af1737584936c3cb11a",
     "formal/CREIB/Pilot/TH3Countermodel.lean": "38a68f131389ecca67d5a798262a663edc7c6dcedb7e58b6695ad12fa30679e5",
+    "formal/lake-manifest.json": "835bdc7555981c3189d81c1a1756f21c780c8fdd60dc07ed96aaed80ba4c54f8",
     "formal/lakefile.toml": "06dc9683188f3d1b967431c49f8999bb96e6ba901f75c34bb75267ad32594181",
     "formal/lean-toolchain": "3aac669c7a910ec2389f4e4f921b605adf6ebf2d1e0c9b9cd0be4d33f3f5db71",
 }
@@ -313,7 +314,9 @@ def _verify_formal_package(root: Path) -> dict[str, bytes]:
         for path in formal_directory.rglob("*.lean")
         if ".lake" not in path.parts
     }
-    actual_inputs.update({"formal/lakefile.toml", "formal/lean-toolchain"})
+    actual_inputs.update(
+        {"formal/lake-manifest.json", "formal/lakefile.toml", "formal/lean-toolchain"}
+    )
     if actual_inputs != set(EXPECTED_FORMAL_PACKAGE):
         raise FormalReplayMismatch(
             f"formal package input set differs; missing={sorted(set(EXPECTED_FORMAL_PACKAGE) - actual_inputs)}, "

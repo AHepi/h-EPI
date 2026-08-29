@@ -118,7 +118,10 @@ class VerifierTests(unittest.TestCase):
             observed_directories.append(cwd)
             self.assertNotEqual(cwd, ROOT / "formal")
             self.assertFalse((cwd / ".lake").exists())
-            self.assertFalse((cwd / "lake-manifest.json").exists())
+            self.assertEqual(
+                (cwd / "lake-manifest.json").read_bytes(),
+                (ROOT / "formal" / "lake-manifest.json").read_bytes(),
+            )
             self.assertTrue((cwd / "CREIB" / "Core" / "Model.lean").is_file())
             if command[-1] == "--version":
                 stdout = (
