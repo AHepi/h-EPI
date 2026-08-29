@@ -1,0 +1,602 @@
+schema_version: "0.1-draft"
+document_type: source_status_registry
+authority:
+  title: "Creativity as Explanatory Self-Correction"
+  sha256: "08ff81e848fea976b558345402d85723173be8f40f1041fb00d6267f1e026b8b"
+  sole_semantic_and_formal_authority: true
+procedural_handoff:
+  authority: false
+  role: procedure_only
+locator_convention:
+  physical_pdf_pages_and_printed_report_pages_are_distinct: true
+  relation_from_physical_page_2: "physical_pdf_page = printed_report_page + 1"
+field_separation:
+  source_status:
+    required_fields: [scheme_id, raw_mark]
+    section_local: true
+    automatic_cross_scheme_normalization: false
+  inferential_status_policy:
+    allowed_values: [DEF, IMP, DER]
+    assigned_in_this_registry: false
+    automatic_mapping_from_source_status: false
+  policy_statement: source_status_never_determines_inferential_status
+
+schemes:
+  - id: global_claim_v1
+    namespace: report.reading_map.claim_status
+    registry_locator:
+      section_id: report.reading_map.claim_statuses
+      physical_pdf_pages: {start: 13, end: 13}
+      printed_report_pages: {start: 12, end: 12}
+    marks:
+      D: Definition
+      X: Explicit_source_claim
+      Q: Qualified_source_conjecture
+      R: Reconstruction
+      P: Substantive_postulate
+      CT: Constructor_theory_import
+      E: Empirical_premise
+      T: Derived_result
+      N: Non_entailment
+
+  - id: boi_index_v1
+    namespace: boi_index.status
+    registry_locator:
+      section_id: boi_index.scope_edition_attribution
+      physical_pdf_pages: {start: 30, end: 30}
+      printed_report_pages: {start: 29, end: 29}
+    marks:
+      E: Explicit
+      Q: Qualified_or_open
+      R: Reconstruction
+      H: Historical_or_context_bound
+    registered_compounds:
+      - raw_mark: E/Q
+        meaning: part_explicit_connection_qualified
+      - raw_mark: Q/R
+        meaning: qualified_authorial_claim_plus_index_reconstruction
+    observed_additional_compounds: [Q/H, H/E]
+
+  - id: for_index_v1
+    namespace: for_index.status
+    registry_locator:
+      section_id: for_index.scope_edition_locator
+      physical_pdf_pages: {start: 84, end: 84}
+      printed_report_pages: {start: 83, end: 83}
+    marks:
+      Explicit: source_states_or_directly_argues
+      Reconstruction: report_makes_dependency_or_consequence_explicit
+      Gap: unresolved_or_not_determined_by_book
+      Dated/contested: obsolete_qualified_inaccurate_or_contested_warning
+
+  - id: ct_dossier_v1
+    namespace: marletto_ct_dossier.status
+    registry_locator:
+      section_id: marletto_ct_dossier.section_1_2
+      physical_pdf_pages: {start: 119, end: 119}
+      printed_report_pages: {start: 118, end: 118}
+    marks:
+      D: Definition_or_stipulated_representational_convention
+      P: Independent_physical_principle_or_meta_law
+      R: Result_conditional_on_definitions_and_principles
+      E: Empirical_or_accepted_scientific_claim
+      C: Conjecture_programme_or_explicit_open_problem
+      A: Analogy_story_or_thought_experiment
+
+  - id: public_weight_v1
+    namespace: public_corpus_dossier.weight
+    registry_locator:
+      section_id: public_corpus_dossier.scope_and_method
+      physical_pdf_pages: {start: 143, end: 143}
+      printed_report_pages: {start: 142, end: 142}
+    marks:
+      A: Deutsch_authored_text_paper_or_verbatim_transcript
+      B: Recorded_interview_or_talk
+      C: Reliable_report_profile_or_reconstruction
+      S: Secondary_scholarship_or_criticism
+    observed_compounds: [A/B, B/C, A/portal, A/index]
+    orthogonal_fields: [access_status]
+
+  - id: recent_delta_v1
+    namespace: recent_primary_source_addendum.status
+    registry_locator:
+      section_id: recent_primary_source_addendum.evidential_convention
+      physical_pdf_pages: {start: 164, end: 164}
+      printed_report_pages: {start: 163, end: 163}
+    marks:
+      Direct_update: corrects_or_sharpens_claim_used_in_CR_1_0
+      Physical_layer_update: bears_on_realization_not_semantic_meaning
+      No_update: compatible_background_or_insufficiently_verified
+
+  - id: concordance_v1
+    namespace: unified_concordance.status
+    registry_locator:
+      section_id: unified_concordance.reading_key
+      physical_pdf_pages: {start: 168, end: 168}
+      printed_report_pages: {start: 167, end: 167}
+    marks:
+      E: Explicit_in_cited_source
+      R: Reconstruction_or_cross_source_synthesis
+      Q: Qualified_conjecture_gap_or_stronger_version_not_established
+      C: Contested_dated_or_source_specific
+    compound_operator: slash_joins_statuses
+
+  - id: model_source_v1
+    namespace: model_cr_1_0.source_status
+    registry_locator:
+      section_id: model_cr_1_0.section_0.status_and_source_discipline
+      physical_pdf_pages: {start: 219, end: 219}
+      printed_report_pages: {start: 218, end: 218}
+    marks:
+      X: explicitly_stated_or_directly_argued_by_cited_source
+      R: reconstruction_that_makes_explicit_claim_more_exact
+      M: added_modeling_or_audit_choice
+      Q: qualified_conjecture_or_guess_in_source
+      O: open_problem_acknowledged_by_source
+    compound_syntax_defined_by_pdf: false
+    observed_unregistered_compounds: ["R from X", R/M, X/R, X/R/Q, X/Q, X/O]
+
+  - id: precursor_audit_v1
+    namespace: superseded_precursor.status
+    registry_locator:
+      section_id: superseded_precursor.scope_and_verdict
+      physical_pdf_pages: {start: 236, end: 236}
+      printed_report_pages: {start: 235, end: 235}
+    marks:
+      D: directly_supported
+      R: faithful_reconstruction
+      M: added_methodological_choice
+      U: unsupported_or_overreaching
+    observed_compounds: [R/M, M/R, R/U, M/U, D/R, D/R/U]
+
+  - id: application_claim_v1
+    namespace: downstream_applications.claim_status
+    registry_locator:
+      section_id: downstream_applications.status_and_scope
+      physical_pdf_pages: {start: 257, end: 257}
+      printed_report_pages: {start: 256, end: 256}
+    marks:
+      K: CR_1_0_consequence
+      C: Conditional_application_result
+      E: Empirical_attribution
+      N: Non_entailment
+
+symbol_collisions:
+  - raw_mark: D
+    meanings_by_scheme:
+      global_claim_v1: Definition
+      ct_dossier_v1: Definition_or_stipulation
+      precursor_audit_v1: directly_supported
+  - raw_mark: X
+    meanings_by_scheme:
+      global_claim_v1: Explicit_source_claim
+      model_source_v1: explicitly_stated_or_directly_argued
+    note: BOI_and_concordance_use_E_for_explicit
+  - raw_mark: E
+    meanings_by_scheme:
+      global_claim_v1: Empirical_premise
+      boi_index_v1: Explicit
+      ct_dossier_v1: Empirical_or_accepted_science
+      concordance_v1: Explicit
+      application_claim_v1: Empirical_attribution
+  - raw_mark: R
+    meanings_by_scheme:
+      global_claim_v1: Reconstruction
+      boi_index_v1: Reconstruction
+      ct_dossier_v1: Conditional_result
+      concordance_v1: Reconstruction_or_synthesis
+      model_source_v1: exactifying_reconstruction
+      precursor_audit_v1: faithful_reconstruction
+  - raw_mark: P
+    meanings_by_scheme:
+      global_claim_v1: Substantive_postulate
+      ct_dossier_v1: Physical_principle_or_meta_law
+  - raw_mark: C
+    meanings_by_scheme:
+      ct_dossier_v1: Conjecture_programme_or_open_problem
+      public_weight_v1: Reliable_report_or_reconstruction
+      concordance_v1: Contested_dated_or_source_specific
+      application_claim_v1: Conditional_application_result
+  - raw_mark: A
+    meanings_by_scheme:
+      ct_dossier_v1: Analogy_story_or_thought_experiment
+      public_weight_v1: Authored_or_direct
+  - raw_mark: M
+    meanings_by_scheme:
+      model_source_v1: added_modeling_or_audit_choice
+      precursor_audit_v1: added_methodological_choice
+    lexical_warning: mathematical_model_metavariable_M_is_not_a_source_mark
+  - raw_mark: Q
+    meanings_by_scheme:
+      global_claim_v1: Qualified_source_conjecture
+      boi_index_v1: Qualified_or_open
+      concordance_v1: Qualified_gap_or_stronger_not_established
+      model_source_v1: Qualified_conjecture_or_guess
+    note: final_model_separates_acknowledged_open_problem_as_O
+
+model_source_mark_summary:
+  scheme_id: model_source_v1
+  registry_definition_count: 5
+  status_bearing_occurrence_count_after_registry: 36
+  atomic_membership_counts:
+    X: 18
+    R: 25
+    M: 7
+    Q: 2
+    O: 1
+  note: compound_occurrences_count_toward_each_atomic_membership
+
+model_source_mark_occurrences:
+  - occurrence_id: MSM-001
+    section_id: model_cr_1_0.section_1_3
+    identifier: SC-3
+    raw_mark: M
+    raw_context: M_reconstruction
+    source_tags: []
+    locator: {physical_pdf_page: 222, printed_report_page: 221}
+
+  - occurrence_id: MSM-002
+    section_id: model_cr_1_0.section_2
+    identifier: DF-1
+    raw_mark: R
+    raw_context: "[R: ...]"
+    source_tags: [S-BOI1, S-FOR3]
+    locator: {physical_pdf_page: 223, printed_report_page: 222}
+
+  - occurrence_id: MSM-003
+    section_id: model_cr_1_0.section_2
+    identifier: DF-2
+    raw_mark: R
+    raw_context: "[R]"
+    source_tags: []
+    locator: {physical_pdf_page: 223, printed_report_page: 222}
+
+  - occurrence_id: MSM-004
+    section_id: model_cr_1_0.section_2
+    identifier: DF-3
+    raw_mark: R
+    raw_context: "[R: ...]"
+    source_tags: [S-FOR1, S-BOI10, S-BOI16]
+    locator: {physical_pdf_page: 223, printed_report_page: 222}
+
+  - occurrence_id: MSM-005
+    section_id: model_cr_1_0.section_2
+    identifier: DF-4
+    raw_mark: "R from X"
+    raw_context: "[R from X: ...]"
+    source_tags: [S-BOI1, S-BOI7, S-CB12, S-FOR1]
+    source_tag_roles:
+      source_claims: [S-BOI1, S-BOI7, S-CB12]
+      correction_support: [S-FOR1]
+    locator: {physical_pdf_page: 223, printed_report_page: 222}
+
+  - occurrence_id: MSM-006
+    section_id: model_cr_1_0.section_2
+    identifier: DF-4a
+    raw_mark: "R from X"
+    raw_context: "[R from X: ...]"
+    source_tags: [S-BOI1, S-CB12]
+    locator: {physical_pdf_page: 223, printed_report_page: 222}
+
+  - occurrence_id: MSM-007
+    section_id: model_cr_1_0.section_2
+    identifier: DF-5
+    raw_mark: R
+    raw_context: "[R: ...]"
+    source_tags: [S-FOR3, S-BOI1, S-BOI14]
+    locator: {physical_pdf_page: 223, printed_report_page: 222}
+
+  - occurrence_id: MSM-008
+    section_id: model_cr_1_0.section_2
+    identifier: DF-6
+    raw_mark: R/M
+    raw_context: "[R/M: ...]"
+    source_tags: [S-FOR3, S-BOI7]
+    locator: {physical_pdf_page: 223, printed_report_page: 222}
+
+  - occurrence_id: MSM-009
+    section_id: model_cr_1_0.section_2
+    identifier: DF-7
+    raw_mark: "R from X"
+    raw_context: "[R from X: ...]"
+    source_tags: [S-FOR3, S-BOI1]
+    locator: {physical_pdf_page: 224, printed_report_page: 223}
+
+  - occurrence_id: MSM-010
+    section_id: model_cr_1_0.section_2
+    identifier: DF-8
+    raw_mark: "R from X"
+    raw_context: "[R from X: ...]"
+    source_tags: [S-BOI1]
+    locator: {physical_pdf_page: 224, printed_report_page: 223}
+
+  - occurrence_id: MSM-011
+    section_id: model_cr_1_0.section_2
+    identifier: DF-9
+    raw_mark: R
+    raw_context: "[R: ...]"
+    source_tags: [S-BOI1, S-FOR3]
+    locator: {physical_pdf_page: 224, printed_report_page: 223}
+
+  - occurrence_id: MSM-012
+    section_id: model_cr_1_0.section_2
+    identifier: DF-10
+    raw_mark: R
+    raw_context: "[R: ...]"
+    source_tags: [S-BOI1, S-FOR3, S-FOR8]
+    locator: {physical_pdf_page: 224, printed_report_page: 223}
+
+  - occurrence_id: MSM-013
+    section_id: model_cr_1_0.section_2
+    identifier: DF-12
+    raw_mark: R
+    raw_context: "[R: ...]"
+    source_tags: [S-BOI6, S-BOI7, S-BOI16]
+    locator: {physical_pdf_page: 224, printed_report_page: 223}
+
+  - occurrence_id: MSM-014
+    section_id: model_cr_1_0.section_2
+    identifier: DF-13
+    raw_mark: X/R/Q
+    raw_context: "[X/R/Q: ...]"
+    source_tags: [S-BOI6, S-BOI7, S-BOI16]
+    locator: {physical_pdf_page: 224, printed_report_page: 223}
+
+  - occurrence_id: MSM-015
+    section_id: model_cr_1_0.section_2
+    identifier: DF-14
+    raw_mark: "R from X"
+    raw_context: "[R from X: ...]"
+    source_tags: [S-BOI1]
+    locator: {physical_pdf_page: 224, printed_report_page: 223}
+
+  - occurrence_id: MSM-016
+    section_id: model_cr_1_0.section_4
+    identifier: DP-1
+    raw_mark: X
+    source_tags: [S-BOI1, S-FOR1]
+    locator: {physical_pdf_page: 226, printed_report_page: 225}
+
+  - occurrence_id: MSM-017
+    section_id: model_cr_1_0.section_4
+    identifier: DP-2
+    raw_mark: X
+    source_tags: [S-BOI1, S-FOR3]
+    locator: {physical_pdf_page: 226, printed_report_page: 225}
+
+  - occurrence_id: MSM-018
+    section_id: model_cr_1_0.section_4
+    identifier: DP-3
+    raw_mark: X/R
+    source_tags: [S-BOI7, S-BOI10, S-BOI16, S-CB12]
+    locator: {physical_pdf_page: 226, printed_report_page: 225}
+
+  - occurrence_id: MSM-019
+    section_id: model_cr_1_0.section_4
+    identifier: DP-4
+    raw_mark: X
+    source_tags: [S-BOI1, S-FOR3, S-FOR10]
+    locator: {physical_pdf_page: 226, printed_report_page: 225}
+
+  - occurrence_id: MSM-020
+    section_id: model_cr_1_0.section_4
+    identifier: DP-5
+    raw_mark: X/R
+    source_tags: [S-FOR3, S-BOI1]
+    locator: {physical_pdf_page: 226, printed_report_page: 225}
+
+  - occurrence_id: MSM-021
+    section_id: model_cr_1_0.section_4
+    identifier: DP-6
+    raw_mark: X/R
+    source_tags: [S-BOI1]
+    locator: {physical_pdf_page: 226, printed_report_page: 225}
+
+  - occurrence_id: MSM-022
+    section_id: model_cr_1_0.section_4
+    identifier: DP-7
+    raw_mark: X/R
+    source_tags: [S-FOR3, S-BOI1]
+    locator: {physical_pdf_page: 226, printed_report_page: 225}
+
+  - occurrence_id: MSM-023
+    section_id: model_cr_1_0.section_4
+    identifier: DP-8
+    raw_mark: X/Q
+    source_tags: [S-BOI3, S-BOI6, S-BOI7, S-BOI16]
+    locator: {physical_pdf_page: 226, printed_report_page: 225}
+
+  - occurrence_id: MSM-024
+    section_id: model_cr_1_0.section_4
+    identifier: DP-9
+    raw_mark: X/O
+    source_tags: [S-BOI6, S-BOI7, S-BOI16, S-FOR13]
+    locator: {physical_pdf_page: 226, printed_report_page: 225}
+
+  - occurrence_id: MSM-025
+    section_id: model_cr_1_0.section_4
+    identifier: DP-10
+    raw_mark: X
+    source_tags: [S-BOI4, S-BOI15, S-BOI16, S-FOR3, S-FOR8, S-CTL15]
+    locator: {physical_pdf_page: 226, printed_report_page: 225}
+
+  - occurrence_id: MSM-026
+    section_id: model_cr_1_0.section_4
+    identifier: AB-1
+    raw_mark: X/R
+    source_tags: [S-BOI4, S-FOR8, S-CTL15, S-SCC5]
+    locator: {physical_pdf_page: 226, printed_report_page: 225}
+
+  - occurrence_id: MSM-027
+    section_id: model_cr_1_0.section_4
+    identifier: DP-11
+    raw_mark: X/R
+    source_tags: [S-BOI3, S-BOI6, S-CT13, S-SCC5, S-SCC7, S-MAI20]
+    locator: {physical_pdf_page: 226, printed_report_page: 225}
+
+  - occurrence_id: MSM-028
+    section_id: model_cr_1_0.section_7_2
+    identifier: null
+    anchor: after_DF-23_task_network_paragraph
+    raw_mark: R/M
+    raw_context: R/M_reconstruction
+    source_tags: []
+    locator: {physical_pdf_page: 229, printed_report_page: 228}
+
+  - occurrence_id: MSM-029
+    section_id: model_cr_1_0.section_8
+    identifier: TH-1
+    anchor: source_entitlement
+    raw_mark: R
+    raw_context: four_way_separation_is_R
+    source_tags: [S-BOI1, S-FOR1]
+    locator: {physical_pdf_page: 229, printed_report_page: 228}
+
+  - occurrence_id: MSM-030
+    section_id: model_cr_1_0.section_8
+    identifier: TH-3
+    anchor: source_entitlement
+    raw_mark: R
+    raw_context: typed_separation_is_R
+    source_tags: [S-BOI1, S-FOR3, S-FOR8]
+    locator: {physical_pdf_page: 230, printed_report_page: 229}
+
+  - occurrence_id: MSM-031
+    section_id: model_cr_1_0.section_8
+    identifier: TH-7
+    anchor: source_entitlement
+    raw_mark: M
+    raw_context: formal_paired_model_construction_is_M
+    source_tags: [S-BOI7, S-CB12]
+    locator: {physical_pdf_page: 231, printed_report_page: 230}
+
+  - occurrence_id: MSM-032
+    section_id: model_cr_1_0.section_8
+    identifier: TH-10
+    anchor: source_entitlement
+    raw_mark: R
+    raw_context: two_predicate_separation_is_R
+    source_tags: [S-BOI4, S-FOR8, S-SCC5, S-CTL15]
+    locator: {physical_pdf_page: 231, printed_report_page: 230}
+
+  - occurrence_id: MSM-033
+    section_id: model_cr_1_0.section_8
+    identifier: TH-12
+    anchor: source_entitlement
+    raw_mark: M
+    raw_context: formal_finite_underdetermination_result_is_M
+    source_tags: [S-BOI6, S-BOI7, S-CB12]
+    locator: {physical_pdf_page: 232, printed_report_page: 231}
+
+  - occurrence_id: MSM-034
+    section_id: model_cr_1_0.section_8
+    identifier: TH-14
+    anchor: source_entitlement
+    raw_mark: M
+    raw_context: realization_scheme_is_M
+    source_tags: [S-CT13, S-CTI15]
+    locator: {physical_pdf_page: 232, printed_report_page: 231}
+
+  - occurrence_id: MSM-035
+    section_id: model_cr_1_0.section_8
+    identifier: TH-15
+    anchor: source_entitlement
+    raw_mark: R
+    raw_context: displayed_bridge_decomposition_is_R
+    source_tags: [S-BOI3, S-BOI6]
+    locator: {physical_pdf_page: 233, printed_report_page: 232}
+
+  - occurrence_id: MSM-036
+    section_id: model_cr_1_0.section_8
+    identifier: TH-16
+    anchor: source_entitlement
+    raw_mark: M
+    raw_context: standard_metalogic_M
+    source_tags: []
+    locator: {physical_pdf_page: 233, printed_report_page: 232}
+
+model_source_mark_null_groups:
+  scheme_id: model_source_v1
+  rule: null_means_no_explicit_mark_observed_and_must_not_be_inferred
+  groups:
+    - {section_id: model_cr_1_0.section_1_1, identifiers: [TY-1, TY-2, TY-3]}
+    - {section_id: model_cr_1_0.section_1_2, identifier_range: MS-1_through_MS-9}
+    - {section_id: model_cr_1_0.section_1_3, identifiers: [SC-1, SC-2, SC-4, SC-5, SC-6, SC-7, SC-8]}
+    - {section_id: model_cr_1_0.section_2, identifiers: [DF-7a, DF-11, DF-15, DF-16, DF-17, DF-18, DF-19, DF-20, DF-21]}
+    - {section_id: model_cr_1_0.section_3, identifiers: [RC-1, RC-2, RC-3]}
+    - {section_id: model_cr_1_0.section_5, identifier_range: OM-1_through_OM-10}
+    - {section_id: model_cr_1_0.section_6, identifier_range: IR-1_through_IR-8}
+    - {section_id: model_cr_1_0.section_7_1, identifier_range: CT-1_through_CT-7}
+    - {section_id: model_cr_1_0.section_7_2, identifiers: [BR-1, BR-2, BR-3, BR-4, BR-5, BR-6, BR-7, BR-8, DF-22, DF-23]}
+    - {section_id: model_cr_1_0.section_8, identifiers: [TH-2, TH-4, TH-5, TH-6, TH-8, TH-9, TH-11, TH-13, TH-17]}
+    - {section_id: model_cr_1_0.section_9, identifiers: [], coverage: prose_untagged}
+    - {section_id: model_cr_1_0.section_10, identifiers: [], coverage: prose_untagged}
+
+part_1_global_claim_occurrences:
+  scheme_id: global_claim_v1
+  report_section_id: part_1.section_1.position_map
+  physical_pdf_pages: {start: 15, end: 16}
+  printed_report_pages: {start: 14, end: 15}
+  rows:
+    - {question: What_is_creativity, raw_mark: X, physical_pdf_page: 15, printed_report_page: 14}
+    - {question: What_is_an_explanation, raw_mark: "X, with an admitted analysis gap", atomic_marks: [X], physical_pdf_page: 15, printed_report_page: 14}
+    - {question: What_makes_an_explanation_good, raw_mark: X, physical_pdf_page: 15, printed_report_page: 14}
+    - {question: What_is_reach, raw_mark: X, physical_pdf_page: 15, printed_report_page: 14}
+    - {question: What_is_intelligence, raw_mark: "R from explicit connections", atomic_marks: [R], physical_pdf_page: 15, printed_report_page: 14}
+    - {question: What_is_an_AGI, raw_mark: X/Q, physical_pdf_page: 15, printed_report_page: 14}
+    - {question: What_do_art_and_reason_share, raw_mark: X/Q, physical_pdf_page: 15, printed_report_page: 14}
+    - {question: What_does_natural_selection_share_with_creativity, raw_mark: X, physical_pdf_page: 15, printed_report_page: 14}
+    - {question: How_do_natural_selection_and_creativity_differ, raw_mark: X, physical_pdf_page: 15, printed_report_page: 14}
+    - {question: Does_constructor_theory_define_creativity, raw_mark: X/R, physical_pdf_page: 16, printed_report_page: 15}
+
+status_defects:
+  - id: STATUS-COMPOUND-SYNTAX-UNDEFINED
+    scheme_id: model_source_v1
+    status: unresolved
+    finding: atomic_marks_are_defined_but_slash_and_R_from_X_semantics_are_not
+    observed_raw_marks: ["R from X", R/M, X/R, X/R/Q, X/Q, X/O]
+    report_locator:
+      physical_pdf_pages: {start: 219, end: 233}
+      printed_report_pages: {start: 218, end: 232}
+
+  - id: STATUS-MODEL-MARKS-INCOMPLETE
+    scheme_id: model_source_v1
+    status: open
+    finding: many_final_model_clauses_have_no_explicit_source_mark
+    report_locator:
+      physical_pdf_pages: {start: 221, end: 234}
+      printed_report_pages: {start: 220, end: 233}
+
+  - id: STATUS-DF2-NO-SOURCE-TAG
+    scheme_id: model_source_v1
+    status: open
+    finding: DF_2_is_marked_R_but_has_no_S_tag
+    report_locator:
+      section_id: model_cr_1_0.section_2
+      physical_pdf_pages: {start: 223, end: 223}
+      printed_report_pages: {start: 222, end: 222}
+
+  - id: STATUS-TASK-NETWORK-NO-ID
+    scheme_id: model_source_v1
+    status: open
+    finding: R_slash_M_task_network_reconstruction_has_no_identifier_and_no_S_tag
+    report_locator:
+      section_id: model_cr_1_0.section_7_2
+      physical_pdf_pages: {start: 229, end: 229}
+      printed_report_pages: {start: 228, end: 228}
+
+  - id: STATUS-CT7-OPEN-BUT-UNMARKED
+    scheme_id: model_source_v1
+    status: open
+    finding: CT_7_cites_sources_and_describes_an_open_programme_but_has_no_Q_or_O_mark
+    report_locator:
+      section_id: model_cr_1_0.section_7_1
+      physical_pdf_pages: {start: 228, end: 228}
+      printed_report_pages: {start: 227, end: 227}
+
+namespace_requirements:
+  - scheme_id_must_be_stored_with_every_source_status
+  - raw_mark_must_be_preserved
+  - no_status_letter_may_be_interpreted_without_scheme_id
+  - superseded_precursor_statuses_must_not_be_attached_to_final_model_clauses
+  - source_status_must_not_be_written_into_inferential_status_fields
