@@ -46,11 +46,13 @@ def loads_strict(source: str) -> Any:
             object_pairs_hook=_pairs_no_duplicates,
             parse_constant=_reject_constant,
         )
+        _reject_floats(value)
     except RecordError:
         raise
+    except RecursionError as exc:
+        raise RecordError("JSON nesting exceeds the supported depth") from exc
     except (json.JSONDecodeError, UnicodeError) as exc:
         raise RecordError(f"invalid JSON: {exc}") from exc
-    _reject_floats(value)
     return value
 
 

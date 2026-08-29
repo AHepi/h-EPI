@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ahepi.github.io/h-EPI/schema/cr-eib.interpretation-choice-registry.v1.json",
+  "title": "CR-EIB interpretation choice registry v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "registry_id",
+    "semantic_authority",
+    "authority_status",
+    "bridge_status",
+    "choices"
+  ],
+  "properties": {
+    "schema_version": {"const": "cr-eib.interpretation-choice-registry.v1"},
+    "registry_id": {"const": "EIB-INTERPRETATION-CHOICES"},
+    "semantic_authority": {"const": "CR-1.0"},
+    "authority_status": {"const": "non-authoritative-interpretation-registry"},
+    "bridge_status": {"const": "proposed"},
+    "choices": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["choice_id", "statement", "authority_status", "bridge_status"],
+        "properties": {
+          "choice_id": {
+            "type": "string",
+            "pattern": "^EIB-C-(?:TY|AR)[0-9]{2}$"
+          },
+          "statement": {"type": "string", "minLength": 1},
+          "authority_status": {"const": "not-a-source-fact"},
+          "bridge_status": {"const": "proposed"}
+        }
+      }
+    }
+  }
+}

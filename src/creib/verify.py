@@ -8,6 +8,7 @@ import re
 import stat
 import subprocess
 import tempfile
+import unicodedata
 import xml.etree.ElementTree as ET
 from decimal import Decimal, InvalidOperation, ROUND_HALF_EVEN
 from pathlib import Path
@@ -15,7 +16,12 @@ from typing import Any, Callable
 
 from .canonical import canonical_bytes
 from .errors import AnchorMismatch, AuthorityMismatch, FormalReplayMismatch, PolicyViolation, RecordError
-from .models import validate_anchor, validate_declaration, validate_manifest
+from .models import (
+    validate_anchor,
+    validate_choice_registry,
+    validate_declaration,
+    validate_manifest,
+)
 from .strict_json import load_strict
 
 EXPECTED_MANIFEST = {
@@ -79,8 +85,28 @@ EXPECTED_ANCHOR_DIGESTS = {
 
 EXPECTED_DECLARATIONS = {
     "EIB-DF10-CANDIDATE",
+    "EIB-DF10-REFINED-CANDIDATE",
     "EIB-TH3A-PILOT",
     "EIB-TH3B-PILOT",
+}
+
+EXPECTED_SCHEMA_CANONICAL_SHA256 = {
+    "bridge/schema/source-anchor.schema.json": "b350b312fd0c0b0fab23c1baeace8fd2cdfc622f3dd6fe46fb76216a3ff60ca7",
+    "bridge/schema/source-manifest.schema.json": "95d2dab9becb5d2df9fb5bb6d29668e76b2b0d5d35816039f482ac73c7575ce1",
+    "bridge/schema/declaration.schema.json": "0a2fff1c2a5c26728fa1ba545f63ee737f4d1438b67d8b9c72c55c4d1915b869",
+    "bridge/schema/declaration-v2.schema.json": "b37492e2cac9118fac4c02ec5ad0d73bde11e816c21fdbc2415c13c370bec92c",
+    "bridge/schema/interpretation-choice-registry.schema.json": "019b3ffd1a78379da0ecd3f45f15991176720644cbe56f62797353dda77a637e",
+}
+
+EXPECTED_CHOICE_REGISTRY_CANONICAL_SHA256 = (
+    "b1b6490de6c18c20fd2ac2b292de72688dfaf8d77a1bf38c3e4858ecd3197511"
+)
+
+EXPECTED_DECLARATION_CANONICAL_SHA256 = {
+    "EIB-DF10-CANDIDATE": "e2f6a0f094539e104237c598a436e03d969056ae2ea40a99eedd00ee3d20aa35",
+    "EIB-DF10-REFINED-CANDIDATE": "5a90a2d749798c19caeffa2c784865703b3a37807137a04f114bd22b5a63ee97",
+    "EIB-TH3A-PILOT": "ca479735becfd85110c1ca071e38f15d0fbfdbc8c793264ba74b5686222d6af8",
+    "EIB-TH3B-PILOT": "98f1ee7f701a5aceff3f9f1ce5969b5e75371be7981f45f8519010db7e41701a",
 }
 
 EXPECTED_PARAMETERS = [
@@ -113,6 +139,53 @@ EXPECTED_OPAQUE_PORTS = [
 ]
 
 EXPECTED_DECLARATION_POLICY = {
+    "EIB-DF10-REFINED-CANDIDATE": {
+        "schema_version": "cr-eib.bridge-declaration.v2",
+        "authoritative_id": "DF-10",
+        "source_anchor_digest": "sha256:2ce383d202be73bd20465f0d0cbd39565fb418cdb6a90af006dae4d8bc260bff",
+        "mapping_status": "candidate",
+        "proposed_inferential_status": "DEF",
+        "choice_ids": ["EIB-C-TY01", "EIB-C-TY03", "EIB-C-TY08", "EIB-C-AR02"],
+        "interpretation_class": "explicitation",
+        "interpretation_bridge_status": "blocked",
+        "interpretation_review_status": "unreviewed",
+        "coverage_id": "EIB-COV-DF10-ENDPOINT-WITNESSED",
+        "coverage_status": "partial",
+        "obligations": [
+            {
+                "obligation_id": "EIB-PO-DF10-FOLD-UNFOLD",
+                "kind": "fold-unfold",
+                "status": "verified",
+                "symbol": "CREIB.EIB_DF10_refined_fold_unfold",
+                "path": "formal/CREIB/Bridge/DF10Refinement.lean",
+                "sha256": "71e29e7148729da1884962518e2fd36ab6488b0f4bc03c8790e161162a70dee9",
+            },
+            {
+                "obligation_id": "EIB-PO-DF10-SOURCE-PROJECTION",
+                "kind": "source-projection",
+                "status": "verified",
+                "symbol": "CREIB.EIB_DF10_refined_projection",
+                "path": "formal/CREIB/Bridge/DF10Refinement.lean",
+                "sha256": "71e29e7148729da1884962518e2fd36ab6488b0f4bc03c8790e161162a70dee9",
+            },
+            {
+                "obligation_id": "EIB-PO-DF10-MODEL-EXPANSION",
+                "kind": "model-expansion",
+                "status": "verified",
+                "symbol": "CREIB.EIB_DF10_canonical_model_expansion_exists",
+                "path": "formal/CREIB/Bridge/DF10Refinement.lean",
+                "sha256": "71e29e7148729da1884962518e2fd36ab6488b0f4bc03c8790e161162a70dee9",
+            },
+        ],
+        "symbol": "CREIB.EIB_DF10_REFINED",
+        "path": "formal/CREIB/Bridge/DF10Refinement.lean",
+        "sha256": "71e29e7148729da1884962518e2fd36ab6488b0f4bc03c8790e161162a70dee9",
+        "closed_proposition": False,
+        "explicit_negative_required_for_countermodel": False,
+        "replay_status": "verified",
+        "replay_command": "cd formal && lake build",
+        "expected_axioms": [],
+    },
     "EIB-DF10-CANDIDATE": {
         "authoritative_id": "DF-10",
         "source_anchor_digest": "sha256:2ce383d202be73bd20465f0d0cbd39565fb418cdb6a90af006dae4d8bc260bff",
@@ -183,12 +256,15 @@ EXPECTED_DECLARATION_POLICY = {
 
 EXPECTED_FORMAL_PACKAGE = {
     "formal/CREIB.lean": "22081eed25468edd266f61a2f291fd761f1ec6c4b442aabfe012abb77d2e2082",
-    "formal/CREIB/Audit/Axioms.lean": "258fd255bf7704291d4de03913d57f0ff15589cc6437c69a3def00740746eecb",
-    "formal/CREIB/Audit/DeclarationBindings.lean": "165c6e90803670172d3e67b008f78665d2da66296607801e8f4d7c02ba3014dd",
+    "formal/CREIB/Audit/Axioms.lean": "bab03f1d7c2c8434062b17453c7830ea1499c28609932ea3cfc1ef3482fd8d97",
+    "formal/CREIB/Audit/DeclarationBindings.lean": "27cdbdace77162fc4cebf494387570e7ad7f2dc54af3786ebfd60ed34127ad78",
     "formal/CREIB/Bridge/DF10Candidate.lean": "14b4fe0ac3a9f1d707f1ac942b85a67a41915d4977211325d6465169c8ca2128",
+    "formal/CREIB/Bridge/DF10Refinement.lean": "71e29e7148729da1884962518e2fd36ab6488b0f4bc03c8790e161162a70dee9",
     "formal/CREIB/Core/Model.lean": "27732f216362107b2a98512301e7e32b5a334de3a0ddb0c194ef30d8c65cc58b",
+    "formal/CREIB/Core/RoleRefinement.lean": "a4cd685df76b0e3018bfc5293183dd6c76542b692de57b6a0258daf4d690828f",
     "formal/CREIB/Pilot/TH3.lean": "ef9096ff0fe7ef133757ccb57ba3fc52a41638b339539af1737584936c3cb11a",
     "formal/CREIB/Pilot/TH3Countermodel.lean": "38a68f131389ecca67d5a798262a663edc7c6dcedb7e58b6695ad12fa30679e5",
+    "formal/CREIB/Pilot/TH3Refinement.lean": "7de569339c2e11721e788397d49eb83a1d6e9a6507084d438605da38ff8f5a46",
     "formal/lake-manifest.json": "835bdc7555981c3189d81c1a1756f21c780c8fdd60dc07ed96aaed80ba4c54f8",
     "formal/lakefile.toml": "06dc9683188f3d1b967431c49f8999bb96e6ba901f75c34bb75267ad32594181",
     "formal/lean-toolchain": "3aac669c7a910ec2389f4e4f921b605adf6ebf2d1e0c9b9cd0be4d33f3f5db71",
@@ -200,7 +276,31 @@ EXPECTED_AXIOM_FREE_DECLARATIONS = [
     "CREIB.TH3Countermodel.concreteWitness",
     "CREIB.EIB_TH3b_countermodel_exists",
     "CREIB.EIB_TH3b_relative_non_sufficiency",
+    "CREIB.unrestricted_role_overlap",
+    "CREIB.EIB_DF10_refined_fold_unfold",
+    "CREIB.EIB_DF10_refined_projection",
+    "CREIB.EIB_DF10_refined_legacy_transport",
+    "CREIB.EIB_DF10_canonical_reduct",
+    "CREIB.EIB_DF10_canonical_model_expansion_exists",
+    "CREIB.TH3RefinedCountermodel.concreteWitness",
+    "CREIB.EIB_TH3b_refined_countermodel_exists",
+    "CREIB.EIB_TH3b_refined_relative_non_sufficiency",
 ]
+
+EXPECTED_VERIFIED_ARTIFACT_BINDINGS = {
+    (
+        "formal/CREIB/Bridge/DF10Refinement.lean",
+        "CREIB.EIB_DF10_refined_fold_unfold",
+    ),
+    (
+        "formal/CREIB/Bridge/DF10Refinement.lean",
+        "CREIB.EIB_DF10_refined_projection",
+    ),
+    (
+        "formal/CREIB/Bridge/DF10Refinement.lean",
+        "CREIB.EIB_DF10_canonical_model_expansion_exists",
+    ),
+}
 
 
 def _exact_keys(value: dict[str, Any], keys: set[str], where: str) -> None:
@@ -225,6 +325,26 @@ def _safe_repository_file(root: Path, relative: str) -> Path:
     if not resolved.is_file():
         raise PolicyViolation(f"evidence path is not a regular file: {relative}")
     return resolved
+
+
+def _verify_schema_pins(root: Path) -> None:
+    """Bind every published declaration/choice schema used by this verifier."""
+    for relative, expected_digest in EXPECTED_SCHEMA_CANONICAL_SHA256.items():
+        schema = load_strict(_safe_repository_file(root, relative))
+        actual_digest = hashlib.sha256(canonical_bytes(schema)).hexdigest()
+        if actual_digest != expected_digest:
+            raise PolicyViolation(f"published schema canonical digest mismatch: {relative}")
+
+
+def _decode_declared_nfc(raw: bytes, relative: str) -> str:
+    """Decode a transcription and enforce its declared UTF-8/NFC contract."""
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise AnchorMismatch(f"reviewed transcription is not UTF-8: {relative}") from exc
+    if unicodedata.normalize("NFC", text) != text:
+        raise AnchorMismatch(f"reviewed transcription is not NFC: {relative}")
+    return text
 
 
 def _enforce_pilot_policy(manifest: dict[str, Any], anchors: dict[str, dict[str, Any]]) -> None:
@@ -288,6 +408,276 @@ def _validate_bridge_graph(declarations: dict[str, dict[str, Any]]) -> None:
 
     for declaration_id in declarations:
         visit(declaration_id)
+
+
+def _v2_metadata_ids(declaration: dict[str, Any]) -> list[tuple[str, str]]:
+    """Return every stable interpretation/obligation identifier in one v2 record."""
+    if declaration["schema_version"] != "cr-eib.bridge-declaration.v2":
+        return []
+    interpretation = declaration["interpretation"]
+    identifiers: list[tuple[str, str]] = []
+    for item in interpretation["preserves"]:
+        identifiers.append((item["preservation_id"], "preservation"))
+    for item in interpretation["loses"]:
+        identifiers.append((item["loss_id"], "loss"))
+    coverage = interpretation["coverage"]
+    identifiers.append((coverage["coverage_id"], "coverage"))
+    for item in coverage["excluded"]:
+        identifiers.append((item["exclusion_id"], "exclusion"))
+    for obligation in declaration["proof_obligations"]:
+        identifiers.append((obligation["obligation_id"], "proof obligation"))
+    return identifiers
+
+
+def _validate_global_metadata_ids(declarations: dict[str, dict[str, Any]]) -> None:
+    """Reject identifier aliasing across declaration files, including across kinds."""
+    owners: dict[str, tuple[str, str]] = {}
+    for declaration_id, declaration in declarations.items():
+        for metadata_id, kind in _v2_metadata_ids(declaration):
+            previous = owners.get(metadata_id)
+            if previous is not None:
+                previous_declaration, previous_kind = previous
+                raise PolicyViolation(
+                    "bridge metadata identifier is not globally unique: "
+                    f"{metadata_id} ({previous_declaration} {previous_kind}; "
+                    f"{declaration_id} {kind})"
+                )
+            owners[metadata_id] = (declaration_id, kind)
+
+
+def _enforce_accepted_mapping_policy(
+    declarations: dict[str, dict[str, Any]],
+    interpretation_choices: dict[str, dict[str, Any]],
+) -> None:
+    """Fail closed before reviewed pilot pins are considered."""
+    accepted_authoritative_ids = {
+        declaration["authoritative_id"]
+        for declaration in declarations.values()
+        if declaration["mapping_status"] == "accepted"
+    }
+    for declaration_id, declaration in declarations.items():
+        if declaration["mapping_status"] != "accepted":
+            continue
+        if declaration["schema_version"] != "cr-eib.bridge-declaration.v2":
+            raise PolicyViolation(
+                f"accepted mapping requires v2 fidelity metadata: {declaration_id}"
+            )
+        interpretation = declaration["interpretation"]
+        if (
+            interpretation["bridge_status"] != "accepted"
+            or interpretation["review_status"] != "accepted"
+        ):
+            raise PolicyViolation(
+                f"accepted mapping lacks accepted interpretation review: {declaration_id}"
+            )
+        if interpretation["class"] not in {"explicitation", "abbreviation"}:
+            raise PolicyViolation(
+                f"accepted mapping requires an equivalence-capable interpretation class: "
+                f"{declaration_id}"
+            )
+        for choice_id in interpretation["choice_ids"]:
+            if interpretation_choices[choice_id]["bridge_status"] != "accepted":
+                raise PolicyViolation(
+                    f"accepted mapping depends on non-accepted choice: {declaration_id} -> {choice_id}"
+                )
+        coverage = interpretation["coverage"]
+        if coverage["status"] != "exact" or coverage["excluded"]:
+            raise PolicyViolation(
+                f"accepted mapping requires exact exclusion-free coverage: {declaration_id}"
+            )
+        if interpretation["loses"]:
+            raise PolicyViolation(
+                f"accepted mapping retains declared semantic losses: {declaration_id}"
+            )
+        if declaration["replay"]["status"] != "verified":
+            raise PolicyViolation(
+                f"accepted mapping lacks verified formal replay: {declaration_id}"
+            )
+        incomplete = [
+            obligation["obligation_id"]
+            for obligation in declaration["proof_obligations"]
+            if obligation["status"] != "verified"
+        ]
+        if incomplete:
+            raise PolicyViolation(
+                f"accepted mapping has incomplete proof obligations: {declaration_id}: {incomplete}"
+            )
+        for dependency_id in declaration["dependencies"]["bridge"]:
+            if declarations[dependency_id]["mapping_status"] != "accepted":
+                raise PolicyViolation(
+                    f"accepted mapping depends on non-accepted bridge declaration: "
+                    f"{declaration_id} -> {dependency_id}"
+                )
+        for dependency_kind in ("source_declared", "reconstructed_source"):
+            for dependency_id in declaration["dependencies"][dependency_kind]:
+                if dependency_id not in accepted_authoritative_ids:
+                    raise PolicyViolation(
+                        f"accepted mapping has unresolved {dependency_kind} dependency: "
+                        f"{declaration_id} -> {dependency_id}"
+                    )
+
+
+def _verify_v2_artifacts(
+    declarations: dict[str, dict[str, Any]],
+    verified_formal_inputs: dict[str, bytes],
+) -> None:
+    """Bind every claimed verified proof artifact to the reviewed formal snapshot."""
+    for declaration_id, declaration in declarations.items():
+        if declaration["schema_version"] != "cr-eib.bridge-declaration.v2":
+            continue
+        for obligation in declaration["proof_obligations"]:
+            if obligation["status"] != "verified":
+                continue
+            artifact = obligation["artifact"]
+            path = artifact["path"]
+            symbol = artifact["symbol"]
+            if path not in verified_formal_inputs:
+                raise PolicyViolation(
+                    f"verified proof artifact is outside the reviewed formal package: "
+                    f"{declaration_id}: {path}"
+                )
+            actual_digest = hashlib.sha256(verified_formal_inputs[path]).hexdigest()
+            if artifact["sha256"] != actual_digest:
+                raise PolicyViolation(
+                    f"verified proof-artifact hash mismatch: {declaration_id}: "
+                    f"{obligation['obligation_id']}"
+                )
+            if (path, symbol) not in EXPECTED_VERIFIED_ARTIFACT_BINDINGS:
+                raise PolicyViolation(
+                    f"unreviewed proof-artifact symbol binding: {declaration_id}: {symbol}"
+                )
+
+
+def _mapping_fidelity_status(declarations: dict[str, dict[str, Any]]) -> str:
+    """Summarize semantic review without conflating it with executable replay."""
+    if any(
+        declaration["schema_version"] != "cr-eib.bridge-declaration.v2"
+        for declaration in declarations.values()
+    ):
+        return "UNREVIEWED"
+    v2_records = [
+        declaration
+        for declaration in declarations.values()
+        if declaration["schema_version"] == "cr-eib.bridge-declaration.v2"
+    ]
+    if not v2_records:
+        return "UNREVIEWED"
+    reviews = {record["interpretation"]["review_status"] for record in v2_records}
+    if "rejected" in reviews:
+        return "REJECTED"
+    if reviews == {"accepted"} and all(
+        record["mapping_status"] == "accepted" for record in v2_records
+    ):
+        return "ACCEPTED"
+    if "in-review" in reviews:
+        return "IN_REVIEW"
+    return "UNREVIEWED"
+
+
+def _bridge_conformance_status(
+    declarations: dict[str, dict[str, Any]],
+    mapping_fidelity_status: str,
+) -> str:
+    """Derive tracked-bundle conformance without promoting partial semantic review."""
+    if not declarations or mapping_fidelity_status != "ACCEPTED":
+        return "BLOCKED"
+    accepted_authoritative_ids = {
+        declaration["authoritative_id"]
+        for declaration in declarations.values()
+        if declaration["mapping_status"] == "accepted"
+    }
+    for declaration in declarations.values():
+        if (
+            declaration["schema_version"] != "cr-eib.bridge-declaration.v2"
+            or declaration["mapping_status"] != "accepted"
+            or declaration["replay"]["status"] != "verified"
+        ):
+            return "BLOCKED"
+        interpretation = declaration["interpretation"]
+        if (
+            interpretation["class"] not in {"explicitation", "abbreviation"}
+            or interpretation["bridge_status"] != "accepted"
+            or interpretation["review_status"] != "accepted"
+            or interpretation["coverage"]["status"] != "exact"
+            or interpretation["coverage"]["excluded"]
+            or interpretation["loses"]
+        ):
+            return "BLOCKED"
+        if any(
+            obligation["status"] != "verified"
+            for obligation in declaration["proof_obligations"]
+        ):
+            return "BLOCKED"
+        if any(
+            declarations[dependency_id]["mapping_status"] != "accepted"
+            for dependency_id in declaration["dependencies"]["bridge"]
+        ):
+            return "BLOCKED"
+        source_dependencies = (
+            declaration["dependencies"]["source_declared"]
+            + declaration["dependencies"]["reconstructed_source"]
+        )
+        if any(
+            dependency_id not in accepted_authoritative_ids
+            for dependency_id in source_dependencies
+        ):
+            return "BLOCKED"
+    return "PASS"
+
+
+def _declaration_policy_view(declaration: dict[str, Any]) -> dict[str, Any]:
+    """Project a declaration onto the reviewed policy fields for its schema version."""
+    body = declaration["typed_body"]
+    common = {
+        "authoritative_id": declaration["authoritative_id"],
+        "source_anchor_digest": declaration["source_anchor_digest"],
+        "mapping_status": declaration["mapping_status"],
+        "proposed_inferential_status": declaration["proposed_inferential_status"],
+        "symbol": body["symbol"],
+        "path": body["path"],
+        "sha256": body["sha256"],
+        "closed_proposition": body["closed_proposition"],
+        "explicit_negative_required_for_countermodel": declaration["evidence_policy"][
+            "explicit_negative_required_for_countermodel"
+        ],
+        "replay_status": declaration["replay"]["status"],
+        "replay_command": declaration["replay"]["command"],
+        "expected_axioms": declaration["replay"]["expected_axioms"],
+    }
+    if declaration["schema_version"] == "cr-eib.bridge-declaration.v1":
+        return {
+            **common,
+            "parameters": declaration["parameters"],
+            "opaque_ports": declaration["opaque_ports"],
+            "dependencies": declaration["dependencies"],
+            "claim_scope": declaration["claim_scope"],
+        }
+
+    interpretation = declaration["interpretation"]
+    obligations = []
+    for obligation in declaration["proof_obligations"]:
+        artifact = obligation["artifact"]
+        obligations.append(
+            {
+                "obligation_id": obligation["obligation_id"],
+                "kind": obligation["kind"],
+                "status": obligation["status"],
+                "symbol": None if artifact is None else artifact["symbol"],
+                "path": None if artifact is None else artifact["path"],
+                "sha256": None if artifact is None else artifact["sha256"],
+            }
+        )
+    return {
+        **common,
+        "schema_version": declaration["schema_version"],
+        "choice_ids": interpretation["choice_ids"],
+        "interpretation_class": interpretation["class"],
+        "interpretation_bridge_status": interpretation["bridge_status"],
+        "interpretation_review_status": interpretation["review_status"],
+        "coverage_id": interpretation["coverage"]["coverage_id"],
+        "coverage_status": interpretation["coverage"]["status"],
+        "obligations": obligations,
+    }
 
 
 def _formal_manifest_bytes() -> bytes:
@@ -374,16 +764,23 @@ def verify_lean(repo_root: Path) -> None:
             env=replay_environment,
             error_cls=FormalReplayMismatch,
         )
-        audit_text = (audit.stdout + audit.stderr).decode("utf-8", errors="replace")
-        expected_lines = {
-            f"'{declaration}' does not depend on any axioms"
-            for declaration in EXPECTED_AXIOM_FREE_DECLARATIONS
-        }
-        actual_lines = {
-            line.strip() for line in audit_text.splitlines() if "depend" in line and "axiom" in line
-        }
-        if actual_lines != expected_lines:
-            raise FormalReplayMismatch("Lean axiom audit output differs from the empty expected set")
+        _verify_axiom_audit(audit.stdout + b"\n" + audit.stderr)
+
+
+def _verify_axiom_audit(output: bytes) -> None:
+    """Require one and only one empty-axiom result for every reviewed theorem."""
+    audit_text = output.decode("utf-8", errors="replace")
+    expected_lines = {
+        f"'{declaration}' does not depend on any axioms"
+        for declaration in EXPECTED_AXIOM_FREE_DECLARATIONS
+    }
+    actual_lines = [
+        line.strip()
+        for line in audit_text.splitlines()
+        if "depend" in line and "axiom" in line
+    ]
+    if len(actual_lines) != len(expected_lines) or set(actual_lines) != expected_lines:
+        raise FormalReplayMismatch("Lean axiom audit output differs from the reviewed empty set")
 
 
 def _verify_lean_version(output: bytes) -> None:
@@ -406,6 +803,7 @@ def verify_bundle(
         root = repo_root.resolve(strict=True)
     except OSError as exc:
         raise RecordError(f"repository root is unavailable: {repo_root}") from exc
+    _verify_schema_pins(root)
     manifest_path = _safe_repository_file(root, "authority/source_manifest.json")
     anchors_path = _safe_repository_file(root, "authority/source_anchors.json")
     checksum_path = _safe_repository_file(root, "authority/authority.pdf.sha256")
@@ -448,14 +846,17 @@ def verify_bundle(
             raw = handle.read(1_000_001)
         if len(raw) > 1_000_000:
             raise AnchorMismatch(f"reviewed transcription exceeds the size limit: {reading['path']}")
-        if hashlib.sha256(raw).hexdigest() != reading["sha256"]:
-            raise AnchorMismatch(f"reviewed transcription hash mismatch: {reading['path']}")
         if not raw.endswith(b"\n") or b"\r" in raw:
             raise AnchorMismatch(f"reviewed transcription newline policy mismatch: {reading['path']}")
-        try:
-            raw.decode("utf-8")
-        except UnicodeDecodeError as exc:
-            raise AnchorMismatch(f"reviewed transcription is not UTF-8: {reading['path']}") from exc
+        _decode_declared_nfc(raw, reading["path"])
+        if hashlib.sha256(raw).hexdigest() != reading["sha256"]:
+            raise AnchorMismatch(f"reviewed transcription hash mismatch: {reading['path']}")
+
+    choice_registry_path = _safe_repository_file(
+        root, "bridge/choices/interpretation-choices.json"
+    )
+    raw_choice_registry = load_strict(choice_registry_path)
+    interpretation_choices = validate_choice_registry(raw_choice_registry)
 
     declaration_directory = root / "bridge" / "declarations"
     if declaration_directory.is_symlink() or not declaration_directory.is_dir():
@@ -471,7 +872,11 @@ def verify_bundle(
     for declaration_path in declaration_paths:
         if declaration_path.is_symlink():
             raise PolicyViolation(f"symlinked declaration is forbidden: {declaration_path}")
-        declaration = validate_declaration(load_strict(declaration_path), anchors_by_digest)
+        declaration = validate_declaration(
+            load_strict(declaration_path),
+            anchors_by_digest,
+            interpretation_choices,
+        )
         declaration_id = declaration["declaration_id"]
         if declaration_id in declarations:
             raise RecordError(f"duplicate bridge declaration: {declaration_id}")
@@ -481,8 +886,12 @@ def verify_bundle(
             f"pilot declaration set differs; missing={sorted(EXPECTED_DECLARATIONS - set(declarations))}, "
             f"extra={sorted(set(declarations) - EXPECTED_DECLARATIONS)}"
         )
-    for declaration_id, expected in EXPECTED_DECLARATION_POLICY.items():
-        declaration = declarations[declaration_id]
+
+    _validate_bridge_graph(declarations)
+    _validate_global_metadata_ids(declarations)
+    _enforce_accepted_mapping_policy(declarations, interpretation_choices)
+
+    for declaration_id, declaration in declarations.items():
         typed_path = _safe_repository_file(root, declaration["typed_body"]["path"])
         with typed_path.open("rb") as handle:
             typed_bytes = handle.read(2_000_001)
@@ -490,42 +899,46 @@ def verify_bundle(
             raise PolicyViolation(f"typed body exceeds the size limit: {declaration_id}")
         if hashlib.sha256(typed_bytes).hexdigest() != declaration["typed_body"]["sha256"]:
             raise PolicyViolation(f"typed-body hash mismatch: {declaration_id}")
-        actual = {
-            "authoritative_id": declaration["authoritative_id"],
-            "source_anchor_digest": declaration["source_anchor_digest"],
-            "mapping_status": declaration["mapping_status"],
-            "proposed_inferential_status": declaration["proposed_inferential_status"],
-            "parameters": declaration["parameters"],
-            "opaque_ports": declaration["opaque_ports"],
-            "dependencies": declaration["dependencies"],
-            "claim_scope": declaration["claim_scope"],
-            "symbol": declaration["typed_body"]["symbol"],
-            "path": declaration["typed_body"]["path"],
-            "sha256": declaration["typed_body"]["sha256"],
-            "closed_proposition": declaration["typed_body"]["closed_proposition"],
-            "explicit_negative_required_for_countermodel": declaration["evidence_policy"][
-                "explicit_negative_required_for_countermodel"
-            ],
-            "replay_status": declaration["replay"]["status"],
-            "replay_command": declaration["replay"]["command"],
-            "expected_axioms": declaration["replay"]["expected_axioms"],
-        }
+
+    verified_formal_inputs = _verify_formal_package(root)
+    _verify_v2_artifacts(declarations, verified_formal_inputs)
+
+    choice_registry_digest = hashlib.sha256(
+        canonical_bytes(raw_choice_registry)
+    ).hexdigest()
+    if choice_registry_digest != EXPECTED_CHOICE_REGISTRY_CANONICAL_SHA256:
+        raise PolicyViolation("interpretation choice registry differs from the reviewed pilot")
+
+    for declaration_id, expected in EXPECTED_DECLARATION_POLICY.items():
+        declaration = declarations[declaration_id]
+        actual = _declaration_policy_view(declaration)
         if actual != expected:
             raise PolicyViolation(f"pilot declaration metadata drift: {declaration_id}")
 
-    _validate_bridge_graph(declarations)
-    _verify_formal_package(root)
+    for declaration_id, declaration in declarations.items():
+        actual_digest = hashlib.sha256(canonical_bytes(declaration)).hexdigest()
+        if actual_digest != EXPECTED_DECLARATION_CANONICAL_SHA256[declaration_id]:
+            raise PolicyViolation(f"pilot declaration canonical digest drift: {declaration_id}")
 
+    mapping_fidelity_status = _mapping_fidelity_status(declarations)
     report = {
         "status": "PARTIAL",
+        "status_scope": "operational-verification-only",
+        "operational_status": "PARTIAL",
+        "mapping_fidelity_status": mapping_fidelity_status,
+        "bridge_conformance_status": _bridge_conformance_status(
+            declarations, mapping_fidelity_status
+        ),
         "record_status": "PASS",
         "authority": manifest["document_id"],
         "authority_pdf_checked": False,
+        "schema_status": "PASS",
+        "choice_registry_status": "PASS",
         "formal_package_status": "PASS",
         "formal_replay_checked": False,
         "anchors_valid": sorted(anchors_by_id),
         "declarations_valid": sorted(declarations),
-        "scope": "record integrity and relative pilot wiring only",
+        "scope": "operational integrity and tracked pilot-bundle wiring only; mapping fidelity and full CR-1.0 conformance are separate",
     }
     if with_records:
         return report, manifest, list(anchors_by_id.values())

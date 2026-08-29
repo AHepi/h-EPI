@@ -11,6 +11,7 @@ from .errors import PolicyViolation, RecordError
 
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
 SOURCE_ID = re.compile(r"^[A-Z][A-Z0-9]*(?:-[A-Za-z0-9]+)+$")
+CHOICE_ID = re.compile(r"^EIB-C-(?:TY|AR)[0-9]{2}$")
 
 
 def _object(value: Any, where: str) -> dict[str, Any]:
@@ -68,6 +69,29 @@ def _source_id(value: Any, where: str) -> str:
     if not SOURCE_ID.fullmatch(text):
         raise RecordError(f"{where} is not one explicit declaration identifier: {text!r}")
     return text
+
+
+def _choice_id(value: Any, where: str) -> str:
+    text = _string(value, where)
+    if not CHOICE_ID.fullmatch(text):
+        raise RecordError(f"{where} is not an interpretation choice identifier: {text!r}")
+    return text
+
+
+def _unique_strings(
+    value: Any,
+    where: str,
+    *,
+    nonempty: bool = False,
+) -> list[str]:
+    items = _list(value, where)
+    if nonempty and not items:
+        raise RecordError(f"{where} must not be empty")
+    for index, item in enumerate(items):
+        _string(item, f"{where}[{index}]")
+    if len(items) != len(set(items)):
+        raise RecordError(f"{where} must contain unique strings")
+    return items
 
 
 def _safe_relative(value: Any, where: str) -> str:
@@ -310,30 +334,87 @@ def validate_anchor(value: Any, manifest: dict[str, Any]) -> dict[str, Any]:
     return payload
 
 
-def validate_declaration(value: Any, anchors: dict[str, dict[str, Any]]) -> dict[str, Any]:
-    declaration = _object(value, "declaration")
+def validate_choice_registry(value: Any) -> dict[str, dict[str, Any]]:
+    registry = _object(value, "interpretation choice registry")
     _exact_keys(
-        declaration,
+        registry,
         {
             "schema_version",
-            "declaration_id",
-            "authoritative_id",
-            "source_anchor_digest",
-            "mapping_status",
-            "source_inferential_status",
-            "proposed_inferential_status",
-            "parameters",
-            "opaque_ports",
-            "dependencies",
-            "claim_scope",
-            "typed_body",
-            "evidence_policy",
-            "replay",
+            "registry_id",
+            "semantic_authority",
+            "authority_status",
+            "bridge_status",
+            "choices",
         },
+        "interpretation choice registry",
+    )
+    if registry["schema_version"] != "cr-eib.interpretation-choice-registry.v1":
+        raise RecordError("unknown interpretation-choice-registry schema version")
+    if registry["registry_id"] != "EIB-INTERPRETATION-CHOICES":
+        raise RecordError("unknown interpretation choice registry identifier")
+    if registry["semantic_authority"] != "CR-1.0":
+        raise PolicyViolation("interpretation choice registry must name CR-1.0 as semantic authority")
+    if registry["authority_status"] != "non-authoritative-interpretation-registry":
+        raise PolicyViolation("interpretation choices must remain non-authoritative")
+    if registry["bridge_status"] != "proposed":
+        raise PolicyViolation("the v1 interpretation choice registry must remain proposed")
+
+    choices: dict[str, dict[str, Any]] = {}
+    for index, choice_value in enumerate(_list(registry["choices"], "interpretation choice registry.choices")):
+        choice = _object(choice_value, f"interpretation choice registry.choices[{index}]")
+        _exact_keys(
+            choice,
+            {"choice_id", "statement", "authority_status", "bridge_status"},
+            f"interpretation choice registry.choices[{index}]",
+        )
+        choice_id = _choice_id(choice["choice_id"], f"interpretation choice registry.choices[{index}].choice_id")
+        if choice_id in choices:
+            raise RecordError(f"duplicate interpretation choice identifier: {choice_id}")
+        _string(choice["statement"], f"interpretation choice registry.choices[{index}].statement")
+        if choice["authority_status"] != "not-a-source-fact":
+            raise PolicyViolation(f"interpretation choice {choice_id} must not be represented as a source fact")
+        if choice["bridge_status"] != "proposed":
+            raise PolicyViolation(f"v1 interpretation choice {choice_id} must remain proposed")
+        choices[choice_id] = choice
+    if not choices:
+        raise RecordError("interpretation choice registry must contain at least one choice")
+    return choices
+
+
+def validate_declaration(
+    value: Any,
+    anchors: dict[str, dict[str, Any]],
+    interpretation_choices: dict[str, dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    declaration = _object(value, "declaration")
+    version = declaration.get("schema_version")
+    v1_keys = {
+        "schema_version",
+        "declaration_id",
+        "authoritative_id",
+        "source_anchor_digest",
+        "mapping_status",
+        "source_inferential_status",
+        "proposed_inferential_status",
+        "parameters",
+        "opaque_ports",
+        "dependencies",
+        "claim_scope",
+        "typed_body",
+        "evidence_policy",
+        "replay",
+    }
+    if version == "cr-eib.bridge-declaration.v1":
+        expected_keys = v1_keys
+    elif version == "cr-eib.bridge-declaration.v2":
+        expected_keys = v1_keys | {"binder_semantics", "interpretation", "proof_obligations"}
+    else:
+        raise RecordError("unknown bridge-declaration schema version")
+    _exact_keys(
+        declaration,
+        expected_keys,
         "declaration",
     )
-    if declaration["schema_version"] != "cr-eib.bridge-declaration.v1":
-        raise RecordError("unknown bridge-declaration schema version")
     _source_id(declaration["declaration_id"], "declaration.declaration_id")
     authoritative_id = _source_id(declaration["authoritative_id"], "declaration.authoritative_id")
     anchor_digest = _digest(declaration["source_anchor_digest"], "declaration.source_anchor_digest", prefixed=True)
@@ -363,6 +444,24 @@ def validate_declaration(value: Any, anchors: dict[str, dict[str, Any]]) -> dict
             raise RecordError("formal parameter names must be unique")
         parameter_names.add(name)
 
+    if version == "cr-eib.bridge-declaration.v2":
+        binder_semantics = _object(declaration["binder_semantics"], "declaration.binder_semantics")
+        _exact_keys(
+            binder_semantics,
+            {"order_significant", "dependency_mode", "order", "hidden_arguments"},
+            "declaration.binder_semantics",
+        )
+        if _boolean(binder_semantics["order_significant"], "declaration.binder_semantics.order_significant") is not True:
+            raise PolicyViolation("v2 declaration binder order must be semantically significant")
+        if binder_semantics["dependency_mode"] != "left-to-right-dependent":
+            raise RecordError("v2 declarations require left-to-right-dependent binder semantics")
+        binder_order = _unique_strings(binder_semantics["order"], "declaration.binder_semantics.order")
+        parameter_order = [parameter["name"] for parameter in parameters]
+        if binder_order != parameter_order:
+            raise PolicyViolation("declared binder order must exactly match parameter array order")
+        if _list(binder_semantics["hidden_arguments"], "declaration.binder_semantics.hidden_arguments"):
+            raise PolicyViolation("v2 declarations may not contain hidden formal arguments")
+
     opaque_ports = _list(declaration["opaque_ports"], "declaration.opaque_ports")
     opaque_names: set[str] = set()
     for port_index, port_value in enumerate(opaque_ports):
@@ -370,8 +469,13 @@ def validate_declaration(value: Any, anchors: dict[str, dict[str, Any]]) -> dict
         _exact_keys(port, {"name", "signature", "binding"}, f"declaration.opaque_ports[{port_index}]")
         name = _string(port["name"], f"declaration.opaque_ports[{port_index}].name")
         _string(port["signature"], f"declaration.opaque_ports[{port_index}].signature")
-        if port["binding"] != "model-field":
-            raise PolicyViolation("opaque semantic ports must be explicit CRModel fields")
+        allowed_bindings = (
+            {"model-field"}
+            if version == "cr-eib.bridge-declaration.v1"
+            else {"model-field", "bridge-structure-field"}
+        )
+        if port["binding"] not in allowed_bindings:
+            raise PolicyViolation("opaque semantic ports must be explicit typed structure fields")
         if name in opaque_names:
             raise RecordError("opaque semantic port names must be unique")
         opaque_names.add(name)
@@ -388,6 +492,130 @@ def validate_declaration(value: Any, anchors: dict[str, dict[str, Any]]) -> dict
         raise PolicyViolation("declaration source dependencies do not exactly mirror its anchor")
     _string(declaration["claim_scope"], "declaration.claim_scope")
 
+    if version == "cr-eib.bridge-declaration.v2":
+        if interpretation_choices is None:
+            raise PolicyViolation("v2 declarations require a validated interpretation choice registry")
+        interpretation = _object(declaration["interpretation"], "declaration.interpretation")
+        _exact_keys(
+            interpretation,
+            {
+                "class",
+                "choice_ids",
+                "authority_status",
+                "bridge_status",
+                "review_status",
+                "preserves",
+                "loses",
+                "coverage",
+            },
+            "declaration.interpretation",
+        )
+        if interpretation["class"] not in {"explicitation", "abbreviation", "refinement", "assumption"}:
+            raise RecordError("unknown interpretation class")
+        if interpretation["authority_status"] != "non-authoritative-interpretation":
+            raise PolicyViolation("bridge interpretations must remain explicitly non-authoritative")
+        bridge_status = interpretation["bridge_status"]
+        if bridge_status not in {"proposed", "accepted", "rejected", "blocked"}:
+            raise RecordError("unknown interpretation bridge status")
+        review_status = interpretation["review_status"]
+        if review_status not in {"unreviewed", "in-review", "accepted", "rejected"}:
+            raise RecordError("unknown interpretation review status")
+        if declaration["mapping_status"] == "accepted":
+            if bridge_status != "accepted" or review_status != "accepted":
+                raise PolicyViolation(
+                    "an accepted mapping requires accepted bridge and interpretation-review statuses"
+                )
+            if interpretation["class"] not in {"explicitation", "abbreviation"}:
+                raise PolicyViolation(
+                    "an accepted mapping requires an equivalence-capable interpretation class"
+                )
+        if bridge_status == "accepted" and review_status != "accepted":
+            raise PolicyViolation("an accepted bridge interpretation requires accepted review")
+
+        choice_ids = _list(interpretation["choice_ids"], "declaration.interpretation.choice_ids")
+        if not choice_ids:
+            raise RecordError("v2 interpretations must cite at least one registered choice")
+        seen_choices: set[str] = set()
+        for choice_index, choice_value in enumerate(choice_ids):
+            choice_id = _choice_id(choice_value, f"declaration.interpretation.choice_ids[{choice_index}]")
+            if choice_id in seen_choices:
+                raise RecordError("declaration interpretation choice identifiers must be unique")
+            seen_choices.add(choice_id)
+            if choice_id not in interpretation_choices:
+                raise PolicyViolation(f"declaration references an unresolved interpretation choice: {choice_id}")
+            choice_status = interpretation_choices[choice_id]["bridge_status"]
+            if choice_status in {"rejected", "withdrawn"}:
+                raise PolicyViolation(f"declaration references an unavailable interpretation choice: {choice_id}")
+            if bridge_status == "accepted" and choice_status != "accepted":
+                raise PolicyViolation(
+                    f"accepted interpretation depends on non-accepted choice: {choice_id}"
+                )
+
+        metadata_ids: set[str] = set()
+
+        def validate_statement_records(
+            records_value: Any,
+            where: str,
+            id_key: str,
+            *,
+            nonempty: bool,
+        ) -> list[dict[str, Any]]:
+            records = _list(records_value, where)
+            if nonempty and not records:
+                raise RecordError(f"{where} must not be empty")
+            for record_index, record_value in enumerate(records):
+                record = _object(record_value, f"{where}[{record_index}]")
+                _exact_keys(record, {id_key, "statement"}, f"{where}[{record_index}]")
+                record_id = _source_id(record[id_key], f"{where}[{record_index}].{id_key}")
+                if record_id in metadata_ids:
+                    raise RecordError(f"duplicate interpretation metadata identifier: {record_id}")
+                metadata_ids.add(record_id)
+                _string(record["statement"], f"{where}[{record_index}].statement")
+            return records
+
+        validate_statement_records(
+            interpretation["preserves"],
+            "declaration.interpretation.preserves",
+            "preservation_id",
+            nonempty=True,
+        )
+        validate_statement_records(
+            interpretation["loses"],
+            "declaration.interpretation.loses",
+            "loss_id",
+            nonempty=False,
+        )
+        coverage = _object(interpretation["coverage"], "declaration.interpretation.coverage")
+        _exact_keys(
+            coverage,
+            {"coverage_id", "status", "scope", "excluded"},
+            "declaration.interpretation.coverage",
+        )
+        coverage_id = _source_id(
+            coverage["coverage_id"], "declaration.interpretation.coverage.coverage_id"
+        )
+        if coverage_id in metadata_ids:
+            raise RecordError(f"duplicate interpretation metadata identifier: {coverage_id}")
+        metadata_ids.add(coverage_id)
+        if coverage["status"] not in {"partial", "exact"}:
+            raise RecordError("unknown interpretation coverage status")
+        _string(coverage["scope"], "declaration.interpretation.coverage.scope")
+        exclusions = validate_statement_records(
+            coverage["excluded"],
+            "declaration.interpretation.coverage.excluded",
+            "exclusion_id",
+            nonempty=False,
+        )
+        if coverage["status"] == "exact" and exclusions:
+            raise PolicyViolation("exact interpretation coverage may not declare exclusions")
+        if declaration["mapping_status"] == "accepted":
+            if coverage["status"] != "exact" or exclusions:
+                raise PolicyViolation(
+                    "an accepted mapping requires exact exclusion-free coverage"
+                )
+            if interpretation["loses"]:
+                raise PolicyViolation("an accepted mapping may not declare semantic losses")
+
     body = _object(declaration["typed_body"], "declaration.typed_body")
     _exact_keys(body, {"language", "symbol", "path", "sha256", "closed_proposition"}, "declaration.typed_body")
     if body["language"] != "Lean4":
@@ -396,6 +624,63 @@ def validate_declaration(value: Any, anchors: dict[str, dict[str, Any]]) -> dict
     _safe_relative(body["path"], "declaration.typed_body.path")
     _digest(body["sha256"], "declaration.typed_body.sha256")
     closed = _boolean(body["closed_proposition"], "declaration.typed_body.closed_proposition")
+
+    if version == "cr-eib.bridge-declaration.v2":
+        obligations = _list(declaration["proof_obligations"], "declaration.proof_obligations")
+        if not obligations:
+            raise RecordError("v2 declarations must state at least one proof obligation")
+        obligation_ids: set[str] = set()
+        obligation_kinds: set[str] = set()
+        for obligation_index, obligation_value in enumerate(obligations):
+            where = f"declaration.proof_obligations[{obligation_index}]"
+            obligation = _object(obligation_value, where)
+            _exact_keys(
+                obligation,
+                {"obligation_id", "kind", "statement", "status", "artifact"},
+                where,
+            )
+            obligation_id = _source_id(obligation["obligation_id"], f"{where}.obligation_id")
+            if obligation_id in obligation_ids or obligation_id in metadata_ids:
+                raise RecordError(f"duplicate declaration metadata identifier: {obligation_id}")
+            obligation_ids.add(obligation_id)
+            kind = obligation["kind"]
+            if kind not in {"fold-unfold", "source-projection", "model-expansion"}:
+                raise RecordError(f"unknown proof-obligation kind: {kind!r}")
+            if kind in obligation_kinds:
+                raise RecordError(f"duplicate proof-obligation kind: {kind}")
+            obligation_kinds.add(kind)
+            _string(obligation["statement"], f"{where}.statement")
+            status = obligation["status"]
+            if status not in {"open", "verified", "blocked"}:
+                raise RecordError(f"unknown proof-obligation status: {status!r}")
+            artifact_value = obligation["artifact"]
+            if status == "verified":
+                artifact = _object(artifact_value, f"{where}.artifact")
+                _exact_keys(
+                    artifact,
+                    {"language", "symbol", "path", "sha256", "replay_status"},
+                    f"{where}.artifact",
+                )
+                if artifact["language"] != "Lean4":
+                    raise RecordError("verified v2 proof artifacts must target Lean4")
+                _string(artifact["symbol"], f"{where}.artifact.symbol")
+                _safe_relative(artifact["path"], f"{where}.artifact.path")
+                _digest(artifact["sha256"], f"{where}.artifact.sha256")
+                if artifact["replay_status"] != "verified":
+                    raise PolicyViolation("verified proof obligations require verified artifact replay")
+            elif artifact_value is not None:
+                raise PolicyViolation("open or blocked proof obligations may not cite a verified artifact")
+
+        required_kinds: set[str] = set()
+        if proposed == "DEF":
+            required_kinds.update({"fold-unfold", "model-expansion"})
+        if interpretation["class"] == "explicitation":
+            required_kinds.add("source-projection")
+        missing_kinds = required_kinds - obligation_kinds
+        if missing_kinds:
+            raise PolicyViolation(
+                f"v2 declaration omits required proof-obligation kinds: {sorted(missing_kinds)}"
+            )
 
     policy = _object(declaration["evidence_policy"], "declaration.evidence_policy")
     _exact_keys(policy, {"missing_is_false", "explicit_negative_required_for_countermodel"}, "declaration.evidence_policy")

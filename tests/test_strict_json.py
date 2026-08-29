@@ -1,13 +1,25 @@
 from __future__ import annotations
 
 import unittest
+from pathlib import Path
+from unittest.mock import patch
 
 from creib.errors import RecordError
 from creib.models import validate_manifest
-from creib.strict_json import loads_strict
+from creib.strict_json import load_strict, loads_strict
 
 
 class StrictJSONTests(unittest.TestCase):
+    def test_excessive_nesting_is_a_typed_record_error(self) -> None:
+        deeply_nested = "[" * 2_000 + "0" + "]" * 2_000
+        with self.assertRaisesRegex(RecordError, "nesting exceeds"):
+            loads_strict(deeply_nested)
+
+    def test_json_read_failure_is_a_typed_record_error(self) -> None:
+        with patch.object(Path, "read_bytes", side_effect=OSError("unavailable")):
+            with self.assertRaisesRegex(RecordError, "cannot read"):
+                load_strict(Path("unavailable.json"))
+
     def test_duplicate_key_is_rejected(self) -> None:
         with self.assertRaises(RecordError):
             loads_strict('{"x": 1, "x": 2}')

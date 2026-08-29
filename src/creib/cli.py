@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 from typing import Sequence
 
-from .errors import CREIBError
+from .errors import CREIBError, RecordError
 from .verify import verify_bundle, verify_lean, verify_pdf
 
 
@@ -22,24 +22,44 @@ def _parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     try:
-        if args.pdf is not None:
-            report, manifest, anchors = verify_bundle(args.repo_root, with_records=True)
-            verify_pdf(args.pdf, manifest, anchors)
-            report["authority_pdf_checked"] = True
-        else:
-            report = verify_bundle(args.repo_root)
-        if args.lean:
-            verify_lean(args.repo_root)
-            report["formal_replay_checked"] = True
-        report["status"] = (
+        try:
+            if args.pdf is not None:
+                report, manifest, anchors = verify_bundle(args.repo_root, with_records=True)
+                verify_pdf(args.pdf, manifest, anchors)
+                report["authority_pdf_checked"] = True
+            else:
+                report = verify_bundle(args.repo_root)
+            if args.lean:
+                verify_lean(args.repo_root)
+                report["formal_replay_checked"] = True
+        except OSError as exc:
+            raise RecordError("verification input/output failed") from exc
+        except RecursionError as exc:
+            raise RecordError("verification input nesting exceeds the supported depth") from exc
+        operational_status = (
             "PASS"
             if report["authority_pdf_checked"] and report["formal_replay_checked"]
             else "PARTIAL"
         )
+        report["operational_status"] = operational_status
+        report["status"] = operational_status
         print(json.dumps(report, ensure_ascii=False, sort_keys=True))
         return 0
     except CREIBError as exc:
-        print(json.dumps({"status": "FAIL", "error": str(exc), "exit_code": exc.exit_code}, sort_keys=True))
+        print(
+            json.dumps(
+                {
+                    "status": "FAIL",
+                    "status_scope": "operational-verification-only",
+                    "operational_status": "FAIL",
+                    "mapping_fidelity_status": "NOT_EVALUATED",
+                    "bridge_conformance_status": "NOT_EVALUATED",
+                    "error": str(exc),
+                    "exit_code": exc.exit_code,
+                },
+                sort_keys=True,
+            )
+        )
         return exc.exit_code
 
 

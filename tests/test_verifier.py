@@ -18,7 +18,13 @@ from creib.models import validate_anchor, validate_manifest
 from creib.strict_json import load_strict
 from creib.verify import (
     EXPECTED_AXIOM_FREE_DECLARATIONS,
+    EXPECTED_SCHEMA_CANONICAL_SHA256,
+    _bridge_conformance_status,
+    _decode_declared_nfc,
+    _enforce_accepted_mapping_policy,
+    _validate_global_metadata_ids,
     _verify_active_span_geometry,
+    _verify_axiom_audit,
     _verify_bbox_span,
     _verify_lean_version,
     verify_bundle,
@@ -66,10 +72,46 @@ class VerifierTests(unittest.TestCase):
         )
         return target
 
+    @staticmethod
+    def accepted_declaration(
+        authoritative_id: str,
+        *,
+        source_declared: list[str] | None = None,
+        reconstructed_source: list[str] | None = None,
+        bridge: list[str] | None = None,
+    ) -> dict[str, object]:
+        return {
+            "schema_version": "cr-eib.bridge-declaration.v2",
+            "authoritative_id": authoritative_id,
+            "mapping_status": "accepted",
+            "interpretation": {
+                "class": "explicitation",
+                "bridge_status": "accepted",
+                "review_status": "accepted",
+                "choice_ids": ["EIB-C-TY01"],
+                "coverage": {"status": "exact", "excluded": []},
+                "loses": [],
+            },
+            "replay": {"status": "verified"},
+            "proof_obligations": [
+                {"obligation_id": "EIB-PO-TEST", "status": "verified"}
+            ],
+            "dependencies": {
+                "source_declared": source_declared or [],
+                "reconstructed_source": reconstructed_source or [],
+                "bridge": bridge or [],
+            },
+        }
+
     def test_repository_records_pass_but_pdf_replay_is_partial(self) -> None:
         report = verify_bundle(ROOT)
         self.assertEqual(report["status"], "PARTIAL")
+        self.assertEqual(report["operational_status"], "PARTIAL")
+        self.assertEqual(report["status_scope"], "operational-verification-only")
+        self.assertEqual(report["mapping_fidelity_status"], "UNREVIEWED")
+        self.assertEqual(report["bridge_conformance_status"], "BLOCKED")
         self.assertEqual(report["record_status"], "PASS")
+        self.assertEqual(report["schema_status"], "PASS")
         self.assertFalse(report["authority_pdf_checked"])
         self.assertFalse(report["formal_replay_checked"])
 
@@ -89,6 +131,9 @@ class VerifierTests(unittest.TestCase):
                 payload = json.loads(output.getvalue())
                 self.assertEqual(exit_code, 0)
                 self.assertEqual(payload["status"], expected_status)
+                self.assertEqual(payload["operational_status"], expected_status)
+                self.assertEqual(payload["mapping_fidelity_status"], "UNREVIEWED")
+                self.assertEqual(payload["bridge_conformance_status"], "BLOCKED")
                 self.assertEqual(payload["authority_pdf_checked"], pdf_checked)
                 self.assertEqual(payload["formal_replay_checked"], lean_checked)
                 self.assertEqual(pdf_replay.call_count, int(pdf_checked))
@@ -105,6 +150,9 @@ class VerifierTests(unittest.TestCase):
         payload = json.loads(output.getvalue())
         self.assertEqual(exit_code, 6)
         self.assertEqual(payload["status"], "FAIL")
+        self.assertEqual(payload["operational_status"], "FAIL")
+        self.assertEqual(payload["mapping_fidelity_status"], "NOT_EVALUATED")
+        self.assertEqual(payload["bridge_conformance_status"], "NOT_EVALUATED")
 
     def test_lean_replay_uses_clean_verified_snapshot(self) -> None:
         audit_output = "\n".join(
@@ -166,6 +214,31 @@ class VerifierTests(unittest.TestCase):
             with self.subTest(output=output), self.assertRaises(FormalReplayMismatch):
                 _verify_lean_version(output)
 
+    def test_axiom_audit_rejects_missing_extra_and_duplicate_results(self) -> None:
+        lines = [
+            f"'{declaration}' does not depend on any axioms"
+            for declaration in EXPECTED_AXIOM_FREE_DECLARATIONS
+        ]
+        _verify_axiom_audit("\n".join(lines).encode("utf-8"))
+        mutations = {
+            "missing": lines[:-1],
+            "extra": [*lines, "'CREIB.Unreviewed' does not depend on any axioms"],
+            "duplicate": [*lines, lines[0]],
+        }
+        for label, mutated in mutations.items():
+            with self.subTest(label=label), self.assertRaises(FormalReplayMismatch):
+                _verify_axiom_audit("\n".join(mutated).encode("utf-8"))
+
+    def test_declared_transcription_normalization_is_enforced(self) -> None:
+        self.assertEqual(_decode_declared_nfc("Café\n".encode(), "test.txt"), "Café\n")
+        with self.assertRaisesRegex(AnchorMismatch, "not NFC"):
+            _decode_declared_nfc("Cafe\N{COMBINING ACUTE ACCENT}\n".encode(), "test.txt")
+
+    def test_bundle_checks_declared_normalization_for_every_transcription(self) -> None:
+        with patch("creib.verify._decode_declared_nfc", wraps=_decode_declared_nfc) as check:
+            verify_bundle(ROOT)
+        self.assertEqual(check.call_count, 2)
+
     def test_missing_repository_root_has_stable_json_failure(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             missing = Path(directory) / "missing"
@@ -175,11 +248,40 @@ class VerifierTests(unittest.TestCase):
         payload = json.loads(output.getvalue())
         self.assertEqual(exit_code, 2)
         self.assertEqual(payload["status"], "FAIL")
+        self.assertEqual(payload["operational_status"], "FAIL")
+
+    def test_raw_io_and_recursion_failures_have_stable_cli_json(self) -> None:
+        failures = (
+            (OSError("read failed"), "verification input/output failed"),
+            (RecursionError("too deep"), "verification input nesting exceeds"),
+        )
+        for failure, expected_message in failures:
+            with self.subTest(failure=type(failure).__name__), patch(
+                "creib.cli.verify_bundle", side_effect=failure
+            ):
+                output = io.StringIO()
+                with redirect_stdout(output):
+                    exit_code = main(["--repo-root", str(ROOT)])
+                payload = json.loads(output.getvalue())
+                self.assertEqual(exit_code, 2)
+                self.assertEqual(payload["status"], "FAIL")
+                self.assertEqual(payload["operational_status"], "FAIL")
+                self.assertEqual(payload["exit_code"], 2)
+                self.assertIn(expected_message, payload["error"])
+
+    def test_cli_boundary_does_not_mask_process_control_exceptions(self) -> None:
+        for failure in (KeyboardInterrupt(), SystemExit(17)):
+            with self.subTest(failure=type(failure).__name__), patch(
+                "creib.cli.verify_bundle", side_effect=failure
+            ), self.assertRaises(type(failure)):
+                main(["--repo-root", str(ROOT)])
 
     def test_verification_does_not_rewrite_inputs(self) -> None:
         tracked = [
             ROOT / "authority" / "source_manifest.json",
             ROOT / "authority" / "source_anchors.json",
+            ROOT / "bridge" / "choices" / "interpretation-choices.json",
+            *sorted((ROOT / "bridge" / "schema").glob("*.json")),
             *sorted((ROOT / "bridge" / "declarations").glob("*.json")),
             *sorted((ROOT / "authority" / "transcriptions").glob("*.txt")),
         ]
@@ -187,6 +289,224 @@ class VerifierTests(unittest.TestCase):
         verify_bundle(ROOT)
         after = {path: hashlib.sha256(path.read_bytes()).digest() for path in tracked}
         self.assertEqual(before, after)
+
+    def test_unresolved_v2_interpretation_choice_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = self.copied_repository(directory)
+            path = repository / "bridge" / "declarations" / "EIB-DF10-REFINED-CANDIDATE.json"
+            declaration = load_strict(path)
+            declaration["interpretation"]["choice_ids"][0] = "EIB-C-TY99"
+            path.write_text(
+                json.dumps(declaration, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(PolicyViolation, "unresolved interpretation choice"):
+                verify_bundle(repository)
+
+    def test_choice_registry_semantic_drift_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = self.copied_repository(directory)
+            path = repository / "bridge" / "choices" / "interpretation-choices.json"
+            registry = load_strict(path)
+            registry["choices"].append(
+                {
+                    "choice_id": "EIB-C-TY99",
+                    "statement": "Unreviewed extra interpretation choice.",
+                    "authority_status": "not-a-source-fact",
+                    "bridge_status": "proposed",
+                }
+            )
+            path.write_text(
+                json.dumps(registry, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(PolicyViolation, "choice registry differs"):
+                verify_bundle(repository)
+
+    def test_published_schema_semantic_drift_is_rejected(self) -> None:
+        for relative in EXPECTED_SCHEMA_CANONICAL_SHA256:
+            with self.subTest(relative=relative), tempfile.TemporaryDirectory() as directory:
+                repository = self.copied_repository(directory)
+                path = repository / relative
+                schema = load_strict(path)
+                schema["title"] += " drift"
+                path.write_text(
+                    json.dumps(schema, ensure_ascii=False, indent=2) + "\n",
+                    encoding="utf-8",
+                )
+                with self.assertRaisesRegex(PolicyViolation, "schema canonical digest mismatch"):
+                    verify_bundle(repository)
+
+    def test_v2_required_projection_and_model_expansion_are_fail_closed(self) -> None:
+        for missing_kind in ("source-projection", "model-expansion"):
+            with self.subTest(missing_kind=missing_kind), tempfile.TemporaryDirectory() as directory:
+                repository = self.copied_repository(directory)
+                path = repository / "bridge" / "declarations" / "EIB-DF10-REFINED-CANDIDATE.json"
+                declaration = load_strict(path)
+                declaration["proof_obligations"] = [
+                    obligation
+                    for obligation in declaration["proof_obligations"]
+                    if obligation["kind"] != missing_kind
+                ]
+                path.write_text(
+                    json.dumps(declaration, ensure_ascii=False, indent=2) + "\n",
+                    encoding="utf-8",
+                )
+                with self.assertRaisesRegex(PolicyViolation, missing_kind):
+                    verify_bundle(repository)
+
+    def test_verified_obligation_artifact_hash_is_checked(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = self.copied_repository(directory)
+            path = repository / "bridge" / "declarations" / "EIB-DF10-REFINED-CANDIDATE.json"
+            declaration = load_strict(path)
+            declaration["proof_obligations"][0]["artifact"]["sha256"] = "0" * 64
+            path.write_text(
+                json.dumps(declaration, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(PolicyViolation, "proof-artifact hash mismatch"):
+                verify_bundle(repository)
+
+    def test_verified_obligation_artifact_must_be_in_reviewed_formal_package(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = self.copied_repository(directory)
+            path = repository / "bridge" / "declarations" / "EIB-DF10-REFINED-CANDIDATE.json"
+            declaration = load_strict(path)
+            artifact = declaration["proof_obligations"][0]["artifact"]
+            artifact["path"] = "README.md"
+            artifact["sha256"] = hashlib.sha256(
+                (repository / "README.md").read_bytes()
+            ).hexdigest()
+            path.write_text(
+                json.dumps(declaration, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(PolicyViolation, "outside the reviewed formal package"):
+                verify_bundle(repository)
+
+    def test_verified_obligation_symbol_binding_is_pinned(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = self.copied_repository(directory)
+            path = repository / "bridge" / "declarations" / "EIB-DF10-REFINED-CANDIDATE.json"
+            declaration = load_strict(path)
+            declaration["proof_obligations"][0]["artifact"]["symbol"] = "CREIB.DoesNotExist"
+            path.write_text(
+                json.dumps(declaration, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(PolicyViolation, "unreviewed proof-artifact symbol"):
+                verify_bundle(repository)
+
+    def test_v2_metadata_ids_are_unique_across_declarations_and_kinds(self) -> None:
+        def declaration(identifier: str, *, coverage_id: str) -> dict[str, object]:
+            return {
+                "schema_version": "cr-eib.bridge-declaration.v2",
+                "interpretation": {
+                    "preserves": [
+                        {"preservation_id": identifier, "statement": "preserved"}
+                    ],
+                    "loses": [],
+                    "coverage": {
+                        "coverage_id": coverage_id,
+                        "excluded": [],
+                    },
+                },
+                "proof_obligations": [],
+            }
+
+        declarations = {
+            "EIB-A": declaration("EIB-META-SHARED", coverage_id="EIB-COV-A"),
+            "EIB-B": declaration("EIB-PRES-B", coverage_id="EIB-META-SHARED"),
+        }
+        with self.assertRaisesRegex(PolicyViolation, "not globally unique"):
+            _validate_global_metadata_ids(declarations)
+
+    def test_accepted_mapping_rejects_nonaccepted_choice_before_pilot_pins(self) -> None:
+        declarations = {
+            "EIB-DF10-CANDIDATE": self.accepted_declaration("DF-10")
+        }
+        choices = {"EIB-C-TY01": {"bridge_status": "proposed"}}
+        with self.assertRaisesRegex(PolicyViolation, "non-accepted choice"):
+            _enforce_accepted_mapping_policy(declarations, choices)
+
+    def test_accepted_mapping_requires_complete_obligations_and_dependencies(self) -> None:
+        accepted = self.accepted_declaration("TH-3", bridge=["EIB-BASE"])
+        accepted["proof_obligations"][0]["status"] = "open"
+        base = {
+            "schema_version": "cr-eib.bridge-declaration.v2",
+            "mapping_status": "candidate",
+        }
+        declarations = {"EIB-MAPPED": accepted, "EIB-BASE": base}
+        choices = {"EIB-C-TY01": {"bridge_status": "accepted"}}
+
+        with self.assertRaisesRegex(PolicyViolation, "incomplete proof obligations"):
+            _enforce_accepted_mapping_policy(declarations, choices)
+
+        accepted["proof_obligations"][0]["status"] = "verified"
+        with self.assertRaisesRegex(PolicyViolation, "non-accepted bridge declaration"):
+            _enforce_accepted_mapping_policy(declarations, choices)
+
+    def test_accepted_mapping_requires_exact_lossless_coverage(self) -> None:
+        accepted = self.accepted_declaration("DF-10")
+        interpretation = accepted["interpretation"]
+        interpretation["coverage"]["status"] = "partial"
+        declarations = {"EIB-MAPPED": accepted}
+        choices = {"EIB-C-TY01": {"bridge_status": "accepted"}}
+
+        with self.assertRaisesRegex(PolicyViolation, "exact exclusion-free coverage"):
+            _enforce_accepted_mapping_policy(declarations, choices)
+
+        interpretation["coverage"]["status"] = "exact"
+        interpretation["coverage"]["excluded"] = [
+            {"exclusion_id": "EIB-EXC-TEST", "statement": "unmapped meaning"}
+        ]
+        with self.assertRaisesRegex(PolicyViolation, "exact exclusion-free coverage"):
+            _enforce_accepted_mapping_policy(declarations, choices)
+
+        interpretation["coverage"]["excluded"] = []
+        interpretation["loses"] = [
+            {"loss_id": "EIB-LOSS-TEST", "statement": "unresolved meaning"}
+        ]
+        with self.assertRaisesRegex(PolicyViolation, "semantic losses"):
+            _enforce_accepted_mapping_policy(declarations, choices)
+
+    def test_accepted_mapping_rejects_refinement_and_assumption_classes(self) -> None:
+        choices = {"EIB-C-TY01": {"bridge_status": "accepted"}}
+        for interpretation_class in ("refinement", "assumption"):
+            declaration = self.accepted_declaration("DF-10")
+            declaration["interpretation"]["class"] = interpretation_class
+            with self.subTest(interpretation_class=interpretation_class), self.assertRaisesRegex(
+                PolicyViolation, "equivalence-capable"
+            ):
+                _enforce_accepted_mapping_policy({"EIB-MAPPED": declaration}, choices)
+        abbreviation = self.accepted_declaration("DF-10")
+        abbreviation["interpretation"]["class"] = "abbreviation"
+        _enforce_accepted_mapping_policy({"EIB-MAPPED": abbreviation}, choices)
+
+    def test_accepted_mapping_requires_accepted_source_dependency_closure(self) -> None:
+        choices = {"EIB-C-TY01": {"bridge_status": "accepted"}}
+        dependency = self.accepted_declaration("DF-10")
+        for dependency_kind in ("source_declared", "reconstructed_source"):
+            dependent = self.accepted_declaration(
+                "TH-3", **{dependency_kind: ["DF-10"]}
+            )
+            with self.subTest(dependency_kind=dependency_kind), self.assertRaisesRegex(
+                PolicyViolation, f"unresolved {dependency_kind} dependency"
+            ):
+                _enforce_accepted_mapping_policy({"EIB-TH3": dependent}, choices)
+            _enforce_accepted_mapping_policy(
+                {"EIB-TH3": dependent, "EIB-DF10": dependency}, choices
+            )
+
+    def test_bridge_conformance_is_derived_fail_closed(self) -> None:
+        dependency = self.accepted_declaration("DF-10")
+        dependent = self.accepted_declaration("TH-3", source_declared=["DF-10"])
+        declarations = {"EIB-DF10": dependency, "EIB-TH3": dependent}
+        self.assertEqual(_bridge_conformance_status(declarations, "UNREVIEWED"), "BLOCKED")
+        self.assertEqual(_bridge_conformance_status(declarations, "ACCEPTED"), "PASS")
+        dependent["dependencies"]["source_declared"] = ["MS-4"]
+        self.assertEqual(_bridge_conformance_status(declarations, "ACCEPTED"), "BLOCKED")
 
     def test_bad_pdf_hash_stops_before_inspector(self) -> None:
         manifest = validate_manifest(load_strict(ROOT / "authority" / "source_manifest.json"))

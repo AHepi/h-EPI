@@ -6,7 +6,7 @@
 
 | Layer | Status | Meaning |
 |---|---|---|
-| CR-1.0 authority identity | **VERIFIED** | The designated PDF is identified by SHA-256 and remains the sole semantic/formal authority. |
+| CR-1.0 authority identity | **PINNED** | The designated PDF identity is pinned by SHA-256; an operator-supplied copy is checked only during `--pdf` replay and remains the sole semantic/formal authority. |
 | Cold-start inventory integrity | **PASS** | The quarantined bootstrap package is internally consistent and reproducible. |
 | CR-1.0 executable-calculus bootstrap | **FAIL** | Required declaration-level source mappings and typed bodies are incomplete. |
 | CR-EIB-0.1 conformance | **BLOCKED** | The bridge is a non-authoritative proposal and cannot pass until its evidence obligations are discharged. |
@@ -31,7 +31,9 @@ PYTHONPATH=src python -m unittest discover -s tests -v
 python tools/verify_bridge.py
 ```
 
-The verifier reports overall status `PASS` only when both the authority PDF and the pinned Lean package are replayed successfully in the same invocation. Omitting either replay reports record integrity `PASS` and overall status `PARTIAL`.
+The verifier reports `operational_status: PASS` only when both the authority PDF and the pinned Lean package are replayed successfully in the same invocation. Omitting either replay reports record integrity `PASS` and operational status `PARTIAL`. The legacy `status` field remains as an operational-only compatibility alias and is labeled by `status_scope`. `mapping_fidelity_status` and `bridge_conformance_status` are independent: a clean operational replay does not promote an unreviewed source mapping or unblock bridge conformance.
+
+A full operator replay succeeded for the reviewed packet in its mixed native-tool environment, using an operator-supplied copy of the pinned authority PDF. CI cannot replay that external PDF and therefore cannot independently produce the same operational `PASS`. Native extractor or compiler version mismatches fail closed instead of being treated as equivalent replays.
 
 To replay the source anchors against a lawfully held PDF copy:
 
