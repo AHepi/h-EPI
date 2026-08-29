@@ -104,7 +104,7 @@ EXPECTED_CHOICE_REGISTRY_CANONICAL_SHA256 = (
 
 EXPECTED_DECLARATION_CANONICAL_SHA256 = {
     "EIB-DF10-CANDIDATE": "e2f6a0f094539e104237c598a436e03d969056ae2ea40a99eedd00ee3d20aa35",
-    "EIB-DF10-REFINED-CANDIDATE": "5a90a2d749798c19caeffa2c784865703b3a37807137a04f114bd22b5a63ee97",
+    "EIB-DF10-REFINED-CANDIDATE": "cfef108816bfaf4b67b9377102a3a296d0af56401afa8a733004c769940fe14e",
     "EIB-TH3A-PILOT": "ca479735becfd85110c1ca071e38f15d0fbfdbc8c793264ba74b5686222d6af8",
     "EIB-TH3B-PILOT": "98f1ee7f701a5aceff3f9f1ce5969b5e75371be7981f45f8519010db7e41701a",
 }
@@ -158,7 +158,7 @@ EXPECTED_DECLARATION_POLICY = {
                 "status": "verified",
                 "symbol": "CREIB.EIB_DF10_refined_fold_unfold",
                 "path": "formal/CREIB/Bridge/DF10Refinement.lean",
-                "sha256": "71e29e7148729da1884962518e2fd36ab6488b0f4bc03c8790e161162a70dee9",
+                "sha256": "3999ea7de109580ed2ed6267ee77a94fced177ef0a6eea24cc3ef829d35abab0",
             },
             {
                 "obligation_id": "EIB-PO-DF10-SOURCE-PROJECTION",
@@ -166,7 +166,7 @@ EXPECTED_DECLARATION_POLICY = {
                 "status": "verified",
                 "symbol": "CREIB.EIB_DF10_refined_projection",
                 "path": "formal/CREIB/Bridge/DF10Refinement.lean",
-                "sha256": "71e29e7148729da1884962518e2fd36ab6488b0f4bc03c8790e161162a70dee9",
+                "sha256": "3999ea7de109580ed2ed6267ee77a94fced177ef0a6eea24cc3ef829d35abab0",
             },
             {
                 "obligation_id": "EIB-PO-DF10-MODEL-EXPANSION",
@@ -174,12 +174,12 @@ EXPECTED_DECLARATION_POLICY = {
                 "status": "verified",
                 "symbol": "CREIB.EIB_DF10_canonical_model_expansion_exists",
                 "path": "formal/CREIB/Bridge/DF10Refinement.lean",
-                "sha256": "71e29e7148729da1884962518e2fd36ab6488b0f4bc03c8790e161162a70dee9",
+                "sha256": "3999ea7de109580ed2ed6267ee77a94fced177ef0a6eea24cc3ef829d35abab0",
             },
         ],
         "symbol": "CREIB.EIB_DF10_REFINED",
         "path": "formal/CREIB/Bridge/DF10Refinement.lean",
-        "sha256": "71e29e7148729da1884962518e2fd36ab6488b0f4bc03c8790e161162a70dee9",
+        "sha256": "3999ea7de109580ed2ed6267ee77a94fced177ef0a6eea24cc3ef829d35abab0",
         "closed_proposition": False,
         "explicit_negative_required_for_countermodel": False,
         "replay_status": "verified",
@@ -259,7 +259,7 @@ EXPECTED_FORMAL_PACKAGE = {
     "formal/CREIB/Audit/Axioms.lean": "bab03f1d7c2c8434062b17453c7830ea1499c28609932ea3cfc1ef3482fd8d97",
     "formal/CREIB/Audit/DeclarationBindings.lean": "27cdbdace77162fc4cebf494387570e7ad7f2dc54af3786ebfd60ed34127ad78",
     "formal/CREIB/Bridge/DF10Candidate.lean": "14b4fe0ac3a9f1d707f1ac942b85a67a41915d4977211325d6465169c8ca2128",
-    "formal/CREIB/Bridge/DF10Refinement.lean": "71e29e7148729da1884962518e2fd36ab6488b0f4bc03c8790e161162a70dee9",
+    "formal/CREIB/Bridge/DF10Refinement.lean": "3999ea7de109580ed2ed6267ee77a94fced177ef0a6eea24cc3ef829d35abab0",
     "formal/CREIB/Core/Model.lean": "27732f216362107b2a98512301e7e32b5a334de3a0ddb0c194ef30d8c65cc58b",
     "formal/CREIB/Core/RoleRefinement.lean": "a4cd685df76b0e3018bfc5293183dd6c76542b692de57b6a0258daf4d690828f",
     "formal/CREIB/Pilot/TH3.lean": "ef9096ff0fe7ef133757ccb57ba3fc52a41638b339539af1737584936c3cb11a",

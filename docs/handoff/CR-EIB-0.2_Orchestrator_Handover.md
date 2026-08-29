@@ -40,10 +40,12 @@ The implementation first landed on remote `main` as `30e078a`. Its initial
 `bridge pilot` run built all Lean modules and printed empty axiom sets for the
 14 release declarations, but the action's additional namespace-wide audit
 rejected three Lean-generated structure injectivity declarations that use
-`propext`. The workflow-only follow-up containing this handover permits exactly
-`propext` for that broad defense-in-depth scan. The release verifier still
-requires the exact 14-declaration output set and an empty axiom list for every
-one of those declarations.
+`propext`. A workflow-only intermediate commit (`b7d7140`) allowed `propext`,
+but that was superseded because the repository intentionally keeps the broader
+namespace allowlist empty. The final source-level correction disables generated
+injectivity declarations in `DF10Refinement.lean`, matching the existing core
+and role-refinement modules. Both the whole namespace and the exact 14-result
+release audit therefore remain zero-axiom checks.
 
 ## What this increment built
 
@@ -124,14 +126,18 @@ output-token budget. They are advisory only.
 
 | Item | SHA-256 |
 |---|---|
-| Final packet | `9ef0da16f8dcd940b7dda409de569ae57ef1bb338c2353a0f6d78701fa4fdc8c` |
-| GLM report (`PASS`, scoped) | `c938fb5f407cac65f8814397335f630923d12ba5009c902926983faf1d5929ad` |
-| Kimi report (`CONDITIONAL PASS`, static-execution condition) | `43a2c5d5dc617e9b6c69a3a3a4df11ea86bdd3e5353d02c42ddb7a54d9cef2b6` |
+| Final packet | `cd6a958505f1162f660da9c666b61d966d07bc58e8253f03e906c26b8cee403c` |
+| GLM report (`PASS`, scoped) | `48de0f874b785471e5bbe6f5ac30d8b1f64aa71e5a5034d4d22cb48d0917b75b` |
+| Kimi report (`PASS`, scoped) | `c314a3a360cca8cd5971417730c241fb43ee4e80c013f81e161d2ff1a6798570` |
 
 Neither found an S0/S1 blocker, authority contradiction, or false semantic-PASS
 path. The exact reports and controller dispositions are under `docs/audits/`.
-Kimi's transcription-replay wording finding was corrected after the packet; no
-code, declaration, schema, or theorem changed after the final audit.
+The final re-audit followed the strict namespace-axiom correction. GLM returned
+46,338 output tokens and Kimi returned 33,446. Prior audit reports and this
+handover were omitted from their packet to preserve reviewer independence. No
+formal source, declaration, schema, verifier, workflow, or test byte changed
+after packet construction; only the excluded audit and handover artifacts were
+refreshed.
 
 Credentials were entered through hidden interactive input only. No API key or
 raw model reasoning is stored. Do not recover or restate keys from conversation
@@ -177,8 +183,10 @@ sha256sum -c formal/formal-package.sha256
 git diff --check
 ```
 
-Expected test count is 76 in each Python mode. The formal build has 12 jobs and
-the axiom audit prints 14 declarations with no axioms.
+Expected test count is 76 in each Python mode. The formal build has 12 jobs, the
+release audit prints 14 declarations with no axioms, and the pinned broad audit
+reports 254 `CREIB` declarations with `allowed=[]`, `axiomsUsed=[]`, and no
+violations.
 
 The exact native extractor provenance is intentionally fail-closed and mixed:
 `pdftotext 24.02.0` and `pdfinfo 26.05.0`. CI cannot reproduce full operational
@@ -199,12 +207,14 @@ human review:
 
 ## Deferred non-blocking hardening
 
-The final audits suggested hash-locking CI-only Python dependencies, a
-canonicalization known-answer vector, a schema for the source-anchor-set
-wrapper, composite X/R/M/Q/O source-status schema v2, a two-endpoint divergence
-witness, a non-constant-`CCPResult` countermodel, a golden Poppler transcript,
-and wiring the evidence resolver once an evidence ledger exists. These are
-valuable but do not change the current scoped verdict.
+The final audits suggested mutation tests for anchor word snapshots and native
+extractor versions, direct traversal/symlink-component fixtures, a Lean
+`K_E ↔ Retained` negative control, an obtainable pinned Poppler environment,
+clarification of proposed `DER` and the superseded contract record sketch, and
+wiring the evidence resolver once an evidence ledger exists. Earlier useful
+hardening suggestions—canonicalization vectors, a source-anchor-set wrapper
+schema, composite X/R/M/Q/O source-status schema v2, and endpoint-divergence
+witnesses—remain deferred. None changes the current scoped verdict.
 
 Do not "fix" the verifier-source self-hash suggestion by adding a mutable hash
 manifest checked by the same code and calling it a trust root. Prefer reviewed
