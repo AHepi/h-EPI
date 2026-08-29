@@ -11,7 +11,7 @@ Use this skill only after the user explicitly authorizes an external Git mutatio
 
 The only allowed destination is GitHub repository `AHepi/h-EPI`. Accept an `origin` URL only when its parsed host, owner, and repository equal that destination. Never print a remote URL that contains user information or credentials; report only the canonical repository slug.
 
-Do not invent an author identity, alter global Git configuration, print tokens, place credentials in a URL, create or delete tags, delete branches, rewrite history, force-push, reset, clean, or rebase protected history. Stop on an authentication failure, non-fast-forward rejection, ambiguous target, unexpected remote, or missing identity.
+Do not invent an author identity, alter global Git configuration, print tokens, place credentials in a URL, create or delete tags, delete branches, rewrite history, force-push, reset, clean, or rebase protected history. A Git CLI authentication failure stops the CLI path. Continue only through the authenticated GitHub connector fallback below when that connector independently confirms write access and the user already authorized publication; otherwise stop.
 
 ## Preflight
 
@@ -46,3 +46,16 @@ The PDF replay is optional because the authority file is deliberately untracked.
 Create a focused commit whose message describes only the staged change. Recheck status immediately after committing. Push normally with `git push origin HEAD:main`; use `-u` only when establishing the first upstream. Never add `--force` or `--force-with-lease`.
 
 After a successful push, read the local `HEAD` SHA and the remote `refs/heads/main` SHA and require exact equality. Report the canonical repository, branch, commit SHA, checks run, and any remaining uncommitted paths. Do not claim publication succeeded until the remote SHA matches.
+
+## Authenticated GitHub connector fallback
+
+Use this only when the normal Git push lacks a credential and the authenticated GitHub connector reports `push` or `admin` permission for exactly `AHepi/h-EPI`. Never request, extract, display, or transfer the connector's token into the shell.
+
+1. Fetch public `origin/main`, inspect its current commit and full tree, and recheck the local worktree. Stop if unreviewed remote-only content would be removed or if the intended final snapshot is ambiguous.
+2. For a genuinely empty repository, initialize `main` with one harmless UTF-8 file already tracked in the reviewed local snapshot; do not invent an extra file. For a nonempty repository, use the current remote `main` commit as the parent.
+3. Upload each intended Git blob with base64 encoding and require GitHub's returned blob SHA to equal the local blob SHA.
+4. Create a complete tree from explicit local `mode`, `type`, `sha`, and `path` entries. Require the returned tree SHA to equal `git rev-parse HEAD^{tree}`. Recreate focused reviewed commits when practical; otherwise create one clearly labeled snapshot commit.
+5. Move `main` only with a non-force ref update. Never set `force: true`.
+6. Fetch `origin/main` again. Require its tree SHA, file count, and path/content diff to equal local `HEAD`. Connector-created commit metadata can make the local and remote commit SHAs differ; report both SHAs and the matching tree SHA instead of claiming commit identity.
+
+Do not reset, rebase, or rewrite the local branch merely to make connector-created commit IDs match. A later Git CLI push requires starting from the published remote history (normally a fresh clone) or separate explicit authorization to reconcile histories.
