@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ahepi.github.io/h-EPI/schema/cr-eib.bridge-declaration.v1.json",
+  "title": "CR-EIB bridge declaration v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "declaration_id",
+    "authoritative_id",
+    "source_anchor_digest",
+    "mapping_status",
+    "source_inferential_status",
+    "proposed_inferential_status",
+    "parameters",
+    "opaque_ports",
+    "dependencies",
+    "claim_scope",
+    "typed_body",
+    "evidence_policy",
+    "replay"
+  ],
+  "properties": {
+    "schema_version": {"const": "cr-eib.bridge-declaration.v1"},
+    "declaration_id": {"$ref": "#/$defs/declarationId"},
+    "authoritative_id": {"$ref": "#/$defs/declarationId"},
+    "source_anchor_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "mapping_status": {"enum": ["candidate", "accepted", "rejected", "blocked"]},
+    "source_inferential_status": {"type": "null"},
+    "proposed_inferential_status": {"enum": [null, "DEF", "IMP", "DER"]},
+    "parameters": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "sort", "binding"],
+        "properties": {
+          "name": {"type": "string", "minLength": 1},
+          "sort": {"type": "string", "minLength": 1},
+          "binding": {"const": "explicit"}
+        }
+      }
+    },
+    "opaque_ports": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "signature", "binding"],
+        "properties": {
+          "name": {"type": "string", "minLength": 1},
+          "signature": {"type": "string", "minLength": 1},
+          "binding": {"const": "model-field"}
+        }
+      }
+    },
+    "dependencies": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_declared", "reconstructed_source", "bridge"],
+      "properties": {
+        "source_declared": {"$ref": "#/$defs/idArray"},
+        "reconstructed_source": {"$ref": "#/$defs/idArray"},
+        "bridge": {"$ref": "#/$defs/idArray"}
+      }
+    },
+    "claim_scope": {"type": "string", "minLength": 1},
+    "typed_body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["language", "symbol", "path", "sha256", "closed_proposition"],
+      "properties": {
+        "language": {"const": "Lean4"},
+        "symbol": {"type": "string", "minLength": 1},
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "closed_proposition": {"type": "boolean"}
+      }
+    },
+    "evidence_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["missing_is_false", "explicit_negative_required_for_countermodel"],
+      "properties": {
+        "missing_is_false": {"const": false},
+        "explicit_negative_required_for_countermodel": {"type": "boolean"}
+      }
+    },
+    "replay": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "tool", "toolchain", "command", "expected_axioms"],
+      "properties": {
+        "status": {"enum": ["pending-ci", "verified"]},
+        "tool": {"const": "Lean4"},
+        "toolchain": {"const": "leanprover/lean4:v4.33.1"},
+        "command": {"type": "string", "minLength": 1},
+        "expected_axioms": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  },
+  "$defs": {
+    "declarationId": {"type": "string", "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Za-z0-9]+)+$"},
+    "idArray": {"type": "array", "items": {"$ref": "#/$defs/declarationId"}, "uniqueItems": true}
+  }
+}

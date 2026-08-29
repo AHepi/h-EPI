@@ -10,16 +10,39 @@
 | Cold-start inventory integrity | **PASS** | The quarantined bootstrap package is internally consistent and reproducible. |
 | CR-1.0 executable-calculus bootstrap | **FAIL** | Required declaration-level source mappings and typed bodies are incomplete. |
 | CR-EIB-0.1 conformance | **BLOCKED** | The bridge is a non-authoritative proposal and cannot pass until its evidence obligations are discharged. |
+| DF-10/TH-3 Lean replay | **PASS (relative)** | The candidate definition, unfolding, and explicit countermodel compile with no axioms; this is not source-level theorem adjudication. |
 
 No theorem has yet been adjudicated as proved or refuted against the complete CR-1.0 authority. This repository does not contain a creativity classifier and does not automate judgments that something or someone is creative.
 
-Lean and SMT are implementation targets. Any checked pilot result is explicitly scoped to its encoded model and evidence record; it is not automatically a result about the whole CR-1.0 model.
+Lean is implemented for the narrow DF-10/TH-3 pilot; SMT remains an implementation target. Any checked pilot result is explicitly scoped to its encoded model and bridge declaration; it is not automatically a result about the whole CR-1.0 model.
 
 The immutable cold-start package is under `baseline/cr-1.0/bootstrap-v0.1/`. Run its integrity and quarantine validator with:
 
 ```sh
 python -m pip install -r requirements-ci.txt
 python baseline/cr-1.0/bootstrap-v0.1/tools/validate_bootstrap.py
+```
+
+Run the bridge record checks and adversarial tests with:
+
+```sh
+python -m pip install -r requirements-bridge-ci.txt
+PYTHONPATH=src python -m unittest discover -s tests -v
+python tools/verify_bridge.py
+```
+
+The verifier reports overall status `PASS` only when both the authority PDF and the pinned Lean package are replayed successfully in the same invocation. Omitting either replay reports record integrity `PASS` and overall status `PARTIAL`.
+
+To replay the source anchors against a lawfully held PDF copy:
+
+```sh
+python tools/verify_bridge.py --pdf /path/to/Creativity_Semantic_Model_CR-1.0.pdf --lean
+```
+
+To replay only the formal pilot (overall status remains `PARTIAL` without the PDF):
+
+```sh
+python tools/verify_bridge.py --lean
 ```
 
 ## Authority and redistribution

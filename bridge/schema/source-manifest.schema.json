@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ahepi.github.io/h-EPI/schema/cr-eib.source-manifest.v1.json",
+  "title": "CR-EIB source manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "document_id",
+    "semantic_authority",
+    "supplied_filename",
+    "sha256",
+    "byte_length",
+    "page_count",
+    "page_size_millipoints",
+    "active_span",
+    "authority_file_committed"
+  ],
+  "properties": {
+    "schema_version": {"const": "cr-eib.source-manifest.v1"},
+    "document_id": {"type": "string", "minLength": 1},
+    "semantic_authority": {"const": true},
+    "supplied_filename": {"type": "string", "minLength": 1},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "byte_length": {"type": "integer", "minimum": 1},
+    "page_count": {"type": "integer", "minimum": 1},
+    "page_size_millipoints": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "prefixItems": [
+        {"type": "integer", "minimum": 1},
+        {"type": "integer", "minimum": 1}
+      ],
+      "items": false
+    },
+    "active_span": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["physical_pdf_pages", "printed_folios"],
+      "properties": {
+        "physical_pdf_pages": {"$ref": "#/$defs/positivePair"},
+        "printed_folios": {"$ref": "#/$defs/positivePair"}
+      }
+    },
+    "authority_file_committed": {"const": false}
+  },
+  "$defs": {
+    "positivePair": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "prefixItems": [
+        {"type": "integer", "minimum": 1},
+        {"type": "integer", "minimum": 1}
+      ],
+      "items": false
+    }
+  }
+}

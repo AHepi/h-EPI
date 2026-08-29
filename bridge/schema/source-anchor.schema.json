@@ -1,0 +1,196 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ahepi.github.io/h-EPI/schema/cr-eib.source-anchor.v1.json",
+  "title": "CR-EIB source anchor v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["anchor_digest", "payload"],
+  "properties": {
+    "anchor_digest": {"$ref": "#/$defs/prefixedSha256"},
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "record_version",
+        "supersedes",
+        "authority",
+        "source_namespace",
+        "authoritative_id",
+        "proxy_ids",
+        "clause_family",
+        "title_raw",
+        "locator",
+        "transcription",
+        "source_status",
+        "dependencies",
+        "source_inferential_status",
+        "provenance"
+      ],
+      "properties": {
+        "schema_version": {"const": "cr-eib.source-anchor.v1"},
+        "record_version": {"type": "integer", "minimum": 1},
+        "supersedes": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/prefixedSha256"}]},
+        "authority": {"$ref": "#/$defs/authority"},
+        "source_namespace": {"type": "string", "minLength": 1},
+        "authoritative_id": {"$ref": "#/$defs/declarationId"},
+        "proxy_ids": {"type": "array", "items": {"$ref": "#/$defs/declarationId"}, "uniqueItems": true},
+        "clause_family": {"enum": ["definition", "theorem"]},
+        "title_raw": {"type": "string", "minLength": 1},
+        "locator": {"$ref": "#/$defs/locator"},
+        "transcription": {"$ref": "#/$defs/transcription"},
+        "source_status": {"$ref": "#/$defs/sourceStatus"},
+        "dependencies": {"$ref": "#/$defs/dependencies"},
+        "source_inferential_status": {"type": "null"},
+        "provenance": {"$ref": "#/$defs/provenance"}
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "prefixedSha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "declarationId": {"type": "string", "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Za-z0-9]+)+$"},
+    "bbox": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "prefixItems": [
+        {"type": "integer", "minimum": 0},
+        {"type": "integer", "minimum": 0},
+        {"type": "integer", "minimum": 1},
+        {"type": "integer", "minimum": 1}
+      ],
+      "items": false
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["document_id", "supplied_filename", "sha256", "byte_length", "page_count", "page_size_millipoints"],
+      "properties": {
+        "document_id": {"type": "string", "minLength": 1},
+        "supplied_filename": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "byte_length": {"type": "integer", "minimum": 1},
+        "page_count": {"type": "integer", "minimum": 1},
+        "page_size_millipoints": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "prefixItems": [{"type": "integer", "minimum": 1}, {"type": "integer", "minimum": 1}],
+          "items": false
+        }
+      }
+    },
+    "locator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["physical_pdf_page", "pdf_page_index_zero_based", "printed_footer_page", "section_raw", "coordinate_system", "page_rotation_degrees", "tight_bbox_millipoints", "regions"],
+      "properties": {
+        "physical_pdf_page": {"type": "integer", "minimum": 1},
+        "pdf_page_index_zero_based": {"type": "integer", "minimum": 0},
+        "printed_footer_page": {"type": "integer", "minimum": 1},
+        "section_raw": {"type": ["string", "null"]},
+        "coordinate_system": {"const": "top-left CropBox millipoints"},
+        "page_rotation_degrees": {"const": 0},
+        "tight_bbox_millipoints": {"$ref": "#/$defs/bbox"},
+        "regions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "bbox_millipoints"],
+            "properties": {
+              "name": {"type": "string", "minLength": 1},
+              "bbox_millipoints": {"$ref": "#/$defs/bbox"}
+            }
+          }
+        }
+      }
+    },
+    "transcription": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["literal_word_snapshot", "reviewed_reading", "declared_transformations"],
+      "properties": {
+        "literal_word_snapshot": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["algorithm", "extractor", "extractor_version", "selection_rule", "word_count", "sha256"],
+          "properties": {
+            "algorithm": {"const": "CR-EIB/pdftotext-word-snapshot/v1"},
+            "extractor": {"const": "pdftotext -bbox"},
+            "extractor_version": {"type": "string", "minLength": 1},
+            "selection_rule": {"type": "string", "minLength": 1},
+            "word_count": {"type": "integer", "minimum": 1},
+            "sha256": {"$ref": "#/$defs/sha256"}
+          }
+        },
+        "reviewed_reading": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path", "sha256", "encoding", "unicode_normalization", "eol", "final_newline"],
+          "properties": {
+            "path": {"type": "string", "minLength": 1},
+            "sha256": {"$ref": "#/$defs/sha256"},
+            "encoding": {"const": "UTF-8"},
+            "unicode_normalization": {"const": "NFC"},
+            "eol": {"const": "LF"},
+            "final_newline": {"const": true}
+          }
+        },
+        "declared_transformations": {"type": "array", "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "sourceStatus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["raw", "assertions", "source_tags"],
+      "properties": {
+        "raw": {"type": "string", "minLength": 1},
+        "assertions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["mark", "scheme", "scope_raw", "parse_status"],
+            "properties": {
+              "mark": {"const": "R"},
+              "scheme": {"const": "CR-1.0/source-status"},
+              "scope_raw": {"type": "string", "minLength": 1},
+              "parse_status": {"enum": ["parsed", "scope-limited"]}
+            }
+          }
+        },
+        "source_tags": {"type": "array", "items": {"$ref": "#/$defs/declarationId"}, "uniqueItems": true}
+      }
+    },
+    "dependencies": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_declared"],
+      "properties": {
+        "source_declared": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["raw", "exact_ids", "declared_exhaustive"],
+          "properties": {
+            "raw": {"type": ["string", "null"]},
+            "exact_ids": {"type": "array", "items": {"$ref": "#/$defs/declarationId"}, "uniqueItems": true},
+            "declared_exhaustive": {"type": "boolean"}
+          }
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input_artifact_hashes", "tool_versions"],
+      "properties": {
+        "input_artifact_hashes": {"type": "array", "items": {"$ref": "#/$defs/sha256"}},
+        "tool_versions": {"type": "object", "additionalProperties": {"type": "string", "minLength": 1}}
+      }
+    }
+  }
+}
