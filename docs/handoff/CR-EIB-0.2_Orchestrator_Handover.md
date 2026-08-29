@@ -36,6 +36,15 @@ The implementation commit is the commit containing this handover and the audit
 artifacts. Resolve its final published SHA with `git rev-parse origin/main` after
 push and verify the remote tree, not merely the local branch label.
 
+The implementation first landed on remote `main` as `30e078a`. Its initial
+`bridge pilot` run built all Lean modules and printed empty axiom sets for the
+14 release declarations, but the action's additional namespace-wide audit
+rejected three Lean-generated structure injectivity declarations that use
+`propext`. The workflow-only follow-up containing this handover permits exactly
+`propext` for that broad defense-in-depth scan. The release verifier still
+requires the exact 14-declaration output set and an empty axiom list for every
+one of those declarations.
+
 ## What this increment built
 
 ### Additive formal spine

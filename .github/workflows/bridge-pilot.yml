@@ -56,6 +56,9 @@ jobs:
           test: false
           lint: false
           axiom-audit: true
-          axiom-audit-allow: ""
+          # Generated structure injectivity declarations use propositional
+          # extensionality; the 14 release declarations remain exact-audited
+          # for an empty axiom set by tools/verify_bridge.py --lean.
+          axiom-audit-allow: "propext"
       - name: Verify pinned formal package and replay report
         run: python tools/verify_bridge.py --lean
