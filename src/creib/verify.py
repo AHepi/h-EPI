@@ -186,7 +186,7 @@ EXPECTED_FORMAL_PACKAGE = {
     "formal/CREIB/Audit/Axioms.lean": "258fd255bf7704291d4de03913d57f0ff15589cc6437c69a3def00740746eecb",
     "formal/CREIB/Audit/DeclarationBindings.lean": "165c6e90803670172d3e67b008f78665d2da66296607801e8f4d7c02ba3014dd",
     "formal/CREIB/Bridge/DF10Candidate.lean": "14b4fe0ac3a9f1d707f1ac942b85a67a41915d4977211325d6465169c8ca2128",
-    "formal/CREIB/Core/Model.lean": "7a56c781e785f8ddba704f07dc785c9677179646f1250329ead39fbb0d35dd0a",
+    "formal/CREIB/Core/Model.lean": "27732f216362107b2a98512301e7e32b5a334de3a0ddb0c194ef30d8c65cc58b",
     "formal/CREIB/Pilot/TH3.lean": "ef9096ff0fe7ef133757ccb57ba3fc52a41638b339539af1737584936c3cb11a",
     "formal/CREIB/Pilot/TH3Countermodel.lean": "38a68f131389ecca67d5a798262a663edc7c6dcedb7e58b6695ad12fa30679e5",
     "formal/lake-manifest.json": "835bdc7555981c3189d81c1a1756f21c780c8fdd60dc07ed96aaed80ba4c54f8",

@@ -1,4 +1,5 @@
 set_option autoImplicit false
+set_option genInjectivity false
 set_option warningAsError true
 
 namespace CREIB
