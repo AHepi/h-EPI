@@ -21,6 +21,7 @@ the image is published, it should additionally retain the OCI manifest digest.
 |---|---|
 | Ubuntu base | `ubuntu:24.04@sha256:33ceb71981b602c1a7443a53469e4dba065f7503eab3078a2d7a57a2ab987517` |
 | Ubuntu archive | snapshot `20260828T000000Z` |
+| TLS bootstrap | `ca-certificates=20260601~24.04.1`, authenticated by signed snapshot metadata; peer verification is disabled only while installing this package into the minimal base, then immediately required |
 | `pdftotext` | Ubuntu `poppler-utils=24.02.0-1ubuntu9.9` |
 | `pdfinfo` | Poppler `26.05.0`, source SHA-256 `6fef27ff04f37db43054c86bcdff6128c9fb1f6af4ef3c8b369a7e9abd68d0bb` |
 | Lean | `4.33.1`, release archive SHA-256 `890afd185370f85666025b883914ab4f4b339136f8c96167b69cfb62aecaf235`, compiler commit `819816b2e0a3bf405af45ae5c7af2491d8f5bee6` |

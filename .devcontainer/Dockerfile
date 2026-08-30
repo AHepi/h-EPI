@@ -2,11 +2,10 @@
 # its own full authority-PDF replay before it can be claimed equivalent.
 ARG UBUNTU_IMAGE=ubuntu:24.04@sha256:33ceb71981b602c1a7443a53469e4dba065f7503eab3078a2d7a57a2ab987517
 
-FROM --platform=linux/amd64 ${UBUNTU_IMAGE} AS poppler-build
+FROM --platform=linux/amd64 ${UBUNTU_IMAGE} AS snapshot-base
 
 ARG UBUNTU_SNAPSHOT=20260828T000000Z
-ARG POPPLER_VERSION=26.05.0
-ARG POPPLER_SHA256=6fef27ff04f37db43054c86bcdff6128c9fb1f6af4ef3c8b369a7e9abd68d0bb
+ARG CA_CERTIFICATES_PACKAGE=20260601~24.04.1
 
 ENV DEBIAN_FRONTEND=noninteractive \
     LANG=C.UTF-8 \
@@ -14,9 +13,30 @@ ENV DEBIAN_FRONTEND=noninteractive \
     SOURCE_DATE_EPOCH=1787875200 \
     TZ=Etc/UTC
 
-RUN apt-get --snapshot "${UBUNTU_SNAPSHOT}" update \
-    && apt-get --snapshot "${UBUNTU_SNAPSHOT}" install -y --no-install-recommends \
-        ca-certificates \
+# The minimal Ubuntu image has no CA bundle. Rewrite both signed Ubuntu sources
+# to the fixed snapshot first, then disable TLS peer verification only for the
+# transaction that installs the exact CA bundle from that signed snapshot.
+RUN sed --in-place --regexp-extended \
+        "s#https?://(archive\\.ubuntu\\.com|security\\.ubuntu\\.com)/ubuntu/?#https://snapshot.ubuntu.com/ubuntu/${UBUNTU_SNAPSHOT}/#g" \
+        /etc/apt/sources.list.d/ubuntu.sources \
+    && apt-get \
+        -o APT::Update::Error-Mode=any \
+        -o Acquire::https::Verify-Peer=false \
+        update \
+    && apt-get \
+        -o Acquire::https::Verify-Peer=false \
+        install -y --no-install-recommends \
+        "ca-certificates=${CA_CERTIFICATES_PACKAGE}" \
+    && apt-get -o APT::Update::Error-Mode=any update \
+    && rm -rf /var/lib/apt/lists/*
+
+FROM snapshot-base AS poppler-build
+
+ARG POPPLER_VERSION=26.05.0
+ARG POPPLER_SHA256=6fef27ff04f37db43054c86bcdff6128c9fb1f6af4ef3c8b369a7e9abd68d0bb
+
+RUN apt-get -o APT::Update::Error-Mode=any update \
+    && apt-get install -y --no-install-recommends \
         cmake \
         curl \
         g++ \
@@ -67,21 +87,13 @@ RUN curl --fail --location --proto '=https' --tlsv1.2 \
     && "/opt/poppler-${POPPLER_VERSION}/bin/pdfinfo" -v 2>&1 \
         | grep --fixed-strings --line-regexp "pdfinfo version ${POPPLER_VERSION}"
 
-FROM --platform=linux/amd64 ${UBUNTU_IMAGE} AS lean-download
+FROM snapshot-base AS lean-download
 
-ARG UBUNTU_SNAPSHOT=20260828T000000Z
 ARG LEAN_VERSION=4.33.1
 ARG LEAN_SHA256=890afd185370f85666025b883914ab4f4b339136f8c96167b69cfb62aecaf235
 
-ENV DEBIAN_FRONTEND=noninteractive \
-    LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8 \
-    SOURCE_DATE_EPOCH=1787875200 \
-    TZ=Etc/UTC
-
-RUN apt-get --snapshot "${UBUNTU_SNAPSHOT}" update \
-    && apt-get --snapshot "${UBUNTU_SNAPSHOT}" install -y --no-install-recommends \
-        ca-certificates \
+RUN apt-get -o APT::Update::Error-Mode=any update \
+    && apt-get install -y --no-install-recommends \
         curl \
         zstd \
     && rm -rf /var/lib/apt/lists/* \
@@ -97,28 +109,22 @@ RUN apt-get --snapshot "${UBUNTU_SNAPSHOT}" update \
         | grep --fixed-strings 'Lean (version 4.33.1,' \
         | grep --fixed-strings 'commit 819816b2e0a3bf405af45ae5c7af2491d8f5bee6'
 
-FROM --platform=linux/amd64 ${UBUNTU_IMAGE} AS replay
+FROM snapshot-base AS replay
 
-ARG UBUNTU_SNAPSHOT=20260828T000000Z
 ARG POPPLER_24_PACKAGE=24.02.0-1ubuntu9.9
 
-ENV DEBIAN_FRONTEND=noninteractive \
-    LANG=C.UTF-8 \
-    LC_ALL=C.UTF-8 \
-    PATH=/opt/cr-eib-venv/bin:/opt/lean/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+ENV PATH=/opt/cr-eib-venv/bin:/opt/lean/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    SOURCE_DATE_EPOCH=1787875200 \
-    TZ=Etc/UTC
+    PYTHONUNBUFFERED=1
 
 LABEL org.opencontainers.image.source="https://github.com/AHepi/h-EPI" \
       org.opencontainers.image.title="CR-EIB cold-start operational replay" \
       org.opencontainers.image.version="0.2" \
       org.opencontainers.image.description="Pinned linux/amd64 replay environment; not semantic authority"
 
-RUN apt-get --snapshot "${UBUNTU_SNAPSHOT}" update \
-    && apt-get --snapshot "${UBUNTU_SNAPSHOT}" install -y --no-install-recommends \
+RUN apt-get -o APT::Update::Error-Mode=any update \
+    && apt-get install -y --no-install-recommends \
         "libpoppler134=${POPPLER_24_PACKAGE}" \
         "poppler-utils=${POPPLER_24_PACKAGE}" \
         python3 \
