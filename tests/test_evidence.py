@@ -73,6 +73,41 @@ class EvidenceResolutionTests(unittest.TestCase):
         )
         self.assertEqual(result.outcome, Outcome.BLOCKED)
 
+    def test_unknown_unreviewed_and_contested_atoms_block_witness(self) -> None:
+        states = {
+            "unknown": (ReviewStatus.ACCEPTED, Polarity.UNKNOWN),
+            "unreviewed": (ReviewStatus.UNREVIEWED, None),
+            "contested": (ReviewStatus.CONTESTED, None),
+        }
+        atoms = {
+            "CCPResult": 0,
+            "Retained": 1,
+            "K_E": 2,
+        }
+        for atom, index in atoms.items():
+            for state, (review_status, polarity_override) in states.items():
+                inputs = [
+                    [accepted("ccp", Polarity.POSITIVE)],
+                    [accepted("retained", Polarity.POSITIVE)],
+                    [accepted("ke-negative", Polarity.NEGATIVE)],
+                ]
+                baseline_polarity = (
+                    Polarity.NEGATIVE if atom == "K_E" else Polarity.POSITIVE
+                )
+                inputs[index] = [
+                    Evidence(
+                        Availability.AVAILABLE,
+                        review_status,
+                        polarity_override or baseline_polarity,
+                        SCOPE,
+                        f"{atom}-{state}",
+                    )
+                ]
+                with self.subTest(atom=atom, state=state):
+                    result = resolve_th3b_witness(*inputs, SCOPE)
+                    self.assertEqual(result.outcome, Outcome.BLOCKED)
+                    self.assertIn(atom, result.reason)
+
 
 if __name__ == "__main__":
     unittest.main()

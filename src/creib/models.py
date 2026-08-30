@@ -97,7 +97,13 @@ def _unique_strings(
 def _safe_relative(value: Any, where: str) -> str:
     text = _string(value, where)
     path = PurePosixPath(text)
-    if path.is_absolute() or ".." in path.parts or "." in path.parts:
+    if (
+        not text
+        or str(path) != text
+        or path.is_absolute()
+        or ".." in path.parts
+        or "." in path.parts
+    ):
         raise RecordError(f"{where} must be a normalized repository-relative path")
     return text
 

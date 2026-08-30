@@ -108,6 +108,37 @@ class RecordSeparationTests(unittest.TestCase):
         with self.assertRaises(PolicyViolation):
             validate_declaration(declaration, anchor_map, self.choice_registry)
 
+    def test_declaration_typed_body_path_rejects_traversal(self) -> None:
+        declaration = copy.deepcopy(
+            load_strict(ROOT / "bridge" / "declarations" / "EIB-DF10-CANDIDATE.json")
+        )
+        declaration["typed_body"]["path"] = "../formal/CREIB/Bridge/DF10Candidate.lean"
+        with self.assertRaisesRegex(RecordError, "normalized repository-relative path"):
+            validate_declaration(declaration, self.anchor_map(), self.choice_registry)
+
+    def test_declaration_typed_body_path_rejects_absolute_path(self) -> None:
+        declaration = copy.deepcopy(
+            load_strict(ROOT / "bridge" / "declarations" / "EIB-DF10-CANDIDATE.json")
+        )
+        declaration["typed_body"]["path"] = "/tmp/DF10Candidate.lean"
+        with self.assertRaisesRegex(RecordError, "normalized repository-relative path"):
+            validate_declaration(declaration, self.anchor_map(), self.choice_registry)
+
+    def test_declaration_typed_body_path_rejects_non_normalized_forms(self) -> None:
+        for path in (
+            "./formal/CREIB/Bridge/DF10Candidate.lean",
+            "formal//CREIB/Bridge/DF10Candidate.lean",
+            "formal/./CREIB/Bridge/DF10Candidate.lean",
+        ):
+            declaration = copy.deepcopy(
+                load_strict(ROOT / "bridge" / "declarations" / "EIB-DF10-CANDIDATE.json")
+            )
+            declaration["typed_body"]["path"] = path
+            with self.subTest(path=path), self.assertRaisesRegex(
+                RecordError, "normalized repository-relative path"
+            ):
+                validate_declaration(declaration, self.anchor_map(), self.choice_registry)
+
     def test_v1_declaration_remains_compatible_without_choice_registry(self) -> None:
         declaration = load_strict(ROOT / "bridge" / "declarations" / "EIB-TH3A-PILOT.json")
         validated = validate_declaration(declaration, self.anchor_map())

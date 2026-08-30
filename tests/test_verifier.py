@@ -22,6 +22,8 @@ from creib.verify import (
     _bridge_conformance_status,
     _decode_declared_nfc,
     _enforce_accepted_mapping_policy,
+    _inspect_verified_pdf,
+    _safe_repository_file,
     _validate_global_metadata_ids,
     _verify_active_span_geometry,
     _verify_axiom_audit,
@@ -53,15 +55,41 @@ class VerifierTests(unittest.TestCase):
         return "\n".join(lines)
 
     @staticmethod
-    def active_span_bbox_xml() -> bytes:
+    def active_span_bbox_xml(*, with_synthetic_anchor: bool = False) -> bytes:
         pages = []
         for offset, folio in enumerate(range(218, 234)):
+            anchor_words = ""
+            if with_synthetic_anchor and folio == 223:
+                anchor_words = (
+                    '<word xMin="100.000" yMin="100.000" '
+                    'xMax="120.000" yMax="110.000">alpha</word>'
+                    '<word xMin="130.000" yMin="100.000" '
+                    'xMax="150.000" yMax="110.000">beta</word>'
+                )
             pages.append(
                 '<page width="612.000" height="792.000">'
+                f"{anchor_words}"
                 f'<word xMin="296.000" yMin="763.000" xMax="316.000" yMax="773.000">{folio}</word>'
                 "</page>"
             )
         return ("<html><body><doc>" + "".join(pages) + "</doc></body></html>").encode()
+
+    @staticmethod
+    def synthetic_word_snapshot_anchor() -> dict[str, object]:
+        return {
+            "authoritative_id": "TEST-ANCHOR",
+            "locator": {
+                "physical_pdf_page": 224,
+                "printed_footer_page": 223,
+                "tight_bbox_millipoints": [90_000, 90_000, 160_000, 120_000],
+            },
+            "transcription": {
+                "literal_word_snapshot": {
+                    "word_count": 2,
+                    "sha256": "2648d1eaf3d40ccba9a1eace722d60f48f0a26a2223e9bf4e3c17fe9393fa881",
+                }
+            },
+        }
 
     def copied_repository(self, directory: str) -> Path:
         target = Path(directory) / "repo"
@@ -238,6 +266,17 @@ class VerifierTests(unittest.TestCase):
         with patch("creib.verify._decode_declared_nfc", wraps=_decode_declared_nfc) as check:
             verify_bundle(ROOT)
         self.assertEqual(check.call_count, 2)
+
+    def test_reviewed_transcription_byte_tamper_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = self.copied_repository(directory)
+            transcription = repository / "authority" / "transcriptions" / "DF-10.reviewed.txt"
+            original = transcription.read_bytes()
+            mutated = original.replace(b"DF-10", b"DF-1O", 1)
+            self.assertNotEqual(mutated, original)
+            transcription.write_bytes(mutated)
+            with self.assertRaisesRegex(AnchorMismatch, "reviewed transcription hash mismatch"):
+                verify_bundle(repository)
 
     def test_missing_repository_root_has_stable_json_failure(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -557,6 +596,115 @@ class VerifierTests(unittest.TestCase):
         for label, mutated in mutations.items():
             with self.subTest(label=label), self.assertRaises(AuthorityMismatch):
                 _verify_bbox_span(mutated, manifest, [])
+
+    def test_synthetic_anchor_word_snapshot_fixture_passes(self) -> None:
+        manifest = validate_manifest(load_strict(ROOT / "authority" / "source_manifest.json"))
+        _verify_bbox_span(
+            self.active_span_bbox_xml(with_synthetic_anchor=True),
+            manifest,
+            [self.synthetic_word_snapshot_anchor()],
+        )
+
+    def test_anchor_word_snapshot_rejects_text_coordinate_and_count_mutations(self) -> None:
+        manifest = validate_manifest(load_strict(ROOT / "authority" / "source_manifest.json"))
+        valid = self.active_span_bbox_xml(with_synthetic_anchor=True)
+        beta_word = (
+            b'<word xMin="130.000" yMin="100.000" '
+            b'xMax="150.000" yMax="110.000">beta</word>'
+        )
+        mutations = {
+            "text": (
+                valid.replace(b">alpha</word>", b">Alpha</word>", 1),
+                "literal word-snapshot mismatch",
+            ),
+            "coordinate-with-same-selection": (
+                valid.replace(b'xMin="100.000"', b'xMin="101.000"', 1),
+                "literal word-snapshot mismatch",
+            ),
+            "word-count": (
+                valid.replace(beta_word, b"", 1),
+                "word-count mismatch",
+            ),
+        }
+        for label, (mutated, message) in mutations.items():
+            self.assertNotEqual(mutated, valid)
+            with self.subTest(label=label), self.assertRaisesRegex(AnchorMismatch, message):
+                _verify_bbox_span(
+                    mutated,
+                    manifest,
+                    [self.synthetic_word_snapshot_anchor()],
+                )
+
+    def test_pdfinfo_version_drift_is_rejected(self) -> None:
+        manifest = validate_manifest(load_strict(ROOT / "authority" / "source_manifest.json"))
+        anchor_set = load_strict(ROOT / "authority" / "source_anchors.json")
+        anchors = [validate_anchor(record, manifest) for record in anchor_set["anchors"]]
+
+        def fake_run(command: list[str], **_kwargs: object) -> subprocess.CompletedProcess[bytes]:
+            if command == ["pdfinfo", "-v"]:
+                return subprocess.CompletedProcess(
+                    command,
+                    0,
+                    stdout=b"",
+                    stderr=b"pdfinfo version 26.05.1\n",
+                )
+            if command[0] == "pdfinfo":
+                return subprocess.CompletedProcess(
+                    command,
+                    0,
+                    stdout=b"Pages: 286\nPage size: 612 x 792 pts (letter)\n",
+                    stderr=b"",
+                )
+            raise AssertionError(f"unexpected command before pdfinfo version rejection: {command}")
+
+        with patch("creib.verify._run", side_effect=fake_run), self.assertRaisesRegex(
+            AuthorityMismatch, "pdfinfo version differs"
+        ):
+            _inspect_verified_pdf(b"synthetic verified PDF bytes", manifest, anchors)
+
+    def test_pdftotext_version_drift_is_rejected(self) -> None:
+        manifest = validate_manifest(load_strict(ROOT / "authority" / "source_manifest.json"))
+        anchor_set = load_strict(ROOT / "authority" / "source_anchors.json")
+        anchors = [validate_anchor(record, manifest) for record in anchor_set["anchors"]]
+
+        def fake_run(command: list[str], **_kwargs: object) -> subprocess.CompletedProcess[bytes]:
+            if command == ["pdfinfo", "-v"]:
+                return subprocess.CompletedProcess(
+                    command,
+                    0,
+                    stdout=b"",
+                    stderr=b"pdfinfo version 26.05.0\n",
+                )
+            if command[:2] == ["pdftotext", "-v"]:
+                return subprocess.CompletedProcess(
+                    command,
+                    0,
+                    stdout=b"",
+                    stderr=b"pdftotext version 24.02.1\n",
+                )
+            if command[0] == "pdfinfo":
+                return subprocess.CompletedProcess(
+                    command,
+                    0,
+                    stdout=b"Pages: 286\nPage size: 612 x 792 pts (letter)\n",
+                    stderr=b"",
+                )
+            raise AssertionError(f"unexpected command before pdftotext version rejection: {command}")
+
+        with patch("creib.verify._run", side_effect=fake_run), patch(
+            "creib.verify._verify_active_span_geometry"
+        ), self.assertRaisesRegex(AnchorMismatch, "pdftotext version mismatch for DF-10"):
+            _inspect_verified_pdf(b"synthetic verified PDF bytes", manifest, anchors)
+
+    def test_repository_path_rejects_intermediate_symlink_component(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository = Path(directory) / "repo"
+            real = repository / "real"
+            real.mkdir(parents=True)
+            (real / "evidence.txt").write_text("evidence\n", encoding="utf-8")
+            (repository / "alias").symlink_to(real, target_is_directory=True)
+            with self.assertRaisesRegex(PolicyViolation, "symlinked evidence path is forbidden"):
+                _safe_repository_file(repository, "alias/evidence.txt")
 
     def test_pdf_symlink_is_rejected(self) -> None:
         manifest = validate_manifest(load_strict(ROOT / "authority" / "source_manifest.json"))

@@ -35,7 +35,11 @@ The verifier reports `operational_status: PASS` only when both the authority PDF
 
 A full operator replay succeeded for the reviewed packet in its mixed native-tool environment, using an operator-supplied copy of the pinned authority PDF. CI cannot replay that external PDF and therefore cannot independently produce the same operational `PASS`. Native extractor or compiler version mismatches fail closed instead of being treated as equivalent replays.
 
-To replay the source anchors against a lawfully held PDF copy:
+The normative cold-start image definition now pins the reviewed `linux/amd64` inputs, and each replay runs the built image by its immutable content ID. See [CR-EIB-0.2 container replay](docs/reproduction/CR-EIB-0.2_Container_Replay.md) for the networkless, read-only full replay and its explicit status boundaries. The DevContainer is only a convenience wrapper over the same image definition.
+
+Audit provenance is published as the [packet coverage and omission manifest](docs/audits/CR-EIB-0.2_packet-manifest.txt) and the [exact 14-declaration release axiom transcript](docs/audits/CR-EIB-0.2_Release_Axiom_Transcript.txt). The [external audit adjudication](docs/audits/CR-EIB-0.2_External_Audit_Adjudication.md) retains the pinned 254-declaration namespace result from the reviewed packet.
+
+Inside an already verified environment, replay the source anchors against a lawfully held PDF copy with:
 
 ```sh
 python tools/verify_bridge.py --pdf /path/to/Creativity_Semantic_Model_CR-1.0.pdf --lean

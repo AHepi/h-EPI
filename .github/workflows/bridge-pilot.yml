@@ -59,3 +59,36 @@ jobs:
           axiom-audit-allow: ""
       - name: Verify pinned formal package and replay report
         run: python tools/verify_bridge.py --lean
+
+  container-replay-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Build pinned linux/amd64 replay image
+        env:
+          DOCKER_BUILDKIT: "1"
+        run: |
+          docker build \
+            --platform linux/amd64 \
+            --pull=false \
+            --file .devcontainer/Dockerfile \
+            --tag cr-eib-replay:ci \
+            .
+          image_id="$(docker image inspect --format '{{.Id}}' cr-eib-replay:ci)"
+          echo "container_image_id=${image_id}"
+          echo "CR_EIB_IMAGE_ID=${image_id}" >> "${GITHUB_ENV}"
+          echo "Container image ID: \`${image_id}\`" >> "${GITHUB_STEP_SUMMARY}"
+      - name: Run networkless read-only smoke replay
+        run: |
+          docker run --rm \
+            --platform linux/amd64 \
+            --network none \
+            --read-only \
+            --cap-drop ALL \
+            --security-opt no-new-privileges \
+            --tmpfs /tmp:rw,nosuid,nodev,size=1g \
+            --mount "type=bind,src=${GITHUB_WORKSPACE},dst=/repo,readonly" \
+            --workdir /repo \
+            "${CR_EIB_IMAGE_ID}" \
+            bash /repo/tools/container_smoke.sh
