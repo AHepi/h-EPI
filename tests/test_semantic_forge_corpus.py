@@ -48,8 +48,12 @@ class SemanticForgeCorpusTests(unittest.TestCase):
         )
         self.assertTrue(
             {
+                "adaptive-inquiry-v2.schema.json",
+                "adaptive-inquiry.schema.json",
                 "challenge.schema.json",
                 "corpus.schema.json",
+                "inquiry-event-v2.schema.json",
+                "inquiry-event.schema.json",
                 "research-issue.schema.json",
             }.issubset(self.schemas)
         )
@@ -59,6 +63,8 @@ class SemanticForgeCorpusTests(unittest.TestCase):
                 if schema_name in {
                     "challenge.schema.json",
                     "corpus.schema.json",
+                    "inquiry-event-v2.schema.json",
+                    "inquiry-event.schema.json",
                     "research-issue.schema.json",
                 }:
                     self.assertFalse(schema["additionalProperties"])

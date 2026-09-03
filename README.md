@@ -53,7 +53,7 @@ python tools/verify_bridge.py --lean
 
 ## Semantic Model Forge (experimental)
 
-`SMF-0.1` is a separate, non-authoritative criticism harness for developing the semantic model class before extracting more mathematics. It does not change the CR-EIB bridge, the pinned authority, or any mapping status. Its research gate starts from a live external unknown, requires rival answers, falsifiers, an expected discriminator, a bounded source scope, and a stop condition, and uses AlphaXiv as the default replaceable discovery channel. Research output can propose criticisms; it cannot confirm a model.
+`SMF-0.1` is a separate, non-authoritative criticism harness for developing the semantic model class before extracting more mathematics. It does not change the CR-EIB bridge, the pinned authority, or any mapping status. Its research gate starts from a live external unknown and requires rival answers, falsifiers, an expected discriminator, a bounded source scope, and a stop condition. It records AlphaXiv as the current replaceable default if an exact external action later authorizes discovery. Research output can propose criticisms; it cannot confirm a model.
 
 Run the first authority-bound calibration with a lawfully held copy of the exact PDF:
 
@@ -65,15 +65,22 @@ PYTHONPATH=src python tools/run_semantic_forge.py first-run \
 
 The calibration deliberately tests a weak typed-role projection, not CR-1.0 itself. It admits a causally grounded case and a labels-only contrast case, reports `NO_HARDENING` for the fixture's disconnected `RoleGrounded` addition under its finite contract, constructs one falsifier-first warrant using the current AlphaXiv default from a supplied external issue, reports formalization `BLOCKED`, and stops at `AWAITING_HUMAN`.
 
-The additive adaptive-inquiry protocol binds a failed observation to its exact run, candidate, issue, warrant, evaluator, fixture, and research ledger. The ledger binding includes its creation and as-of dates; triage cannot predate ledger creation, and every generated question binds the triage date. Without a separately supplied human failure triage it stops at `AWAITING_HUMAN_TRIAGE`, proposes no research question, and leaves the semantic verdict null. After triage it can construct content-addressed critical questions and route them, but neither a search result nor failure to find one can promote the model. Current-case transitions must address an exact question regenerated from the current inventory; blocked and integration-only routes are non-actionable.
+The additive adaptive-inquiry protocol binds a failed observation to its exact run, candidate, issue, warrant, evaluator, fixture, and research ledger. Its active v2 triage can retain several live `CANDIDATE`, `AUXILIARY`, `TEST`, and `SCOPE` criticisms at once, including one mechanism that crosses loci. `UNRESOLVED` describes the overall epistemic state; a live locus assessment is a criticism to investigate, not a finding that the named component caused the failure. One nullable `next_action` schedules work on one or more compatible dependency-frontier assessments without closing the others.
+
+Active triage is an append-only, content-addressed lineage under `forge/triage/`. A loose JSON file is only a draft: it becomes operational only when it is published without overwrite and its unique terminal ID is explicitly selected for planning. A successor must retain every prior assessment and disposition byte-for-byte. Separate human dispositions can retain, defeat, or mark one exact assessment stale for the exact current bindings. Same-binding treatment of a live assessment must follow the previously authorized frontier action and cite the exact bound calibration record; staleness must embed the exact binding delta. That makes scheduling dependencies traversable without turning treatment of an objection into confirmation. If the bound run, model, issue, warrant, observation, or ledger snapshot changes, the successor must say so explicitly and clear `next_action` for fresh human scheduling; old-binding dispositions have no current operational effect. With no published triage the planner stops at `AWAITING_HUMAN_TRIAGE`; with live assessments but no selected action it stops at `AWAITING_HUMAN_ACTION_SELECTION`; if the present set has no effective-live member it stops at `AWAITING_HUMAN_REASSESSMENT`, still `UNRESOLVED`.
+
+Every plan exposes the exact rival-falsifier attack targets available from the bound issue and warrant. That list is a menu, not research authorization. External research is generated only for the target IDs explicitly selected by an external `next_action`; each resulting question carries the selected assessments, action, exact attack target, scope, and stop rule. AlphaXiv is the current replaceable discovery gate, never a primary-source substitute or oracle, and neither a search result nor failure to find one can promote the model. The exclusive v1 records remain immutable validation and replay evidence; they cannot be newly published, extended, or used as active v2 routing inputs.
+
+The named binding changes above are illustrative: a change to any case-bound input requires the same explicit successor and action reset.
 
 ```sh
 PYTHONPATH=src python tools/run_semantic_inquiry.py plan \
   --run-record forge/runs/SMF-CALIBRATION-CR-1-0-001.4219efce.json \
-  --research-ledger forge/research/SMF-RESEARCH-2026-09-03.json
+  --research-ledger forge/research/SMF-RESEARCH-2026-09-03.json \
+  --triage-dir forge/triage
 ```
 
-See the [SMF architecture](docs/forge/SMF-0.1_Architecture.md), [underspecification atlas](docs/forge/SMF-0.1_Underspecification_Atlas.md), [research basis](docs/forge/SMF-0.1_Research_Basis.md), [first run](docs/forge/SMF-0.1_First_Run.md), [mathematical target](docs/forge/SMF-0.2_Mathematical_Target.md), [adaptive inquiry protocol](docs/forge/SMF-0.3_Adaptive_Inquiry_Protocol.md), [current run record](forge/runs/SMF-CALIBRATION-CR-1-0-001.4219efce.json), [current no-triage plan](forge/plans/SMF-AIP-2d589a64.no-triage.json), [research ledger](forge/research/SMF-RESEARCH-2026-09-03.json), and [seed corpus](forge/README.md).
+See the [SMF architecture](docs/forge/SMF-0.1_Architecture.md), [underspecification atlas](docs/forge/SMF-0.1_Underspecification_Atlas.md), [research basis](docs/forge/SMF-0.1_Research_Basis.md), [first run](docs/forge/SMF-0.1_First_Run.md), [mathematical target](docs/forge/SMF-0.2_Mathematical_Target.md), [adaptive inquiry protocol](docs/forge/SMF-0.3_Adaptive_Inquiry_Protocol.md), [current orchestrator handover](docs/handoff/CR-EIB-0.4_Orchestrator_Handover.md), [current run record](forge/runs/SMF-CALIBRATION-CR-1-0-001.4219efce.json), [current no-triage plan](forge/plans/SMF-AIP-a5d3d7fb.no-triage.json), [research ledger](forge/research/SMF-RESEARCH-2026-09-03.json), [seed corpus](forge/corpus/cr-1.0-seed.json), and [forge guide](forge/README.md).
 
 ## Authority and redistribution
 

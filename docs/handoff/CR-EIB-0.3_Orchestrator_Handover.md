@@ -1,5 +1,7 @@
 # CR-EIB-0.3 orchestrator handover
 
+> Historical handover. For the current continuation point, use `CR-EIB-0.4_Orchestrator_Handover.md`.
+
 ## Mission and authority boundary
 
 Continue the CR-1.0 work through the Semantic Model Forge without treating a test suite, research result, formal model, or proof assistant as a semantic authority. The sole semantic and formal authority remains the externally supplied PDF `Creativity as Explanatory Self-Correction`, Model CR-1.0:

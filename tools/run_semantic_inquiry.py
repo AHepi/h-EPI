@@ -17,6 +17,7 @@ from creib.canonical import canonical_bytes  # noqa: E402
 from creib.errors import CREIBError  # noqa: E402
 from creib.strict_json import loads_strict  # noqa: E402
 from creib.forge.inquiry import (  # noqa: E402
+    EVENT_SCHEMA,
     InquiryError,
     build_adaptive_inquiry_plan,
     build_inquiry_event,
@@ -24,6 +25,7 @@ from creib.forge.inquiry import (  # noqa: E402
     load_human_triage,
     load_research_ledger_binding,
     loads_adaptive_inquiry_plan,
+    publish_human_triage_against_inputs,
     publish_inquiry_event,
     validate_adaptive_inquiry_plan_against_inputs,
     validate_inquiry_question_against_plan,
@@ -33,11 +35,13 @@ from creib.forge.inquiry import (  # noqa: E402
 
 
 DEFAULT_LEDGER = ROOT / "forge" / "research" / "SMF-RESEARCH-2026-09-03.json"
+DEFAULT_TRIAGE_DIR = ROOT / "forge" / "triage"
 
 
 def _base(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--repo-root", type=Path, default=ROOT)
     parser.add_argument("--research-ledger", type=Path, default=DEFAULT_LEDGER)
+    parser.add_argument("--triage-dir", type=Path, default=DEFAULT_TRIAGE_DIR)
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -53,12 +57,20 @@ def _parser() -> argparse.ArgumentParser:
     _base(plan)
     plan.add_argument("--run-record", type=Path, required=True)
     plan.add_argument(
-        "--triage",
-        type=Path,
-        help="separately supplied human triage record; omitted means fail closed",
+        "--head-triage-id",
+        help="explicit published v2 human-triage head; omitted requires an empty lineage",
     )
     plan.add_argument("--events-dir", type=Path)
     plan.add_argument("--head-event-id")
+
+    publish_triage = commands.add_parser(
+        "publish-triage",
+        help="publish one append-only plural human-triage record",
+    )
+    _base(publish_triage)
+    publish_triage.add_argument("--run-record", type=Path, required=True)
+    publish_triage.add_argument("--triage", type=Path, required=True)
+    publish_triage.add_argument("--expected-head-triage-id")
 
     verify = commands.add_parser("verify", help="verify one explicitly selected event chain")
     _base(verify)
@@ -103,8 +115,9 @@ def _parser() -> argparse.ArgumentParser:
         "--research-entry",
         type=Path,
         help=(
-            "exact standalone v2 source-entry snapshot produced after the active "
-            "question; it need not be pre-seeded in the background ledger"
+            "exact v2 event research-entry envelope containing the active "
+            "question binding and a standalone source-report snapshot; the report "
+            "need not be pre-seeded in the background ledger"
         ),
     )
     return parser
@@ -118,15 +131,33 @@ def _read_text(path: Path, where: str) -> str:
 
 
 def _plan_command(args: argparse.Namespace) -> dict[str, object]:
-    triage = None if args.triage is None else load_human_triage(args.triage)
     return build_adaptive_inquiry_plan(
         repo_root=args.repo_root,
         run_record_path=args.run_record,
         research_ledger_path=args.research_ledger,
-        triage=triage,
+        triage_dir=args.triage_dir,
+        head_triage_id=args.head_triage_id,
         events_dir=args.events_dir,
         head_event_id=args.head_event_id,
     )
+
+
+def _publish_triage_command(args: argparse.Namespace) -> dict[str, object]:
+    triage = load_human_triage(args.triage)
+    output = publish_human_triage_against_inputs(
+        args.triage_dir,
+        triage,
+        expected_head_triage_id=args.expected_head_triage_id,
+        repo_root=args.repo_root,
+        run_record_path=args.run_record,
+        research_ledger_path=args.research_ledger,
+    )
+    return {
+        "publication_status": "CREATED_NO_CLOBBER",
+        "triage": triage,
+        "triage_path": str(output),
+        "semantic_verdict": None,
+    }
 
 
 def _verify_command(args: argparse.Namespace) -> dict[str, object]:
@@ -161,6 +192,7 @@ def _append_command(args: argparse.Namespace) -> dict[str, object]:
         repo_root=args.repo_root,
         run_record_path=args.run_record,
         research_ledger_path=args.research_ledger,
+        triage_dir=args.triage_dir,
         events_dir=args.events_dir,
     )
     validate_inquiry_transition_against_plan(args.event_type, plan)
@@ -175,6 +207,7 @@ def _append_command(args: argparse.Namespace) -> dict[str, object]:
         args.expected_head_event_id,
         research_ledger=ledger,
         research_binding=binding,
+        required_schema_version=EVENT_SCHEMA,
     )
     if args.event_type == "QUESTION_PROPOSED":
         questions = {
@@ -230,6 +263,11 @@ def _append_command(args: argparse.Namespace) -> dict[str, object]:
         args.events_dir,
         event,
         expected_head_event_id=args.expected_head_event_id,
+        plan=plan,
+        repo_root=args.repo_root,
+        run_record_path=args.run_record,
+        research_ledger_path=args.research_ledger,
+        triage_dir=args.triage_dir,
         research_ledger=ledger,
         research_binding=binding,
     )
@@ -247,6 +285,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.command == "plan":
             result = _plan_command(args)
             print(dumps_adaptive_inquiry_plan(result))
+        elif args.command == "publish-triage":
+            result = _publish_triage_command(args)
+            print(canonical_bytes(result).decode("utf-8"))
         elif args.command == "verify":
             result = _verify_command(args)
             print(canonical_bytes(result).decode("utf-8"))

@@ -1159,18 +1159,19 @@ def build_calibration_report(
         "human_review": {
             "status": "AWAITING_HUMAN",
             "question": (
-                "Does the paired fixture expose a genuine in-scope defect in this "
-                "typed-role projection, or is the candidate, auxiliary, test, or "
-                "scope specification at fault?"
+                "Which candidate, auxiliary, test, or scope criticisms remain live "
+                "for the paired fixture, and what operational action, if any, "
+                "should be taken next?"
             ),
-            "allowed_dispositions": [
-                "CANDIDATE_DEFECT",
-                "AUXILIARY_DEFECT",
-                "TEST_DEFECT",
-                "OUT_OF_SCOPE",
-                "UNRESOLVED",
+            "allowed_loci": [
+                "CANDIDATE",
+                "AUXILIARY",
+                "TEST",
+                "SCOPE",
             ],
-            "human_disposition": None,
+            "multiple_loci_may_coexist": True,
+            "overall_status": "UNRESOLVED",
+            "human_triage_record": None,
             "semantic_verdict": None,
         },
     }

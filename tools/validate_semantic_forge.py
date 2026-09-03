@@ -22,6 +22,17 @@ from creib.forge.schema_validation import (  # noqa: E402
 )
 
 
+_CALIBRATION_RUN_SCHEMA_ID = (
+    "https://ahepi.example/smf/0.1/calibration-run.schema.json"
+)
+_ADAPTIVE_INQUIRY_SCHEMA_IDS = frozenset(
+    {
+        "https://ahepi.example/smf/0.2/adaptive-inquiry.schema.json",
+        "https://ahepi.example/smf/0.3/adaptive-inquiry-v2.schema.json",
+    }
+)
+
+
 def _validate_specialized_runtime_contract(
     instance: object,
     *,
@@ -41,7 +52,8 @@ def _validate_specialized_runtime_contract(
         # LocalSchemaCatalog.validate already dispatched the parser selected
         # by this schema's canonical identity.
         return "FULL_RECORD"
-    if schema_name == "calibration-run.schema.json":
+    schema_id = catalog.schemas[schema_name]["$id"]
+    if schema_id == _CALIBRATION_RUN_SCHEMA_ID:
         default_dir = ROOT / "forge" / "schema"
         if schema_dir.resolve() != default_dir.resolve():
             return "NONE"
@@ -49,12 +61,23 @@ def _validate_specialized_runtime_contract(
 
         validate_calibration_report(instance, repo_root=ROOT)  # type: ignore[arg-type]
         return "CURRENT_REPOSITORY_REPLAY"
-    if schema_name == "adaptive-inquiry.schema.json":
-        if type(instance) is not dict or instance.get("record_type") != "adaptive_inquiry_plan":
+    if schema_id in _ADAPTIVE_INQUIRY_SCHEMA_IDS:
+        if type(instance) is not dict:
             return "NONE"
-        from creib.forge.inquiry import validate_adaptive_inquiry_plan
+        from creib.forge.inquiry import (
+            validate_adaptive_inquiry_plan,
+            validate_human_triage,
+        )
 
-        validate_adaptive_inquiry_plan(instance)
+        if instance.get("record_type") == "adaptive_inquiry_plan":
+            validate_adaptive_inquiry_plan(instance)
+        elif instance.get("record_type") == "human_failure_triage":
+            bindings = instance.get("bindings")
+            if type(bindings) is not dict:
+                return "NONE"
+            validate_human_triage(instance, expected_bindings=bindings)
+        else:
+            return "NONE"
         # Exact run/ledger/event replay needs paths which are deliberately not
         # inferred by this generic validator.  The inquiry CLI performs that
         # contextual regeneration before it can append an event.

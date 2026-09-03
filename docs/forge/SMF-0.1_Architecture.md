@@ -23,7 +23,7 @@ The forge operationalizes the following asymmetry:
 \text{criticism/test} \longrightarrow \text{new problem situation}.
 \]
 
-The first arrow is not a truth-preserving inference. A test is discriminating only relative to rival conjectures, a stated interpretation, auxiliary assumptions, and an expected difference. An observation never interprets itself. A passed test removes or weakens a particular criticism under the current test construction; it does not confirm the candidate, increase its probability of truth, or close inquiry.
+The first arrow is not a truth-preserving inference. A test is discriminating only relative to rival conjectures, a stated interpretation, auxiliary assumptions, and an expected difference. An observation never interprets itself. A passed test leaves the candidate unrefuted by that test and may bear on a separately recorded human treatment of the particular criticism; it does not automatically dispose the criticism, confirm the candidate, increase its probability of truth, or close inquiry.
 
 Criticism is always criticism of an already recorded conjecture, interpretation, import, test, or formal claim. The controller rejects an unattached `CriticismRecord`; it does not let criticism manufacture its target retrospectively.
 
@@ -42,12 +42,12 @@ Both kinds of change are versioned. Neither kind may mutate the protected author
 | Authority store | Resolve the pinned CR-1.0 identity, locators, source marks, active namespace, and immutable excerpts used in a run. | Cannot amend, paraphrase into authority, or fill an omission. |
 | Problem registrar | Open a precise defect record and bind it to a witnessed case, candidate version, and affected distinctions. | Cannot infer a problem merely from low scores or disagreement. |
 | Conjecture workbench | Hold one or more explicit rival interpretations, model fragments, repair proposals, or mathematical encodings. | Cannot mark its own proposal accepted. |
-| Research broker | Turn a live defect into discriminating, falsifier-first source questions and preserve complete retrieval provenance. | Cannot search for confirmation or aggregate sources into semantic confidence. |
+| Research broker | Turn a selected live criticism into discriminating, falsifier-first source questions and preserve complete retrieval provenance. | Cannot establish that the criticism identifies a defect, search for confirmation, or aggregate sources into semantic confidence. |
 | Claim classifier | Keep source claims, interpretations, project imports, and formal consequences in separate namespaces. | Cannot promote records across namespaces automatically. |
 | Adversary | Propose counterexamples, unintended models, omitted intended cases, causal reversals, and near-neighbour cases. | Cannot decide that its generated case is coherent or relevant. |
 | Test synthesizer | Produce dynamic competency questions, minimal pairs, countermodels, and metamorphic relations from the current distinction graph. | Cannot make a generated expected result authoritative. |
 | Executor | Replay machine-checkable tests, compare artifacts, run solvers or proof kernels, and emit exact traces. | Cannot interpret a semantic outcome or turn a check into acceptance. |
-| Counterexample triage | Determine whether a proposed failure attacks the candidate, an auxiliary, a test construction, a source reading, or nothing coherent. | Machine triage may recommend; final semantic triage belongs to the human reviewer. |
+| Counterexample triage | Preserve concurrent or joint criticisms of the candidate, auxiliaries, test, and scope, with mechanisms, discriminators, and dependencies. | Cannot determine a unique cause; any machine proposal remains a non-operative draft, while published locus assessments and scheduling belong to the human reviewer. |
 | Formal extractor | Propose signatures, definitions, axioms, bridges, countermodels, and theorem statements from a reviewed semantic slice. | Cannot create missing semantics by notation or choose among unresolved readings. |
 | Human semantic oracle | Give scoped dispositions on meaning, intended cases, source readings, imports, test expectations, and candidate revisions. | Is a workflow authority, not an infallible epistemic source; every decision remains revisable and attributable. |
 | Append-only ledger | Bind every artifact, dependency, result, decision, and supersession by identity. | Cannot erase an adverse result or rewrite a prior decision in place. |
@@ -56,7 +56,7 @@ The controller is deliberately thin. It validates state transitions, schedules i
 
 ### Research-provider policy
 
-Contemporary research and discovery use AlphaXiv as the default channel. Consensus is an optional independent cross-check when it can materially test a retrieval, metadata, or interpretation question; it is not a co-equal mandatory source and its absence does not block a run. Any report retained in research-ledger v2 requires inspection of the exact primary-source version; direct primary discovery may bypass AlphaXiv without changing the epistemic boundary.
+Once an exact external action and attack target are published, contemporary discovery uses AlphaXiv as the default channel. Consensus is an optional independent cross-check when it can materially test a retrieval, metadata, or interpretation question; it is not a co-equal mandatory source and its absence does not block a run. Any report retained in research-ledger v2 requires inspection of the exact primary-source version; direct primary discovery may bypass AlphaXiv without changing the epistemic boundary.
 
 Both services are replaceable provider adapters. Provider responses, summaries, relevance rankings, and generated explanations are advisory records only. No provider belongs to the semantic authority boundary, and no provider-specific field may be required by the core `ResearchQuestionRecord`, `EvidenceRecord`, or claim schema. Replacing a provider must change provenance and replay identity without changing claim kind or adjudication authority.
 
@@ -83,29 +83,33 @@ No language model, parser, proof assistant, vote, or passing test can change a c
 | `ResearchQuestionRecord` | Live problem and typed premise references; rival answers; expected discriminator; possible answer classes; what would criticize each rival; admissible source scope; stop condition; query variants; `PROPOSED` status. |
 | `EvidenceRecord` | Exact source identity and locator; bounded extract or paraphrase typed as `SOURCE_AUTHORITY` or `EXTERNAL_SOURCE_REPORT`; retrieval route; context; source status; candidate implications kept as separate typed conjectures; unresolved interpretation. |
 | `CriticismRecord` | Targeted typed conjecture; separately typed alleged defect; witness; relevant distinction; dependencies; proposer; triage and human disposition. |
+| `LocusAssessmentRecord` | One content-addressed, human-supplied criticism of the candidate, an auxiliary, a test, the declared scope, or a joint mechanism; relevance, discriminator, dependencies, and uncertainty location; no causal or semantic verdict. |
+| `NextActionRecord` | One nullable scheduling choice over compatible dependency-frontier locus assessments; route intent, reason, and exact research target where applicable; no ranking or closure effect. |
+| `AttackTargetRecord` | One content-addressed issue/warrant/rival/falsifier tuple in the planner-derived review menu; no research authorization until a published external action selects its ID. |
+| `HumanTriageLineage` | One explicitly headed, no-clobber chain of additive v2 triage records and successor claims; loose drafts, forks, and directory order have no routing authority. |
 | `TestRecord` | Test family; source problem; candidate distinction; fixtures or transformations; `PROJECT_IMPORT` construction kind; separate typed basis for the expected preservation or reversal; oracle owner and adjudication state; applicability conditions; version. |
 | `ResultRecord` | Frozen run identity; observed output; mechanical verdicts; semantic verdict if supplied by the human; artifacts; exceptions; links to resulting criticisms. |
 | `RevisionRecord` | Prior and proposed candidate digests; criticism addressed; exact semantic and formal delta; imports added or removed; tests added, changed, retired, passed, and failed. |
 | `DecisionRecord` | Human actor; object decided; disposition; reasons; scope; timestamp; superseded decision if any; unresolved consequences. |
 | `FormalModuleRecord` | Signature, definitions, independent premises, bridge declarations, theorems, countermodels, proof status, semantic-review status, and transitive dependency closure. |
 
-Every record is append-only. Corrections supersede rather than overwrite. Human prose is retained alongside normalized fields because mechanically invalid or incomplete prose may still carry the operative semantic distinction.
+Every record is append-only. Corrections supersede rather than overwrite. In active v2 triage, a successor must preserve every earlier locus assessment byte-for-byte and may only add assessments; same-binding successors can change scheduling, while changed-binding successors must clear it for human reselection. Human prose is retained alongside normalized fields because mechanically invalid or incomplete prose may still carry the operative semantic distinction.
 
 ## Problem-led research protocol
 
 A research run is inadmissible without a live `ProblemRecord`. The broker first conjectures a `ResearchQuestionRecord`; this question is itself open to criticism. The question must identify at least two answers or readings whose consequences for the model differ. It must state what possible finding would count against each rival. A question to which every possible answer leaves the same candidate models admissible is non-discriminating and should be revised or suspended.
 
-The calibration router consumes an issue whose `internal` or `external` classification is supplied as a project-import input subject to human review. It can refuse a warrant for the former and propose a bounded warrant for the latter, but it does not infer from raw failures whether research is needed. The additive Adaptive Inquiry Protocol improves that boundary without pretending to solve it: it binds an exact failed observation, candidate, issue, warrant, evaluator, fixture, run, and research ledger; requires a separately supplied human failure triage; and then reduces the declared disposition and uncertainty location to a workflow route. With no triage it stops at `AWAITING_HUMAN_TRIAGE`, emits no question, and leaves the semantic verdict null. It cannot infer the failure locus or the truth of an `internal`/`external` classification.
+The calibration router consumes an issue whose `internal` or `external` classification is supplied as a project-import input subject to human review. It can refuse a warrant for the former and propose a bounded warrant for the latter, but it does not infer from raw failures whether research is needed. The additive Adaptive Inquiry Protocol improves that boundary without pretending to solve it: it binds an exact failed observation, candidate, issue, warrant, evaluator, fixture, run, and research ledger; requires a published, explicitly headed human-triage lineage; and routes only an explicit scheduling action. With no published triage it stops at `AWAITING_HUMAN_TRIAGE`. With live assessments but no `next_action` it stops at `AWAITING_HUMAN_ACTION_SELECTION`. Both states emit no question and leave the semantic verdict null. The planner's complete attack-target menu grants no authority. A selected external action must identify the exact issue, warrant, and attack-target IDs to investigate; it does not establish that the selected locus caused the failure or that the issue's `internal`/`external` classification is true.
 
 In the target architecture, the broker generates disconfirming searches before any background expansion. Search formulations target contrary passages, changed positions, boundary cases, explicit denials, counterexamples, and alternative terminology. A neutral source search may follow to locate the primary text. The target broker rejects a request such as “find support for definition D”; an admissible replacement asks whether the source excludes a case admitted by D, admits a case excluded by D, or distinguishes terms that D collapses. SMF-0.1 does not yet semantically inspect and reject arbitrary support-seeking issue prose; it only constructs falsifier-first queries from a supplied, structurally eligible issue.
 
 Retrieved material does not flow directly into a model. It first becomes an `EvidenceRecord`, then one or more `SOURCE_AUTHORITY` or `EXTERNAL_SOURCE_REPORT` claims, then competing `SOURCE_INTERPRETATION` records if interpretation is needed. Any source-to-model crossing is represented as an explicit source interpretation or project import. Source quantity is never accumulated into a confidence score.
 
-In the target architecture, a human-adjudicated research episode may end when the declared source scope has been inspected, the discriminator has been answered as far as the material permits, or the question is shown to be non-discriminating. `NO_DECISIVE_SOURCE`, `AMBIGUOUS`, and `QUESTION_DEFECTIVE` are ordinary target outcomes, and none triggers an automatic repair. Protocol v1 cannot authenticate exhaustive scope inspection, so an unsuccessful search remains active rather than manufacturing any such outcome.
+In the target architecture, a human-adjudicated research episode may end when the declared source scope has been inspected, the discriminator has been answered as far as the material permits, or the question is shown to be non-discriminating. `NO_DECISIVE_SOURCE`, `AMBIGUOUS`, and `QUESTION_DEFECTIVE` are ordinary target outcomes, and none triggers an automatic repair. The current protocol cannot authenticate exhaustive scope inspection, so an unsuccessful search remains active rather than manufacturing any such outcome.
 
 ## Dynamic semantic tests
 
-In the target architecture, the suite is generated from the current problem and distinction graph rather than treated as a fixed constitutional checklist. Tests remain conjectures about what would discriminate the intended class. A human may revise or retire a test, but only through a reasoned, append-only decision that preserves its earlier results. SMF-0.1 implements a seed attack vocabulary, deterministic calibration selection, and content-addressed critical questions constructed from the exact falsifier conditions of a human-triaged external issue. General issue discovery, arbitrary model-delta synthesis, and semantic evaluation of generated questions remain future work.
+In the target architecture, the suite is generated from the current problem and distinction graph rather than treated as a fixed constitutional checklist. Tests remain conjectures about what would discriminate the intended class. A human may revise or retire a test, but only through a reasoned, append-only decision that preserves its earlier results. SMF-0.1 implements a seed attack vocabulary, deterministic calibration selection, and content-addressed critical questions constructed from the exact falsifier conditions of a human-selected external research target. General issue discovery, arbitrary model-delta synthesis, and semantic evaluation of generated questions remain future work.
 
 ### Competency questions
 
@@ -129,17 +133,30 @@ A claimed entailment is attacked by searching for a fully typed model satisfying
 
 ## Counterexample triage
 
-Generated counterexamples are not presumed valid. Every proposed counterexample receives one of the following human-reviewable diagnoses.
+Generated counterexamples are not presumed valid, and failure does not choose one cause. If an expected result depends on the conjunction of candidate adequacy (C), acceptable auxiliaries (A), an adequate test (T), and applicable scope (S), then observing the expected result fail licenses at most
 
-| Diagnosis | Meaning | Permitted next move |
+\[
+\neg C \lor \neg A \lor \neg T \lor \neg S.
+\]
+
+That disjunction is inclusive. Several terms can be false together, and one criticism mechanism may cross several terms. Treating the observation as a command to choose exactly one bucket would add information that the test did not supply.
+
+Active v2 triage therefore records one or more live, human-reviewable locus assessments:
+
+| Locus | What the assessment criticizes | Typical work it may motivate |
 |---|---|---|
-| `CANDIDATE_DEFECT` | The case is coherent, falls within declared scope, and the candidate misclassifies it for the alleged reason. | Open a repair problem and preserve the case as a regression candidate. |
-| `AUXILIARY_DEFECT` | The failure depends on a disputable fixture, boundary, source reading, or bridge rather than the targeted semantic clause. | Open the auxiliary as the new problem; do not patch the target automatically. |
-| `TEST_DEFECT` | The pair, transformation, expected relation, or held-fixed conditions are incoherent or non-discriminating. | Revise or retire the test with reasons. |
-| `OUT_OF_SCOPE` | The case is coherent but outside the declared model scope. | Preserve the boundary finding and check whether the scope itself is criticized. |
-| `UNRESOLVED` | More than one diagnosis remains live. | Suspend; no repair or closure follows. |
+| `CANDIDATE` | The proposed semantic clause, distinction, or model class may mishandle the case. | Internal model comparison, countermodel search, or a scoped repair problem. |
+| `AUXILIARY` | A fixture premise, bridge, source reading, held-fixed condition, or other auxiliary may be doing the illicit work. | Inspect or replace that auxiliary before changing the candidate. |
+| `TEST` | The pair, transformation, oracle, or discriminator may be incoherent or non-discriminating. | Repair, replace, or retire the test with reasons while preserving its trace. |
+| `SCOPE` | The declared boundary may exclude the case, or the boundary itself may be under criticism. | Review the boundary explicitly; a scope assessment never vetoes other live loci. |
 
-This triage blocks definition growth driven by spurious or ill-posed counterexamples.
+Each assessment states a concrete mechanism, its relevance, a discriminator that could defeat the criticism, an uncertainty location, dependencies, and scope. It is a criticism candidate, not an established cause. `UNRESOLVED` is the overall epistemic state while any such alternatives remain live; it is not a fifth locus and does not collapse the alternatives.
+
+One nullable `next_action` separates diagnosis from scheduling. It may select one assessment or several compatible dependency-frontier assessments when one piece of work tests a shared mechanism. Every unselected assessment remains live. Selection may follow an upstream dependency, shared work across loci, or explicit human priority among independent fronts. It may not follow confidence, apparent truth, array order, pass counts, source counts, or votes. No selected action leaves the case at `AWAITING_HUMAN_ACTION_SELECTION` rather than allowing the machine to choose.
+
+These judgments become operational only as a published append-only lineage with an explicitly selected terminal head. A loose triage object has no authority. Successors preserve every earlier assessment byte-for-byte and may add new criticisms or reschedule work; a binding-changing successor must declare the change and clear the old action. This prevents a rewritten diagnosis, a hidden fork, or an action chosen for an old case from controlling the new one.
+
+This plural triage blocks definition growth driven by spurious or ill-posed counterexamples without pretending that scheduling one investigation has explained the failure.
 
 ## Semantic ratchet
 
@@ -163,13 +180,13 @@ Language models may not adjudicate source meaning, set the expected semantic lab
 
 An LLM judge may be used for inexpensive triage only if its output is clearly advisory and sampled items reach human review. Its accept/reject token never enters the semantic ratchet as a decision.
 
-Research providers obey the same boundary. AlphaXiv is the default contemporary discovery channel and Consensus may independently cross-check selected questions, but neither is an oracle. Both are modular adapters whose outputs must be traced to inspected primary material before a source claim is retained.
+Research providers obey the same boundary. AlphaXiv is the default contemporary discovery channel only after a published external action selects exact attack-target IDs, and Consensus may independently cross-check those selected questions. Neither is an oracle. Both are modular adapters whose outputs must be traced to inspected primary material before a source claim is retained.
 
 ## Human semantic oracle
 
 “Oracle” names a role in the engineering workflow, not an infallible person or source of justified certainty. The human reviewer owns decisions that require understanding what a source passage means, why a distinction matters, whether a case is intended, whether a criticism bears on the stated problem, and whether a new import is indispensable. The reviewer may accept, reject, reframe, or suspend, and may later criticize any prior decision.
 
-The harness must always present the exact candidate, its alternatives, the strongest outstanding criticism, the semantic delta, affected tests, source locators, and formal consequences before requesting a disposition. It must permit free prose alongside any structured choice. Silence, timeout, model consensus, test success, or resource exhaustion leaves the mechanical run at `AWAITING_HUMAN`; it never fabricates the human disposition `SUSPEND_JUDGMENT` and never implies acceptance.
+The harness must always present the exact candidate, its alternatives, all live locus assessments and their dependencies, the semantic delta, affected tests, source locators, and formal consequences before requesting a disposition or scheduling choice. It must permit free prose alongside any structured choice. Silence, timeout, model consensus, test success, or resource exhaustion leaves the mechanical run awaiting the human; it never fabricates a diagnosis, a `next_action`, or the human disposition `SUSPEND_JUDGMENT`, and never implies acceptance.
 
 ## Mathematical extraction
 
@@ -181,7 +198,9 @@ Where the semantic model remains underdetermined, the extractor emits rival modu
 
 ## Iteration protocol
 
-Each forge iteration freezes an authority digest, candidate digest, live problem, rival conjectures, research scope, test versions, tool versions, model configurations, prompts, and supplied human decisions. It executes applicable mechanical checks, presents semantic cases for human triage, and conditionally routes bounded research or adversarial generation only when the corresponding gate is discharged. It then produces a version-to-version delta. The iteration ends only in a human disposition or an explicit unresolved suspension.
+Each forge iteration freezes an authority digest, candidate digest, live problem, rival conjectures, research scope, test versions, tool versions, model configurations, prompts, and supplied human decisions. It executes applicable mechanical checks, presents semantic cases for plural human triage, and conditionally routes bounded research or adversarial generation only through an explicit `next_action`. It then produces a version-to-version delta. Acting on one frontier leaves every other live assessment visible in the next problem situation. The iteration ends only in a human disposition or an explicit unresolved suspension.
+
+Operationally, `next_action` means the action in the explicitly selected, verified terminal triage record; an unpublished draft or nonterminal record is not a supplied human decision.
 
 The next iteration begins from the new problem situation, not from a numerical reward. One semantic mechanism should change at a time where separability is possible. Where several clauses share one defect mechanism and must change together, the revision records that coupling and provides deletion tests for each part.
 
@@ -210,8 +229,10 @@ No combination of mechanical statuses produces semantic closure. There is no aut
 
 ## SMF-0.1 implementation boundary
 
-The first implementation provides immutable authority resolution, strict issue, rival, warrant, challenge, hardening, and readiness records, fourteen seed challenge constructors, an open defect-family key for newly constructed challenges, and one deterministic calibration run. It also provides a digest-bound external-research ledger and an additive inquiry protocol with exact human-triage records, content-addressed falsifier questions, a fail-closed route reducer, and append-only no-clobber question events. The seed constructors are an attack vocabulary, not a complete or constitutional checklist. General issue/model-delta synthesis and ledger-backed human semantic-decision resolution remain subsequent implementation work. The implementation uses CR-1.0's existing source and dependency records rather than inventing a parallel authority map.
+The first implementation provides immutable authority resolution, strict issue, rival, warrant, challenge, hardening, and readiness records, fourteen seed challenge constructors, an open defect-family key for newly constructed challenges, and one deterministic calibration run. It also provides a digest-bound external-research ledger and an additive inquiry protocol with exact plural human-triage records, a separate scheduling action, content-addressed falsifier questions, a fail-closed route reducer, and append-only no-clobber question events. Active v2 records preserve concurrent and joint locus criticisms; the exclusive v1 schemas and records remain immutable historical evidence. The seed constructors are an attack vocabulary, not a complete or constitutional checklist. General issue/model-delta synthesis and ledger-backed human semantic-decision resolution remain subsequent implementation work. The implementation uses CR-1.0's existing source and dependency records rather than inventing a parallel authority map.
 
-SMF-0.1 is successful as an engineering artifact if it can mechanically reproduce the declared fixture equalities and erasure invariance, propose the corresponding conditional criticisms without adjudicating them, keep internal work out of external research, construct a falsifier-first AlphaXiv warrant only for a decision-relevant external issue, preserve the source/report/interpretation/import/consequence boundary, and terminate awaiting a human decision. Its adaptive layer must additionally refuse to invent triage, bind every proposed question to the exact criticism candidate, and treat research as criticism-generating workflow input only. That success shows that the forge executes its declared discipline. It does not establish that the fixture is an in-scope defect, that a supplied classification is correct, that the proposed oracle is correct, that full CR-1.0 admits the same countermodel, or that any repaired semantic model is adequate.
+SMF-0.1 is successful as an engineering artifact if it can mechanically reproduce the declared fixture equalities and erasure invariance, propose the corresponding conditional criticisms without adjudicating them, keep internal work out of external research, construct a falsifier-first AlphaXiv warrant only from a structurally eligible external issue, preserve the source/report/interpretation/import/consequence boundary, and terminate awaiting a human decision. Its adaptive layer must additionally refuse to invent locus assessments or a scheduling action, preserve all live criticisms when one is selected, authorize questions and research only for the exact externally selected action and target, and treat research as criticism-generating workflow input only. That success shows that the forge executes its declared discipline. It does not establish that the fixture is an in-scope defect, that a supplied classification is correct, that the proposed oracle is correct, that full CR-1.0 admits the same countermodel, or that any repaired semantic model is adequate.
+
+The active inquiry slice also publishes triage through a uniquely headed, no-clobber additive lineage; derives a complete but non-authorizing attack-target menu; and contextually revalidates the exact v2 plan, triage head, event head, route, question, and research binding before an event write. Questions and research are authorized only for the selected action and exact attack-target IDs. Unsuffixed v1 records remain validation and replay material only, not new publication or extension targets.
 
 The engineering research behind these choices is recorded in [SMF-0.1 Research Basis](./SMF-0.1_Research_Basis.md). The implemented post-failure routing boundary is specified in [SMF-0.3 Adaptive Inquiry Protocol](./SMF-0.3_Adaptive_Inquiry_Protocol.md).

@@ -16,7 +16,7 @@ For a fixed target-neutral base, the decisive question is whether two incompatib
 
 ## Primitive and role frontier
 
-The “Research trigger” cells below describe candidate conditions under which source or application work could discriminate a live fork. None authorizes research by itself: the exact failure must first receive bound human triage locating an external uncertainty, after which the adaptive gate checks rivals, falsifiers, decision relevance, scope, and a stop condition.
+The “Research trigger” cells below describe candidate conditions under which source or application work could discriminate a live fork. None authorizes research by itself: an additive v2 human triage must first be published and explicitly selected, and its external `next_action` must select exact attack-target IDs from the planner's non-authorizing menu. Only then does the adaptive gate construct questions carrying the selected assessments, rivals, falsifiers, decision relevance, scope, and stop condition.
 
 | Surface | Existing CR-1.0 constraint | Still-admitted counterfeit or ambiguity | Critical minimal pair or question | Research trigger | Strength endangered by a poor repair |
 |---|---|---|---|---|---|
@@ -50,6 +50,8 @@ The forge must reject any transition from repeated instances, survival, citation
 A research question is itself a conjectured criticism opportunity. It is useful only when different possible answers discriminate live rivals or attack a shared premise. A search that finds nothing does not support the queried claim; protocol v1 leaves that question open because it cannot prove exhaustive execution. A failed empirical test criticizes the tested conjunction, including auxiliaries and interpretation, rather than mechanically isolating one theory. Passing a challenge records only `UNREFUTED_BY_THIS_CHALLENGE`.
 
 ## Initial prioritized frontier
+
+Here, the earlier reference to protocol v1 is historical. Active v2 preserves the same nonconfirmation rule: an unsuccessful search leaves its selected question live and supplies no support. Its plural triage also keeps candidate, auxiliary, test, and scope criticisms jointly live until future evidence-bound human workflow treatment; scheduling one does not isolate it as the cause.
 
 The first frontier is implicit determination of the core semantic roles. The forge should seek twin expansions of the same target-neutral history in which `Problem`, `Attempt`, `Criticism`, `UsesReason`, `Authors`, or `K_E` receive incompatible assignments. This directly tests whether the current model does more than name its intended meanings.
 

@@ -491,7 +491,9 @@
             "forge/schema/calibration-run.schema.json",
             "forge/schema/research-ledger.schema.json",
             "forge/schema/adaptive-inquiry.schema.json",
-            "forge/schema/inquiry-event.schema.json"
+            "forge/schema/adaptive-inquiry-v2.schema.json",
+            "forge/schema/inquiry-event.schema.json",
+            "forge/schema/inquiry-event-v2.schema.json"
           ],
           "properties": {
             "src/creib/__init__.py": {
@@ -563,7 +565,13 @@
             "forge/schema/adaptive-inquiry.schema.json": {
               "$ref": "#/$defs/sha256"
             },
+            "forge/schema/adaptive-inquiry-v2.schema.json": {
+              "$ref": "#/$defs/sha256"
+            },
             "forge/schema/inquiry-event.schema.json": {
+              "$ref": "#/$defs/sha256"
+            },
+            "forge/schema/inquiry-event-v2.schema.json": {
               "$ref": "#/$defs/sha256"
             }
           }
@@ -1077,8 +1085,10 @@
       "required": [
         "status",
         "question",
-        "allowed_dispositions",
-        "human_disposition",
+        "allowed_loci",
+        "multiple_loci_may_coexist",
+        "overall_status",
+        "human_triage_record",
         "semantic_verdict"
       ],
       "properties": {
@@ -1088,22 +1098,27 @@
         "question": {
           "$ref": "#/$defs/nonempty_string"
         },
-        "allowed_dispositions": {
+        "allowed_loci": {
           "type": "array",
-          "minItems": 5,
-          "maxItems": 5,
+          "minItems": 4,
+          "maxItems": 4,
           "uniqueItems": true,
           "items": {
             "enum": [
-              "CANDIDATE_DEFECT",
-              "AUXILIARY_DEFECT",
-              "TEST_DEFECT",
-              "OUT_OF_SCOPE",
-              "UNRESOLVED"
+              "CANDIDATE",
+              "AUXILIARY",
+              "TEST",
+              "SCOPE"
             ]
           }
         },
-        "human_disposition": {
+        "multiple_loci_may_coexist": {
+          "const": true
+        },
+        "overall_status": {
+          "const": "UNRESOLVED"
+        },
+        "human_triage_record": {
           "type": "null"
         },
         "semantic_verdict": {

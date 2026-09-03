@@ -235,6 +235,16 @@ class SemanticForgeCalibrationTests(unittest.TestCase):
         self.assertEqual(report["review_status"], "AWAITING_HUMAN")
         self.assertIsNone(report["semantic_verdict"])
         self.assertIsNone(report["human_disposition"])
+        human_review = report["human_review"]
+        self.assertEqual(
+            human_review["allowed_loci"],
+            ["CANDIDATE", "AUXILIARY", "TEST", "SCOPE"],
+        )
+        self.assertIs(human_review["multiple_loci_may_coexist"], True)
+        self.assertEqual(human_review["overall_status"], "UNRESOLVED")
+        self.assertIsNone(human_review["human_triage_record"])
+        self.assertNotIn("allowed_dispositions", human_review)
+        self.assertNotIn("human_disposition", human_review)
         self.assertIsNone(report["research_routing"]["internal_erasure_warrant"])
         self.assertEqual(
             report["research_routing"]["external_role_warrant"]["discovery_channels"],
