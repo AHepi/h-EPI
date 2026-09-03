@@ -1,0 +1,575 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ahepi.example/smf/0.1/corpus.schema.json",
+  "title": "SMF-0.1 semantic forge corpus",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "corpus_id",
+    "title",
+    "authority",
+    "epistemic_policy",
+    "research_policy",
+    "challenges",
+    "challenge_annotations",
+    "research_issues",
+    "research_issue_annotations"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "../schema/corpus.schema.json"
+    },
+    "schema_version": {
+      "const": "smf-corpus-0.1"
+    },
+    "corpus_id": {
+      "type": "string",
+      "pattern": "^SMF-CORPUS-[A-Z0-9][A-Z0-9-]{0,116}$"
+    },
+    "title": {
+      "$ref": "#/$defs/nonempty_string"
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "document_id",
+        "sha256",
+        "byte_length",
+        "physical_pdf_pages",
+        "semantic_and_formal_authority",
+        "supplied_externally"
+      ],
+      "properties": {
+        "document_id": {
+          "const": "CR-1.0"
+        },
+        "sha256": {
+          "const": "08ff81e848fea976b558345402d85723173be8f40f1041fb00d6267f1e026b8b"
+        },
+        "byte_length": {
+          "const": 1734769
+        },
+        "physical_pdf_pages": {
+          "const": 286
+        },
+        "semantic_and_formal_authority": {
+          "const": true
+        },
+        "supplied_externally": {
+          "const": true
+        }
+      }
+    },
+    "epistemic_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claim_kind_meanings",
+        "research_role",
+        "passing_tests_confirms",
+        "failed_test_targets_whole_conjunction",
+        "unresolved_is_not_false",
+        "frequency_or_consensus_can_promote_authority"
+      ],
+      "properties": {
+        "claim_kind_meanings": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source_authority",
+            "external_source_report",
+            "source_interpretation",
+            "project_import",
+            "formal_consequence"
+          ],
+          "properties": {
+            "source_authority": {
+              "const": "A claim stated by the digest-bound CR-1.0 authority; this corpus only points to it and does not replace it."
+            },
+            "external_source_report": {
+              "const": "A bounded report about a non-CR primary or engineering source; it has no CR-1.0 authority and cannot enter the model without a typed bridge."
+            },
+            "source_interpretation": {
+              "const": "A contestable reading of one or more CR-1.0 regions that remains subordinate to the PDF."
+            },
+            "project_import": {
+              "const": "An operator or harness rule not asserted as CR-1.0 authority and never to be laundered into the source."
+            },
+            "formal_consequence": {
+              "const": "A consequence of stated formal premises or a paired-model construction, conditional on those premises and their interpretation."
+            }
+          }
+        },
+        "research_role": {
+          "const": "generate_and_sharpen_criticism_not_confirm_the_model"
+        },
+        "passing_tests_confirms": {
+          "const": false
+        },
+        "failed_test_targets_whole_conjunction": {
+          "const": true
+        },
+        "unresolved_is_not_false": {
+          "const": true
+        },
+        "frequency_or_consensus_can_promote_authority": {
+          "const": false
+        }
+      }
+    },
+    "research_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "preferred_discovery_channels",
+        "provider_replaceable",
+        "falsifier_first",
+        "provider_output_is_oracle"
+      ],
+      "properties": {
+        "preferred_discovery_channels": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonempty_string"
+          }
+        },
+        "provider_replaceable": {
+          "const": true
+        },
+        "falsifier_first": {
+          "const": true
+        },
+        "provider_output_is_oracle": {
+          "const": false
+        }
+      }
+    },
+    "challenges": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "challenge.schema.json"
+      }
+    },
+    "challenge_annotations": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/annotation"
+      }
+    },
+    "research_issues": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "research-issue.schema.json"
+      }
+    },
+    "research_issue_annotations": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/issue_annotation"
+      }
+    }
+  },
+  "$defs": {
+    "nonempty_string": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": ".*\\S.*"
+    },
+    "annotation_basis_kind": {
+      "type": "string",
+      "enum": [
+        "source_authority",
+        "source_interpretation",
+        "project_import"
+      ]
+    },
+    "authority_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reference_id",
+        "source_record_ids",
+        "locator",
+        "physical_pdf_pages",
+        "use"
+      ],
+      "properties": {
+        "reference_id": {
+          "type": "string",
+          "enum": [
+            "CR1REF:SMF-CH-ANTI-INDUCTION-001:AUTHORITATIVE:01",
+            "CR1REF:SMF-CH-CONJECTURE-BEFORE-CRITICISM-001:RELATED:01",
+            "CR1REF:SMF-CH-CRITICISM-VS-SCORE-001:AUTHORITATIVE:01",
+            "CR1REF:SMF-CH-CRITICISM-VS-SCORE-001:RELATED:01",
+            "CR1REF:SMF-CH-PROBLEM-ATTENTION-VALUE-001:RELATED:01",
+            "CR1REF:SMF-CH-AUTHORSHIP-VS-OUTPUT-001:AUTHORITATIVE:01",
+            "CR1REF:SMF-CH-AUTHORSHIP-VS-OUTPUT-001:RELATED:01",
+            "CR1REF:SMF-CH-SUSPEND-UNRESOLVED-001:RELATED:01",
+            "CR1REF:SMF-CH-OVERLAPPING-EPISODES-001:RELATED:01",
+            "CR1REF:SMF-CH-FINITE-HISTORY-DISPOSITION-001:AUTHORITATIVE:01",
+            "CR1REF:SMF-CH-FINITE-HISTORY-DISPOSITION-001:RELATED:01",
+            "CR1REF:SMF-CH-ROLE-RELABEL-TWIN-001:AUTHORITATIVE:01",
+            "CR1REF:SMF-CH-SEMANTIC-PHYSICAL-MAPPING-001:AUTHORITATIVE:01",
+            "CR1REF:SMF-RI-ATTENTION-REALIZATION-001:RELATED:01",
+            "CR1REF:SMF-RI-CONJECTURE-PRECEDENCE-001:RELATED:01",
+            "CR1REF:SMF-RI-SUSPENSION-STATE-001:RELATED:01",
+            "CR1REF:SMF-RI-EPISODE-OVERLAP-001:RELATED:01",
+            "CR1REF:SMF-RI-AUTHORSHIP-CREDIT-001:AUTHORITATIVE:01",
+            "CR1REF:SMF-RI-DISPOSITION-EVIDENCE-001:AUTHORITATIVE:01",
+            "CR1REF:SMF-RI-ROLE-REALIZATION-001:AUTHORITATIVE:01",
+            "CR1REF:SMF-RI-SEMANTIC-PHYSICAL-BRIDGE-001:AUTHORITATIVE:01",
+            "CR1REF:SMF-RI-ANTIINDUCTIVE-PRIORITY-001:RELATED:01",
+            "CR1REF:SMF-RI-EXPLANATION-INTERPRETATION-001:AUTHORITATIVE:01"
+          ]
+        },
+        "source_record_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "LANGUAGE-1.1",
+              "TY-3",
+              "MS-4",
+              "MS-5",
+              "SC-2",
+              "SC-3",
+              "SC-4",
+              "SC-5",
+              "SC-6",
+              "SC-8",
+              "DF-1",
+              "DF-5",
+              "DF-6",
+              "DF-7",
+              "DF-7a",
+              "DF-11",
+              "DF-12",
+              "DF-13",
+              "DF-22",
+              "DF-23",
+              "DP-1",
+              "DP-2",
+              "DP-3",
+              "DP-4",
+              "DP-5",
+              "BR-1",
+              "BR-2",
+              "BR-3",
+              "BR-4",
+              "BR-5",
+              "BR-6",
+              "BR-7",
+              "BR-8",
+              "TH-7",
+              "TH-9",
+              "TH-12",
+              "TH-14"
+            ]
+          }
+        },
+        "locator": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "physical_pdf_pages": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 286
+          }
+        },
+        "use": {
+          "$ref": "#/$defs/nonempty_string"
+        }
+      }
+    },
+    "source_basis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "authority_sha256",
+        "authoritative_refs",
+        "related_authority_refs",
+        "boundary_note"
+      ],
+      "properties": {
+        "authority_sha256": {
+          "const": "08ff81e848fea976b558345402d85723173be8f40f1041fb00d6267f1e026b8b"
+        },
+        "authoritative_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/authority_ref"
+          }
+        },
+        "related_authority_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/authority_ref"
+          }
+        },
+        "boundary_note": {
+          "$ref": "#/$defs/nonempty_string"
+        }
+      }
+    },
+    "annotation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_id",
+        "title",
+        "annotation_prose_status",
+        "annotation_prose_semantic_effect",
+        "construction_kind",
+        "basis_kind",
+        "source_basis",
+        "oracle_status",
+        "tags"
+      ],
+      "properties": {
+        "record_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+        },
+        "title": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "annotation_prose_status": {
+          "const": "unreviewed_non_authoritative"
+        },
+        "annotation_prose_semantic_effect": {
+          "const": "none"
+        },
+        "construction_kind": {
+          "const": "project_import"
+        },
+        "basis_kind": {
+          "$ref": "#/$defs/annotation_basis_kind"
+        },
+        "source_basis": {
+          "$ref": "#/$defs/source_basis"
+        },
+        "oracle_status": {
+          "type": "string",
+          "enum": [
+            "source_scoped",
+            "interpretation_provisional",
+            "project_import_provisional"
+          ]
+        },
+        "tags": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,127}$"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "basis_kind": {
+                "const": "project_import"
+              }
+            },
+            "required": [
+              "basis_kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "source_basis": {
+                "properties": {
+                  "authoritative_refs": {
+                    "maxItems": 0
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "source_basis": {
+                "properties": {
+                  "authoritative_refs": {
+                    "minItems": 1
+                  }
+                }
+              }
+            }
+          }
+        }
+        ,
+        {
+          "if": {
+            "properties": {
+              "basis_kind": {
+                "const": "source_authority"
+              }
+            },
+            "required": [
+              "basis_kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "oracle_status": {
+                "const": "source_scoped"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "basis_kind": {
+                "const": "source_interpretation"
+              }
+            },
+            "required": [
+              "basis_kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "oracle_status": {
+                "const": "interpretation_provisional"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "basis_kind": {
+                "const": "project_import"
+              }
+            },
+            "required": [
+              "basis_kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "oracle_status": {
+                "const": "project_import_provisional"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "issue_annotation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_id",
+        "title",
+        "annotation_prose_status",
+        "annotation_prose_semantic_effect",
+        "construction_kind",
+        "basis_kind",
+        "source_basis",
+        "status",
+        "resolution",
+        "tags"
+      ],
+      "properties": {
+        "record_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+        },
+        "title": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "annotation_prose_status": {
+          "const": "unreviewed_non_authoritative"
+        },
+        "annotation_prose_semantic_effect": {
+          "const": "none"
+        },
+        "construction_kind": {
+          "const": "project_import"
+        },
+        "basis_kind": {
+          "$ref": "#/$defs/annotation_basis_kind"
+        },
+        "source_basis": {
+          "$ref": "#/$defs/source_basis"
+        },
+        "status": {
+          "const": "unresolved"
+        },
+        "resolution": {
+          "type": "null"
+        },
+        "tags": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9_-]{0,127}$"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "basis_kind": {
+                "const": "project_import"
+              }
+            },
+            "required": [
+              "basis_kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "source_basis": {
+                "properties": {
+                  "authoritative_refs": {
+                    "maxItems": 0
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "source_basis": {
+                "properties": {
+                  "authoritative_refs": {
+                    "minItems": 1
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,5 +1,7 @@
 # CR-EIB-0.2 orchestrator handover
 
+> Historical handover. For the current continuation point, use `CR-EIB-0.3_Orchestrator_Handover.md`.
+
 ## Mission and non-negotiable authority boundary
 
 Continue the executable-bridge work for CR-1.0 without confusing a compiled

@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ahepi.example/smf/0.1/research-issue.schema.json",
+  "title": "SMF-0.1 runtime-compatible problem-led research issue",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "issue_id",
+    "question",
+    "unknown_kind",
+    "decision",
+    "decision_relevance",
+    "expected_discriminator",
+    "admissible_source_scope",
+    "stop_condition",
+    "rivals"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "creib.semantic-forge.issue.v1"
+    },
+    "issue_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+    },
+    "question": {
+      "$ref": "#/$defs/nonempty_string"
+    },
+    "unknown_kind": {
+      "const": "external"
+    },
+    "decision": {
+      "$ref": "#/$defs/nonempty_string"
+    },
+    "decision_relevance": {
+      "$ref": "#/$defs/nonempty_string"
+    },
+    "expected_discriminator": {
+      "$ref": "#/$defs/nonempty_string"
+    },
+    "admissible_source_scope": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/nonempty_string"
+      }
+    },
+    "stop_condition": {
+      "$ref": "#/$defs/nonempty_string"
+    },
+    "rivals": {
+      "type": "array",
+      "minItems": 2,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "rival_id",
+          "claim",
+          "falsifier_conditions"
+        ],
+        "properties": {
+          "rival_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+          },
+          "claim": {
+            "$ref": "#/$defs/nonempty_string"
+          },
+          "falsifier_conditions": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "$ref": "#/$defs/nonempty_string"
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "nonempty_string": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": ".*\\S.*"
+    }
+  }
+}

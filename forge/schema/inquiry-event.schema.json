@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ahepi.example/smf/0.2/inquiry-event.schema.json",
+  "title": "SMF append-only inquiry event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "event_id",
+    "ledger_id",
+    "sequence",
+    "previous_event_id",
+    "event_type",
+    "occurred_on",
+    "actor_kind",
+    "question",
+    "from_state",
+    "to_state",
+    "reason_code",
+    "reason",
+    "research_ledger",
+    "research_entry",
+    "research_entry_sha256",
+    "semantic_verdict",
+    "epistemic_effect"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "../schema/inquiry-event.schema.json"
+    },
+    "schema_version": {
+      "const": "creib.semantic-forge.inquiry-event.v1"
+    },
+    "event_id": {
+      "type": "string",
+      "pattern": "^IE:[0-9a-f]{64}$"
+    },
+    "ledger_id": {
+      "const": "SMF-INQUIRY-CR-1-0"
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "previous_event_id": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "pattern": "^IE:[0-9a-f]{64}$"
+        }
+      ]
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "QUESTION_PROPOSED",
+        "QUESTION_ACTIVATED",
+        "RESEARCH_CANDIDATE_RECORDED",
+        "HUMAN_CRITICISM_RETAINED",
+        "HUMAN_NONDISCRIMINATING",
+        "HUMAN_MISFRAMED",
+        "HUMAN_OUT_OF_SCOPE",
+        "MODEL_CHANGED"
+      ]
+    },
+    "occurred_on": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "actor_kind": {
+      "type": "string",
+      "enum": [
+        "MACHINE",
+        "HUMAN",
+        "OPERATOR"
+      ]
+    },
+    "question": {
+      "$ref": "https://ahepi.example/smf/0.2/adaptive-inquiry.schema.json#/$defs/critical_question"
+    },
+    "from_state": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "enum": [
+            "PROPOSED",
+            "ACTIVE",
+            "AWAITING_HUMAN_REVIEW"
+          ]
+        }
+      ]
+    },
+    "to_state": {
+      "type": "string",
+      "enum": [
+        "PROPOSED",
+        "ACTIVE",
+        "AWAITING_HUMAN_REVIEW",
+        "RETIRED_WITH_CRITICISM_CANDIDATE",
+        "RETIRED_NONDISCRIMINATING",
+        "RETIRED_MISFRAMED",
+        "RETIRED_OUT_OF_SCOPE",
+        "STALE_BY_MODEL_CHANGE"
+      ]
+    },
+    "reason_code": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]{0,127}$"
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": ".*\\S.*"
+    },
+    "research_ledger": {
+      "$ref": "https://ahepi.example/smf/0.2/adaptive-inquiry.schema.json#/$defs/research_ledger_binding"
+    },
+    "research_entry": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "https://ahepi.example/smf/0.2/research-ledger.schema.json#/$defs/research_entry"
+        }
+      ]
+    },
+    "research_entry_sha256": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      ]
+    },
+    "semantic_verdict": {
+      "type": "null"
+    },
+    "epistemic_effect": {
+      "const": "MAY_CRITICIZE_OR_ROUTE_WORK_ONLY"
+    }
+  }
+}

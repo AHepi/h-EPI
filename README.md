@@ -51,6 +51,30 @@ To replay only the formal pilot (overall status remains `PARTIAL` without the PD
 python tools/verify_bridge.py --lean
 ```
 
+## Semantic Model Forge (experimental)
+
+`SMF-0.1` is a separate, non-authoritative criticism harness for developing the semantic model class before extracting more mathematics. It does not change the CR-EIB bridge, the pinned authority, or any mapping status. Its research gate starts from a live external unknown, requires rival answers, falsifiers, an expected discriminator, a bounded source scope, and a stop condition, and uses AlphaXiv as the default replaceable discovery channel. Research output can propose criticisms; it cannot confirm a model.
+
+Run the first authority-bound calibration with a lawfully held copy of the exact PDF:
+
+```sh
+PYTHONPATH=src python tools/run_semantic_forge.py first-run \
+  --authority /path/to/Creativity_Semantic_Model_CR-1.0.pdf \
+  --output forge/runs/my-new-calibration.json
+```
+
+The calibration deliberately tests a weak typed-role projection, not CR-1.0 itself. It admits a causally grounded case and a labels-only contrast case, reports `NO_HARDENING` for the fixture's disconnected `RoleGrounded` addition under its finite contract, constructs one falsifier-first warrant using the current AlphaXiv default from a supplied external issue, reports formalization `BLOCKED`, and stops at `AWAITING_HUMAN`.
+
+The additive adaptive-inquiry protocol binds a failed observation to its exact run, candidate, issue, warrant, evaluator, fixture, and research ledger. The ledger binding includes its creation and as-of dates; triage cannot predate ledger creation, and every generated question binds the triage date. Without a separately supplied human failure triage it stops at `AWAITING_HUMAN_TRIAGE`, proposes no research question, and leaves the semantic verdict null. After triage it can construct content-addressed critical questions and route them, but neither a search result nor failure to find one can promote the model. Current-case transitions must address an exact question regenerated from the current inventory; blocked and integration-only routes are non-actionable.
+
+```sh
+PYTHONPATH=src python tools/run_semantic_inquiry.py plan \
+  --run-record forge/runs/SMF-CALIBRATION-CR-1-0-001.4219efce.json \
+  --research-ledger forge/research/SMF-RESEARCH-2026-09-03.json
+```
+
+See the [SMF architecture](docs/forge/SMF-0.1_Architecture.md), [underspecification atlas](docs/forge/SMF-0.1_Underspecification_Atlas.md), [research basis](docs/forge/SMF-0.1_Research_Basis.md), [first run](docs/forge/SMF-0.1_First_Run.md), [mathematical target](docs/forge/SMF-0.2_Mathematical_Target.md), [adaptive inquiry protocol](docs/forge/SMF-0.3_Adaptive_Inquiry_Protocol.md), [current run record](forge/runs/SMF-CALIBRATION-CR-1-0-001.4219efce.json), [current no-triage plan](forge/plans/SMF-AIP-2d589a64.no-triage.json), [research ledger](forge/research/SMF-RESEARCH-2026-09-03.json), and [seed corpus](forge/README.md).
+
 ## Authority and redistribution
 
 The authority PDF itself is intentionally not committed. Its expected digest is recorded in the baseline and bridge evidence. Local verification requires a lawfully held copy supplied by the operator.

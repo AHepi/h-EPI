@@ -1,0 +1,502 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ahepi.example/smf/0.2/adaptive-inquiry.schema.json",
+  "title": "SMF adaptive inquiry records",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/human_failure_triage"
+    },
+    {
+      "$ref": "#/$defs/inquiry_plan"
+    }
+  ],
+  "$defs": {
+    "nonempty_string": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": ".*\\S.*"
+    },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "domain_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "research_ledger_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ledger_id",
+        "created_on",
+        "as_of_date",
+        "file_sha256",
+        "record_sha256"
+      ],
+      "properties": {
+        "ledger_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "created_on": {
+          "$ref": "#/$defs/date"
+        },
+        "as_of_date": {
+          "$ref": "#/$defs/date"
+        },
+        "file_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "record_sha256": {
+          "$ref": "#/$defs/domain_sha256"
+        }
+      }
+    },
+    "bindings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "run_record_file_sha256",
+        "run_id",
+        "run_contract_sha256",
+        "authority_sha256",
+        "candidate_id",
+        "candidate_contract_sha256",
+        "challenge_id",
+        "challenge_contract_sha256",
+        "fixture_contract_sha256",
+        "evaluator_id",
+        "evaluator_contract_sha256",
+        "observation_pointer",
+        "observation_sha256",
+        "observation_kind",
+        "issue_id",
+        "issue_sha256",
+        "warrant_id",
+        "warrant_sha256",
+        "research_ledger"
+      ],
+      "properties": {
+        "run_record_file_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "run_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "run_contract_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "authority_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "candidate_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "candidate_contract_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "challenge_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "challenge_contract_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "fixture_contract_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "evaluator_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "evaluator_contract_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "observation_pointer": {
+          "const": "/fixture_evaluations/weak_typed_role_projection"
+        },
+        "observation_sha256": {
+          "$ref": "#/$defs/domain_sha256"
+        },
+        "observation_kind": {
+          "const": "CRITICISM_CANDIDATE_NOT_SEMANTIC_VERDICT"
+        },
+        "issue_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "issue_sha256": {
+          "$ref": "#/$defs/domain_sha256"
+        },
+        "warrant_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "warrant_sha256": {
+          "$ref": "#/$defs/domain_sha256"
+        },
+        "research_ledger": {
+          "$ref": "#/$defs/research_ledger_binding"
+        }
+      }
+    },
+    "human_failure_triage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "$schema",
+        "schema_version",
+        "record_type",
+        "triage_id",
+        "created_on",
+        "bindings",
+        "disposition",
+        "uncertainty_location",
+        "reason",
+        "scope",
+        "reviewer_kind",
+        "machine_generated",
+        "epistemic_effect",
+        "can_promote_model",
+        "semantic_verdict"
+      ],
+      "properties": {
+        "$schema": {
+          "const": "../schema/adaptive-inquiry.schema.json"
+        },
+        "schema_version": {
+          "const": "creib.semantic-forge.human-failure-triage.v1"
+        },
+        "record_type": {
+          "const": "human_failure_triage"
+        },
+        "triage_id": {
+          "type": "string",
+          "pattern": "^HT:[0-9a-f]{64}$"
+        },
+        "created_on": {
+          "$ref": "#/$defs/date"
+        },
+        "bindings": {
+          "$ref": "#/$defs/bindings"
+        },
+        "disposition": {
+          "type": "string",
+          "enum": [
+            "CANDIDATE_DEFECT",
+            "AUXILIARY_DEFECT",
+            "TEST_DEFECT",
+            "OUT_OF_SCOPE",
+            "UNRESOLVED"
+          ]
+        },
+        "uncertainty_location": {
+          "type": "string",
+          "enum": [
+            "INTERNAL_DEDUCTION_OR_MODEL_FINDING",
+            "INTERNAL_HARNESS_SPECIFICATION",
+            "CR_AUTHORITY_INTERPRETATION",
+            "EXTERNAL_CRITICAL_INSTRUMENT",
+            "APPLICATION_EMPIRICAL",
+            "UNLOCATED"
+          ]
+        },
+        "reason": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "scope": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "reviewer_kind": {
+          "const": "HUMAN"
+        },
+        "machine_generated": {
+          "const": false
+        },
+        "epistemic_effect": {
+          "const": "WORKFLOW_ROUTING_ONLY"
+        },
+        "can_promote_model": {
+          "const": false
+        },
+        "semantic_verdict": {
+          "type": "null"
+        }
+      }
+    },
+    "search_protocol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "discovery_channels",
+        "default_contemporary_discovery_channel",
+        "direct_primary_source_required",
+        "provider_output_is_oracle",
+        "stop_condition",
+        "not_found_effect"
+      ],
+      "properties": {
+        "discovery_channels": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonempty_string"
+          }
+        },
+        "default_contemporary_discovery_channel": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "direct_primary_source_required": {
+          "const": true
+        },
+        "provider_output_is_oracle": {
+          "const": false
+        },
+        "stop_condition": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "not_found_effect": {
+          "const": "ABSENCE_SUPPLIES_NO_SUPPORT"
+        }
+      }
+    },
+    "critical_question": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "question_id",
+        "case_sha256",
+        "issue_id",
+        "issue_sha256",
+        "warrant_id",
+        "warrant_sha256",
+        "model_binding_sha256",
+        "trigger_observation_sha256",
+        "triage_created_on",
+        "attack_target_id",
+        "rival_id",
+        "rival_claim",
+        "falsifier_condition",
+        "purpose",
+        "query",
+        "expected_discriminator",
+        "decision_relevance",
+        "admissible_source_scope",
+        "search_protocol",
+        "epistemic_limit",
+        "can_confirm_target_semantics",
+        "source_count_can_promote",
+        "provider_agreement_can_promote"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "creib.semantic-forge.critical-question.v1"
+        },
+        "question_id": {
+          "type": "string",
+          "pattern": "^IQ:[0-9a-f]{64}$"
+        },
+        "case_sha256": {
+          "$ref": "#/$defs/domain_sha256"
+        },
+        "issue_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "issue_sha256": {
+          "$ref": "#/$defs/domain_sha256"
+        },
+        "warrant_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "warrant_sha256": {
+          "$ref": "#/$defs/domain_sha256"
+        },
+        "model_binding_sha256": {
+          "$ref": "#/$defs/domain_sha256"
+        },
+        "trigger_observation_sha256": {
+          "$ref": "#/$defs/domain_sha256"
+        },
+        "triage_created_on": {
+          "$ref": "#/$defs/date"
+        },
+        "attack_target_id": {
+          "type": "string",
+          "pattern": "^AT:[0-9a-f]{64}$"
+        },
+        "rival_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "rival_claim": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "falsifier_condition": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "purpose": {
+          "const": "RIVAL_FALSIFIER"
+        },
+        "query": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "expected_discriminator": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "decision_relevance": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "admissible_source_scope": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonempty_string"
+          }
+        },
+        "search_protocol": {
+          "$ref": "#/$defs/search_protocol"
+        },
+        "epistemic_limit": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "can_confirm_target_semantics": {
+          "const": false
+        },
+        "source_count_can_promote": {
+          "const": false
+        },
+        "provider_agreement_can_promote": {
+          "const": false
+        }
+      }
+    },
+    "inquiry_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "$schema",
+        "schema_version",
+        "record_type",
+        "plan_id",
+        "case_sha256",
+        "route",
+        "route_reason",
+        "bindings",
+        "triage",
+        "state_head_event_id",
+        "proposed_questions",
+        "question_state",
+        "semantic_verdict",
+        "epistemic_status",
+        "epistemic_effect",
+        "epistemic_limit"
+      ],
+      "properties": {
+        "$schema": {
+          "const": "../schema/adaptive-inquiry.schema.json"
+        },
+        "schema_version": {
+          "const": "creib.semantic-forge.adaptive-inquiry-plan.v1"
+        },
+        "record_type": {
+          "const": "adaptive_inquiry_plan"
+        },
+        "plan_id": {
+          "type": "string",
+          "pattern": "^AIP:[0-9a-f]{64}$"
+        },
+        "case_sha256": {
+          "$ref": "#/$defs/domain_sha256"
+        },
+        "route": {
+          "type": "string",
+          "enum": [
+            "AWAITING_HUMAN_TRIAGE",
+            "INTERNAL_HARNESS_WORK",
+            "INTERNAL_MODEL_WORK",
+            "AUTHORITY_REVIEW",
+            "OUT_OF_SCOPE",
+            "POLICY_BLOCKED",
+            "EXTERNAL_RESEARCH_REQUIRED",
+            "RESEARCH_IN_PROGRESS",
+            "AWAITING_HUMAN_REVIEW",
+            "INTERNAL_INTEGRATION_REQUIRED",
+            "NO_NEW_RESEARCH_UNDER_CURRENT_PROTOCOL"
+          ]
+        },
+        "route_reason": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "bindings": {
+          "$ref": "#/$defs/bindings"
+        },
+        "triage": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/human_failure_triage"
+            }
+          ]
+        },
+        "state_head_event_id": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "pattern": "^IE:[0-9a-f]{64}$"
+            }
+          ]
+        },
+        "proposed_questions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/critical_question"
+          }
+        },
+        "question_state": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^IQ:[0-9a-f]{64}$"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "enum": [
+              "PROPOSED",
+              "ACTIVE",
+              "AWAITING_HUMAN_REVIEW",
+              "RETIRED_WITH_CRITICISM_CANDIDATE",
+              "RETIRED_NONDISCRIMINATING",
+              "RETIRED_MISFRAMED",
+              "RETIRED_OUT_OF_SCOPE",
+              "STALE_BY_MODEL_CHANGE"
+            ]
+          }
+        },
+        "semantic_verdict": {
+          "type": "null"
+        },
+        "epistemic_status": {
+          "const": "UNRESOLVED"
+        },
+        "epistemic_effect": {
+          "const": "WORKFLOW_ROUTING_ONLY"
+        },
+        "epistemic_limit": {
+          "$ref": "#/$defs/nonempty_string"
+        }
+      }
+    }
+  }
+}

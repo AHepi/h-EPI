@@ -1,0 +1,1115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ahepi.example/smf/0.1/calibration-run.schema.json",
+  "title": "SMF-0.1 deterministic calibration run",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "run_status",
+    "mechanical_status",
+    "epistemic_status",
+    "review_status",
+    "result_scope",
+    "semantic_verdict",
+    "human_disposition",
+    "epistemic_limit",
+    "authority_binding",
+    "corpus_trace",
+    "execution_contract",
+    "fixture_evaluations",
+    "research_routing",
+    "hardening_assessments",
+    "formalization_readiness",
+    "human_review"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "creib.semantic-forge.calibration-run.v1"
+    },
+    "run_id": {
+      "const": "SMF-CALIBRATION-CR-1-0-001"
+    },
+    "run_status": {
+      "const": "RUN_COMPLETE"
+    },
+    "mechanical_status": {
+      "const": "MECHANICALLY_VALID"
+    },
+    "epistemic_status": {
+      "const": "UNRESOLVED"
+    },
+    "review_status": {
+      "const": "AWAITING_HUMAN"
+    },
+    "result_scope": {
+      "const": "NON_AUTHORITATIVE_MECHANICAL_CALIBRATION"
+    },
+    "semantic_verdict": {
+      "type": "null"
+    },
+    "human_disposition": {
+      "type": "null"
+    },
+    "epistemic_limit": {
+      "const": "Survival of criticism leaves a claim unrefuted; pass counts, consensus, and confidence do not justify it."
+    },
+    "authority_binding": {
+      "$ref": "#/$defs/authority_binding"
+    },
+    "corpus_trace": {
+      "$ref": "#/$defs/corpus_trace"
+    },
+    "execution_contract": {
+      "$ref": "#/$defs/execution_contract"
+    },
+    "fixture_evaluations": {
+      "$ref": "#/$defs/fixture_evaluations"
+    },
+    "research_routing": {
+      "$ref": "#/$defs/research_routing"
+    },
+    "hardening_assessments": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "naive_disconnected_revision",
+        "substantive_connected_proposal"
+      ],
+      "properties": {
+        "naive_disconnected_revision": {
+          "$ref": "#/$defs/hardening_assessment"
+        },
+        "substantive_connected_proposal": {
+          "$ref": "#/$defs/hardening_assessment"
+        }
+      }
+    },
+    "formalization_readiness": {
+      "$ref": "#/$defs/formalization_readiness"
+    },
+    "human_review": {
+      "$ref": "#/$defs/human_review"
+    }
+  },
+  "$defs": {
+    "nonempty_string": {
+      "type": "string",
+      "minLength": 1
+    },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "digest_map": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {
+        "$ref": "#/$defs/identifier"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/sha256"
+      }
+    },
+    "string_array": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/nonempty_string"
+      }
+    },
+    "rival": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rival_id",
+        "claim",
+        "falsifier_conditions"
+      ],
+      "properties": {
+        "rival_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "claim": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "falsifier_conditions": {
+          "$ref": "#/$defs/string_array"
+        }
+      }
+    },
+    "issue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "issue_id",
+        "question",
+        "unknown_kind",
+        "decision",
+        "decision_relevance",
+        "rivals",
+        "expected_discriminator",
+        "admissible_source_scope",
+        "stop_condition"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "creib.semantic-forge.issue.v1"
+        },
+        "issue_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "question": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "unknown_kind": {
+          "enum": [
+            "internal",
+            "external",
+            "undecided"
+          ]
+        },
+        "decision": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "decision_relevance": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/nonempty_string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rivals": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/rival"
+          }
+        },
+        "expected_discriminator": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/nonempty_string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "admissible_source_scope": {
+          "$ref": "#/$defs/string_array"
+        },
+        "stop_condition": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/nonempty_string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "research_warrant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "warrant_id",
+        "issue_id",
+        "question",
+        "unknown_kind",
+        "decision",
+        "decision_relevance",
+        "rivals",
+        "expected_discriminator",
+        "admissible_source_scope",
+        "stop_condition",
+        "discovery_channels",
+        "proposal_status",
+        "epistemic_limit"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "creib.semantic-forge.research-warrant.v1"
+        },
+        "warrant_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "issue_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "question": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "unknown_kind": {
+          "const": "external"
+        },
+        "decision": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "decision_relevance": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "rivals": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/rival"
+          }
+        },
+        "expected_discriminator": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "admissible_source_scope": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonempty_string"
+          }
+        },
+        "stop_condition": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "discovery_channels": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonempty_string"
+          }
+        },
+        "proposal_status": {
+          "const": "PROPOSED"
+        },
+        "epistemic_limit": {
+          "const": "Survival of criticism leaves a claim unrefuted; pass counts, consensus, and confidence do not justify it."
+        }
+      }
+    },
+    "authority_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "document_id",
+        "sha256",
+        "byte_length",
+        "physical_pdf_pages",
+        "semantic_authority",
+        "verification_scope"
+      ],
+      "properties": {
+        "status": {
+          "const": "MECHANICALLY_VALID"
+        },
+        "document_id": {
+          "const": "CR-1.0"
+        },
+        "sha256": {
+          "const": "08ff81e848fea976b558345402d85723173be8f40f1041fb00d6267f1e026b8b"
+        },
+        "byte_length": {
+          "const": 1734769
+        },
+        "physical_pdf_pages": {
+          "const": 286
+        },
+        "semantic_authority": {
+          "const": "EXTERNAL_CR_1_0_PDF_ONLY"
+        },
+        "verification_scope": {
+          "const": "PDF identity, byte length, page structure, and pinned source anchors; not a semantic verdict"
+        }
+      }
+    },
+    "corpus_trace": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "corpus_id",
+        "corpus_sha256",
+        "parsed_challenge_ids",
+        "parsed_issue_ids",
+        "challenge_annotation_ids",
+        "issue_annotation_ids",
+        "challenge_annotation_sha256",
+        "issue_annotation_sha256",
+        "selected_challenge",
+        "selected_external_issue"
+      ],
+      "properties": {
+        "corpus_id": {
+          "const": "SMF-CORPUS-CR-1-0-SEED"
+        },
+        "corpus_sha256": {
+          "const": "4219efceb5502aa8b9209884ec1d22533d6eb049277c8ae3354d08e38f7c47a6"
+        },
+        "parsed_challenge_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        },
+        "parsed_issue_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        },
+        "challenge_annotation_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        },
+        "issue_annotation_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/identifier"
+          }
+        },
+        "challenge_annotation_sha256": {
+          "$ref": "#/$defs/digest_map"
+        },
+        "issue_annotation_sha256": {
+          "$ref": "#/$defs/digest_map"
+        },
+        "selected_challenge": {
+          "$ref": "challenge.schema.json"
+        },
+        "selected_external_issue": {
+          "$ref": "research-issue.schema.json"
+        }
+      }
+    },
+    "execution_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "run_id",
+        "corpus_id",
+        "corpus_sha256",
+        "authority_sha256",
+        "challenge_contract_sha256",
+        "fixture_contract_sha256",
+        "candidate_contract_sha256",
+        "naive_revision_contract_sha256",
+        "evaluator_contract_sha256",
+        "implementation_file_sha256",
+        "run_contract_sha256"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "creib.semantic-forge.calibration-contract.v1"
+        },
+        "run_id": {
+          "const": "SMF-CALIBRATION-CR-1-0-001"
+        },
+        "corpus_id": {
+          "const": "SMF-CORPUS-CR-1-0-SEED"
+        },
+        "corpus_sha256": {
+          "const": "4219efceb5502aa8b9209884ec1d22533d6eb049277c8ae3354d08e38f7c47a6"
+        },
+        "authority_sha256": {
+          "const": "08ff81e848fea976b558345402d85723173be8f40f1041fb00d6267f1e026b8b"
+        },
+        "challenge_contract_sha256": {
+          "const": "60eaccc0eff53936740ef063edd332e86dbac0b7bd098b720d6ca90628647b3d"
+        },
+        "fixture_contract_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "candidate_contract_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "naive_revision_contract_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "evaluator_contract_sha256": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "weak_typed_role_projection",
+            "naive_existential_erasure"
+          ],
+          "properties": {
+            "weak_typed_role_projection": {
+              "$ref": "#/$defs/sha256"
+            },
+            "naive_existential_erasure": {
+              "$ref": "#/$defs/sha256"
+            }
+          }
+        },
+        "implementation_file_sha256": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "src/creib/__init__.py",
+            "src/creib/canonical.py",
+            "src/creib/errors.py",
+            "src/creib/evidence.py",
+            "src/creib/models.py",
+            "src/creib/strict_json.py",
+            "src/creib/verify.py",
+            "src/creib/forge/__init__.py",
+            "src/creib/forge/models.py",
+            "src/creib/forge/engine.py",
+            "src/creib/forge/research.py",
+            "src/creib/forge/inquiry.py",
+            "src/creib/forge/schema_validation.py",
+            "src/creib/forge/calibration.py",
+            "tools/run_semantic_forge.py",
+            "tools/run_semantic_inquiry.py",
+            "tools/validate_semantic_forge.py",
+            "forge/schema/challenge.schema.json",
+            "forge/schema/research-issue.schema.json",
+            "forge/schema/corpus.schema.json",
+            "forge/schema/calibration-run.schema.json",
+            "forge/schema/research-ledger.schema.json",
+            "forge/schema/adaptive-inquiry.schema.json",
+            "forge/schema/inquiry-event.schema.json"
+          ],
+          "properties": {
+            "src/creib/__init__.py": {
+              "$ref": "#/$defs/sha256"
+            },
+            "src/creib/canonical.py": {
+              "$ref": "#/$defs/sha256"
+            },
+            "src/creib/errors.py": {
+              "$ref": "#/$defs/sha256"
+            },
+            "src/creib/evidence.py": {
+              "$ref": "#/$defs/sha256"
+            },
+            "src/creib/models.py": {
+              "$ref": "#/$defs/sha256"
+            },
+            "src/creib/strict_json.py": {
+              "$ref": "#/$defs/sha256"
+            },
+            "src/creib/verify.py": {
+              "$ref": "#/$defs/sha256"
+            },
+            "src/creib/forge/__init__.py": {
+              "$ref": "#/$defs/sha256"
+            },
+            "src/creib/forge/models.py": {
+              "$ref": "#/$defs/sha256"
+            },
+            "src/creib/forge/engine.py": {
+              "$ref": "#/$defs/sha256"
+            },
+            "src/creib/forge/research.py": {
+              "$ref": "#/$defs/sha256"
+            },
+            "src/creib/forge/inquiry.py": {
+              "$ref": "#/$defs/sha256"
+            },
+            "src/creib/forge/schema_validation.py": {
+              "$ref": "#/$defs/sha256"
+            },
+            "src/creib/forge/calibration.py": {
+              "$ref": "#/$defs/sha256"
+            },
+            "tools/run_semantic_forge.py": {
+              "$ref": "#/$defs/sha256"
+            },
+            "tools/run_semantic_inquiry.py": {
+              "$ref": "#/$defs/sha256"
+            },
+            "tools/validate_semantic_forge.py": {
+              "$ref": "#/$defs/sha256"
+            },
+            "forge/schema/challenge.schema.json": {
+              "$ref": "#/$defs/sha256"
+            },
+            "forge/schema/research-issue.schema.json": {
+              "$ref": "#/$defs/sha256"
+            },
+            "forge/schema/corpus.schema.json": {
+              "$ref": "#/$defs/sha256"
+            },
+            "forge/schema/calibration-run.schema.json": {
+              "$ref": "#/$defs/sha256"
+            },
+            "forge/schema/research-ledger.schema.json": {
+              "$ref": "#/$defs/sha256"
+            },
+            "forge/schema/adaptive-inquiry.schema.json": {
+              "$ref": "#/$defs/sha256"
+            },
+            "forge/schema/inquiry-event.schema.json": {
+              "$ref": "#/$defs/sha256"
+            }
+          }
+        },
+        "run_contract_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "contract_binding_weak": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evaluator_id",
+        "challenge_contract_sha256",
+        "fixture_contract_sha256",
+        "candidate_contract_sha256",
+        "evaluator_contract_sha256"
+      ],
+      "properties": {
+        "evaluator_id": {
+          "const": "SMF-EVAL-WEAK-ROLE-PROJECTION-001"
+        },
+        "challenge_contract_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "fixture_contract_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "candidate_contract_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "evaluator_contract_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "contract_binding_erasure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evaluator_id",
+        "fixture_contract_sha256",
+        "candidate_contract_sha256",
+        "naive_revision_contract_sha256",
+        "evaluator_contract_sha256"
+      ],
+      "properties": {
+        "evaluator_id": {
+          "const": "SMF-EVAL-NAIVE-EXISTENTIAL-ERASURE-001"
+        },
+        "fixture_contract_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "candidate_contract_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "naive_revision_contract_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "evaluator_contract_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "role_case_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "case_id",
+        "typed_events_present",
+        "typed_role_predicates_present",
+        "system_level_causal_use",
+        "matched_counterfactual_support",
+        "admitted_by_weak_projection"
+      ],
+      "properties": {
+        "case_id": {
+          "enum": [
+            "GROUNDED-ROLE-ASSIGNMENT",
+            "LABELS-ONLY-CONTRAST"
+          ]
+        },
+        "typed_events_present": {
+          "type": "boolean"
+        },
+        "typed_role_predicates_present": {
+          "type": "boolean"
+        },
+        "system_level_causal_use": {
+          "type": "boolean"
+        },
+        "matched_counterfactual_support": {
+          "type": "boolean"
+        },
+        "admitted_by_weak_projection": {
+          "type": "boolean"
+        }
+      }
+    },
+    "weak_evaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "result_scope",
+        "mechanical_status",
+        "semantic_verdict",
+        "candidate_id",
+        "challenge_id",
+        "contract_binding",
+        "candidate_rule",
+        "omitted_authority_constraints",
+        "case_results",
+        "mechanical_observation"
+      ],
+      "properties": {
+        "result_scope": {
+          "const": "NON_AUTHORITATIVE_MECHANICAL_FIXTURE"
+        },
+        "mechanical_status": {
+          "const": "MECHANICALLY_VALID"
+        },
+        "semantic_verdict": {
+          "type": "null"
+        },
+        "candidate_id": {
+          "const": "SMF-FIXTURE-TYPED-ROLE-PROJECTION"
+        },
+        "challenge_id": {
+          "const": "SMF-CH-ROLE-RELABEL-TWIN-001"
+        },
+        "contract_binding": {
+          "$ref": "#/$defs/contract_binding_weak"
+        },
+        "candidate_rule": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "omitted_authority_constraints": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonempty_string"
+          }
+        },
+        "case_results": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "$ref": "#/$defs/role_case_result"
+          }
+        },
+        "mechanical_observation": {
+          "enum": [
+            "BOTH_GROUNDED_AND_LABELS_ONLY_CONTRASTS_ADMITTED",
+            "FIXTURE_DID_NOT_REPRODUCE_EXPECTED_WEAKNESS"
+          ]
+        }
+      }
+    },
+    "admission_map": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "GROUNDED-ROLE-ASSIGNMENT",
+        "LABELS-ONLY-CONTRAST"
+      ],
+      "properties": {
+        "GROUNDED-ROLE-ASSIGNMENT": {
+          "type": "boolean"
+        },
+        "LABELS-ONLY-CONTRAST": {
+          "type": "boolean"
+        }
+      }
+    },
+    "expanded_case_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "case_id",
+        "role_grounded",
+        "admitted_by_naive_revision"
+      ],
+      "properties": {
+        "case_id": {
+          "enum": [
+            "GROUNDED-ROLE-ASSIGNMENT",
+            "LABELS-ONLY-CONTRAST"
+          ]
+        },
+        "role_grounded": {
+          "type": "boolean"
+        },
+        "admitted_by_naive_revision": {
+          "type": "boolean"
+        }
+      }
+    },
+    "erasure_evaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "result_scope",
+        "mechanical_status",
+        "semantic_verdict",
+        "revision_id",
+        "contract_binding",
+        "new_predicate",
+        "new_predicate_connected_to_admission",
+        "expanded_case_results",
+        "baseline_old_language_admission",
+        "existentially_erased_admission",
+        "old_language_result_preserved",
+        "mechanical_observation"
+      ],
+      "properties": {
+        "result_scope": {
+          "const": "NON_AUTHORITATIVE_MECHANICAL_FIXTURE"
+        },
+        "mechanical_status": {
+          "const": "MECHANICALLY_VALID"
+        },
+        "semantic_verdict": {
+          "type": "null"
+        },
+        "revision_id": {
+          "const": "SMF-0.1-VACUOUS-GROUNDING"
+        },
+        "contract_binding": {
+          "$ref": "#/$defs/contract_binding_erasure"
+        },
+        "new_predicate": {
+          "const": "RoleGrounded"
+        },
+        "new_predicate_connected_to_admission": {
+          "const": false
+        },
+        "expanded_case_results": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "$ref": "#/$defs/expanded_case_result"
+          }
+        },
+        "baseline_old_language_admission": {
+          "$ref": "#/$defs/admission_map"
+        },
+        "existentially_erased_admission": {
+          "$ref": "#/$defs/admission_map"
+        },
+        "old_language_result_preserved": {
+          "type": "boolean"
+        },
+        "mechanical_observation": {
+          "enum": [
+            "EXISTENTIAL_ERASURE_CHANGES_NOTHING_IN_FIXTURE",
+            "EXISTENTIAL_ERASURE_CHANGED_THE_FIXTURE"
+          ]
+        }
+      }
+    },
+    "fixture_evaluations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "weak_typed_role_projection",
+        "naive_existential_erasure"
+      ],
+      "properties": {
+        "weak_typed_role_projection": {
+          "$ref": "#/$defs/weak_evaluation"
+        },
+        "naive_existential_erasure": {
+          "$ref": "#/$defs/erasure_evaluation"
+        }
+      }
+    },
+    "attack_target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "target_id",
+        "rival_id",
+        "falsifier_condition",
+        "attack_query"
+      ],
+      "properties": {
+        "target_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "rival_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "falsifier_condition": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "attack_query": {
+          "$ref": "#/$defs/nonempty_string"
+        }
+      }
+    },
+    "research_routing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "execution_boundary",
+        "provider_replaceable",
+        "provider_output_is_oracle",
+        "falsifier_first",
+        "default_discovery_channel",
+        "internal_erasure_issue",
+        "internal_erasure_warrant",
+        "external_role_warrant",
+        "attack_search_targets"
+      ],
+      "properties": {
+        "execution_boundary": {
+          "const": "OUTSIDE_DETERMINISTIC_CORE"
+        },
+        "provider_replaceable": {
+          "const": true
+        },
+        "provider_output_is_oracle": {
+          "const": false
+        },
+        "falsifier_first": {
+          "const": true
+        },
+        "default_discovery_channel": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "internal_erasure_issue": {
+          "$ref": "#/$defs/issue"
+        },
+        "internal_erasure_warrant": {
+          "type": "null"
+        },
+        "external_role_warrant": {
+          "$ref": "#/$defs/research_warrant"
+        },
+        "attack_search_targets": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/attack_target"
+          }
+        }
+      }
+    },
+    "hardening_assessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "assessment_id",
+        "baseline_id",
+        "revision_id",
+        "status",
+        "excluded_countermodels",
+        "resolved_ambiguities",
+        "preserved_dimensions",
+        "new_countermodels",
+        "lost_intended_cases",
+        "weakened_claims",
+        "collapsed_distinctions",
+        "unresolved_criticisms",
+        "research_warrants",
+        "justification_bases",
+        "gain_witness_refs",
+        "preservation_review_refs",
+        "human_decision_refs",
+        "epistemic_limit"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "creib.semantic-forge.hardening-assessment.v1"
+        },
+        "assessment_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "baseline_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "revision_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "status": {
+          "enum": [
+            "HARDENING_UNREFUTED",
+            "NO_HARDENING",
+            "UNRESOLVED"
+          ]
+        },
+        "excluded_countermodels": {
+          "$ref": "#/$defs/string_array"
+        },
+        "resolved_ambiguities": {
+          "$ref": "#/$defs/string_array"
+        },
+        "preserved_dimensions": {
+          "$ref": "#/$defs/string_array"
+        },
+        "new_countermodels": {
+          "$ref": "#/$defs/string_array"
+        },
+        "lost_intended_cases": {
+          "$ref": "#/$defs/string_array"
+        },
+        "weakened_claims": {
+          "$ref": "#/$defs/string_array"
+        },
+        "collapsed_distinctions": {
+          "$ref": "#/$defs/string_array"
+        },
+        "unresolved_criticisms": {
+          "$ref": "#/$defs/string_array"
+        },
+        "research_warrants": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/research_warrant"
+          }
+        },
+        "justification_bases": {
+          "$ref": "#/$defs/string_array"
+        },
+        "gain_witness_refs": {
+          "$ref": "#/$defs/string_array"
+        },
+        "preservation_review_refs": {
+          "$ref": "#/$defs/string_array"
+        },
+        "human_decision_refs": {
+          "$ref": "#/$defs/string_array"
+        },
+        "epistemic_limit": {
+          "const": "Survival of criticism leaves a claim unrefuted; pass counts, consensus, and confidence do not justify it."
+        }
+      }
+    },
+    "formalization_readiness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "report_id",
+        "candidate_id",
+        "status",
+        "unresolved_semantic_roles",
+        "missing_positive_witnesses",
+        "missing_negative_witnesses",
+        "ungrounded_primitives",
+        "undecided_source_forks",
+        "review_record_refs",
+        "advisory",
+        "final",
+        "epistemic_limit"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "creib.semantic-forge.formalization-readiness.v1"
+        },
+        "report_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "candidate_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "status": {
+          "enum": [
+            "BLOCKED",
+            "PROVISIONALLY_READY"
+          ]
+        },
+        "unresolved_semantic_roles": {
+          "$ref": "#/$defs/string_array"
+        },
+        "missing_positive_witnesses": {
+          "$ref": "#/$defs/string_array"
+        },
+        "missing_negative_witnesses": {
+          "$ref": "#/$defs/string_array"
+        },
+        "ungrounded_primitives": {
+          "$ref": "#/$defs/string_array"
+        },
+        "undecided_source_forks": {
+          "$ref": "#/$defs/string_array"
+        },
+        "review_record_refs": {
+          "$ref": "#/$defs/string_array"
+        },
+        "advisory": {
+          "const": true
+        },
+        "final": {
+          "const": false
+        },
+        "epistemic_limit": {
+          "const": "Survival of criticism leaves a claim unrefuted; pass counts, consensus, and confidence do not justify it."
+        }
+      }
+    },
+    "human_review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "question",
+        "allowed_dispositions",
+        "human_disposition",
+        "semantic_verdict"
+      ],
+      "properties": {
+        "status": {
+          "const": "AWAITING_HUMAN"
+        },
+        "question": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "allowed_dispositions": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "CANDIDATE_DEFECT",
+              "AUXILIARY_DEFECT",
+              "TEST_DEFECT",
+              "OUT_OF_SCOPE",
+              "UNRESOLVED"
+            ]
+          }
+        },
+        "human_disposition": {
+          "type": "null"
+        },
+        "semantic_verdict": {
+          "type": "null"
+        }
+      }
+    }
+  }
+}

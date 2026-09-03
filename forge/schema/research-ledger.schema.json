@@ -1,0 +1,257 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ahepi.example/smf/0.2/research-ledger.schema.json",
+  "title": "SMF external research ledger v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema", "schema_version", "ledger_id", "title", "created_on",
+    "as_of_date", "authority_boundary", "provider_policy", "epistemic_policy",
+    "entries", "project_use_proposals", "engineering_decisions",
+    "previous_ledger_sha256", "ledger_sha256"
+  ],
+  "properties": {
+    "$schema": {"const": "../schema/research-ledger.schema.json"},
+    "schema_version": {"const": "creib.semantic-forge.external-research-ledger.v2"},
+    "ledger_id": {"type": "string", "pattern": "^SMF-RESEARCH-[A-Z0-9][A-Z0-9-]*$"},
+    "title": {"$ref": "#/$defs/nonempty_string"},
+    "created_on": {"$ref": "#/$defs/date"},
+    "as_of_date": {"$ref": "#/$defs/date"},
+    "authority_boundary": {"$ref": "#/$defs/authority_boundary"},
+    "provider_policy": {"$ref": "#/$defs/provider_policy"},
+    "epistemic_policy": {"$ref": "#/$defs/epistemic_policy"},
+    "entries": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": {"$ref": "#/$defs/research_entry"}
+    },
+    "project_use_proposals": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": {"$ref": "#/$defs/project_use_proposal"}
+    },
+    "engineering_decisions": {
+      "type": "array", "maxItems": 0, "uniqueItems": true,
+      "items": {"$ref": "#/$defs/engineering_decision"}
+    },
+    "previous_ledger_sha256": {
+      "oneOf": [{"type": "null"}, {"$ref": "#/$defs/sha256"}]
+    },
+    "ledger_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "nonempty_string": {
+      "type": "string", "minLength": 1, "pattern": ".*\\S.*"
+    },
+    "date": {
+      "type": "string", "format": "date", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "authority_boundary": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "target_document_id", "target_sha256",
+        "external_research_semantic_authority", "external_reports_are_target_semantics"
+      ],
+      "properties": {
+        "target_document_id": {"const": "CR-1.0"},
+        "target_sha256": {"const": "08ff81e848fea976b558345402d85723173be8f40f1041fb00d6267f1e026b8b"},
+        "external_research_semantic_authority": {"const": false},
+        "external_reports_are_target_semantics": {"const": false}
+      }
+    },
+    "provider_policy": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "default_contemporary_discovery_provider", "contemporary_from_year",
+        "consensus_role", "providers_replaceable", "direct_primary_source_required",
+        "provider_output_is_oracle"
+      ],
+      "properties": {
+        "default_contemporary_discovery_provider": {"$ref": "#/$defs/nonempty_string"},
+        "contemporary_from_year": {"type": "integer", "minimum": 1900, "maximum": 9999},
+        "consensus_role": {"const": "optional_independent_cross_check"},
+        "providers_replaceable": {"const": true},
+        "direct_primary_source_required": {"const": true},
+        "provider_output_is_oracle": {"const": false}
+      }
+    },
+    "epistemic_policy": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "claim_kind", "research_role", "passing_reports_confirm_model",
+        "frequency_or_citation_count_can_promote", "provider_agreement_can_promote",
+        "inductive_promotion_permitted", "research_can_close_semantic_question"
+      ],
+      "properties": {
+        "claim_kind": {"const": "external_source_report"},
+        "research_role": {"const": "generate_and_sharpen_criticism_not_confirm_the_model"},
+        "passing_reports_confirm_model": {"const": false},
+        "frequency_or_citation_count_can_promote": {"const": false},
+        "provider_agreement_can_promote": {"const": false},
+        "inductive_promotion_permitted": {"const": false},
+        "research_can_close_semantic_question": {"const": false}
+      }
+    },
+    "canonical_source": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "source_kind", "canonical_identifier", "canonical_url", "version",
+        "versioned_url", "publication_year", "as_of_date", "retrieved_on"
+      ],
+      "properties": {
+        "source_kind": {"type": "string", "enum": ["doi", "arxiv"]},
+        "canonical_identifier": {
+          "type": "string",
+          "pattern": "^(doi:10\\.[0-9]{4,9}/\\S+|arXiv:[0-9]{2}(0[1-9]|1[0-2])\\.[0-9]{5})$"
+        },
+        "canonical_url": {
+          "type": "string", "format": "uri",
+          "pattern": "^https://(doi\\.org/|arxiv\\.org/abs/).+$"
+        },
+        "version": {"$ref": "#/$defs/nonempty_string"},
+        "versioned_url": {
+          "type": "string", "format": "uri",
+          "pattern": "^https://(doi\\.org/|arxiv\\.org/abs/).+$"
+        },
+        "publication_year": {"type": "integer", "minimum": 1900, "maximum": 9999},
+        "as_of_date": {"$ref": "#/$defs/date"},
+        "retrieved_on": {"$ref": "#/$defs/date"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"source_kind": {"const": "doi"}}, "required": ["source_kind"]},
+          "then": {"properties": {
+            "canonical_identifier": {"pattern": "^doi:10\\.[0-9]{4,9}/.+$"},
+            "canonical_url": {"pattern": "^https://doi\\.org/10\\.[0-9]{4,9}/.+$"},
+            "versioned_url": {"pattern": "^https://doi\\.org/10\\.[0-9]{4,9}/.+$"}
+          }}
+        },
+        {
+          "if": {"properties": {"source_kind": {"const": "arxiv"}}, "required": ["source_kind"]},
+          "then": {"properties": {
+            "canonical_identifier": {"pattern": "^arXiv:[0-9]{2}(0[1-9]|1[0-2])\\.[0-9]{5}$"},
+            "canonical_url": {"pattern": "^https://arxiv\\.org/abs/[0-9]{2}(0[1-9]|1[0-2])\\.[0-9]{5}$"},
+            "version": {"pattern": "^v[1-9][0-9]*$"},
+            "versioned_url": {"pattern": "^https://arxiv\\.org/abs/[0-9]{2}(0[1-9]|1[0-2])\\.[0-9]{5}v[1-9][0-9]*$"}
+          }}
+        }
+      ]
+    },
+    "primary_inspection": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "locator", "version", "retrieved_on", "inspected_scope",
+        "primary_source_inspected", "preservation_status", "source_artifact_sha256"
+      ],
+      "properties": {
+        "locator": {"type": "string", "format": "uri", "pattern": "^https://"},
+        "version": {"$ref": "#/$defs/nonempty_string"},
+        "retrieved_on": {"$ref": "#/$defs/date"},
+        "inspected_scope": {"$ref": "#/$defs/nonempty_string"},
+        "primary_source_inspected": {"const": true},
+        "preservation_status": {"const": "versioned_locator_and_bounded_report_only"},
+        "source_artifact_sha256": {"type": "null"}
+      }
+    },
+    "discovery": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "provider", "route_kind", "query", "route_locator", "discovered_on",
+        "contemporary", "provider_output_is_oracle"
+      ],
+      "properties": {
+        "provider": {"$ref": "#/$defs/nonempty_string"},
+        "route_kind": {
+          "type": "string",
+          "enum": ["default_contemporary_discovery", "direct_primary_source"]
+        },
+        "query": {"$ref": "#/$defs/nonempty_string"},
+        "route_locator": {"type": "string", "format": "uri", "pattern": "^https://"},
+        "discovered_on": {"$ref": "#/$defs/date"},
+        "contemporary": {"type": "boolean"},
+        "provider_output_is_oracle": {"const": false}
+      },
+      "allOf": [{
+        "if": {"properties": {"provider": {"const": "AlphaXiv"}}, "required": ["provider"]},
+        "then": {"properties": {
+          "route_locator": {"pattern": "^https://(www\\.)?alphaxiv\\.org/"}
+        }}
+      }]
+    },
+    "research_entry": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "entry_id", "title", "canonical_source", "primary_inspection", "discovery",
+        "attacked_harness_question", "falsifier", "claim_kind", "report_scope", "report_author",
+        "bounded_source_report", "report_sha256", "entry_sha256", "limitations",
+        "epistemic_effect", "semantic_authority", "provider_output_is_oracle",
+        "can_confirm_target_semantics", "human_adjudication_status"
+      ],
+      "properties": {
+        "entry_id": {"type": "string", "pattern": "^SMF-RES-[A-Z0-9][A-Z0-9-]*$"},
+        "title": {"$ref": "#/$defs/nonempty_string"},
+        "canonical_source": {"$ref": "#/$defs/canonical_source"},
+        "primary_inspection": {"$ref": "#/$defs/primary_inspection"},
+        "discovery": {"$ref": "#/$defs/discovery"},
+        "attacked_harness_question": {"$ref": "#/$defs/nonempty_string"},
+        "falsifier": {"$ref": "#/$defs/nonempty_string"},
+        "claim_kind": {"const": "external_source_report"},
+        "report_scope": {"const": "source_claims_only"},
+        "report_author": {"const": "SMF_PROJECT"},
+        "bounded_source_report": {"$ref": "#/$defs/nonempty_string"},
+        "report_sha256": {"$ref": "#/$defs/sha256"},
+        "entry_sha256": {"$ref": "#/$defs/sha256"},
+        "limitations": {
+          "type": "array", "minItems": 1, "uniqueItems": true,
+          "items": {"$ref": "#/$defs/nonempty_string"}
+        },
+        "epistemic_effect": {"const": "may_criticize_or_guide_engineering_only"},
+        "semantic_authority": {"const": false},
+        "provider_output_is_oracle": {"const": false},
+        "can_confirm_target_semantics": {"const": false},
+        "human_adjudication_status": {"const": "UNREVIEWED"}
+      }
+    },
+    "project_use_proposal": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "schema_version", "proposal_id", "source_entry_id", "source_entry_sha256",
+        "proposed_use", "rationale", "proposal_status", "epistemic_effect",
+        "semantic_authority", "can_promote_hardening", "proposal_sha256"
+      ],
+      "properties": {
+        "schema_version": {"const": "creib.semantic-forge.project-use-proposal.v1"},
+        "proposal_id": {"type": "string", "pattern": "^SMF-PROP-[A-Z0-9][A-Z0-9-]*$"},
+        "source_entry_id": {"type": "string", "pattern": "^SMF-RES-[A-Z0-9][A-Z0-9-]*$"},
+        "source_entry_sha256": {"$ref": "#/$defs/sha256"},
+        "proposed_use": {"$ref": "#/$defs/nonempty_string"},
+        "rationale": {"$ref": "#/$defs/nonempty_string"},
+        "proposal_status": {"const": "PROPOSED"},
+        "epistemic_effect": {"const": "may_guide_harness_engineering_only"},
+        "semantic_authority": {"const": false},
+        "can_promote_hardening": {"const": false},
+        "proposal_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "engineering_decision": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "schema_version", "decision_id", "proposal_id", "proposal_sha256",
+        "disposition", "rationale", "decided_on", "decision_maker_role",
+        "decision_scope", "semantic_authority", "can_promote_hardening"
+      ],
+      "properties": {
+        "schema_version": {"const": "creib.semantic-forge.engineering-decision.v1"},
+        "decision_id": {"type": "string", "pattern": "^SMF-DEC-[A-Z0-9][A-Z0-9-]*$"},
+        "proposal_id": {"type": "string", "pattern": "^SMF-PROP-[A-Z0-9][A-Z0-9-]*$"},
+        "proposal_sha256": {"$ref": "#/$defs/sha256"},
+        "disposition": {"type": "string", "enum": ["ADOPT", "REJECT", "DEFER"]},
+        "rationale": {"$ref": "#/$defs/nonempty_string"},
+        "decided_on": {"$ref": "#/$defs/date"},
+        "decision_maker_role": {"const": "HUMAN_REVIEWER"},
+        "decision_scope": {"const": "HARNESS_ENGINEERING_ONLY"},
+        "semantic_authority": {"const": false},
+        "can_promote_hardening": {"const": false}
+      }
+    }
+  }
+}
