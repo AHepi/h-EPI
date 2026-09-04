@@ -1,0 +1,307 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ahepi.example/smf/0.4/translation-neutral-model.schema.json",
+  "title": "Semantic Forge neutral semantic model v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "model_id",
+    "supersedes_model_id",
+    "charter_id",
+    "signature_id",
+    "interpretation_ids",
+    "import_ids",
+    "clauses",
+    "open_ports",
+    "semantic_dependency_closure",
+    "theory_projection",
+    "proposal_status",
+    "semantic_verdict",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "creib.semantic-forge.translation-neutral-model.v1"
+    },
+    "model_id": {"$ref": "#/$defs/modelId"},
+    "supersedes_model_id": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/modelId"}
+      ]
+    },
+    "charter_id": {"$ref": "#/$defs/charterId"},
+    "signature_id": {"$ref": "#/$defs/signatureId"},
+    "interpretation_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/interpretationId"},
+      "uniqueItems": true
+    },
+    "import_ids": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/importId"},
+      "uniqueItems": true
+    },
+    "clauses": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/clause"},
+      "uniqueItems": true
+    },
+    "open_ports": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/openPort"},
+      "uniqueItems": true
+    },
+    "semantic_dependency_closure": {"$ref": "#/$defs/dependencyClosure"},
+    "theory_projection": {"$ref": "#/$defs/theoryProjection"},
+    "proposal_status": {"const": "PROPOSED"},
+    "semantic_verdict": {"type": "null"},
+    "provenance": {"$ref": "#/$defs/provenance"}
+  },
+  "$defs": {
+    "prefixedSha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "contentId": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9]*:[0-9a-f]{64}$"
+    },
+    "charterId": {"type": "string", "pattern": "^TCHAR:[0-9a-f]{64}$"},
+    "signatureId": {"type": "string", "pattern": "^TNS:[0-9a-f]{64}$"},
+    "signatureMemberId": {"type": "string", "pattern": "^TNSM:[0-9a-f]{64}$"},
+    "modelId": {"type": "string", "pattern": "^TNM:[0-9a-f]{64}$"},
+    "clauseId": {"type": "string", "pattern": "^TNMC:[0-9a-f]{64}$"},
+    "portId": {"type": "string", "pattern": "^TNMP:[0-9a-f]{64}$"},
+    "interpretationSetId": {"type": "string", "pattern": "^TIS:[0-9a-f]{64}$"},
+    "interpretationId": {"type": "string", "pattern": "^TI:[0-9a-f]{64}$"},
+    "sourceClaimId": {"type": "string", "pattern": "^TSC:[0-9a-f]{64}$"},
+    "importId": {"type": "string", "pattern": "^TIMP:[0-9a-f]{64}$"},
+    "stableKey": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+    },
+    "nonemptyString": {"type": "string", "minLength": 1},
+    "basis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["premise_kind", "record_ids"],
+      "properties": {
+        "premise_kind": {"enum": ["SOURCE_INTERPRETATION", "PROJECT_IMPORT"]},
+        "record_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "oneOf": [
+              {"$ref": "#/$defs/interpretationId"},
+              {"$ref": "#/$defs/importId"}
+            ]
+          },
+          "uniqueItems": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"premise_kind": {"const": "SOURCE_INTERPRETATION"}},
+            "required": ["premise_kind"]
+          },
+          "then": {
+            "properties": {"record_ids": {"items": {"$ref": "#/$defs/interpretationId"}}}
+          }
+        },
+        {
+          "if": {
+            "properties": {"premise_kind": {"const": "PROJECT_IMPORT"}},
+            "required": ["premise_kind"]
+          },
+          "then": {
+            "properties": {"record_ids": {"items": {"$ref": "#/$defs/importId"}}}
+          }
+        }
+      ]
+    },
+    "clause": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "clause_id",
+        "element_key",
+        "kind",
+        "operative_prose",
+        "uses_member_ids",
+        "depends_on_clause_ids",
+        "basis"
+      ],
+      "properties": {
+        "clause_id": {"$ref": "#/$defs/clauseId"},
+        "element_key": {"$ref": "#/$defs/stableKey"},
+        "kind": {
+          "enum": [
+            "PRIMITIVE_CONDITION",
+            "DEFINITION",
+            "CONSTRAINT",
+            "DISTINCTION",
+            "SCOPE_CONDITION",
+            "MODAL_CONDITION",
+            "IDENTITY_CONDITION"
+          ]
+        },
+        "operative_prose": {"$ref": "#/$defs/nonemptyString"},
+        "uses_member_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/signatureMemberId"},
+          "uniqueItems": true
+        },
+        "depends_on_clause_ids": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/clauseId"},
+          "uniqueItems": true
+        },
+        "basis": {"$ref": "#/$defs/basis"}
+      }
+    },
+    "openPort": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "port_id",
+        "question",
+        "affected_member_ids",
+        "affected_clause_ids",
+        "interpretation_set_ids"
+      ],
+      "properties": {
+        "port_id": {"$ref": "#/$defs/portId"},
+        "question": {"$ref": "#/$defs/nonemptyString"},
+        "affected_member_ids": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/signatureMemberId"},
+          "uniqueItems": true
+        },
+        "affected_clause_ids": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/clauseId"},
+          "uniqueItems": true
+        },
+        "interpretation_set_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/interpretationSetId"},
+          "uniqueItems": true
+        }
+      }
+    },
+    "closureMember": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_id", "premise_kind", "role"],
+      "properties": {
+        "record_id": {
+          "oneOf": [
+            {"$ref": "#/$defs/sourceClaimId"},
+            {"$ref": "#/$defs/interpretationId"},
+            {"$ref": "#/$defs/importId"}
+          ]
+        },
+        "premise_kind": {
+          "enum": ["SOURCE_AUTHORITY", "SOURCE_INTERPRETATION", "PROJECT_IMPORT"]
+        },
+        "role": {"enum": ["DIRECT", "TRANSITIVE"]}
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"premise_kind": {"const": "SOURCE_AUTHORITY"}},
+            "required": ["premise_kind"]
+          },
+          "then": {"properties": {"record_id": {"$ref": "#/$defs/sourceClaimId"}}}
+        },
+        {
+          "if": {
+            "properties": {"premise_kind": {"const": "SOURCE_INTERPRETATION"}},
+            "required": ["premise_kind"]
+          },
+          "then": {"properties": {"record_id": {"$ref": "#/$defs/interpretationId"}}}
+        },
+        {
+          "if": {
+            "properties": {"premise_kind": {"const": "PROJECT_IMPORT"}},
+            "required": ["premise_kind"]
+          },
+          "then": {"properties": {"record_id": {"$ref": "#/$defs/importId"}}}
+        }
+      ]
+    },
+    "dependencyClosure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["members", "closure_sha256"],
+      "properties": {
+        "members": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/closureMember"},
+          "uniqueItems": true
+        },
+        "closure_sha256": {"$ref": "#/$defs/prefixedSha256"}
+      }
+    },
+    "theoryProjection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "signature_id",
+        "member_ids",
+        "clause_ids",
+        "theory_record_sha256",
+        "execution_semantics"
+      ],
+      "properties": {
+        "signature_id": {"$ref": "#/$defs/signatureId"},
+        "member_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/signatureMemberId"},
+          "uniqueItems": true
+        },
+        "clause_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/clauseId"},
+          "uniqueItems": true
+        },
+        "theory_record_sha256": {"$ref": "#/$defs/prefixedSha256"},
+        "execution_semantics": {"const": "NONE_V1"}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["producer_kind", "producer_id", "created_at", "generation_record_ids"],
+      "properties": {
+        "producer_kind": {"enum": ["HUMAN", "TOOL", "LLM"]},
+        "producer_id": {"$ref": "#/$defs/nonemptyString"},
+        "created_at": {"type": "string", "format": "date-time"},
+        "generation_record_ids": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/contentId"},
+          "uniqueItems": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"producer_kind": {"const": "LLM"}},
+            "required": ["producer_kind"]
+          },
+          "then": {"properties": {"generation_record_ids": {"minItems": 1}}}
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,201 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ahepi.example/smf/0.4/translation-interpretation-set.schema.json",
+  "title": "Semantic Forge translation interpretation set v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "interpretation_set_id",
+    "supersedes_interpretation_set_id",
+    "charter_id",
+    "graph_id",
+    "question",
+    "source_span_ids",
+    "obligation_ids",
+    "rival_relation",
+    "admissible_branch_sets",
+    "branches",
+    "proposal_status",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "creib.semantic-forge.translation-interpretation-set.v1"
+    },
+    "interpretation_set_id": {"$ref": "#/$defs/interpretationSetId"},
+    "supersedes_interpretation_set_id": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/interpretationSetId"}
+      ]
+    },
+    "charter_id": {"$ref": "#/$defs/charterId"},
+    "graph_id": {"$ref": "#/$defs/graphId"},
+    "question": {"$ref": "#/$defs/nonemptyString"},
+    "source_span_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/spanId"},
+      "uniqueItems": true
+    },
+    "obligation_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/obligationId"},
+      "uniqueItems": true
+    },
+    "rival_relation": {
+      "enum": ["EXCLUSIVE", "OVERLAPPING", "PARTIALLY_COMPATIBLE"]
+    },
+    "admissible_branch_sets": {
+      "type": "array",
+      "minItems": 2,
+      "uniqueItems": true,
+      "items": {
+        "type": "array",
+        "minItems": 1,
+        "uniqueItems": true,
+        "items": {"$ref": "#/$defs/interpretationId"}
+      }
+    },
+    "branches": {
+      "type": "array",
+      "minItems": 2,
+      "items": {"$ref": "#/$defs/branch"},
+      "uniqueItems": true
+    },
+    "proposal_status": {"const": "PROPOSED"},
+    "provenance": {"$ref": "#/$defs/provenance"}
+  },
+  "$defs": {
+    "contentId": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9]*:[0-9a-f]{64}$"
+    },
+    "spanId": {"type": "string", "pattern": "^TSPAN:[0-9a-f]{64}$"},
+    "charterId": {"type": "string", "pattern": "^TCHAR:[0-9a-f]{64}$"},
+    "graphId": {"type": "string", "pattern": "^TOG:[0-9a-f]{64}$"},
+    "obligationId": {"type": "string", "pattern": "^TO:[0-9a-f]{64}$"},
+    "featureId": {"type": "string", "pattern": "^TPF:[0-9a-f]{64}$"},
+    "interpretationSetId": {"type": "string", "pattern": "^TIS:[0-9a-f]{64}$"},
+    "interpretationId": {"type": "string", "pattern": "^TI:[0-9a-f]{64}$"},
+    "stableKey": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+    },
+    "nonemptyString": {"type": "string", "minLength": 1},
+    "modelEffect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "effect_statement", "affected_element_keys"],
+      "properties": {
+        "status": {"enum": ["DECLARED", "UNPROJECTED"]},
+        "effect_statement": {"$ref": "#/$defs/nonemptyString"},
+        "affected_element_keys": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/stableKey"},
+          "uniqueItems": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"status": {"const": "DECLARED"}},
+            "required": ["status"]
+          },
+          "then": {
+            "properties": {"affected_element_keys": {"minItems": 1}}
+          },
+          "else": {
+            "properties": {"affected_element_keys": {"maxItems": 0}}
+          }
+        }
+      ]
+    },
+    "branch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "interpretation_id",
+        "claim_kind",
+        "statement",
+        "source_span_ids",
+        "interpreted_obligation_ids",
+        "preserved_feature_ids",
+        "model_effect",
+        "discriminating_consequences",
+        "falsifier_conditions",
+        "known_loss_risks",
+        "proposal_status"
+      ],
+      "properties": {
+        "interpretation_id": {"$ref": "#/$defs/interpretationId"},
+        "claim_kind": {"const": "SOURCE_INTERPRETATION"},
+        "statement": {"$ref": "#/$defs/nonemptyString"},
+        "source_span_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/spanId"},
+          "uniqueItems": true
+        },
+        "interpreted_obligation_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/obligationId"},
+          "uniqueItems": true
+        },
+        "preserved_feature_ids": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/featureId"},
+          "uniqueItems": true
+        },
+        "model_effect": {"$ref": "#/$defs/modelEffect"},
+        "discriminating_consequences": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/nonemptyString"},
+          "uniqueItems": true
+        },
+        "falsifier_conditions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/nonemptyString"},
+          "uniqueItems": true
+        },
+        "known_loss_risks": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/nonemptyString"},
+          "uniqueItems": true
+        },
+        "proposal_status": {"const": "PROPOSED"}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["producer_kind", "producer_id", "created_at", "generation_record_ids"],
+      "properties": {
+        "producer_kind": {"enum": ["HUMAN", "TOOL", "LLM"]},
+        "producer_id": {"$ref": "#/$defs/nonemptyString"},
+        "created_at": {"type": "string", "format": "date-time"},
+        "generation_record_ids": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/contentId"},
+          "uniqueItems": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"producer_kind": {"const": "LLM"}},
+            "required": ["producer_kind"]
+          },
+          "then": {
+            "properties": {"generation_record_ids": {"minItems": 1}}
+          }
+        }
+      ]
+    }
+  }
+}

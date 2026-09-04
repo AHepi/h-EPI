@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ahepi.example/smf/0.4/hardening-resolution.schema.json",
+  "title": "Semantic Model Forge hardening resolution v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "record_type", "resolution_id", "comparison_id",
+    "comparison_sha256", "status", "obligations", "human_requirements",
+    "effective_live_criticism_ids", "reason_codes",
+    "evidence_inventory_sha256", "decision_inventory_sha256",
+    "result_scope", "final", "semantic_verdict", "epistemic_limit"
+  ],
+  "properties": {
+    "schema_version": {"const": "creib.semantic-forge.hardening-resolution.v1"},
+    "record_type": {"const": "hardening_resolution"},
+    "resolution_id": {"type": "string", "pattern": "^HR:[0-9a-f]{64}$"},
+    "comparison_id": {"type": "string", "pattern": "^HC:[0-9a-f]{64}$"},
+    "comparison_sha256": {"$ref": "#/$defs/digest"},
+    "status": {"enum": ["HARDENING_UNREFUTED", "NO_HARDENING", "UNRESOLVED"]},
+    "obligations": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["obligation_id", "kind", "state", "evidence_ids"],
+        "properties": {
+          "obligation_id": {"type": "string", "pattern": "^HO:[0-9a-f]{64}$"},
+          "kind": {
+            "enum": [
+              "OLD_RESULT_NON_BROADENING", "ROLE_FIBER_NON_BROADENING",
+              "TARGETED_GAIN_OLD_RESULT", "TARGETED_GAIN_ROLE_FIBER",
+              "SUCCESSOR_NON_VACUITY", "POSITIVE_PRESERVATION",
+              "EXCLUSION_PRESERVATION", "CONSEQUENCE_PRESERVATION",
+              "SCOPE_PRESERVATION", "CLAUSE_INDEPENDENCE",
+              "TYPE_DEPENDENCY_PRESERVATION"
+            ]
+          },
+          "state": {"enum": ["WITNESSED", "COUNTERWITNESSED", "INCONCLUSIVE", "MISSING"]},
+          "evidence_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^HE:[0-9a-f]{64}$"}}
+        }
+      }
+    },
+    "human_requirements": {
+      "type": "array", "minItems": 4, "uniqueItems": true,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["requirement_id", "decision_kind", "state", "decision_id"],
+        "properties": {
+          "requirement_id": {"type": "string", "pattern": "^HRQ:[0-9a-f]{64}$"},
+          "decision_kind": {
+            "enum": [
+              "GAIN_RELEVANCE_FOR_SCOPE", "PROTECTION_REGISTRY_FOR_SCOPE",
+              "SCOPE_USE_FOR_COMPARISON", "TYPE_AND_DELTA_CLASSIFICATION",
+              "IMPORT_USE_FOR_SCOPE"
+            ]
+          },
+          "state": {"enum": ["ACCEPT_FOR_DECLARED_SCOPE", "SUSPEND", "COMPARISON_DEFECT", "DEFEATS_HARDENING", "MISSING"]},
+          "decision_id": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^HD:[0-9a-f]{64}$"}]}
+        }
+      }
+    },
+    "effective_live_criticism_ids": {"$ref": "#/$defs/identifier_array"},
+    "reason_codes": {"$ref": "#/$defs/identifier_array"},
+    "evidence_inventory_sha256": {"$ref": "#/$defs/digest"},
+    "decision_inventory_sha256": {"$ref": "#/$defs/digest"},
+    "result_scope": {"const": "DECLARED_COMPARISON_ONLY"},
+    "final": {"const": false},
+    "semantic_verdict": {"type": "null"},
+    "epistemic_limit": {"const": "Survival of criticism leaves a claim unrefuted; pass counts, consensus, and confidence do not justify it."}
+  },
+  "$defs": {
+    "identifier": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,255}$"},
+    "identifier_array": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/identifier"}},
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+  }
+}

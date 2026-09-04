@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ahepi.example/smf/0.4/translation-source-document.schema.json",
+  "title": "Semantic Forge translation source document v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "document_id",
+    "supersedes_document_id",
+    "document_key",
+    "title",
+    "artifact",
+    "structure",
+    "legacy_refs",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "creib.semantic-forge.translation-source-document.v1"
+    },
+    "document_id": {
+      "$ref": "#/$defs/documentId"
+    },
+    "supersedes_document_id": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/documentId"}
+      ]
+    },
+    "document_key": {
+      "$ref": "#/$defs/stableKey"
+    },
+    "title": {
+      "$ref": "#/$defs/nonemptyString"
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["supplied_filename", "media_type", "sha256", "byte_length"],
+      "properties": {
+        "supplied_filename": {"$ref": "#/$defs/nonemptyString"},
+        "media_type": {
+          "enum": ["application/pdf", "text/plain", "text/markdown", "text/html"]
+        },
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "byte_length": {"type": "integer", "minimum": 1}
+      }
+    },
+    "structure": {
+      "oneOf": [
+        {"$ref": "#/$defs/pdfStructure"},
+        {"$ref": "#/$defs/textStructure"}
+      ]
+    },
+    "legacy_refs": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/legacyRef"},
+      "uniqueItems": true
+    },
+    "provenance": {
+      "$ref": "#/$defs/provenance"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "artifact": {
+            "properties": {"media_type": {"const": "application/pdf"}},
+            "required": ["media_type"]
+          }
+        },
+        "required": ["artifact"]
+      },
+      "then": {
+        "properties": {
+          "structure": {
+            "properties": {"kind": {"const": "PDF"}}
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "structure": {
+            "properties": {"kind": {"const": "UTF8_TEXT"}}
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "contentId": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9]*:[0-9a-f]{64}$"
+    },
+    "documentId": {
+      "type": "string",
+      "pattern": "^TDOC:[0-9a-f]{64}$"
+    },
+    "stableKey": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+    },
+    "nonemptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "pdfStructure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "page_count", "encoding"],
+      "properties": {
+        "kind": {"const": "PDF"},
+        "page_count": {"type": "integer", "minimum": 1},
+        "encoding": {"type": "null"}
+      }
+    },
+    "textStructure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "page_count", "encoding"],
+      "properties": {
+        "kind": {"const": "UTF8_TEXT"},
+        "page_count": {"type": "null"},
+        "encoding": {"const": "UTF-8"}
+      }
+    },
+    "legacyRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["namespace", "record_id"],
+      "properties": {
+        "namespace": {"$ref": "#/$defs/nonemptyString"},
+        "record_id": {"$ref": "#/$defs/nonemptyString"}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["producer_kind", "producer_id", "created_at", "generation_record_ids"],
+      "properties": {
+        "producer_kind": {"enum": ["HUMAN", "TOOL", "LLM"]},
+        "producer_id": {"$ref": "#/$defs/nonemptyString"},
+        "created_at": {"type": "string", "format": "date-time"},
+        "generation_record_ids": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/contentId"},
+          "uniqueItems": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"producer_kind": {"const": "LLM"}},
+            "required": ["producer_kind"]
+          },
+          "then": {
+            "properties": {"generation_record_ids": {"minItems": 1}}
+          }
+        }
+      ]
+    }
+  }
+}

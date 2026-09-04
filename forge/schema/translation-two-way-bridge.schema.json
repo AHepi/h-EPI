@@ -1,0 +1,315 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ahepi.example/smf/0.4/translation-two-way-bridge.schema.json",
+  "title": "Semantic Forge two-way translation bridge v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "bridge_id",
+    "supersedes_bridge_id",
+    "charter_id",
+    "graph_id",
+    "signature_id",
+    "model_id",
+    "interpretation_set_ids",
+    "import_ids",
+    "forward_mappings",
+    "reverse_mappings",
+    "translation_deltas",
+    "mapping_status",
+    "semantic_verdict",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "creib.semantic-forge.translation-two-way-bridge.v1"
+    },
+    "bridge_id": {"$ref": "#/$defs/bridgeId"},
+    "supersedes_bridge_id": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/bridgeId"}
+      ]
+    },
+    "charter_id": {"$ref": "#/$defs/charterId"},
+    "graph_id": {"$ref": "#/$defs/graphId"},
+    "signature_id": {"$ref": "#/$defs/signatureId"},
+    "model_id": {"$ref": "#/$defs/modelId"},
+    "interpretation_set_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/interpretationSetId"},
+      "uniqueItems": true
+    },
+    "import_ids": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/importId"},
+      "uniqueItems": true
+    },
+    "forward_mappings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/forwardMapping"},
+      "uniqueItems": true
+    },
+    "reverse_mappings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/reverseMapping"},
+      "uniqueItems": true
+    },
+    "translation_deltas": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/translationDelta"},
+      "uniqueItems": true
+    },
+    "mapping_status": {"const": "PROPOSED"},
+    "semantic_verdict": {"type": "null"},
+    "provenance": {"$ref": "#/$defs/provenance"}
+  },
+  "$defs": {
+    "contentId": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9]*:[0-9a-f]{64}$"
+    },
+    "charterId": {"type": "string", "pattern": "^TCHAR:[0-9a-f]{64}$"},
+    "graphId": {"type": "string", "pattern": "^TOG:[0-9a-f]{64}$"},
+    "obligationId": {"type": "string", "pattern": "^TO:[0-9a-f]{64}$"},
+    "signatureId": {"type": "string", "pattern": "^TNS:[0-9a-f]{64}$"},
+    "signatureMemberId": {"type": "string", "pattern": "^TNSM:[0-9a-f]{64}$"},
+    "modelId": {"type": "string", "pattern": "^TNM:[0-9a-f]{64}$"},
+    "clauseId": {"type": "string", "pattern": "^TNMC:[0-9a-f]{64}$"},
+    "interpretationSetId": {"type": "string", "pattern": "^TIS:[0-9a-f]{64}$"},
+    "interpretationId": {"type": "string", "pattern": "^TI:[0-9a-f]{64}$"},
+    "importId": {"type": "string", "pattern": "^TIMP:[0-9a-f]{64}$"},
+    "bridgeId": {"type": "string", "pattern": "^TBR:[0-9a-f]{64}$"},
+    "forwardMappingId": {"type": "string", "pattern": "^TFM:[0-9a-f]{64}$"},
+    "reverseMappingId": {"type": "string", "pattern": "^TRM:[0-9a-f]{64}$"},
+    "deltaId": {"type": "string", "pattern": "^TDL:[0-9a-f]{64}$"},
+    "nonemptyString": {"type": "string", "minLength": 1},
+    "modelElementId": {
+      "oneOf": [
+        {"$ref": "#/$defs/signatureMemberId"},
+        {"$ref": "#/$defs/clauseId"}
+      ]
+    },
+    "forwardMapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mapping_id",
+        "obligation_id",
+        "model_element_ids",
+        "interpretation_ids",
+        "coverage_claim",
+        "transformation_statement",
+        "back_translation",
+        "comparison",
+        "delta_ids"
+      ],
+      "properties": {
+        "mapping_id": {"$ref": "#/$defs/forwardMappingId"},
+        "obligation_id": {"$ref": "#/$defs/obligationId"},
+        "model_element_ids": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/modelElementId"},
+          "uniqueItems": true
+        },
+        "interpretation_ids": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/interpretationId"},
+          "uniqueItems": true
+        },
+        "coverage_claim": {
+          "enum": ["CLAIMED_EXACT", "PARTIAL", "UNREPRESENTED", "DISPUTED"]
+        },
+        "transformation_statement": {"$ref": "#/$defs/nonemptyString"},
+        "back_translation": {"$ref": "#/$defs/nonemptyString"},
+        "comparison": {
+          "enum": ["EQUIVALENT_CANDIDATE", "WEAKER", "STRONGER", "DIFFERENT", "UNRESOLVED"]
+        },
+        "delta_ids": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/deltaId"},
+          "uniqueItems": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"coverage_claim": {"const": "CLAIMED_EXACT"}},
+            "required": ["coverage_claim"]
+          },
+          "then": {
+            "properties": {
+              "model_element_ids": {"minItems": 1},
+              "interpretation_ids": {"minItems": 1},
+              "comparison": {"const": "EQUIVALENT_CANDIDATE"},
+              "delta_ids": {"maxItems": 0}
+            }
+          },
+          "else": {
+            "properties": {"delta_ids": {"minItems": 1}}
+          }
+        }
+      ]
+    },
+    "reverseMapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mapping_id",
+        "model_element_id",
+        "basis_kind",
+        "basis_ids",
+        "source_obligation_ids",
+        "back_translation",
+        "semantic_effect"
+      ],
+      "properties": {
+        "mapping_id": {"$ref": "#/$defs/reverseMappingId"},
+        "model_element_id": {"$ref": "#/$defs/modelElementId"},
+        "basis_kind": {
+          "enum": ["SOURCE_INTERPRETATION", "PROJECT_IMPORT", "STRUCTURAL_SCAFFOLD"]
+        },
+        "basis_ids": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {"$ref": "#/$defs/interpretationId"},
+              {"$ref": "#/$defs/importId"}
+            ]
+          },
+          "uniqueItems": true
+        },
+        "source_obligation_ids": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/obligationId"},
+          "uniqueItems": true
+        },
+        "back_translation": {"$ref": "#/$defs/nonemptyString"},
+        "semantic_effect": {"enum": ["MEANING_BEARING", "NONE"]}
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"basis_kind": {"const": "SOURCE_INTERPRETATION"}},
+            "required": ["basis_kind"]
+          },
+          "then": {
+            "properties": {
+              "basis_ids": {
+                "minItems": 1,
+                "items": {"$ref": "#/$defs/interpretationId"}
+              },
+              "source_obligation_ids": {"minItems": 1},
+              "semantic_effect": {"const": "MEANING_BEARING"}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {"basis_kind": {"const": "PROJECT_IMPORT"}},
+            "required": ["basis_kind"]
+          },
+          "then": {
+            "properties": {
+              "basis_ids": {
+                "minItems": 1,
+                "items": {"$ref": "#/$defs/importId"}
+              },
+              "source_obligation_ids": {"maxItems": 0},
+              "semantic_effect": {"const": "MEANING_BEARING"}
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {"basis_kind": {"const": "STRUCTURAL_SCAFFOLD"}},
+            "required": ["basis_kind"]
+          },
+          "then": {
+            "properties": {
+              "basis_ids": {"maxItems": 0},
+              "source_obligation_ids": {"maxItems": 0},
+              "semantic_effect": {"const": "NONE"}
+            }
+          }
+        }
+      ]
+    },
+    "translationDelta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "delta_id",
+        "kind",
+        "source_obligation_ids",
+        "model_element_ids",
+        "statement",
+        "consequence",
+        "status"
+      ],
+      "properties": {
+        "delta_id": {"$ref": "#/$defs/deltaId"},
+        "kind": {
+          "enum": [
+            "OMISSION",
+            "ADDITION",
+            "STRENGTHENING",
+            "WEAKENING",
+            "COLLAPSED_DISTINCTION",
+            "SPLIT_DISTINCTION",
+            "MODAL_SHIFT",
+            "SCOPE_SHIFT",
+            "IDENTITY_SHIFT",
+            "DEPENDENCY_SHIFT",
+            "UNRESOLVED"
+          ]
+        },
+        "source_obligation_ids": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/obligationId"},
+          "uniqueItems": true
+        },
+        "model_element_ids": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/modelElementId"},
+          "uniqueItems": true
+        },
+        "statement": {"$ref": "#/$defs/nonemptyString"},
+        "consequence": {"$ref": "#/$defs/nonemptyString"},
+        "status": {"const": "OPEN"}
+      },
+      "anyOf": [
+        {"properties": {"source_obligation_ids": {"minItems": 1}}},
+        {"properties": {"model_element_ids": {"minItems": 1}}}
+      ]
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["producer_kind", "producer_id", "created_at", "generation_record_ids"],
+      "properties": {
+        "producer_kind": {"enum": ["HUMAN", "TOOL", "LLM"]},
+        "producer_id": {"$ref": "#/$defs/nonemptyString"},
+        "created_at": {"type": "string", "format": "date-time"},
+        "generation_record_ids": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/contentId"},
+          "uniqueItems": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"producer_kind": {"const": "LLM"}},
+            "required": ["producer_kind"]
+          },
+          "then": {"properties": {"generation_record_ids": {"minItems": 1}}}
+        }
+      ]
+    }
+  }
+}

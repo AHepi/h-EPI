@@ -1,0 +1,189 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ahepi.example/smf/0.4/hardening-comparison.schema.json",
+  "title": "Semantic Model Forge hardening comparison v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "record_type",
+    "comparison_id",
+    "declared_purpose",
+    "baseline",
+    "successor",
+    "translation_delta_ref",
+    "criticism_state",
+    "target_roles",
+    "signatures",
+    "role_view",
+    "model_domain",
+    "gain",
+    "protections",
+    "necessary_clauses",
+    "imports",
+    "change_inventory",
+    "execution_semantics",
+    "semantic_verdict",
+    "epistemic_limit"
+  ],
+  "properties": {
+    "schema_version": {"const": "creib.semantic-forge.hardening-comparison.v1"},
+    "record_type": {"const": "hardening_comparison"},
+    "comparison_id": {"type": "string", "pattern": "^HC:[0-9a-f]{64}$"},
+    "declared_purpose": {"$ref": "#/$defs/nonempty"},
+    "baseline": {"$ref": "#/$defs/theory_binding"},
+    "successor": {"$ref": "#/$defs/theory_binding"},
+    "translation_delta_ref": {"$ref": "#/$defs/record_ref"},
+    "criticism_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["snapshot_ref", "effective_live_criticism_ids"],
+      "properties": {
+        "snapshot_ref": {"$ref": "#/$defs/record_ref"},
+        "effective_live_criticism_ids": {"$ref": "#/$defs/identifier_array"}
+      }
+    },
+    "target_roles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["registry_id", "registry_sha256", "symbols"],
+      "properties": {
+        "registry_id": {"$ref": "#/$defs/identifier"},
+        "registry_sha256": {"$ref": "#/$defs/digest"},
+        "symbols": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["symbol", "kind", "argument_roles"],
+            "properties": {
+              "symbol": {"$ref": "#/$defs/identifier"},
+              "kind": {"enum": ["RELATION", "FUNCTION", "CONSTANT"]},
+              "argument_roles": {"$ref": "#/$defs/identifier_array"}
+            }
+          }
+        }
+      }
+    },
+    "signatures": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidate_symbols", "old_result_symbols", "control_symbols", "preservation_scope_symbols"],
+      "properties": {
+        "candidate_symbols": {"$ref": "#/$defs/nonempty_identifier_array"},
+        "old_result_symbols": {"$ref": "#/$defs/identifier_array"},
+        "control_symbols": {"$ref": "#/$defs/identifier_array"},
+        "preservation_scope_symbols": {"$ref": "#/$defs/identifier_array"}
+      }
+    },
+    "role_view": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "localization_ref"],
+      "properties": {
+        "kind": {"enum": ["GLOBAL", "HISTORY_LOCAL"]},
+        "localization_ref": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/record_ref"}]}
+      }
+    },
+    "model_domain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "domain_ref"],
+      "properties": {
+        "mode": {"enum": ["NONEXHAUSTIVE_SEARCH", "FINITE_EXHAUSTIVE", "PROOF_DEFINED"]},
+        "domain_ref": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/record_ref"}]}
+      }
+    },
+    "gain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["axis", "bad_old_result_id", "control_base_id", "bad_assignment_id", "keep_assignment_id"],
+      "properties": {
+        "axis": {"enum": ["OLD_RESULT_RESTRICTION", "ROLE_NARROWING"]},
+        "bad_old_result_id": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/identifier"}]},
+        "control_base_id": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/identifier"}]},
+        "bad_assignment_id": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/identifier"}]},
+        "keep_assignment_id": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/identifier"}]}
+      }
+    },
+    "protections": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["positives", "exclusions", "consequences"],
+      "properties": {
+        "positives": {"$ref": "#/$defs/nonempty_ref_array"},
+        "exclusions": {"$ref": "#/$defs/ref_array"},
+        "consequences": {"$ref": "#/$defs/ref_array"}
+      }
+    },
+    "necessary_clauses": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["clause_ref", "defect_witness_ref"],
+        "properties": {
+          "clause_ref": {"$ref": "#/$defs/record_ref"},
+          "defect_witness_ref": {"$ref": "#/$defs/record_ref"}
+        }
+      }
+    },
+    "imports": {"$ref": "#/$defs/ref_array"},
+    "change_inventory": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["change_id", "disposition", "premise_kind", "baseline_ref", "successor_ref", "transport_refs"],
+        "properties": {
+          "change_id": {"$ref": "#/$defs/identifier"},
+          "disposition": {"enum": ["RETAINED", "ADDED", "REMOVED", "REPLACED", "TRANSPORTED"]},
+          "premise_kind": {"enum": ["SOURCE_AUTHORITY", "SOURCE_INTERPRETATION", "PROJECT_IMPORT"]},
+          "baseline_ref": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/record_ref"}]},
+          "successor_ref": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/record_ref"}]},
+          "transport_refs": {"$ref": "#/$defs/ref_array"}
+        }
+      }
+    },
+    "execution_semantics": {"enum": ["NONE_V1", "FINITE_EXHAUSTIVE_V1", "PROOF_CERTIFIED_V1"]},
+    "semantic_verdict": {"type": "null"},
+    "epistemic_limit": {"const": "Survival of criticism leaves a claim unrefuted; pass counts, consensus, and confidence do not justify it."}
+  },
+  "$defs": {
+    "nonempty": {"type": "string", "minLength": 1},
+    "identifier": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,255}$"},
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "identifier_array": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/identifier"}},
+    "nonempty_identifier_array": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/identifier"}},
+    "record_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_id", "schema_version", "record_sha256"],
+      "properties": {
+        "record_id": {"$ref": "#/$defs/identifier"},
+        "schema_version": {"$ref": "#/$defs/identifier"},
+        "record_sha256": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "ref_array": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/record_ref"}},
+    "nonempty_ref_array": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/record_ref"}},
+    "theory_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["snapshot_ref", "review_head_ref", "model_ref", "signature_ref", "theory_record_sha256", "dependency_closure_sha256"],
+      "properties": {
+        "snapshot_ref": {"$ref": "#/$defs/record_ref"},
+        "review_head_ref": {"$ref": "#/$defs/record_ref"},
+        "model_ref": {"$ref": "#/$defs/record_ref"},
+        "signature_ref": {"$ref": "#/$defs/record_ref"},
+        "theory_record_sha256": {"$ref": "#/$defs/digest"},
+        "dependency_closure_sha256": {"$ref": "#/$defs/digest"}
+      }
+    }
+  }
+}

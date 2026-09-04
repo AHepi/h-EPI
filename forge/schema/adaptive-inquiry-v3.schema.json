@@ -1,0 +1,542 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ahepi.example/smf/0.4/adaptive-inquiry-v3.schema.json",
+  "title": "SMF generic adaptive inquiry v3 foundation",
+  "$ref": "#/$defs/inquiry_plan",
+  "$defs": {
+    "nonempty_string": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": ".*\\S.*"
+    },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "domain_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "json_pointer": {
+      "type": "string",
+      "pattern": "^(?:|/(?:[^~/]|~[01])*(?:/(?:[^~/]|~[01])*)*)$"
+    },
+    "authority_binding": {
+      "$ref": "https://ahepi.example/smf/0.4/inquiry-input-v1.schema.json#/$defs/authority_binding"
+    },
+    "component_binding": {
+      "$ref": "https://ahepi.example/smf/0.4/inquiry-input-v1.schema.json#/$defs/component_binding"
+    },
+    "research_basis": {
+      "$ref": "https://ahepi.example/smf/0.4/inquiry-input-v1.schema.json#/$defs/research_basis"
+    },
+    "research_ledger_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ledger_id",
+        "created_on",
+        "as_of_date",
+        "file_sha256",
+        "record_sha256"
+      ],
+      "properties": {
+        "ledger_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "created_on": {
+          "type": "string",
+          "format": "date"
+        },
+        "as_of_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "file_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "record_sha256": {
+          "$ref": "#/$defs/domain_sha256"
+        }
+      }
+    },
+    "input_observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "observation_id",
+        "observation_domain",
+        "adapter_id",
+        "adapter_contract_sha256",
+        "source_record_id",
+        "source_schema_version",
+        "source_record_id_pointer",
+        "source_file_sha256",
+        "source_contract_sha256",
+        "selected_value_pointer",
+        "selected_value_digest_domain",
+        "selected_value_sha256",
+        "observation_kind",
+        "epistemic_effect",
+        "semantic_verdict"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "creib.semantic-forge.input-observation.v1"
+        },
+        "observation_id": {
+          "type": "string",
+          "pattern": "^IO:[0-9a-f]{64}$"
+        },
+        "observation_domain": {
+          "type": "string",
+          "enum": [
+            "HARNESS_TEST",
+            "LEGACY_CALIBRATION",
+            "MATHEMATICAL_EXTRACTION",
+            "ROUND_TRIP",
+            "SEMANTIC_MODEL",
+            "SOURCE_TRANSLATION"
+          ]
+        },
+        "adapter_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "adapter_contract_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "source_record_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "source_schema_version": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "source_record_id_pointer": {
+          "$ref": "#/$defs/json_pointer"
+        },
+        "source_file_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "source_contract_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "selected_value_pointer": {
+          "$ref": "#/$defs/json_pointer"
+        },
+        "selected_value_digest_domain": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "selected_value_sha256": {
+          "$ref": "#/$defs/domain_sha256"
+        },
+        "observation_kind": {
+          "const": "CRITICISM_CANDIDATE_NOT_SEMANTIC_VERDICT"
+        },
+        "epistemic_effect": {
+          "const": "CRITICISM_CANDIDATE_ONLY"
+        },
+        "semantic_verdict": {
+          "type": "null"
+        }
+      }
+    },
+    "case_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "case_binding_id",
+        "authority_bindings",
+        "component_bindings",
+        "observation",
+        "research_basis",
+        "research_ledger"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "creib.semantic-forge.case-binding.v1"
+        },
+        "case_binding_id": {
+          "type": "string",
+          "pattern": "^CB:[0-9a-f]{64}$"
+        },
+        "authority_bindings": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/authority_binding"
+          }
+        },
+        "component_bindings": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/component_binding"
+          }
+        },
+        "observation": {
+          "$ref": "#/$defs/input_observation"
+        },
+        "research_basis": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/research_basis"
+            }
+          ]
+        },
+        "research_ledger": {
+          "$ref": "#/$defs/research_ledger_binding"
+        }
+      }
+    },
+    "locus_assessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "assessment_id",
+        "status",
+        "loci",
+        "mechanism",
+        "relevance",
+        "discriminator",
+        "scope",
+        "uncertainty_location",
+        "depends_on_assessment_ids",
+        "epistemic_effect",
+        "can_establish_unique_cause"
+      ],
+      "properties": {
+        "assessment_id": {
+          "type": "string",
+          "pattern": "^LA:[0-9a-f]{64}$"
+        },
+        "status": {
+          "const": "LIVE"
+        },
+        "loci": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "AUXILIARY",
+              "CANDIDATE",
+              "SCOPE",
+              "TEST"
+            ]
+          }
+        },
+        "mechanism": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "relevance": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "discriminator": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "scope": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "uncertainty_location": {
+          "type": "string",
+          "enum": [
+            "APPLICATION_EMPIRICAL",
+            "CR_AUTHORITY_INTERPRETATION",
+            "EXTERNAL_CRITICAL_INSTRUMENT",
+            "INTERNAL_DEDUCTION_OR_MODEL_FINDING",
+            "INTERNAL_HARNESS_SPECIFICATION",
+            "UNLOCATED"
+          ]
+        },
+        "depends_on_assessment_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^LA:[0-9a-f]{64}$"
+          }
+        },
+        "epistemic_effect": {
+          "const": "CRITICISM_ONLY"
+        },
+        "can_establish_unique_cause": {
+          "const": false
+        }
+      }
+    },
+    "research_target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "case_binding_id",
+        "issue_id",
+        "issue_sha256",
+        "warrant_id",
+        "warrant_sha256",
+        "attack_target_ids"
+      ],
+      "properties": {
+        "case_binding_id": {
+          "type": "string",
+          "pattern": "^CB:[0-9a-f]{64}$"
+        },
+        "issue_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "issue_sha256": {
+          "$ref": "#/$defs/domain_sha256"
+        },
+        "warrant_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "warrant_sha256": {
+          "$ref": "#/$defs/domain_sha256"
+        },
+        "attack_target_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^AT:[0-9a-f]{64}$"
+          }
+        }
+      }
+    },
+    "next_action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "action_id",
+        "selected_assessment_ids",
+        "route_intent",
+        "action",
+        "selection_basis",
+        "reason",
+        "research_target",
+        "epistemic_effect",
+        "can_rank_semantic_truth"
+      ],
+      "properties": {
+        "action_id": {
+          "type": "string",
+          "pattern": "^NA:[0-9a-f]{64}$"
+        },
+        "selected_assessment_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^LA:[0-9a-f]{64}$"
+          }
+        },
+        "route_intent": {
+          "type": "string",
+          "enum": [
+            "AUTHORITY_REVIEW",
+            "EXTERNAL_RESEARCH_REQUIRED",
+            "INTERNAL_HARNESS_WORK",
+            "INTERNAL_MODEL_WORK"
+          ]
+        },
+        "action": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "selection_basis": {
+          "type": "string",
+          "enum": [
+            "INDEPENDENT_HUMAN_PRIORITY",
+            "SHARED_ACTION_FOR_MULTIPLE_LOCI",
+            "UPSTREAM_DEPENDENCY"
+          ]
+        },
+        "reason": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "research_target": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/research_target"
+            }
+          ]
+        },
+        "epistemic_effect": {
+          "const": "SCHEDULING_ONLY"
+        },
+        "can_rank_semantic_truth": {
+          "const": false
+        }
+      }
+    },
+    "attack_target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attack_target_id",
+        "issue_sha256",
+        "warrant_sha256",
+        "rival_id",
+        "rival_claim",
+        "falsifier_condition"
+      ],
+      "properties": {
+        "attack_target_id": {
+          "type": "string",
+          "pattern": "^AT:[0-9a-f]{64}$"
+        },
+        "issue_sha256": {
+          "$ref": "#/$defs/domain_sha256"
+        },
+        "warrant_sha256": {
+          "$ref": "#/$defs/domain_sha256"
+        },
+        "rival_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "rival_claim": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "falsifier_condition": {
+          "$ref": "#/$defs/nonempty_string"
+        }
+      }
+    },
+    "inquiry_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "$schema",
+        "schema_version",
+        "record_type",
+        "plan_id",
+        "case_sha256",
+        "case_binding",
+        "locus_assessments",
+        "live_locus_assessment_ids",
+        "next_action",
+        "selected_action_id",
+        "available_attack_targets",
+        "route",
+        "route_reason",
+        "origin_can_select_locus_or_route",
+        "publication_authority",
+        "epistemic_status",
+        "epistemic_effect",
+        "epistemic_limit",
+        "semantic_verdict"
+      ],
+      "properties": {
+        "$schema": {
+          "const": "../schema/adaptive-inquiry-v3.schema.json"
+        },
+        "schema_version": {
+          "const": "creib.semantic-forge.adaptive-inquiry-plan.v3"
+        },
+        "record_type": {
+          "const": "adaptive_inquiry_plan"
+        },
+        "plan_id": {
+          "type": "string",
+          "pattern": "^AIP:[0-9a-f]{64}$"
+        },
+        "case_sha256": {
+          "$ref": "#/$defs/domain_sha256"
+        },
+        "case_binding": {
+          "$ref": "#/$defs/case_binding"
+        },
+        "locus_assessments": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/locus_assessment"
+          }
+        },
+        "live_locus_assessment_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^LA:[0-9a-f]{64}$"
+          }
+        },
+        "next_action": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/next_action"
+            }
+          ]
+        },
+        "selected_action_id": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "pattern": "^NA:[0-9a-f]{64}$"
+            }
+          ]
+        },
+        "available_attack_targets": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/attack_target"
+          }
+        },
+        "route": {
+          "type": "string",
+          "enum": [
+            "AUTHORITY_REVIEW",
+            "AWAITING_HUMAN_ACTION_SELECTION",
+            "AWAITING_HUMAN_TRIAGE",
+            "EXTERNAL_RESEARCH_REQUIRED",
+            "INTERNAL_HARNESS_WORK",
+            "INTERNAL_MODEL_WORK"
+          ]
+        },
+        "route_reason": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "origin_can_select_locus_or_route": {
+          "const": false
+        },
+        "publication_authority": {
+          "const": false
+        },
+        "epistemic_status": {
+          "const": "UNRESOLVED"
+        },
+        "epistemic_effect": {
+          "const": "WORKFLOW_ROUTING_ONLY"
+        },
+        "epistemic_limit": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "semantic_verdict": {
+          "type": "null"
+        }
+      }
+    }
+  }
+}

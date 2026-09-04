@@ -45,12 +45,39 @@ _RESEARCH_ISSUE_SCHEMA_ID = (
 _RESEARCH_LEDGER_SCHEMA_ID = (
     "https://ahepi.example/smf/0.2/research-ledger.schema.json"
 )
+_TRANSLATION_SCHEMA_IDS = frozenset(
+    {
+        "https://ahepi.example/smf/0.4/translation-source-document.schema.json",
+        "https://ahepi.example/smf/0.4/translation-source-span.schema.json",
+        "https://ahepi.example/smf/0.4/translation-charter.schema.json",
+        "https://ahepi.example/smf/0.4/translation-obligation-graph.schema.json",
+        "https://ahepi.example/smf/0.4/translation-interpretation-set.schema.json",
+        "https://ahepi.example/smf/0.4/translation-neutral-signature.schema.json",
+        "https://ahepi.example/smf/0.4/translation-neutral-model.schema.json",
+        "https://ahepi.example/smf/0.4/translation-project-import.schema.json",
+        "https://ahepi.example/smf/0.4/translation-two-way-bridge.schema.json",
+        "https://ahepi.example/smf/0.4/translation-snapshot.schema.json",
+    }
+)
+_GENERIC_INQUIRY_PLAN_SCHEMA_ID = (
+    "https://ahepi.example/smf/0.4/adaptive-inquiry-v3.schema.json"
+)
+_HARDENING_COMPARISON_SCHEMA_ID = (
+    "https://ahepi.example/smf/0.4/hardening-comparison.schema.json"
+)
+_TRANSLATION_SNAPSHOT_DELTA_SCHEMA_ID = (
+    "https://ahepi.example/smf/0.4/translation-snapshot-delta.schema.json"
+)
 _FULL_RECORD_RUNTIME_SCHEMA_IDS = frozenset(
     {
         _CHALLENGE_SCHEMA_ID,
         _CORPUS_SCHEMA_ID,
         _RESEARCH_ISSUE_SCHEMA_ID,
         _RESEARCH_LEDGER_SCHEMA_ID,
+        _GENERIC_INQUIRY_PLAN_SCHEMA_ID,
+        _HARDENING_COMPARISON_SCHEMA_ID,
+        _TRANSLATION_SNAPSHOT_DELTA_SCHEMA_ID,
+        *_TRANSLATION_SCHEMA_IDS,
     }
 )
 _ANNOTATION_PROSE_STATUS = "unreviewed_non_authoritative"
@@ -480,12 +507,14 @@ class LocalSchemaCatalog:
         )
 
     def has_full_record_runtime_contract(self, schema_name: str) -> bool:
-        """Report whether ``validate`` dispatches a full-record parser.
+        """Report whether ``validate`` dispatches a context-free record check.
 
         Runtime dispatch is keyed by the selected schema's canonical ``$id``,
         not by its local filename.  Keeping this query beside the dispatch
         logic prevents callers from overstating coverage for lookalike custom
-        schemas that reuse a canonical filename.
+        schemas that reuse a canonical filename.  A true result covers every
+        intrinsic invariant implemented by that record family's standalone
+        validator; it does not imply cross-record replay or semantic review.
         """
 
         schemas = self.schemas
@@ -540,6 +569,34 @@ class LocalSchemaCatalog:
             from .research import parse_research_ledger
 
             parse_research_ledger(instance)
+        elif schema_id in _TRANSLATION_SCHEMA_IDS:
+            # These validators check one complete translation record in
+            # isolation.  Snapshot closure, source-byte replay, and two-way
+            # cross-record coverage remain explicit higher-level operations.
+            from .translation import validate_translation_record
+
+            validate_translation_record(instance)
+        elif schema_id == _GENERIC_INQUIRY_PLAN_SCHEMA_ID:
+            # V3 embeds its case binding and deterministically regenerates its
+            # route preview, so its intrinsic contract needs no repository
+            # path or selected external chain head.
+            from .generic_inquiry import validate_generic_inquiry_plan
+
+            validate_generic_inquiry_plan(instance)
+        elif schema_id == _HARDENING_COMPARISON_SCHEMA_ID:
+            # Comparison integrity is self-contained.  Evidence, decisions,
+            # and resolutions deliberately remain schema-only here because
+            # their validators require the bound comparison (and, for human
+            # decisions, the selected evidence inventory).
+            from .hardening import validate_hardening_comparison
+
+            validate_hardening_comparison(instance)
+        elif schema_id == _TRANSLATION_SNAPSHOT_DELTA_SCHEMA_ID:
+            # Old/new cross-binding is contextual, but the standalone delta
+            # has a complete intrinsic content-ID and shape contract.
+            from .translation_tests import validate_translation_snapshot_delta_record
+
+            validate_translation_snapshot_delta_record(instance)
 
 
 def load_local_schema_catalog(

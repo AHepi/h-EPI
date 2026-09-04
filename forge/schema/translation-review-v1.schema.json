@@ -1,0 +1,979 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ahepi.example/smf/0.4/translation-review-v1.schema.json",
+  "title": "Semantic Model Forge translation review lineage v1",
+  "$ref": "#/$defs/translation_review",
+  "$defs": {
+    "nonempty_string": {
+      "type": "string",
+      "minLength": 1
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "stable_key": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+    },
+    "date": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "translation_review_bindings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "snapshot_id",
+        "predecessor_snapshot_id",
+        "snapshot_sha256",
+        "record_closure_sha256"
+      ],
+      "properties": {
+        "snapshot_id": {
+          "type": "string",
+          "pattern": "^TSN:[0-9a-f]{64}$"
+        },
+        "predecessor_snapshot_id": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "pattern": "^TSN:[0-9a-f]{64}$"
+            }
+          ]
+        },
+        "snapshot_sha256": {
+          "$ref": "#/$defs/digest"
+        },
+        "record_closure_sha256": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "interpretation_surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "interpretation_id",
+        "claim_kind",
+        "statement",
+        "source_span_ids",
+        "interpreted_obligation_ids",
+        "preserved_feature_ids",
+        "model_effect",
+        "model_effect_sha256",
+        "discriminating_consequences",
+        "falsifier_conditions",
+        "known_loss_risks",
+        "proposal_status"
+      ],
+      "properties": {
+        "interpretation_id": {
+          "type": "string",
+          "pattern": "^TI:[0-9a-f]{64}$"
+        },
+        "claim_kind": {
+          "const": "SOURCE_INTERPRETATION"
+        },
+        "statement": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "source_span_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^TSPAN:[0-9a-f]{64}$"
+          }
+        },
+        "interpreted_obligation_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^TO:[0-9a-f]{64}$"
+          }
+        },
+        "preserved_feature_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^TPF:[0-9a-f]{64}$"
+          }
+        },
+        "model_effect": {
+          "$ref": "#/$defs/model_effect"
+        },
+        "model_effect_sha256": {
+          "$ref": "#/$defs/digest"
+        },
+        "discriminating_consequences": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonempty_string"
+          }
+        },
+        "falsifier_conditions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonempty_string"
+          }
+        },
+        "known_loss_risks": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonempty_string"
+          }
+        },
+        "proposal_status": {
+          "const": "PROPOSED"
+        }
+      }
+    },
+    "model_effect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "effect_statement",
+        "affected_element_keys"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "DECLARED",
+            "UNPROJECTED"
+          ]
+        },
+        "effect_statement": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "affected_element_keys": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/stable_key"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "DECLARED"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "affected_element_keys": {
+                "minItems": 1
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "affected_element_keys": {
+                "maxItems": 0
+              }
+            }
+          }
+        }
+      ]
+    },
+    "interpretation_set_surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "interpretation_set_id",
+        "supersedes_interpretation_set_id",
+        "question",
+        "source_span_ids",
+        "obligation_ids",
+        "rival_relation",
+        "admissible_branch_sets",
+        "interpretations"
+      ],
+      "properties": {
+        "interpretation_set_id": {
+          "type": "string",
+          "pattern": "^TIS:[0-9a-f]{64}$"
+        },
+        "supersedes_interpretation_set_id": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "pattern": "^TIS:[0-9a-f]{64}$"
+            }
+          ]
+        },
+        "question": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "source_span_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonempty_string"
+          }
+        },
+        "obligation_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonempty_string"
+          }
+        },
+        "rival_relation": {
+          "enum": [
+            "EXCLUSIVE",
+            "OVERLAPPING",
+            "PARTIALLY_COMPATIBLE"
+          ]
+        },
+        "admissible_branch_sets": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^TI:[0-9a-f]{64}$"
+            }
+          }
+        },
+        "interpretations": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/interpretation_surface"
+          }
+        }
+      }
+    },
+    "review_surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "document_ids",
+        "source_span_ids",
+        "charter_id",
+        "graph_id",
+        "interpretation_sets",
+        "signature_id",
+        "model_id",
+        "import_ids",
+        "bridge_id",
+        "unresolved_record_ids"
+      ],
+      "properties": {
+        "document_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonempty_string"
+          }
+        },
+        "source_span_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonempty_string"
+          }
+        },
+        "charter_id": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "graph_id": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "interpretation_sets": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/interpretation_set_surface"
+          }
+        },
+        "signature_id": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "model_id": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "import_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonempty_string"
+          }
+        },
+        "bridge_id": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "unresolved_record_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonempty_string"
+          }
+        }
+      }
+    },
+    "reviewer_prose": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "plain_language_reading",
+        "reason",
+        "model_effect_assessment",
+        "remaining_uncertainty"
+      ],
+      "properties": {
+        "plain_language_reading": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "reason": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "model_effect_assessment": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "remaining_uncertainty": {
+          "$ref": "#/$defs/nonempty_string"
+        }
+      }
+    },
+    "review_scope_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scope_id",
+        "charter_id",
+        "purpose",
+        "system_boundary",
+        "in_scope"
+      ],
+      "properties": {
+        "scope_id": {
+          "type": "string",
+          "pattern": "^TRS:[0-9a-f]{64}$"
+        },
+        "charter_id": {
+          "type": "string",
+          "pattern": "^TCHAR:[0-9a-f]{64}$"
+        },
+        "purpose": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "system_boundary": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "in_scope": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonempty_string"
+          }
+        }
+      }
+    },
+    "branch_disposition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "record_type",
+        "disposition_id",
+        "interpretation_set_id",
+        "interpretation_id",
+        "decision_sequence",
+        "previous_disposition_id",
+        "created_on",
+        "bindings",
+        "disposition",
+        "reviewed_source_span_ids",
+        "considered_interpretation_ids",
+        "reviewed_model_effect_sha256",
+        "reviewer_prose",
+        "superseded_bindings",
+        "changed_binding_pointers",
+        "reviewer_kind",
+        "reviewer_authentication",
+        "machine_generated",
+        "epistemic_effect",
+        "can_authorize_translation",
+        "can_confirm_source_meaning",
+        "semantic_verdict"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "creib.semantic-forge.translation-branch-disposition.v1"
+        },
+        "record_type": {
+          "const": "translation_branch_disposition"
+        },
+        "disposition_id": {
+          "type": "string",
+          "pattern": "^BD:[0-9a-f]{64}$"
+        },
+        "interpretation_set_id": {
+          "type": "string",
+          "pattern": "^TIS:[0-9a-f]{64}$"
+        },
+        "interpretation_id": {
+          "type": "string",
+          "pattern": "^TI:[0-9a-f]{64}$"
+        },
+        "decision_sequence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "previous_disposition_id": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "pattern": "^BD:[0-9a-f]{64}$"
+            }
+          ]
+        },
+        "created_on": {
+          "$ref": "#/$defs/date"
+        },
+        "bindings": {
+          "$ref": "#/$defs/translation_review_bindings"
+        },
+        "disposition": {
+          "enum": [
+            "RETAINED_OPEN",
+            "EXCLUDED_FOR_SCOPE",
+            "STALE_BY_BINDING_CHANGE"
+          ]
+        },
+        "reviewed_source_span_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonempty_string"
+          }
+        },
+        "considered_interpretation_ids": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^TI:[0-9a-f]{64}$"
+          }
+        },
+        "reviewed_model_effect_sha256": {
+          "$ref": "#/$defs/digest"
+        },
+        "reviewer_prose": {
+          "$ref": "#/$defs/reviewer_prose"
+        },
+        "superseded_bindings": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/translation_review_bindings"
+            }
+          ]
+        },
+        "changed_binding_pointers": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^/"
+          }
+        },
+        "reviewer_kind": {
+          "const": "HUMAN"
+        },
+        "reviewer_authentication": {
+          "const": "NOT_ESTABLISHED_BY_RECORD"
+        },
+        "machine_generated": {
+          "const": false
+        },
+        "epistemic_effect": {
+          "const": "BRANCH_WORKFLOW_ONLY"
+        },
+        "can_authorize_translation": {
+          "const": false
+        },
+        "can_confirm_source_meaning": {
+          "const": false
+        },
+        "semantic_verdict": {
+          "type": "null"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "disposition": {
+                "const": "STALE_BY_BINDING_CHANGE"
+              }
+            },
+            "required": [
+              "disposition"
+            ]
+          },
+          "then": {
+            "properties": {
+              "superseded_bindings": {
+                "$ref": "#/$defs/translation_review_bindings"
+              },
+              "changed_binding_pointers": {
+                "minItems": 1
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "superseded_bindings": {
+                "type": "null"
+              },
+              "changed_binding_pointers": {
+                "maxItems": 0
+              }
+            }
+          }
+        }
+      ]
+    },
+    "reviewed_model_effect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "interpretation_id",
+        "model_effect_sha256"
+      ],
+      "properties": {
+        "interpretation_id": {
+          "type": "string",
+          "pattern": "^TI:[0-9a-f]{64}$"
+        },
+        "model_effect_sha256": {
+          "$ref": "#/$defs/digest"
+        }
+      }
+    },
+    "variant_selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "interpretation_set_id",
+        "interpretation_id"
+      ],
+      "properties": {
+        "interpretation_set_id": {
+          "type": "string",
+          "pattern": "^TIS:[0-9a-f]{64}$"
+        },
+        "interpretation_id": {
+          "type": "string",
+          "pattern": "^TI:[0-9a-f]{64}$"
+        }
+      }
+    },
+    "authorized_variant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "variant_id",
+        "model_id",
+        "selections",
+        "model_effect_sha256s",
+        "reason"
+      ],
+      "properties": {
+        "variant_id": {
+          "type": "string",
+          "pattern": "^TV:[0-9a-f]{64}$"
+        },
+        "model_id": {
+          "type": "string",
+          "pattern": "^TNM:[0-9a-f]{64}$"
+        },
+        "selections": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/variant_selection"
+          }
+        },
+        "model_effect_sha256s": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/digest"
+          }
+        },
+        "reason": {
+          "$ref": "#/$defs/nonempty_string"
+        }
+      }
+    },
+    "translation_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "record_type",
+        "decision_id",
+        "decision_sequence",
+        "previous_decision_id",
+        "created_on",
+        "bindings",
+        "scope_binding",
+        "disposition",
+        "reviewed_source_span_ids",
+        "considered_interpretation_ids",
+        "reviewed_model_effects",
+        "authorized_variants",
+        "reviewer_prose",
+        "reviewer_kind",
+        "reviewer_authentication",
+        "machine_generated",
+        "epistemic_effect",
+        "can_confirm_unique_reading",
+        "can_accept_project_import",
+        "source_count_can_decide",
+        "provider_agreement_can_decide",
+        "source_truth_verdict",
+        "semantic_verdict"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "creib.semantic-forge.translation-decision.v1"
+        },
+        "record_type": {
+          "const": "translation_decision"
+        },
+        "decision_id": {
+          "type": "string",
+          "pattern": "^TD:[0-9a-f]{64}$"
+        },
+        "decision_sequence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "previous_decision_id": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "pattern": "^TD:[0-9a-f]{64}$"
+            }
+          ]
+        },
+        "created_on": {
+          "$ref": "#/$defs/date"
+        },
+        "bindings": {
+          "$ref": "#/$defs/translation_review_bindings"
+        },
+        "scope_binding": {
+          "$ref": "#/$defs/review_scope_binding"
+        },
+        "disposition": {
+          "enum": [
+            "AUTHORIZE_SCOPED_USE",
+            "REJECT_CURRENT_SET_FOR_SCOPE",
+            "SUSPEND_UNRESOLVED",
+            "REFRAME_REVIEW_PROBLEM"
+          ]
+        },
+        "reviewed_source_span_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonempty_string"
+          }
+        },
+        "considered_interpretation_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^TI:[0-9a-f]{64}$"
+          }
+        },
+        "reviewed_model_effects": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/reviewed_model_effect"
+          }
+        },
+        "authorized_variants": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/authorized_variant"
+          }
+        },
+        "reviewer_prose": {
+          "$ref": "#/$defs/reviewer_prose"
+        },
+        "reviewer_kind": {
+          "const": "HUMAN"
+        },
+        "reviewer_authentication": {
+          "const": "NOT_ESTABLISHED_BY_RECORD"
+        },
+        "machine_generated": {
+          "const": false
+        },
+        "epistemic_effect": {
+          "const": "SCOPED_WORKFLOW_DECISION_ONLY"
+        },
+        "can_confirm_unique_reading": {
+          "const": false
+        },
+        "can_accept_project_import": {
+          "const": false
+        },
+        "source_count_can_decide": {
+          "const": false
+        },
+        "provider_agreement_can_decide": {
+          "const": false
+        },
+        "source_truth_verdict": {
+          "type": "null"
+        },
+        "semantic_verdict": {
+          "type": "null"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "disposition": {
+                "const": "AUTHORIZE_SCOPED_USE"
+              }
+            },
+            "required": [
+              "disposition"
+            ]
+          },
+          "then": {
+            "properties": {
+              "authorized_variants": {
+                "minItems": 1
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "authorized_variants": {
+                "maxItems": 0
+              }
+            }
+          }
+        }
+      ]
+    },
+    "translation_review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "$schema",
+        "schema_version",
+        "record_type",
+        "review_id",
+        "sequence",
+        "previous_review_id",
+        "transition_kind",
+        "transition_reason",
+        "created_on",
+        "bindings",
+        "review_surface",
+        "branch_dispositions",
+        "translation_decisions",
+        "reviewer_kind",
+        "reviewer_authentication",
+        "machine_generated",
+        "epistemic_status",
+        "epistemic_effect",
+        "can_confirm_source_meaning",
+        "can_promote_model",
+        "semantic_verdict"
+      ],
+      "properties": {
+        "$schema": {
+          "const": "../../schema/translation-review-v1.schema.json"
+        },
+        "schema_version": {
+          "const": "creib.semantic-forge.translation-review.v1"
+        },
+        "record_type": {
+          "const": "translation_review"
+        },
+        "review_id": {
+          "type": "string",
+          "pattern": "^TR:[0-9a-f]{64}$"
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "previous_review_id": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "pattern": "^TR:[0-9a-f]{64}$"
+            }
+          ]
+        },
+        "transition_kind": {
+          "enum": [
+            "GENESIS",
+            "SAME_BINDINGS",
+            "INPUT_BINDING_CHANGED"
+          ]
+        },
+        "transition_reason": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "created_on": {
+          "$ref": "#/$defs/date"
+        },
+        "bindings": {
+          "$ref": "#/$defs/translation_review_bindings"
+        },
+        "review_surface": {
+          "$ref": "#/$defs/review_surface"
+        },
+        "branch_dispositions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/branch_disposition"
+          }
+        },
+        "translation_decisions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/translation_decision"
+          }
+        },
+        "reviewer_kind": {
+          "const": "HUMAN"
+        },
+        "reviewer_authentication": {
+          "const": "NOT_ESTABLISHED_BY_RECORD"
+        },
+        "machine_generated": {
+          "const": false
+        },
+        "epistemic_status": {
+          "const": "UNRESOLVED"
+        },
+        "epistemic_effect": {
+          "const": "TRANSLATION_REVIEW_WORKFLOW_ONLY"
+        },
+        "can_confirm_source_meaning": {
+          "const": false
+        },
+        "can_promote_model": {
+          "const": false
+        },
+        "semantic_verdict": {
+          "type": "null"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "transition_kind": {
+                "const": "GENESIS"
+              }
+            },
+            "required": [
+              "transition_kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "sequence": {
+                "const": 1
+              },
+              "previous_review_id": {
+                "type": "null"
+              },
+              "branch_dispositions": {
+                "maxItems": 0
+              },
+              "translation_decisions": {
+                "maxItems": 0
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "sequence": {
+                "minimum": 2
+              },
+              "previous_review_id": {
+                "type": "string",
+                "pattern": "^TR:[0-9a-f]{64}$"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

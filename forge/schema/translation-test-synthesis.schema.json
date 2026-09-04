@@ -1,0 +1,272 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ahepi.example/smf/0.4/translation-test-synthesis.schema.json",
+  "title": "Deterministic translation-delta test synthesis",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "synthesis_id",
+    "family_contract",
+    "old_snapshot_binding",
+    "new_snapshot_binding",
+    "delta_binding",
+    "coverage",
+    "overall_status",
+    "semantic_verdict",
+    "next_action",
+    "research_authorized",
+    "failure_locus_policy",
+    "epistemic_effect",
+    "epistemic_limit"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "creib.semantic-forge.translation-test-synthesis.v1"
+    },
+    "synthesis_id": {
+      "type": "string",
+      "pattern": "^TTS:[0-9a-f]{64}$"
+    },
+    "family_contract": {
+      "const": "creib.semantic-forge.translation-test-families.v1"
+    },
+    "old_snapshot_binding": {
+      "$ref": "#/$defs/inputBinding"
+    },
+    "new_snapshot_binding": {
+      "$ref": "#/$defs/inputBinding"
+    },
+    "delta_binding": {
+      "$ref": "#/$defs/inputBinding"
+    },
+    "coverage": {
+      "type": "array",
+      "minItems": 9,
+      "maxItems": 9,
+      "prefixItems": [
+        {
+          "allOf": [
+            {"$ref": "#/$defs/coverageRow"},
+            {"properties": {"family": {"const": "DELETION"}}}
+          ]
+        },
+        {
+          "allOf": [
+            {"$ref": "#/$defs/coverageRow"},
+            {"properties": {"family": {"const": "NEGATION"}}}
+          ]
+        },
+        {
+          "allOf": [
+            {"$ref": "#/$defs/coverageRow"},
+            {"properties": {"family": {"const": "RIVAL_SUBSTITUTION"}}}
+          ]
+        },
+        {
+          "allOf": [
+            {"$ref": "#/$defs/coverageRow"},
+            {"properties": {"family": {"const": "SEMANTIC_ROLE_TWIN"}}}
+          ]
+        },
+        {
+          "allOf": [
+            {"$ref": "#/$defs/coverageRow"},
+            {"properties": {"family": {"const": "SUBSTRATE_SWAP"}}}
+          ]
+        },
+        {
+          "allOf": [
+            {"$ref": "#/$defs/coverageRow"},
+            {"properties": {"family": {"const": "BOUNDARY_SHIFT"}}}
+          ]
+        },
+        {
+          "allOf": [
+            {"$ref": "#/$defs/coverageRow"},
+            {"properties": {"family": {"const": "IMPORT_DEPENDENCY"}}}
+          ]
+        },
+        {
+          "allOf": [
+            {"$ref": "#/$defs/coverageRow"},
+            {"properties": {"family": {"const": "NON_VACUITY"}}}
+          ]
+        },
+        {
+          "allOf": [
+            {"$ref": "#/$defs/coverageRow"},
+            {"properties": {"family": {"const": "ROUND_TRIP"}}}
+          ]
+        }
+      ],
+      "items": false
+    },
+    "overall_status": {
+      "const": "AWAITING_SEMANTIC_BINDINGS"
+    },
+    "semantic_verdict": {
+      "type": "null"
+    },
+    "next_action": {
+      "type": "null"
+    },
+    "research_authorized": {
+      "const": false
+    },
+    "failure_locus_policy": {
+      "const": "A generated or observed test cannot select a unique CANDIDATE, AUXILIARY, TEST, or SCOPE cause."
+    },
+    "epistemic_effect": {
+      "const": "CRITICISM_ONLY"
+    },
+    "epistemic_limit": {
+      "const": "Survival of criticism leaves a claim unrefuted; pass counts, consensus, and confidence do not justify it."
+    }
+  },
+  "$defs": {
+    "inputBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_id", "record_digest"],
+      "properties": {
+        "record_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._-]*:[0-9a-f]{64}$"
+        },
+        "record_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    },
+    "semanticBindingName": {
+      "enum": [
+        "BACK_TRANSLATOR",
+        "CLAIM_KIND_BRIDGES",
+        "COMMON_COMPARISON_TRANSPORT",
+        "CONSEQUENCE_OBSERVABLES",
+        "CONTROL_SIGNATURE",
+        "DELETION_SEMANTICS",
+        "EXECUTABLE_DEPENDENCY_GRAPH",
+        "EXECUTABLE_THEORY_PROJECTION",
+        "EXPLICIT_RIVAL_BRANCH",
+        "FORWARD_TRANSLATOR",
+        "HELD_FIXED_CONTRACT",
+        "INTENDED_BASE_REGISTRY",
+        "MEMBERSHIP_FIXTURES",
+        "MODEL_CHECKER",
+        "NEGATABLE_FORM",
+        "NON_VACUITY_CHECKER",
+        "OBSERVABLE_CONTRACT",
+        "PREREGISTERED_BOUNDARY_ALTERNATIVES",
+        "REALIZATION_TRANSFORM",
+        "ROLE_VIEW_SCOPE",
+        "SATISFIABILITY_CHECKER",
+        "SUBSTRATE_INVARIANCE_CLAIM",
+        "TYPED_COMPARATOR",
+        "TYPED_EXPECTATION"
+      ]
+    },
+    "coverageRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "obligation_id",
+        "family",
+        "old_snapshot_id",
+        "new_snapshot_id",
+        "delta_id",
+        "target_ids",
+        "question",
+        "coverage_status",
+        "required_semantic_bindings",
+        "missing_semantic_bindings",
+        "semantic_expectation",
+        "semantic_verdict",
+        "next_action",
+        "research_authorized",
+        "epistemic_effect",
+        "epistemic_limit"
+      ],
+      "properties": {
+        "obligation_id": {
+          "type": "string",
+          "pattern": "^TTO:[0-9a-f]{64}$"
+        },
+        "family": {
+          "enum": [
+            "DELETION",
+            "NEGATION",
+            "RIVAL_SUBSTITUTION",
+            "SEMANTIC_ROLE_TWIN",
+            "SUBSTRATE_SWAP",
+            "BOUNDARY_SHIFT",
+            "IMPORT_DEPENDENCY",
+            "NON_VACUITY",
+            "ROUND_TRIP"
+          ]
+        },
+        "old_snapshot_id": {
+          "type": "string",
+          "pattern": "^TSN:[0-9a-f]{64}$"
+        },
+        "new_snapshot_id": {
+          "type": "string",
+          "pattern": "^TSN:[0-9a-f]{64}$"
+        },
+        "delta_id": {
+          "type": "string",
+          "pattern": "^TSD:[0-9a-f]{64}$"
+        },
+        "target_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._-]*:[0-9a-f]{64}$"
+          }
+        },
+        "question": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": ".*\\S.*"
+        },
+        "coverage_status": {
+          "const": "DEFERRED_MISSING_SEMANTIC_BINDINGS"
+        },
+        "required_semantic_bindings": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/semanticBindingName"}
+        },
+        "missing_semantic_bindings": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/semanticBindingName"}
+        },
+        "semantic_expectation": {
+          "type": "null"
+        },
+        "semantic_verdict": {
+          "type": "null"
+        },
+        "next_action": {
+          "type": "null"
+        },
+        "research_authorized": {
+          "const": false
+        },
+        "epistemic_effect": {
+          "const": "CRITICISM_ONLY"
+        },
+        "epistemic_limit": {
+          "const": "Survival of criticism leaves a claim unrefuted; pass counts, consensus, and confidence do not justify it."
+        }
+      }
+    }
+  }
+}

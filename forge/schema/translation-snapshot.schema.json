@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ahepi.example/smf/0.4/translation-snapshot.schema.json",
+  "title": "Semantic Forge translation snapshot v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "snapshot_id",
+    "predecessor_snapshot_id",
+    "document_ids",
+    "span_ids",
+    "charter_id",
+    "graph_id",
+    "interpretation_set_ids",
+    "signature_id",
+    "model_id",
+    "import_ids",
+    "bridge_id",
+    "unresolved_record_ids",
+    "record_closure_sha256"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "creib.semantic-forge.translation-snapshot.v1"
+    },
+    "snapshot_id": {"$ref": "#/$defs/snapshotId"},
+    "predecessor_snapshot_id": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/snapshotId"}
+      ]
+    },
+    "document_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/documentId"},
+      "uniqueItems": true
+    },
+    "span_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/spanId"},
+      "uniqueItems": true
+    },
+    "charter_id": {"$ref": "#/$defs/charterId"},
+    "graph_id": {"$ref": "#/$defs/graphId"},
+    "interpretation_set_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/interpretationSetId"},
+      "uniqueItems": true
+    },
+    "signature_id": {"$ref": "#/$defs/signatureId"},
+    "model_id": {"$ref": "#/$defs/modelId"},
+    "import_ids": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/importId"},
+      "uniqueItems": true
+    },
+    "bridge_id": {"$ref": "#/$defs/bridgeId"},
+    "unresolved_record_ids": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/contentId"},
+      "uniqueItems": true
+    },
+    "record_closure_sha256": {"$ref": "#/$defs/prefixedSha256"}
+  },
+  "$defs": {
+    "prefixedSha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "contentId": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9]*:[0-9a-f]{64}$"
+    },
+    "snapshotId": {"type": "string", "pattern": "^TSN:[0-9a-f]{64}$"},
+    "documentId": {"type": "string", "pattern": "^TDOC:[0-9a-f]{64}$"},
+    "spanId": {"type": "string", "pattern": "^TSPAN:[0-9a-f]{64}$"},
+    "charterId": {"type": "string", "pattern": "^TCHAR:[0-9a-f]{64}$"},
+    "graphId": {"type": "string", "pattern": "^TOG:[0-9a-f]{64}$"},
+    "interpretationSetId": {"type": "string", "pattern": "^TIS:[0-9a-f]{64}$"},
+    "signatureId": {"type": "string", "pattern": "^TNS:[0-9a-f]{64}$"},
+    "modelId": {"type": "string", "pattern": "^TNM:[0-9a-f]{64}$"},
+    "importId": {"type": "string", "pattern": "^TIMP:[0-9a-f]{64}$"},
+    "bridgeId": {"type": "string", "pattern": "^TBR:[0-9a-f]{64}$"}
+  }
+}

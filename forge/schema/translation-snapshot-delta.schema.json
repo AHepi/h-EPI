@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ahepi.example/smf/0.4/translation-snapshot-delta.schema.json",
+  "title": "Semantic Forge old/new translation snapshot delta v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "delta_id", "old_snapshot_id", "new_snapshot_id",
+    "retained_ids", "added_ids", "removed_ids", "replaced_pairs",
+    "transported_members", "changed_obligation_ids",
+    "changed_model_element_ids", "changed_import_ids", "changed_loss_ids",
+    "claimed_preservations", "unresolved_effects"
+  ],
+  "properties": {
+    "schema_version": {"const": "creib.semantic-forge.translation-snapshot-delta.v1"},
+    "delta_id": {"type": "string", "pattern": "^TSD:[0-9a-f]{64}$"},
+    "old_snapshot_id": {"$ref": "#/$defs/snapshotId"},
+    "new_snapshot_id": {"$ref": "#/$defs/snapshotId"},
+    "retained_ids": {"$ref": "#/$defs/contentIds"},
+    "added_ids": {"$ref": "#/$defs/contentIds"},
+    "removed_ids": {"$ref": "#/$defs/contentIds"},
+    "replaced_pairs": {
+      "type": "array", "uniqueItems": true,
+      "items": {"$ref": "#/$defs/replacementPair"}
+    },
+    "transported_members": {
+      "type": "array", "uniqueItems": true,
+      "items": {"$ref": "#/$defs/transportPair"}
+    },
+    "changed_obligation_ids": {"$ref": "#/$defs/contentIds"},
+    "changed_model_element_ids": {"$ref": "#/$defs/contentIds"},
+    "changed_import_ids": {"$ref": "#/$defs/contentIds"},
+    "changed_loss_ids": {"$ref": "#/$defs/contentIds"},
+    "claimed_preservations": {"$ref": "#/$defs/texts"},
+    "unresolved_effects": {"$ref": "#/$defs/texts"}
+  },
+  "$defs": {
+    "contentId": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._-]*:[0-9a-f]{64}$"
+    },
+    "snapshotId": {"type": "string", "pattern": "^TSN:[0-9a-f]{64}$"},
+    "contentIds": {
+      "type": "array", "uniqueItems": true,
+      "items": {"$ref": "#/$defs/contentId"}
+    },
+    "texts": {
+      "type": "array", "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "pattern": ".*\\S.*"}
+    },
+    "replacementPair": {
+      "type": "object", "additionalProperties": false,
+      "required": ["old_id", "new_id"],
+      "properties": {
+        "old_id": {"$ref": "#/$defs/contentId"},
+        "new_id": {"$ref": "#/$defs/contentId"}
+      }
+    },
+    "transportPair": {
+      "type": "object", "additionalProperties": false,
+      "required": ["old_member_id", "new_member_id", "transport_ref"],
+      "properties": {
+        "old_member_id": {"$ref": "#/$defs/contentId"},
+        "new_member_id": {"$ref": "#/$defs/contentId"},
+        "transport_ref": {"$ref": "#/$defs/contentId"}
+      }
+    }
+  },
+  "anyOf": [
+    {"properties": {"added_ids": {"minItems": 1}}},
+    {"properties": {"removed_ids": {"minItems": 1}}},
+    {"properties": {"replaced_pairs": {"minItems": 1}}},
+    {"properties": {"transported_members": {"minItems": 1}}},
+    {"properties": {"changed_obligation_ids": {"minItems": 1}}},
+    {"properties": {"changed_model_element_ids": {"minItems": 1}}},
+    {"properties": {"changed_import_ids": {"minItems": 1}}},
+    {"properties": {"changed_loss_ids": {"minItems": 1}}}
+  ]
+}

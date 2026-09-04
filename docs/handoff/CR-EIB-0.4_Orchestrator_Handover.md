@@ -1,5 +1,10 @@
 # CR-EIB-0.4 orchestrator handover
 
+> Historical snapshot: this handover is superseded by
+> [CR-EIB-0.5 orchestrator handover](./CR-EIB-0.5_Orchestrator_Handover.md).
+> The statuses and artifact identities below are retained as the 0.4 record,
+> not presented as current repository state.
+
 ## Outcome
 
 The Semantic Model Forge no longer forces a failed test into one exclusive failure diagnosis. Its active v2 inquiry contract preserves every live candidate, auxiliary, test, and scope criticism, including mechanisms that cross several loci. A separate `next_action` chooses only the work to run next. That operational choice cannot rank the criticisms, identify a unique cause, close an unselected criticism, or promote the model.
@@ -115,7 +120,7 @@ Event publication is equally contextual and uses the same durable-claim recovery
 | Research inputs | `forge/corpus/cr-1.0-seed.json` and `forge/research/SMF-RESEARCH-2026-09-03.json`; their classifications and oracles remain reviewable project inputs. |
 | Preserved inquiry history | Unsuffixed v1 schemas plus `forge/history/invalidated-runs/` and `forge/history/invalidated-plans/`; validate or replay, never reactivate or extend. |
 | Human-facing protocol | `docs/forge/SMF-0.3_Adaptive_Inquiry_Protocol.md` and `.codex/skills/h-epi-human-handoff/SKILL.md`; the latter requires practical, falsifier-first, non-confirmatory handoffs. |
-| Prior handovers | `CR-EIB-0.2_Orchestrator_Handover.md` and `CR-EIB-0.3_Orchestrator_Handover.md` are historical. This 0.4 file is the continuation point. |
+| Prior handovers | The 0.2–0.4 handovers are historical snapshots. The repository README names the live continuation point. |
 
 Legacy facts remain binding unless a separately authorized, append-only successor changes them: source reports, source interpretations, project imports, and formal consequences remain distinct claim kinds; the weak two-Boolean calibration is not the full model class or a genuine same-reduct role twin; the neutral signature and source-to-model mapping remain proposals; and positive hardening or readiness cannot be produced from passing tests, proof success, empty blocker lists, or plain references. The old DF-7a/`CCPWitness`, TH-3 dependency, DF-10 interpretation, SMT/witness, mapping, intended-model, non-vacuity, global non-broadening, exact-fiber, and preservation obligations therefore remain open alongside the new human-triage step.
 
@@ -124,7 +129,8 @@ Legacy facts remain binding unless a separately authorized, append-only successo
 Calibration record:
 
 ```text
-Path:         forge/runs/SMF-CALIBRATION-CR-1-0-001.4219efce.json
+Path at handover: forge/runs/SMF-CALIBRATION-CR-1-0-001.4219efce.json
+Preserved as:     forge/history/invalidated-runs/SMF-CALIBRATION-CR-1-0-001.4219efce.pre-generic-translation-harness.json
 SHA-256:      e033cb8e82c6a38799f8b8c8f7f3bf4694ac54046e099e98b17d8abc8fb3d999
 Bytes:        26162
 Run contract: e6b9cbe72539ef0be5b02e05a755365e3df6ffb58b6c5113b8cd60c199b208fd
@@ -134,7 +140,8 @@ Bound implementation files: 26
 No-triage plan:
 
 ```text
-Path:      forge/plans/SMF-AIP-a5d3d7fb.no-triage.json
+Path at handover: forge/plans/SMF-AIP-a5d3d7fb.no-triage.json
+Preserved as:     forge/history/invalidated-plans/SMF-AIP-a5d3d7fb.no-triage.json
 Plan ID:   AIP:a5d3d7fb4ced18cf97dbc94d6d0b0a48842dbeabcd26a0644f9ae26a9a9cd386
 SHA-256:   6679c04c8a37108dd50a7dd9d3c9e472ea697d7aec871c6ea073007c83125006
 Bytes:     4923
@@ -196,7 +203,7 @@ forge/history/invalidated-runs/SMF-CALIBRATION-CR-1-0-001.4219efce.pre-canonical
 SHA-256: 4cd574daae2432b14572f883ad1719817bcb87a3abe4533e1e3a6f4e422a980a
 ```
 
-History now contains 18 invalidated runs and 11 invalidated plans. Invalidation is operational, not a semantic judgment.
+At this handover, history contained 18 invalidated runs and 11 invalidated plans. Invalidation is operational, not a semantic judgment.
 
 ## Verification on 2026-09-03
 
@@ -257,4 +264,4 @@ The one `next_action` is just the dispatch ticket for the first executable work 
 
 What should change the next choice is a declared discriminator: a source passage that defeats an interpretation, a repaired same-reduct fixture that defeats the test criticism, a model or countermodel that bears on the candidate, or an application observation that attacks an empirical mechanism. Mere completion, agreement, repeated survival, AlphaXiv rank, source count, or failure to find a criticism changes none of those assessments by itself. A disposition must remain an explicit, separately published human judgment bound to an accepted exact evidence type and current inputs. Even when every present criticism has a current-binding terminal disposition and none remains effective-live, the machine asks for human reassessment rather than confirming the model.
 
-This file supersedes `CR-EIB-0.3_Orchestrator_Handover.md` as the continuation point. Earlier handovers remain immutable historical evidence.
+For the 0.4 increment, this file superseded `CR-EIB-0.3_Orchestrator_Handover.md`; it is now retained as historical evidence. The repository README names the live continuation point.

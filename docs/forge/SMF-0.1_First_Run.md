@@ -8,17 +8,17 @@
 
 **Current record:** `forge/runs/SMF-CALIBRATION-CR-1-0-001.4219efce.json`
 
-**Record SHA-256:** `e033cb8e82c6a38799f8b8c8f7f3bf4694ac54046e099e98b17d8abc8fb3d999`
+**Record SHA-256:** `b83059255390e20da34cf416747bc13d5533a0794a7be7bdc0ba7760bc326fe2`
 
-**Run-contract SHA-256:** `e6b9cbe72539ef0be5b02e05a755365e3df6ffb58b6c5113b8cd60c199b208fd`
+**Run-contract SHA-256:** `2bb36991abb95f2c87c5ecdde86b67d3392a5b9558de229614e9f5daafae1404`
 
 **Seed-corpus SHA-256:** `4219efceb5502aa8b9209884ec1d22533d6eb049277c8ae3354d08e38f7c47a6`
 
-**Current no-triage plan:** `forge/plans/SMF-AIP-a5d3d7fb.no-triage.json`
+**Current no-triage plan:** `forge/plans/SMF-AIP-1210e0fa.no-triage.json`
 
-**Plan identifier:** `AIP:a5d3d7fb4ced18cf97dbc94d6d0b0a48842dbeabcd26a0644f9ae26a9a9cd386`
+**Plan identifier:** `AIP:1210e0fa967f4e044f8c0129b9ec650abd61dc8a17b88bfdbb18525e0deea94d`
 
-**Plan file SHA-256:** `6679c04c8a37108dd50a7dd9d3c9e472ea697d7aec871c6ea073007c83125006`
+**Plan file SHA-256:** `78f0c19d7fa609015a4ec6c610588d58460e77bcbba68778c1fd3f1b3bd38b8d`
 
 Earlier byte-exact records, including the pre-multi-locus calibration, are retained under `forge/history/invalidated-runs/`; they are historical evidence, not current runs. Their identities and invalidation reasons are recorded in that directory's `README.md`. The exclusive v1 no-triage plan is likewise retained under `forge/history/invalidated-plans/` rather than reinterpreted as a v2 record.
 
@@ -45,7 +45,18 @@ The calibration record ended `RUN_COMPLETE`, `MECHANICALLY_VALID`, `UNRESOLVED`,
 
 The naive negative assessment records no preserved dimensions. Its `NO_HARDENING` result says that this finite report contains no admissible witnessed gain; the erasure check alone does not establish global absence of gain on the separate role-fiber axis, nor does it silently claim preservation of modality, distinctions, or intended reach. The connected proposal's readiness inventory also retains the missing executed negative witness for exclusion of a role-relabel twin.
 
-Positive promotions fail closed because the current implementation has neither the needed schema fields nor a typed, digest-bound resolver for witness, review, or decision records. Plain reference strings cannot authorize `HARDENING_UNREFUTED` or `PROVISIONALLY_READY`, even with an empty blocker list. Such promotions remain unavailable until schema evolution and ledger-backed resolution can enforce successor consistency and non-vacuity, global non-broadening, exact role-fiber comparison, retained intended-model coverage, and the full mapping, import, gain, preservation, review, and decision obligations.
+Positive promotion through the legacy calibration and readiness records still
+fails closed: those record families do not encode the complete comparison or a
+typed, digest-bound resolution lineage. Plain reference strings cannot
+authorize `HARDENING_UNREFUTED` or `PROVISIONALLY_READY`, even with an empty
+blocker list. The separate SMF-0.4 hardening runtime now carries comparison,
+evidence, human-decision, and resolution records, but its v1 checker has no
+artifact resolver or model executor. Caller-declared finite payloads therefore
+remain `INCONCLUSIVE`, so the reserved scoped status
+`HARDENING_UNREFUTED` is not currently reachable. The runtime does not promote
+this legacy proposal, authorize `PROVISIONALLY_READY`, or establish semantic
+fidelity; a production neutral model with `NONE_V1` execution semantics remains
+`UNRESOLVED`.
 
 ## Exact live distinction
 

@@ -2,7 +2,7 @@
 
 This directory preserves byte-exact predecessors of the current no-triage adaptive-inquiry plan. They are historical workflow evidence only: a superseded plan cannot authorize a current transition, research action, or semantic conclusion.
 
-The sole current no-triage plan is `forge/plans/SMF-AIP-a5d3d7fb.no-triage.json`, with plan ID `AIP:a5d3d7fb4ced18cf97dbc94d6d0b0a48842dbeabcd26a0644f9ae26a9a9cd386` and file SHA-256 `6679c04c8a37108dd50a7dd9d3c9e472ea697d7aec871c6ea073007c83125006`.
+The sole current no-triage plan is `forge/plans/SMF-AIP-1210e0fa.no-triage.json`, with plan ID `AIP:1210e0fa967f4e044f8c0129b9ec650abd61dc8a17b88bfdbb18525e0deea94d` and file SHA-256 `78f0c19d7fa609015a4ec6c610588d58460e77bcbba68778c1fd3f1b3bd38b8d`.
 
 | Historical plan | File SHA-256 | Reason invalidated |
 |---|---|---|
@@ -17,5 +17,8 @@ The sole current no-triage plan is `forge/plans/SMF-AIP-a5d3d7fb.no-triage.json`
 | `SMF-AIP-b17b2120.no-triage.json` | `a8bccee689fcb17e2cdf20223af09b389505dbb12a128418884cd2c18d562810` | Reflected the first disposition/event-integrity contract, before evidence kinds were narrowed to validated calibration runs and exact input-binding deltas and dispositions were tied to earlier frontier-authorized work. |
 | `SMF-AIP-f562d179.no-triage.json` | `2b6df34a1ca11087b895e2985bac9f5730a7a392ff64694a745aaa0bfe784e9d` | Bound the first typed disposition-evidence contract, whose generated dependent-frontier question could not pass its own subset validator. It also predates the final event-head, shared source-ID, and recoverable-publication invariants. |
 | `SMF-AIP-bfe35a0a.no-triage.json` | `38a989ab1c52f1327575e6e62eb30d6e645f647f3b762f32470caa6417ea4567` | Bound the corrected frontier-question contract before claim-only roll-forward, contextual idempotent retry, exact per-question state-at-write checks, and final recovery validation were complete. |
+| `SMF-AIP-a5d3d7fb.no-triage.json` | `6679c04c8a37108dd50a7dd9d3c9e472ea697d7aec871c6ea073007c83125006` | Became operationally stale when its bound calibration record was regenerated against the expanded generic translation-harness schema and runtime inventory. It remains unresolved and authorizes no research. |
+| `SMF-AIP-0efdf106.pre-harness-soundness-fixes.no-triage.json` | `3a7bc66dbc968cb2bd1068b7174c802c90723a653c7593526fad4930bb91bf08` | Became operationally stale when its calibration input was regenerated after source-replay, rival-combination, hardening, qualification, and schema-inventory soundness fixes. It remained at `AWAITING_HUMAN_TRIAGE` and authorized no research. |
+| `SMF-AIP-5c012c57.pre-review-lineage-replay.no-triage.json` | `889b2659c8153538ddc35c98b7a6d01e4c75d879f127e093a75c4db7ef4d182c` | Became operationally stale when its bound calibration was regenerated after self-contained review-lineage replay entered the schema contract. It remained at `AWAITING_HUMAN_TRIAGE` and authorized no research. |
 
 Plan invalidation is operational, not a semantic judgment. Current status must be regenerated from the exact active run, research ledger, optional triage, and explicit origin head; intrinsic self-consistency alone is insufficient authorization for append.

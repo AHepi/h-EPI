@@ -1,0 +1,230 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ahepi.example/smf/0.4/translation-obligation-graph.schema.json",
+  "title": "Semantic Forge source obligation graph v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "graph_id",
+    "supersedes_graph_id",
+    "charter_id",
+    "span_bindings",
+    "obligations",
+    "edges",
+    "proposal_status",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "creib.semantic-forge.translation-obligation-graph.v1"
+    },
+    "graph_id": {"$ref": "#/$defs/graphId"},
+    "supersedes_graph_id": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/graphId"}
+      ]
+    },
+    "charter_id": {"$ref": "#/$defs/charterId"},
+    "span_bindings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/spanBinding"},
+      "uniqueItems": true
+    },
+    "obligations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/obligation"},
+      "uniqueItems": true
+    },
+    "edges": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/edge"},
+      "uniqueItems": true
+    },
+    "proposal_status": {"const": "PROPOSED"},
+    "provenance": {"$ref": "#/$defs/provenance"}
+  },
+  "$defs": {
+    "contentId": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9]*:[0-9a-f]{64}$"
+    },
+    "spanId": {"type": "string", "pattern": "^TSPAN:[0-9a-f]{64}$"},
+    "charterId": {"type": "string", "pattern": "^TCHAR:[0-9a-f]{64}$"},
+    "graphId": {"type": "string", "pattern": "^TOG:[0-9a-f]{64}$"},
+    "obligationId": {"type": "string", "pattern": "^TO:[0-9a-f]{64}$"},
+    "sourceClaimId": {"type": "string", "pattern": "^TSC:[0-9a-f]{64}$"},
+    "dutyId": {"type": "string", "pattern": "^TDUT:[0-9a-f]{64}$"},
+    "featureId": {"type": "string", "pattern": "^TPF:[0-9a-f]{64}$"},
+    "edgeId": {"type": "string", "pattern": "^TOE:[0-9a-f]{64}$"},
+    "nonemptyString": {"type": "string", "minLength": 1},
+    "spanBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["span_id", "role"],
+      "properties": {
+        "span_id": {"$ref": "#/$defs/spanId"},
+        "role": {"enum": ["TARGET", "CONTEXT"]}
+      }
+    },
+    "sourceClaim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claim_id",
+        "claim_kind",
+        "expression_mode",
+        "statement",
+        "source_span_ids",
+        "source_marks_raw"
+      ],
+      "properties": {
+        "claim_id": {"$ref": "#/$defs/sourceClaimId"},
+        "claim_kind": {"const": "SOURCE_AUTHORITY"},
+        "expression_mode": {"const": "VERBATIM_TRANSCRIPTION"},
+        "statement": {"$ref": "#/$defs/nonemptyString"},
+        "source_span_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/spanId"},
+          "uniqueItems": true
+        },
+        "source_marks_raw": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/nonemptyString"},
+          "uniqueItems": true
+        }
+      }
+    },
+    "protectedFeature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["feature_id", "kind", "statement", "charter_distinction_ids"],
+      "properties": {
+        "feature_id": {"$ref": "#/$defs/featureId"},
+        "kind": {
+          "enum": [
+            "TERM",
+            "RELATION",
+            "DISTINCTION",
+            "IDENTITY",
+            "QUANTIFIER",
+            "NEGATION",
+            "MODALITY",
+            "SCOPE",
+            "DEPENDENCY",
+            "QUALIFICATION",
+            "EXAMPLE",
+            "EXCEPTION"
+          ]
+        },
+        "statement": {"$ref": "#/$defs/nonemptyString"},
+        "charter_distinction_ids": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "^TPD:[0-9a-f]{64}$"},
+          "uniqueItems": true
+        }
+      }
+    },
+    "translationDuty": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["duty_id", "claim_kind", "duty_kind", "statement", "protected_features"],
+      "properties": {
+        "duty_id": {"$ref": "#/$defs/dutyId"},
+        "claim_kind": {"const": "SOURCE_INTERPRETATION"},
+        "duty_kind": {
+          "enum": [
+            "CLAIM",
+            "DEFINITION",
+            "DISTINCTION",
+            "PROHIBITION",
+            "QUALIFICATION",
+            "MODALITY",
+            "BOUNDARY",
+            "EXAMPLE",
+            "EXCEPTION",
+            "OPEN_RESIDUE"
+          ]
+        },
+        "statement": {"$ref": "#/$defs/nonemptyString"},
+        "protected_features": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/protectedFeature"},
+          "uniqueItems": true
+        }
+      }
+    },
+    "obligation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "obligation_id",
+        "source_claim",
+        "translation_duty",
+        "depends_on_obligation_ids"
+      ],
+      "properties": {
+        "obligation_id": {"$ref": "#/$defs/obligationId"},
+        "source_claim": {"$ref": "#/$defs/sourceClaim"},
+        "translation_duty": {"$ref": "#/$defs/translationDuty"},
+        "depends_on_obligation_ids": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/obligationId"},
+          "uniqueItems": true
+        }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["edge_id", "from_obligation_id", "to_obligation_id", "kind", "statement"],
+      "properties": {
+        "edge_id": {"$ref": "#/$defs/edgeId"},
+        "from_obligation_id": {"$ref": "#/$defs/obligationId"},
+        "to_obligation_id": {"$ref": "#/$defs/obligationId"},
+        "kind": {
+          "enum": [
+            "DEPENDS_ON",
+            "QUALIFIES",
+            "EXCLUDES",
+            "CONTRASTS_WITH",
+            "EXAMPLE_OF",
+            "EXCEPTION_TO",
+            "SCOPES"
+          ]
+        },
+        "statement": {"$ref": "#/$defs/nonemptyString"}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["producer_kind", "producer_id", "created_at", "generation_record_ids"],
+      "properties": {
+        "producer_kind": {"enum": ["HUMAN", "TOOL", "LLM"]},
+        "producer_id": {"$ref": "#/$defs/nonemptyString"},
+        "created_at": {"type": "string", "format": "date-time"},
+        "generation_record_ids": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/contentId"},
+          "uniqueItems": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"producer_kind": {"const": "LLM"}},
+            "required": ["producer_kind"]
+          },
+          "then": {
+            "properties": {"generation_record_ids": {"minItems": 1}}
+          }
+        }
+      ]
+    }
+  }
+}

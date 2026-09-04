@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ahepi.example/smf/0.4/hardening-decision.schema.json",
+  "title": "Semantic Model Forge hardening human decision v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "record_type", "decision_id", "comparison_id",
+    "comparison_sha256", "requirement_id", "decision_kind",
+    "subject_sha256", "decision_sequence", "previous_decision_id",
+    "disposition", "considered_evidence", "reason", "created_on",
+    "human_judgment_is_fallible", "reviewer_authentication",
+    "can_supply_mechanical_evidence", "can_promote_source_authority",
+    "semantic_verdict", "epistemic_limit"
+  ],
+  "properties": {
+    "schema_version": {"const": "creib.semantic-forge.hardening-decision.v1"},
+    "record_type": {"const": "hardening_human_decision"},
+    "decision_id": {"type": "string", "pattern": "^HD:[0-9a-f]{64}$"},
+    "comparison_id": {"type": "string", "pattern": "^HC:[0-9a-f]{64}$"},
+    "comparison_sha256": {"$ref": "#/$defs/digest"},
+    "requirement_id": {"type": "string", "pattern": "^HRQ:[0-9a-f]{64}$"},
+    "decision_kind": {
+      "enum": [
+        "GAIN_RELEVANCE_FOR_SCOPE", "PROTECTION_REGISTRY_FOR_SCOPE",
+        "SCOPE_USE_FOR_COMPARISON", "TYPE_AND_DELTA_CLASSIFICATION",
+        "IMPORT_USE_FOR_SCOPE"
+      ]
+    },
+    "subject_sha256": {"$ref": "#/$defs/digest"},
+    "decision_sequence": {"type": "integer", "minimum": 1},
+    "previous_decision_id": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^HD:[0-9a-f]{64}$"}]},
+    "disposition": {"enum": ["ACCEPT_FOR_DECLARED_SCOPE", "SUSPEND", "COMPARISON_DEFECT", "DEFEATS_HARDENING"]},
+    "considered_evidence": {
+      "type": "array", "uniqueItems": true,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["evidence_id", "evidence_sha256"],
+        "properties": {
+          "evidence_id": {"type": "string", "pattern": "^HE:[0-9a-f]{64}$"},
+          "evidence_sha256": {"$ref": "#/$defs/digest"}
+        }
+      }
+    },
+    "reason": {"type": "string", "minLength": 1},
+    "created_on": {"type": "string", "format": "date"},
+    "human_judgment_is_fallible": {"const": true},
+    "reviewer_authentication": {"const": "NOT_ESTABLISHED_BY_RECORD"},
+    "can_supply_mechanical_evidence": {"const": false},
+    "can_promote_source_authority": {"const": false},
+    "semantic_verdict": {"type": "null"},
+    "epistemic_limit": {"const": "Survival of criticism leaves a claim unrefuted; pass counts, consensus, and confidence do not justify it."}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+  }
+}

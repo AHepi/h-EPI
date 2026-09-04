@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ahepi.example/smf/0.4/translation-project-import.schema.json",
+  "title": "Semantic Forge translation project import v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "import_id",
+    "supersedes_import_id",
+    "charter_id",
+    "import_key",
+    "statement",
+    "claim_kind",
+    "category",
+    "scope",
+    "source_entitlement",
+    "motivation",
+    "independence_claim",
+    "necessity_claim",
+    "alternatives",
+    "deletion_test",
+    "affected_element_keys",
+    "proposal_status",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "creib.semantic-forge.translation-project-import.v1"
+    },
+    "import_id": {"$ref": "#/$defs/importId"},
+    "supersedes_import_id": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/importId"}
+      ]
+    },
+    "charter_id": {"$ref": "#/$defs/charterId"},
+    "import_key": {"$ref": "#/$defs/stableKey"},
+    "statement": {"$ref": "#/$defs/nonemptyString"},
+    "claim_kind": {"const": "PROJECT_IMPORT"},
+    "category": {
+      "enum": ["SEMANTIC", "CAUSAL", "EPISTEMIC", "METHODOLOGICAL", "PHYSICAL"]
+    },
+    "scope": {"$ref": "#/$defs/nonemptyString"},
+    "source_entitlement": {"const": "NONE_CLAIMED"},
+    "motivation": {"$ref": "#/$defs/nonemptyString"},
+    "independence_claim": {"$ref": "#/$defs/openClaim"},
+    "necessity_claim": {"$ref": "#/$defs/openClaim"},
+    "alternatives": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/nonemptyString"},
+      "uniqueItems": true
+    },
+    "deletion_test": {"$ref": "#/$defs/deletionTest"},
+    "affected_element_keys": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/stableKey"},
+      "uniqueItems": true
+    },
+    "proposal_status": {"const": "PROPOSED"},
+    "provenance": {"$ref": "#/$defs/provenance"}
+  },
+  "$defs": {
+    "contentId": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9]*:[0-9a-f]{64}$"
+    },
+    "charterId": {"type": "string", "pattern": "^TCHAR:[0-9a-f]{64}$"},
+    "importId": {"type": "string", "pattern": "^TIMP:[0-9a-f]{64}$"},
+    "stableKey": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+    },
+    "nonemptyString": {"type": "string", "minLength": 1},
+    "openClaim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["statement", "status", "discriminator", "evidence_record_ids"],
+      "properties": {
+        "statement": {"$ref": "#/$defs/nonemptyString"},
+        "status": {"const": "PROPOSED"},
+        "discriminator": {"$ref": "#/$defs/nonemptyString"},
+        "evidence_record_ids": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/contentId"},
+          "uniqueItems": true
+        }
+      }
+    },
+    "deletionTest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["prediction", "test_record_ids"],
+      "properties": {
+        "prediction": {"$ref": "#/$defs/nonemptyString"},
+        "test_record_ids": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/contentId"},
+          "uniqueItems": true
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["producer_kind", "producer_id", "created_at", "generation_record_ids"],
+      "properties": {
+        "producer_kind": {"enum": ["HUMAN", "TOOL", "LLM"]},
+        "producer_id": {"$ref": "#/$defs/nonemptyString"},
+        "created_at": {"type": "string", "format": "date-time"},
+        "generation_record_ids": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/contentId"},
+          "uniqueItems": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"producer_kind": {"const": "LLM"}},
+            "required": ["producer_kind"]
+          },
+          "then": {"properties": {"generation_record_ids": {"minItems": 1}}}
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,231 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ahepi.example/smf/0.4/translation-neutral-signature.schema.json",
+  "title": "Semantic Forge neutral semantic signature v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "signature_id",
+    "supersedes_signature_id",
+    "charter_id",
+    "members",
+    "proposal_status",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "creib.semantic-forge.translation-neutral-signature.v1"
+    },
+    "signature_id": {"$ref": "#/$defs/signatureId"},
+    "supersedes_signature_id": {
+      "oneOf": [
+        {"type": "null"},
+        {"$ref": "#/$defs/signatureId"}
+      ]
+    },
+    "charter_id": {"$ref": "#/$defs/charterId"},
+    "members": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/member"},
+      "uniqueItems": true
+    },
+    "proposal_status": {"const": "PROPOSED"},
+    "provenance": {"$ref": "#/$defs/provenance"}
+  },
+  "$defs": {
+    "contentId": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9]*:[0-9a-f]{64}$"
+    },
+    "charterId": {"type": "string", "pattern": "^TCHAR:[0-9a-f]{64}$"},
+    "signatureId": {"type": "string", "pattern": "^TNS:[0-9a-f]{64}$"},
+    "memberId": {"type": "string", "pattern": "^TNSM:[0-9a-f]{64}$"},
+    "interpretationId": {"type": "string", "pattern": "^TI:[0-9a-f]{64}$"},
+    "importId": {"type": "string", "pattern": "^TIMP:[0-9a-f]{64}$"},
+    "stableKey": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+    },
+    "nonemptyString": {"type": "string", "minLength": 1},
+    "argumentRole": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "target_member_id", "multiplicity"],
+      "properties": {
+        "name": {"$ref": "#/$defs/stableKey"},
+        "target_member_id": {"$ref": "#/$defs/memberId"},
+        "multiplicity": {"enum": ["ONE", "OPTIONAL", "MANY"]}
+      }
+    },
+    "basis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["premise_kind", "record_ids"],
+      "properties": {
+        "premise_kind": {
+          "enum": ["SOURCE_INTERPRETATION", "PROJECT_IMPORT", "STRUCTURAL_SCAFFOLD"]
+        },
+        "record_ids": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {"$ref": "#/$defs/interpretationId"},
+              {"$ref": "#/$defs/importId"}
+            ]
+          },
+          "uniqueItems": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"premise_kind": {"const": "SOURCE_INTERPRETATION"}},
+            "required": ["premise_kind"]
+          },
+          "then": {
+            "properties": {
+              "record_ids": {
+                "minItems": 1,
+                "items": {"$ref": "#/$defs/interpretationId"}
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {"premise_kind": {"const": "PROJECT_IMPORT"}},
+            "required": ["premise_kind"]
+          },
+          "then": {
+            "properties": {
+              "record_ids": {
+                "minItems": 1,
+                "items": {"$ref": "#/$defs/importId"}
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {"premise_kind": {"const": "STRUCTURAL_SCAFFOLD"}},
+            "required": ["premise_kind"]
+          },
+          "then": {
+            "properties": {"record_ids": {"maxItems": 0}}
+          }
+        }
+      ]
+    },
+    "member": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "member_id",
+        "element_key",
+        "kind",
+        "statement",
+        "argument_roles",
+        "identity_conditions",
+        "variation_conditions",
+        "scope_conditions",
+        "semantic_effect",
+        "basis"
+      ],
+      "properties": {
+        "member_id": {"$ref": "#/$defs/memberId"},
+        "element_key": {"$ref": "#/$defs/stableKey"},
+        "kind": {
+          "enum": [
+            "SORT",
+            "ENTITY",
+            "ROLE",
+            "RELATION",
+            "PROPERTY",
+            "EVENT",
+            "PROCESS",
+            "MODALITY",
+            "BOUNDARY",
+            "IDENTITY_CONDITION"
+          ]
+        },
+        "statement": {"$ref": "#/$defs/nonemptyString"},
+        "argument_roles": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/argumentRole"},
+          "uniqueItems": true
+        },
+        "identity_conditions": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/nonemptyString"},
+          "uniqueItems": true
+        },
+        "variation_conditions": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/nonemptyString"},
+          "uniqueItems": true
+        },
+        "scope_conditions": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/nonemptyString"},
+          "uniqueItems": true
+        },
+        "semantic_effect": {"enum": ["MEANING_BEARING", "NONE"]},
+        "basis": {"$ref": "#/$defs/basis"}
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"semantic_effect": {"const": "NONE"}},
+            "required": ["semantic_effect"]
+          },
+          "then": {
+            "properties": {
+              "basis": {
+                "properties": {"premise_kind": {"const": "STRUCTURAL_SCAFFOLD"}}
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "basis": {
+                "properties": {
+                  "premise_kind": {
+                    "enum": ["SOURCE_INTERPRETATION", "PROJECT_IMPORT"]
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["producer_kind", "producer_id", "created_at", "generation_record_ids"],
+      "properties": {
+        "producer_kind": {"enum": ["HUMAN", "TOOL", "LLM"]},
+        "producer_id": {"$ref": "#/$defs/nonemptyString"},
+        "created_at": {"type": "string", "format": "date-time"},
+        "generation_record_ids": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/contentId"},
+          "uniqueItems": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"producer_kind": {"const": "LLM"}},
+            "required": ["producer_kind"]
+          },
+          "then": {
+            "properties": {"generation_record_ids": {"minItems": 1}}
+          }
+        }
+      ]
+    }
+  }
+}
