@@ -1,5 +1,7 @@
 # CR-EIB-0.5 orchestrator handover
 
+> Historical handover. For the current continuation point, use `STATUS.md` and `CR-EIB-0.6_Orchestrator_Handover.md`.
+
 ## Outcome
 
 This increment adds the first generic, fail-closed semantic translation
