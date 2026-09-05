@@ -2,10 +2,16 @@ name: bootstrap integrity
 
 on:
   push:
+    branches: [main]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: bootstrap-integrity-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   validate-bootstrap:

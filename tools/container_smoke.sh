@@ -42,8 +42,11 @@ if (( $# == 1 )); then
 fi
 
 python3 baseline/cr-1.0/bootstrap-v0.1/tools/validate_bootstrap.py
+# One complete Python pass. The former second pass under `python -O` is
+# replaced by the shipped-code assert guard in tools/check.py (lint), which
+# CI runs on the same commit; with no `assert` in src/ or tools/ the -O pass
+# could not exercise anything this pass does not.
 python3 -m unittest discover -s tests -v
-python3 -O -m unittest discover -s tests -v
 sha256sum --check --strict formal/formal-package.sha256
 
 formal_replay_directory="$(mktemp -d -t cr-eib-container-formal-XXXXXXXX)"

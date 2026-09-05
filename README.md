@@ -2,6 +2,10 @@
 
 `h-EPI` is the implementation workspace for the CR-1.0 creativity semantic model and its proposed executable interpretation bridge.
 
+[![bootstrap integrity](https://github.com/AHepi/h-EPI/actions/workflows/bootstrap-integrity.yml/badge.svg?branch=main)](https://github.com/AHepi/h-EPI/actions/workflows/bootstrap-integrity.yml) [![bridge pilot](https://github.com/AHepi/h-EPI/actions/workflows/bridge-pilot.yml/badge.svg?branch=main)](https://github.com/AHepi/h-EPI/actions/workflows/bridge-pilot.yml)
+
+Working in this repository, as a person or an agent: read [`CLAUDE.md`](CLAUDE.md) (durable rules; `AGENTS.md` is the same file), then [`docs/handoff/STATUS.md`](docs/handoff/STATUS.md) (current state), then the live handover it names. Python 3.12 is required; create the environment with `python3.12 tools/check.py bootstrap` and run every check through `python tools/check.py <target>` (`lint`, `test-fast`, `test`, `verify`, `verify-lean`, `smoke`). Claude Code web sessions do this automatically through `.claude/hooks/session-start.sh`.
+
 ## Current status
 
 | Layer | Status | Meaning |
@@ -19,17 +23,19 @@ Lean is implemented for the narrow DF-10/TH-3 pilot; SMT remains an implementati
 The immutable cold-start package is under `baseline/cr-1.0/bootstrap-v0.1/`. Run its integrity and quarantine validator with:
 
 ```sh
-python -m pip install -r requirements-ci.txt
-python baseline/cr-1.0/bootstrap-v0.1/tools/validate_bootstrap.py
+python3.12 tools/check.py bootstrap   # once: .venv with the hash-locked dependencies
+.venv/bin/python tools/check.py verify   # bootstrap validator + bridge verifier
 ```
 
 Run the bridge record checks and adversarial tests with:
 
 ```sh
-python -m pip install -r requirements-bridge-ci.txt
-PYTHONPATH=src python -m unittest discover -s tests -v
-python tools/verify_bridge.py
+.venv/bin/python tools/check.py lint        # compileall, assert guard, whitespace, Lean scan
+.venv/bin/python tools/check.py test-fast   # ~1.5 min: every module except the two slow scenario suites
+.venv/bin/python tools/check.py test        # ~13 min: the complete suite, one pass
 ```
+
+The suite runs once. The former second pass under `python -O` is replaced by the assert guard in `lint`, which fails if any `assert` statement exists in `src/` or `tools/`. The same targets run in CI (`.github/workflows/bridge-pilot.yml`), in the container smoke replay, and in the publish skill.
 
 The verifier reports `operational_status: PASS` only when both the authority PDF and the pinned Lean package are replayed successfully in the same invocation. Omitting either replay reports record integrity `PASS` and operational status `PARTIAL`. The legacy `status` field remains as an operational-only compatibility alias and is labeled by `status_scope`. `mapping_fidelity_status` and `bridge_conformance_status` are independent: a clean operational replay does not promote an unreviewed source mapping or unblock bridge conformance.
 

@@ -109,8 +109,10 @@ docker run --rm \
 The full invocation is accepted only if it reports operational `PASS`, mapping
 fidelity `UNREVIEWED`, bridge conformance `BLOCKED`, and both replay flags
 `true`. The smoke driver asserts that exact tuple mechanically after running
-the bootstrap validator, both Python test modes, the formal checksum/build and
-axiom transcript checks, and the verifier. The verifier hashes the PDF before
+the bootstrap validator, one complete Python test pass (the former second
+pass under `python -O` is replaced by the shipped-code assert guard that CI
+runs on the same commit), the formal checksum/build and axiom transcript
+checks, and the verifier. The verifier hashes the PDF before
 parsing a private copy and then replays the pinned formal package in the same
 process invocation.
 

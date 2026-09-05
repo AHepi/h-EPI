@@ -20,7 +20,7 @@ from creib.canonical import canonical_bytes, domain_digest
 from creib.errors import PolicyViolation, RecordError
 from creib.strict_json import load_strict, loads_strict
 
-from .schema_validation import load_local_schema_catalog
+from .schema_catalog_cache import cached_local_schema_catalog
 from .translation import (
     compute_translation_component_id,
     compute_translation_record_id,
@@ -213,7 +213,7 @@ def _validate_translation_inputs(
     snapshot: dict[str, object],
     interpretation_sets: Iterable[dict[str, object]],
 ) -> tuple[dict[str, object], tuple[dict[str, object], ...]]:
-    catalog = load_local_schema_catalog()
+    catalog = cached_local_schema_catalog()
     catalog.validate(snapshot, "translation-snapshot.schema.json")
     if snapshot.get("schema_version") != SNAPSHOT_SCHEMA:
         raise RecordError("translation snapshot has an unsupported schema version")
@@ -749,7 +749,7 @@ def validate_translation_review(
 ) -> dict[str, object]:
     """Validate one review head against the exact current translation snapshot."""
 
-    load_local_schema_catalog().validate(review, "translation-review-v1.schema.json")
+    cached_local_schema_catalog().validate(review, "translation-review-v1.schema.json")
     if review.get("review_id") != compute_translation_review_id(review):
         raise RecordError("translation review content-addressed ID mismatch")
     _surface_index(_object(review.get("review_surface"), "translation review surface"))
@@ -818,7 +818,7 @@ def _load_review_file(path: Path) -> dict[str, object]:
     except UnicodeDecodeError as exc:
         raise RecordError("translation review is not UTF-8") from exc
     review = _object(value, "translation review")
-    load_local_schema_catalog().validate(review, "translation-review-v1.schema.json")
+    cached_local_schema_catalog().validate(review, "translation-review-v1.schema.json")
     if review.get("review_id") != compute_translation_review_id(review):
         raise RecordError("translation review content-addressed ID mismatch")
     _surface_index(_object(review.get("review_surface"), "translation review surface"))
@@ -1191,7 +1191,7 @@ def verify_translation_review_chain(
         except UnicodeDecodeError as exc:
             raise RecordError("pending translation review is not UTF-8") from exc
         pending_review = _object(parsed, "pending translation review")
-        load_local_schema_catalog().validate(
+        cached_local_schema_catalog().validate(
             pending_review, "translation-review-v1.schema.json"
         )
         if canonical_bytes(pending_review) + b"\n" != payload:
