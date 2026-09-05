@@ -14,6 +14,8 @@ decide whether recovered output should count at all.
 
 from __future__ import annotations
 
+import json
+
 from dataclasses import dataclass
 import re
 from typing import Any, Mapping
@@ -26,6 +28,7 @@ from creib.forge.models import OracleStatus
 from creib.strict_json import loads_strict
 
 from .common import (
+    any_string,
     array_value,
     boolean,
     canonical_text,
@@ -146,7 +149,7 @@ def scoring_from_dict(raw: Any, where: str = "scoring") -> Scoring:
             raise RecordError(f"{where}.field_verdicts[{index}].verdict is unknown")
         verdicts.append(
             FieldVerdict(
-                field=text(entry["field"], f"{where}.field_verdicts[{index}].field"),
+                field=any_string(entry["field"], f"{where}.field_verdicts[{index}].field"),
                 verdict=kind,
                 observed_present=boolean(entry["observed_present"], f"{where}.field_verdicts[{index}].observed_present"),
                 observed_canonical=None if entry["observed_canonical"] is None else text(entry["observed_canonical"], f"{where}.field_verdicts[{index}].observed_canonical"),
@@ -171,17 +174,30 @@ def recover_json_object(content: str) -> Any:
     """Project import: extract a JSON object from fences or surrounding prose."""
 
     candidates: list[str] = [match.group(1) for match in _FENCE.finditer(content)]
-    start = content.find("{")
-    end = content.rfind("}")
-    if start != -1 and end > start:
-        candidates.append(content[start : end + 1])
+    # Every balanced object in the text is a candidate, not only the span from
+    # the first "{" to the last "}": reasoning prose before or after the answer
+    # frequently contains stray braces. Among the candidates that parse as
+    # strict objects, the one with the most keys is taken; ties go to the last,
+    # because models place their final answer last.
+    decoder = json.JSONDecoder()
+    for index, character in enumerate(content):
+        if character != "{":
+            continue
+        try:
+            _value, end = decoder.raw_decode(content, index)
+        except (ValueError, RecursionError):
+            continue
+        candidates.append(content[index:end])
+    best: dict[str, Any] | None = None
     for candidate in candidates:
         try:
             value = loads_strict(candidate.strip())
-        except RecordError:
+        except (RecordError, ValueError, RecursionError):
             continue
-        if type(value) is dict:
-            return value
+        if type(value) is dict and (best is None or len(value) >= len(best)):
+            best = value
+    if best is not None:
+        return best
     raise RecordError("no JSON object could be recovered from the response")
 
 
@@ -190,7 +206,7 @@ def parse_content(content: str, refusal_phrases: tuple[str, ...]) -> tuple[Any, 
 
     try:
         return loads_strict(content), "JSON_OBJECT", None, False
-    except RecordError as strict_error:
+    except (RecordError, ValueError, RecursionError) as strict_error:
         try:
             recovered = recover_json_object(content)
         except RecordError:

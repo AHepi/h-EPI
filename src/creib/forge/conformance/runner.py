@@ -17,7 +17,7 @@ from typing import Iterable
 
 from creib.errors import RecordError
 
-from .common import SCOPE_REFUTED, SCOPE_UNREFUTED, rfc3339
+from .common import SCOPE_INCONCLUSIVE, SCOPE_REFUTED, SCOPE_UNREFUTED, rfc3339
 from .corpus import Corpus
 from .executor import ModelExecutor
 from .families import ExpectationKind, Family, Plan, Variant, materialize_round_trip
@@ -175,6 +175,19 @@ def run_pilot(
         field_counter.update(verdict.verdict for verdict in observation.scoring.field_verdicts)
         locus_counter.update(observation.routing.loci)
     candidate_live = any("CANDIDATE" in observation.routing.loci for observation in observations)
+    scored_model_outputs = sum(
+        1 for observation in observations
+        if observation.response is not None and observation.scoring.response_verdict == "JSON_OBJECT"
+    )
+    # RP-1: "unrefuted" is claimable only when at least one model output was
+    # actually scored and no model call went unobserved. A run made of
+    # transport errors has refuted nothing and confirmed nothing.
+    if candidate_live:
+        scope_label = SCOPE_REFUTED
+    elif scored_model_outputs > 0 and response_counter.get("TRANSPORT_ERROR", 0) == 0:
+        scope_label = SCOPE_UNREFUTED
+    else:
+        scope_label = SCOPE_INCONCLUSIVE
     format_flags = [observation.routing.format_enforced_by_server for observation in observations]
     run_record = build_run_record(
         pilot_id=spec.pilot_id,
@@ -194,7 +207,7 @@ def run_pilot(
         observations_with_live_loci=sum(1 for observation in observations if observation.routing.live_loci),
         model_call_count=sum(1 for observation in observations if observation.response is not None),
         transport_error_count=response_counter.get("TRANSPORT_ERROR", 0),
-        scope_label=SCOPE_REFUTED if candidate_live else SCOPE_UNREFUTED,
+        scope_label=scope_label,
         format_enforced_by_server=False if any(flag is False for flag in format_flags) else None,
     )
     if run_record.run_id != run_id:

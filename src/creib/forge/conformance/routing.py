@@ -118,16 +118,16 @@ _TEST_ORACLE = ("TEST", "The oracle is a non-final proposal and may misread the 
 _MISMATCH_TRIGGERS = ("MISMATCH", "TYPE_VIOLATION", "PATTERN_VIOLATION", "ENUM_VIOLATION", "LENGTH_VIOLATION", "UNEXPECTED_PRESENT", "SCHEMA_INVALID")
 _MISMATCH_FAMILY_LOCI: dict[Family, tuple[tuple[str, str], ...]] = {
     Family.RIVAL_SUBSTITUTION: (
-        ("CANDIDATE", "The output did not follow the appended rival reading; a silent disambiguation may be in play."),
+        ("CANDIDATE", "The output did not match the oracle for the appended rival rule; ignoring or overriding the rule is one reading of this."),
         ("AUXILIARY", "The appended rival sentence may be phrased so that the model cannot apply it."),
         _TEST_ORACLE,
     ),
     Family.SEMANTIC_ROLE_TWIN: (
-        ("CANDIDATE", "Values followed label positions rather than labels."),
+        ("CANDIDATE", "At least one value did not match its swapped label; following position rather than label is one reading of this."),
         ("TEST", "The position swap may itself alter how the labels read; the probe may be confounded."),
     ),
     Family.SUBSTRATE_SWAP: (
-        ("CANDIDATE", "The same facts on another substrate produced a different filled form."),
+        ("CANDIDATE", "On this substrate at least one field missed its oracle; sensitivity to the rendering is one reading of this."),
         ("SCOPE", "The alternative substrate may fall outside the declared input scope."),
         _TEST_ORACLE,
     ),
@@ -340,10 +340,12 @@ def derive_triggers(variant: Variant, scoring: Scoring, *, format_sent: bool) ->
     if scoring.schema_valid is False and not any(t in _CRITICISM_FIELD_VERDICTS | _STRUCTURAL_FIELD_VERDICTS for t in field_triggers):
         field_triggers.append("SCHEMA_INVALID")
     triggers.extend(field_triggers)
-    if format_sent and variant.model_call and any(t in _STRUCTURAL_FIELD_VERDICTS for t in field_triggers):
+    if format_sent and variant.model_call and any(t in _STRUCTURAL_FIELD_VERDICTS or t == "UNEXPECTED_PRESENT" for t in field_triggers):
         triggers.append("FORMAT_NOT_ENFORCED")
     if variant.family is Family.NEGATION and scoring.changed_vs_baseline is False:
         triggers.append("IDENTICAL_TO_BASELINE")
+    if variant.family is Family.NEGATION and scoring.changed_vs_baseline is None:
+        triggers.append("PREREQUISITE_UNAVAILABLE")
     return tuple(triggers)
 
 

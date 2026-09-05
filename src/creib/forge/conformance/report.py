@@ -26,7 +26,7 @@ HUMAN_READINGS: Mapping[str, str] = {
     "INVALID_JSON": "The reply was not parseable JSON even after prose recovery.",
     "NOT_AN_OBJECT": "The reply was JSON but not an object.",
     "REFUSAL_SUSPECTED": "The reply reads like a refusal; the phrase match is a heuristic.",
-    "PREREQUISITE_UNAVAILABLE": "A chained variant could not be built because its baseline output was unusable.",
+    "PREREQUISITE_UNAVAILABLE": "This variant could not be compared with its baseline because the baseline output was unusable; nothing about the model on this variant is claimed.",
     "MISMATCH": "At least one field value differs from the proposed oracle.",
     "MISSING_REQUIRED": "A required key was omitted.",
     "EXTRA_FIELD": "A key outside the schema was emitted.",
@@ -89,11 +89,12 @@ def build_report(run_records: list[RunRecord], observations: Iterable[Observatio
                         "count": 1,
                         "example_case_id": observation.variant.base_case_id,
                         "example_observation_id": observation.observation_id,
-                        "live_loci": list(observation.routing.loci),
+                        "live_loci": sorted(set(observation.routing.loci)),
                         "human_reading": HUMAN_READINGS.get(trigger, "No canned reading; inspect the observation."),
                     }
                 else:
                     mode["count"] += 1
+                    mode["live_loci"] = sorted(set(mode["live_loci"]) | set(observation.routing.loci))
         runs.append(
             {
                 "model": run.model,

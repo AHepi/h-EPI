@@ -30,6 +30,7 @@ from .common import (
     ROUTE_AWAITING_HUMAN_TRIAGE,
     RUN_SCHEMA_NAME,
     RUN_SCHEMA_VERSION,
+    SCOPE_INCONCLUSIVE,
     SCOPE_REFUTED,
     SCOPE_UNREFUTED,
     array_value,
@@ -150,7 +151,14 @@ def observation_from_dict(raw: Any) -> ObservationRecord:
         raise RecordError("observation_id does not replay from the record content")
     if (request_digest is None) != (response is None):
         raise RecordError("observation must carry a request digest exactly when it carries a response")
-    if rebuilt.variant.model_call == (response is None):
+    # A model-call variant whose prerequisite (its baseline output) was unusable is
+    # published without a response and without a request digest: the call was
+    # never made. That is the one legitimate shape in which a model-call variant
+    # carries no response.
+    prerequisite_unavailable = rebuilt.scoring.response_verdict == "PREREQUISITE_UNAVAILABLE"
+    if rebuilt.variant.model_call == (response is None) and not (
+        rebuilt.variant.model_call and response is None and prerequisite_unavailable
+    ):
         raise RecordError("observation response presence disagrees with the variant's model_call flag")
     return rebuilt
 
@@ -189,7 +197,7 @@ class RunRecord:
             raise PolicyViolation("a conformance run record must route to human triage")
         if self.epistemic_limit != NON_INDUCTIVE_LIMIT:
             raise PolicyViolation("run record weakens the non-inductive limit")
-        if self.scope_label not in (SCOPE_REFUTED, SCOPE_UNREFUTED):
+        if self.scope_label not in (SCOPE_REFUTED, SCOPE_UNREFUTED, SCOPE_INCONCLUSIVE):
             raise PolicyViolation("run record scope label is outside the allowed vocabulary")
         if self.executor_kind not in EXECUTOR_KINDS:
             raise RecordError("run record executor_kind is unknown")

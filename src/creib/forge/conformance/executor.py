@@ -14,6 +14,7 @@ separate prior attempt inside the final response.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import http.client
 import json
 import os
 from pathlib import Path
@@ -26,6 +27,7 @@ from creib.canonical import bytes_digest, domain_digest
 from creib.errors import RecordError
 
 from .common import (
+    any_string,
     array_value,
     boolean,
     hex_digest,
@@ -41,6 +43,12 @@ REQUEST_DOMAIN = "creib.conformance-pilot.chat-request.v1"
 API_KEY_ENV = "OLLAMA_API_KEY"
 _BEARER = re.compile(r"(?i)bearer\s+\S+")
 _AUTHORIZATION = re.compile(r"(?i)authorization")
+
+
+def redact_content(content: str, secret: str | None) -> str:
+    """Remove only the key value from model output; ordinary words are left intact."""
+
+    return content.replace(secret, "[REDACTED]") if secret else content
 
 
 def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -73,12 +81,12 @@ def _duration_int(value: Any, where: str) -> int | None:
     if value is None:
         return None
     if type(value) is bool:
-        raise RecordError(f"{where} must be numeric, not boolean")
+        return None
     if type(value) is int:
         return value
     if type(value) is float:
         return int(value)
-    raise RecordError(f"{where} must be numeric")
+    return None
 
 
 @dataclass(frozen=True)
@@ -166,7 +174,7 @@ class ChatResponse:
 def _response_from_attempt(raw: Any, where: str) -> ChatResponse:
     record = object_value(raw, where)
     return ChatResponse(
-        content=text(record["content"], f"{where}.content") if record["content"] else "",
+        content=any_string(record["content"], f"{where}.content"),
         thinking_present=boolean(record["thinking_present"], f"{where}.thinking_present"),
         done=boolean(record["done"], f"{where}.done"),
         done_reason=optional_text(record["done_reason"], f"{where}.done_reason"),
@@ -246,10 +254,10 @@ def parse_chat_body(body: bytes, *, http_status: int, attempt: int, secret: str 
     thinking = message.get("thinking")
     done_reason = parsed.get("done_reason")
     return ChatResponse(
-        content=redact(content, secret),
+        content=redact_content(content, secret),
         thinking_present=type(thinking) is str and bool(thinking.strip()),
         done=parsed.get("done") is True,
-        done_reason=done_reason if type(done_reason) is str else None,
+        done_reason=done_reason if type(done_reason) is str and done_reason.strip() else None,
         prompt_eval_count=_duration_int(parsed.get("prompt_eval_count"), "prompt_eval_count"),
         eval_count=_duration_int(parsed.get("eval_count"), "eval_count"),
         total_duration_ns=_duration_int(parsed.get("total_duration"), "total_duration"),
@@ -306,7 +314,7 @@ class OllamaChatExecutor:
                 body=body,
                 attempt=attempt,
             )
-        except (urllib.error.URLError, OSError, ValueError) as exc:
+        except (urllib.error.URLError, OSError, ValueError, http.client.HTTPException) as exc:
             return _error_response(
                 f"{type(exc).__name__}: {redact(str(exc), secret)}",
                 http_status=None,

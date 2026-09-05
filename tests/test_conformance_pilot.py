@@ -545,7 +545,8 @@ class SecrecyTests(unittest.TestCase):
                 for forbidden in (DUMMY_KEY, "Authorization", "Bearer"):
                     self.assertNotIn(forbidden, text)
             self.assertEqual(result.run_record.transport_error_count, 2)
-            self.assertEqual(result.run_record.scope_label, "UNREFUTED_FOR_DECLARED_SCOPE")
+            # A run made entirely of transport errors has scored nothing; it is neither refuted nor unrefuted.
+            self.assertEqual(result.run_record.scope_label, "INCONCLUSIVE_NO_SCORED_OUTPUT")
 
     def test_redaction_and_float_duration_conversion(self) -> None:
         self.assertEqual(redact(f"token {DUMMY_KEY} Authorization: Bearer abc", DUMMY_KEY), "token [REDACTED] [REDACTED_HEADER]: [REDACTED_AUTH]")
@@ -584,3 +585,100 @@ class CLITests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RobustnessRegressionTests(unittest.TestCase):
+    """Defects found by review after the first live runs; each was confirmed against the code."""
+
+    def setUp(self) -> None:
+        self.baseline = _variant(Family.BASELINE, "ORD-001")
+        self.output = _correct_output("ORD-001")
+        self.phrases = _CONFIG.spec.refusal_phrases
+
+    def _score(self, content: str, variant=None, **kwargs):
+        return score(variant or self.baseline, response_from_content(content), refusal_phrases=self.phrases, **kwargs)
+
+    def test_http_client_exceptions_become_transport_errors(self) -> None:
+        import http.client
+
+        executor = OllamaChatExecutor(base_url="https://example.invalid", timeout_seconds=1)
+        request = build_chat_request(self.baseline, model="gpt-oss:20b", endpoint=_CONFIG.spec.endpoint)
+        for exc in (http.client.IncompleteRead(b"partial"), http.client.BadStatusLine("garbage"), http.client.RemoteDisconnected("gone")):
+            with patch.dict(os.environ, {"OLLAMA_API_KEY": DUMMY_KEY}), patch("urllib.request.urlopen", side_effect=exc):
+                response = executor.complete(request)
+            self.assertIsNotNone(response.transport_error, type(exc).__name__)
+            self.assertEqual(score(self.baseline, response).response_verdict, "TRANSPORT_ERROR")
+
+    def test_oversized_integer_literal_is_invalid_json_not_a_crash(self) -> None:
+        scoring = self._score('{"reporter_name": ' + "9" * 5000 + "}")
+        self.assertEqual(scoring.response_verdict, "INVALID_JSON")
+
+    def test_json_after_reasoning_prose_is_recovered(self) -> None:
+        prose = "Let me work through the fields. Dates like {day}/{month} are day-first here.\n\nFinal answer:\n" + json.dumps(self.output, indent=2) + "\n"
+        scoring = self._score(prose)
+        self.assertEqual(scoring.response_verdict, "JSON_OBJECT")
+        self.assertTrue(scoring.recovered_from_prose)
+        self.assertTrue(all(v.verdict == "MATCH" for v in scoring.field_verdicts))
+        trailing = json.dumps(self.output) + "\nNote: the summary is {short}."
+        self.assertEqual(self._score(trailing).response_verdict, "JSON_OBJECT")
+
+    def test_empty_done_reason_and_non_numeric_counters_do_not_abort(self) -> None:
+        body = json.dumps({"message": {"content": json.dumps(self.output)}, "done": True, "done_reason": "", "eval_count": "many", "total_duration": True}).encode()
+        response = parse_chat_body(body, http_status=200, attempt=1, secret=DUMMY_KEY)
+        self.assertIsNone(response.done_reason)
+        self.assertIsNone(response.eval_count)
+        self.assertIsNone(response.total_duration_ns)
+        self.assertIsNone(response.transport_error)
+
+    def test_model_content_is_not_rewritten_for_ordinary_words(self) -> None:
+        body = json.dumps({"message": {"content": json.dumps({**self.output, "summary": "Bearer of bad news at the authorization desk"})}, "done": True, "done_reason": "stop"}).encode()
+        response = parse_chat_body(body, http_status=200, attempt=1, secret=DUMMY_KEY)
+        self.assertIn("Bearer of bad news at the authorization desk", response.content)
+        leaked = json.dumps({"message": {"content": "key " + DUMMY_KEY}, "done": True, "done_reason": "stop"}).encode()
+        self.assertNotIn(DUMMY_KEY, parse_chat_body(leaked, http_status=200, attempt=1, secret=DUMMY_KEY).content)
+
+    def test_whitespace_content_and_empty_key_round_trip_through_publication(self) -> None:
+        def respond(request: ChatRequest) -> ChatResponse:
+            if "ORD-001" in request.user or "Alice" in request.user:
+                return response_from_content("   ")
+            return response_from_content(json.dumps({**self.output, "": "stray"}))
+
+        with tempfile.TemporaryDirectory() as directory:
+            result = run_pilot(
+                spec=_CONFIG.spec, corpus=_CORPUS, plan=_PLAN, model="gpt-oss:20b",
+                executor=FakeExecutor(respond), executor_kind="fake",
+                output_dir=Path(directory), created_on=CREATED_ON, families=(Family.BASELINE,), limit=3,
+            )
+            verdicts = {o.scoring.response_verdict for o in result.observations}
+            self.assertIn("EMPTY_RESPONSE", verdicts)
+            reloaded = load_observation_directory(Path(directory))
+            self.assertEqual(len(reloaded), len(result.observations))
+            self.assertEqual(load_run(result.run_path).run_id, result.run_record.run_id)
+
+    def test_scope_label_is_inconclusive_when_nothing_was_scored(self) -> None:
+        error = ChatResponse("", False, False, None, None, None, None, None, "URLError: unreachable", "0" * 64)
+        with tempfile.TemporaryDirectory() as directory:
+            result = run_pilot(
+                spec=_CONFIG.spec, corpus=_CORPUS, plan=_PLAN, model="gpt-oss:20b",
+                executor=FakeExecutor(lambda req: error), executor_kind="fake",
+                output_dir=Path(directory), created_on=CREATED_ON, families=(Family.BASELINE,), limit=2,
+            )
+        self.assertEqual(result.run_record.scope_label, "INCONCLUSIVE_NO_SCORED_OUTPUT")
+        self.assertNotIn("CANDIDATE", {locus for o in result.observations for locus in o.routing.loci})
+
+    def test_negation_without_usable_baseline_routes_somewhere(self) -> None:
+        variant = _variant(Family.NEGATION, "ORD-001")
+        scoring = score(variant, response_from_content(json.dumps(self.output)), refusal_phrases=self.phrases, baseline_output=None)
+        routing = route(variant, scoring)
+        self.assertIn("PREREQUISITE_UNAVAILABLE", routing.triggers)
+        self.assertTrue(routing.live_loci)
+
+    def test_reemitted_deleted_key_proves_format_not_enforced(self) -> None:
+        variant = _variant(Family.DELETION, "ORD-001")
+        deleted = [f for f in self.output if f not in variant.field_order]
+        self.assertTrue(deleted)
+        scoring = score(variant, response_from_content(json.dumps(self.output)), refusal_phrases=self.phrases)
+        routing = route(variant, scoring, format_sent=True)
+        self.assertIn("UNEXPECTED_PRESENT", routing.triggers)
+        self.assertIn("FORMAT_NOT_ENFORCED", routing.triggers)
+        self.assertIs(routing.format_enforced_by_server, False)
