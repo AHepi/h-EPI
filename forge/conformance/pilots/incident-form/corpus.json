@@ -1,0 +1,1660 @@
+{
+  "schema_version": "creib.conformance-pilot.corpus.v1",
+  "corpus_id": "SMF-CONFORMANCE-INCIDENT-CORPUS-001",
+  "cases": [
+    {
+      "case_id": "ORD-001",
+      "boundary": false,
+      "rendering": "prose",
+      "renderings": {
+        "prose": "Incident report filed by Alice Nguyen (contact 0412 345 678). On 3 April 2025 at about 2:30 pm, Tom Baker (date of birth 12 June 1988) slipped on a wet patch at Warehouse B, Dock 3. In Alice's words: \"Tom slipped on a wet patch near dock 3 and landed on his wrist; it swelled up but he finished the shift.\" Alice describes the injury as minor; no hospital treatment was needed.",
+        "table": "Field | Value\nReported by | Alice Nguyen\nReporter contact | 0412 345 678\nPerson involved | Tom Baker\nDate of birth | 12 June 1988\nDate of incident | 3 April 2025\nTime | approx. 2:30 pm\nLocation | Warehouse B, Dock 3\nInjury | Yes - sprained wrist, described as minor, no hospital treatment\nReporter's account | Tom slipped on a wet patch near dock 3 and landed on his wrist; it swelled up but he finished the shift.",
+        "email": "From: Alice Nguyen\nTo: WHS Team\nSubject: Incident at Warehouse B, Dock 3 - 3 April 2025\n\nHi team,\n\nReporting an incident from today, 3 April 2025, at about 2:30 pm at Warehouse B, Dock 3. Tom Baker (DOB 12 June 1988) slipped on a wet patch near dock 3 and landed on his wrist; it swelled up but he finished the shift. I'd call it minor - no hospital needed.\n\nCall me on 0412 345 678 if you need more.\n\nAlice"
+      },
+      "expected": [
+        {
+          "field": "reporter_name",
+          "kind": "exact",
+          "value": "Alice Nguyen",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S2: the name written as the person who reported"
+        },
+        {
+          "field": "subject_name",
+          "kind": "exact",
+          "value": "Tom Baker",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S3: the name written as the person the incident happened to"
+        },
+        {
+          "field": "date_of_birth",
+          "kind": "exact",
+          "value": "1988-06-12",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S4: the stated date of birth in ISO 8601"
+        },
+        {
+          "field": "incident_date",
+          "kind": "exact",
+          "value": "2025-04-03",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S5: the stated incident date in ISO 8601"
+        },
+        {
+          "field": "incident_time",
+          "kind": "exact",
+          "value": "14:30",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S6: the stated time in 24-hour HH:MM"
+        },
+        {
+          "field": "phone",
+          "kind": "exact",
+          "value": "+61412345678",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S7: the reporter's number in E.164 with +61"
+        },
+        {
+          "field": "site",
+          "kind": "any_of",
+          "value": null,
+          "values": [
+            "Warehouse B, Dock 3",
+            "warehouse B, Dock 3"
+          ],
+          "pattern": null,
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S8 says 'as named in the document'; the documents use sentence case and, where several renderings exist, name the place with small wording differences. The verbatim forms from every rendering and the capitalised proper-name reading are all admitted; none is endorsed. A baseline run against gpt-oss:20b exposed the earlier title-cased exact oracle as a TEST defect (model output matched the document, oracle did not)."
+        },
+        {
+          "field": "severity",
+          "kind": "exact",
+          "value": "medium",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S9: an injury is reported so severity is at least medium; the reporter calls it minor and no hospital treatment occurred, read as medium; the letter of S9 does not exclude high"
+        },
+        {
+          "field": "injury_reported",
+          "kind": "exact",
+          "value": true,
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S10: whether any injury is reported"
+        },
+        {
+          "field": "summary",
+          "kind": "regex",
+          "value": null,
+          "values": null,
+          "pattern": "(?i)wrist",
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S11: the reporter's account concerns a wrist injury; exact wording is the model's"
+        }
+      ],
+      "held_fixed": "all facts as rendered; reference case for ORD-001-P",
+      "varied": null,
+      "pair_of": null,
+      "reference_output": [
+        {
+          "field": "reporter_name",
+          "value": "Alice Nguyen"
+        },
+        {
+          "field": "subject_name",
+          "value": "Tom Baker"
+        },
+        {
+          "field": "date_of_birth",
+          "value": "1988-06-12"
+        },
+        {
+          "field": "incident_date",
+          "value": "2025-04-03"
+        },
+        {
+          "field": "incident_time",
+          "value": "14:30"
+        },
+        {
+          "field": "phone",
+          "value": "+61412345678"
+        },
+        {
+          "field": "site",
+          "value": "Warehouse B, Dock 3"
+        },
+        {
+          "field": "severity",
+          "value": "medium"
+        },
+        {
+          "field": "injury_reported",
+          "value": true
+        },
+        {
+          "field": "summary",
+          "value": "Tom slipped on a wet patch near dock 3 and landed on his wrist; it swelled up but he finished the shift."
+        }
+      ],
+      "rival_expected": [],
+      "notes": null
+    },
+    {
+      "case_id": "ORD-002",
+      "boundary": false,
+      "rendering": "prose",
+      "renderings": {
+        "prose": "Report from Priya Raman, phone (02) 9876 5432. On 18 February 2025 a pallet fell from the top rack at the loading bay, Site 4 Parramatta, landing about a metre from Marcus Hill (born 3 November 1979). Priya writes: \"A pallet came off the top rack and hit the floor next to Marcus. Nobody was hurt but it was close.\" She rates the risk as low and reports no injury.",
+        "table": "Field | Value\nReported by | Priya Raman\nReporter contact | (02) 9876 5432\nPerson involved | Marcus Hill\nDate of birth | 3 November 1979\nDate of incident | 18 February 2025\nTime | not recorded\nLocation | Loading bay, Site 4 Parramatta\nInjury | None\nReporter's rating | low\nReporter's account | A pallet came off the top rack and hit the floor next to Marcus. Nobody was hurt but it was close.",
+        "email": "From: Priya Raman\nTo: WHS Team\nSubject: Near miss at the loading bay, Site 4 Parramatta\n\nHi,\n\nOn 18 February 2025 a pallet came off the top rack and hit the floor next to Marcus Hill (born 3 November 1979) at the loading bay, Site 4 Parramatta. Nobody was hurt but it was close. I'd rate it low.\n\nPriya Raman, (02) 9876 5432"
+      },
+      "expected": [
+        {
+          "field": "reporter_name",
+          "kind": "exact",
+          "value": "Priya Raman",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S2: the name written as the person who reported"
+        },
+        {
+          "field": "subject_name",
+          "kind": "exact",
+          "value": "Marcus Hill",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S3: the name written as the person the incident happened to"
+        },
+        {
+          "field": "date_of_birth",
+          "kind": "exact",
+          "value": "1979-11-03",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S4: the stated date of birth in ISO 8601"
+        },
+        {
+          "field": "incident_date",
+          "kind": "exact",
+          "value": "2025-02-18",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S5: the stated incident date in ISO 8601"
+        },
+        {
+          "field": "incident_time",
+          "kind": "absent",
+          "value": null,
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S6: no time is stated, so the key must be omitted"
+        },
+        {
+          "field": "phone",
+          "kind": "exact",
+          "value": "+61298765432",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S7: the reporter's number in E.164 with +61"
+        },
+        {
+          "field": "site",
+          "kind": "any_of",
+          "value": null,
+          "values": [
+            "Loading bay, Site 4 Parramatta",
+            "loading bay, Site 4 Parramatta"
+          ],
+          "pattern": null,
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S8 says 'as named in the document'; the documents use sentence case and, where several renderings exist, name the place with small wording differences. The verbatim forms from every rendering and the capitalised proper-name reading are all admitted; none is endorsed. A baseline run against gpt-oss:20b exposed the earlier title-cased exact oracle as a TEST defect (model output matched the document, oracle did not)."
+        },
+        {
+          "field": "severity",
+          "kind": "exact",
+          "value": "low",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S9 sets no floor when no injury is reported; the reporter rates it low and that rating is read as the answer"
+        },
+        {
+          "field": "injury_reported",
+          "kind": "exact",
+          "value": false,
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S10: whether any injury is reported"
+        },
+        {
+          "field": "summary",
+          "kind": "regex",
+          "value": null,
+          "values": null,
+          "pattern": "(?i)pallet",
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S11: the reporter's account concerns a fallen pallet"
+        }
+      ],
+      "held_fixed": "all facts as rendered; reference case for ORD-002-P",
+      "varied": null,
+      "pair_of": null,
+      "reference_output": [
+        {
+          "field": "reporter_name",
+          "value": "Priya Raman"
+        },
+        {
+          "field": "subject_name",
+          "value": "Marcus Hill"
+        },
+        {
+          "field": "date_of_birth",
+          "value": "1979-11-03"
+        },
+        {
+          "field": "incident_date",
+          "value": "2025-02-18"
+        },
+        {
+          "field": "phone",
+          "value": "+61298765432"
+        },
+        {
+          "field": "site",
+          "value": "Loading bay, Site 4 Parramatta"
+        },
+        {
+          "field": "severity",
+          "value": "low"
+        },
+        {
+          "field": "injury_reported",
+          "value": false
+        },
+        {
+          "field": "summary",
+          "value": "A pallet came off the top rack and hit the floor next to Marcus. Nobody was hurt but it was close."
+        }
+      ],
+      "rival_expected": [],
+      "notes": null
+    },
+    {
+      "case_id": "ORD-003",
+      "boundary": false,
+      "rendering": "email",
+      "renderings": {
+        "email": "From: Daniel O'Connor\nTo: WHS Team\nSubject: Chemical splash, plant room B2\n\nAt 9:05 am on 9 March 2025 Wei Zhang (DOB 25/08/1992) was splashed on the forearm with cleaning concentrate while changing a drum in the plant room, Level B2. Wei was taken to hospital for assessment. In my words: Wei got a splash of concentrate on the forearm while swapping a drum and we sent her to hospital to be safe.\n\nDaniel O'Connor, +61 3 9123 4567",
+        "prose": "Daniel O'Connor (phone +61 3 9123 4567) reports that at 9:05 am on 9 March 2025 Wei Zhang, date of birth 25/08/1992, was splashed on the forearm with cleaning concentrate while changing a drum in the plant room, Level B2, and was taken to hospital for assessment. Daniel's account: \"Wei got a splash of concentrate on the forearm while swapping a drum and we sent her to hospital to be safe.\"",
+        "table": "Field | Value\nReported by | Daniel O'Connor\nReporter contact | +61 3 9123 4567\nPerson involved | Wei Zhang\nDate of birth | 25/08/1992\nDate of incident | 9 March 2025\nTime | 9:05 am\nLocation | Plant room, Level B2\nInjury | Yes - chemical splash to forearm, taken to hospital\nReporter's account | Wei got a splash of concentrate on the forearm while swapping a drum and we sent her to hospital to be safe."
+      },
+      "expected": [
+        {
+          "field": "reporter_name",
+          "kind": "exact",
+          "value": "Daniel O'Connor",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S2: the name written as the person who reported"
+        },
+        {
+          "field": "subject_name",
+          "kind": "exact",
+          "value": "Wei Zhang",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S3: the name written as the person the incident happened to"
+        },
+        {
+          "field": "date_of_birth",
+          "kind": "exact",
+          "value": "1992-08-25",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S4: the stated date of birth in ISO 8601"
+        },
+        {
+          "field": "incident_date",
+          "kind": "exact",
+          "value": "2025-03-09",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S5: the stated incident date in ISO 8601"
+        },
+        {
+          "field": "incident_time",
+          "kind": "exact",
+          "value": "09:05",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S6: the stated time in 24-hour HH:MM"
+        },
+        {
+          "field": "phone",
+          "kind": "exact",
+          "value": "+61391234567",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S7: the reporter's number in E.164 with +61"
+        },
+        {
+          "field": "site",
+          "kind": "any_of",
+          "value": null,
+          "values": [
+            "Plant room, Level B2",
+            "plant room, Level B2"
+          ],
+          "pattern": null,
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S8 says 'as named in the document'; the documents use sentence case and, where several renderings exist, name the place with small wording differences. The verbatim forms from every rendering and the capitalised proper-name reading are all admitted; none is endorsed. A baseline run against gpt-oss:20b exposed the earlier title-cased exact oracle as a TEST defect (model output matched the document, oracle did not)."
+        },
+        {
+          "field": "severity",
+          "kind": "exact",
+          "value": "high",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S9: hospital treatment means high"
+        },
+        {
+          "field": "injury_reported",
+          "kind": "exact",
+          "value": true,
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S10: whether any injury is reported"
+        },
+        {
+          "field": "summary",
+          "kind": "regex",
+          "value": null,
+          "values": null,
+          "pattern": "(?i)splash|concentrate",
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S11: the reporter's account concerns a chemical splash"
+        }
+      ],
+      "held_fixed": "all facts as rendered; reference case for ORD-003-P",
+      "varied": null,
+      "pair_of": null,
+      "reference_output": null,
+      "rival_expected": [],
+      "notes": null
+    },
+    {
+      "case_id": "ORD-004",
+      "boundary": false,
+      "rendering": "table",
+      "renderings": {
+        "table": "Field | Value\nReported by | Grace Okafor\nReporter contact | 0455 000 111\nPerson involved | Liam Foster\nDate of birth | 1 January 2001\nDate of incident | 22 May 2025\nTime | 16:45\nLocation | Car park, Gate 2\nInjury | None\nReporter's rating | medium - could have been serious\nReporter's account | A forklift reversed out of Gate 2 without a spotter and stopped about half a metre from Liam.",
+        "prose": "Grace Okafor (0455 000 111) reports that at 16:45 on 22 May 2025, in the car park at Gate 2, a forklift reversed out of Gate 2 without a spotter and stopped about half a metre from Liam Foster (born 1 January 2001). Nobody was injured. Grace rates it medium because it could have been serious.",
+        "email": "From: Grace Okafor\nTo: WHS Team\nSubject: Forklift near miss, car park Gate 2\n\nAt 16:45 on 22 May 2025 a forklift reversed out of Gate 2 without a spotter and stopped about half a metre from Liam Foster (born 1 January 2001) in the car park. No injury, but I'd rate it medium - could have been serious.\n\nGrace Okafor, 0455 000 111"
+      },
+      "expected": [
+        {
+          "field": "reporter_name",
+          "kind": "exact",
+          "value": "Grace Okafor",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S2: the name written as the person who reported"
+        },
+        {
+          "field": "subject_name",
+          "kind": "exact",
+          "value": "Liam Foster",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S3: the name written as the person the incident happened to"
+        },
+        {
+          "field": "date_of_birth",
+          "kind": "exact",
+          "value": "2001-01-01",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S4: the stated date of birth in ISO 8601"
+        },
+        {
+          "field": "incident_date",
+          "kind": "exact",
+          "value": "2025-05-22",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S5: the stated incident date in ISO 8601"
+        },
+        {
+          "field": "incident_time",
+          "kind": "exact",
+          "value": "16:45",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S6: the stated time in 24-hour HH:MM"
+        },
+        {
+          "field": "phone",
+          "kind": "exact",
+          "value": "+61455000111",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S7: the reporter's number in E.164 with +61"
+        },
+        {
+          "field": "site",
+          "kind": "any_of",
+          "value": null,
+          "values": [
+            "Car park, Gate 2",
+            "car park Gate 2",
+            "car park at Gate 2",
+            "car park, Gate 2",
+            "the car park at Gate 2"
+          ],
+          "pattern": null,
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S8 says 'as named in the document'; the documents use sentence case and, where several renderings exist, name the place with small wording differences. The verbatim forms from every rendering and the capitalised proper-name reading are all admitted; none is endorsed. A baseline run against gpt-oss:20b exposed the earlier title-cased exact oracle as a TEST defect (model output matched the document, oracle did not)."
+        },
+        {
+          "field": "severity",
+          "kind": "exact",
+          "value": "medium",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S9 sets no floor when no injury is reported; the reporter rates it medium and that rating is read as the answer"
+        },
+        {
+          "field": "injury_reported",
+          "kind": "exact",
+          "value": false,
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S10: whether any injury is reported"
+        },
+        {
+          "field": "summary",
+          "kind": "regex",
+          "value": null,
+          "values": null,
+          "pattern": "(?i)forklift",
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S11: the reporter's account concerns a reversing forklift"
+        }
+      ],
+      "held_fixed": "all facts as rendered",
+      "varied": null,
+      "pair_of": null,
+      "reference_output": null,
+      "rival_expected": [],
+      "notes": null
+    },
+    {
+      "case_id": "ORD-005",
+      "boundary": false,
+      "rendering": "prose",
+      "renderings": {
+        "prose": "Hannah Lee (mobile 0401 222 333) reports that at 11:20 am on 30 June 2025 Omar Haddad, born 14 July 1985, burned his hand on a hot tray in the kitchen, Building C. First aid was given on site and no hospital visit was needed. Hannah's words: \"Omar grabbed a tray that had just come out of the oven and burned his palm; we ran it under cold water and dressed it.\" She calls it moderate.",
+        "table": "Field | Value\nReported by | Hannah Lee\nReporter contact | 0401 222 333\nPerson involved | Omar Haddad\nDate of birth | 14 July 1985\nDate of incident | 30 June 2025\nTime | 11:20 am\nLocation | Kitchen, Building C\nInjury | Yes - burn to palm, first aid on site, no hospital\nReporter's rating | moderate\nReporter's account | Omar grabbed a tray that had just come out of the oven and burned his palm; we ran it under cold water and dressed it.",
+        "email": "From: Hannah Lee\nTo: WHS Team\nSubject: Burn in the kitchen, Building C\n\nAt 11:20 am on 30 June 2025 Omar Haddad (born 14 July 1985) grabbed a tray that had just come out of the oven and burned his palm; we ran it under cold water and dressed it. First aid only, no hospital. I'd call it moderate.\n\nHannah Lee, 0401 222 333"
+      },
+      "expected": [
+        {
+          "field": "reporter_name",
+          "kind": "exact",
+          "value": "Hannah Lee",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S2: the name written as the person who reported"
+        },
+        {
+          "field": "subject_name",
+          "kind": "exact",
+          "value": "Omar Haddad",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S3: the name written as the person the incident happened to"
+        },
+        {
+          "field": "date_of_birth",
+          "kind": "exact",
+          "value": "1985-07-14",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S4: the stated date of birth in ISO 8601"
+        },
+        {
+          "field": "incident_date",
+          "kind": "exact",
+          "value": "2025-06-30",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S5: the stated incident date in ISO 8601"
+        },
+        {
+          "field": "incident_time",
+          "kind": "exact",
+          "value": "11:20",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S6: the stated time in 24-hour HH:MM"
+        },
+        {
+          "field": "phone",
+          "kind": "exact",
+          "value": "+61401222333",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S7: the reporter's number in E.164 with +61"
+        },
+        {
+          "field": "site",
+          "kind": "any_of",
+          "value": null,
+          "values": [
+            "Kitchen, Building C",
+            "kitchen, Building C"
+          ],
+          "pattern": null,
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S8 says 'as named in the document'; the documents use sentence case and, where several renderings exist, name the place with small wording differences. The verbatim forms from every rendering and the capitalised proper-name reading are all admitted; none is endorsed. A baseline run against gpt-oss:20b exposed the earlier title-cased exact oracle as a TEST defect (model output matched the document, oracle did not)."
+        },
+        {
+          "field": "severity",
+          "kind": "exact",
+          "value": "medium",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S9: an injury is reported so severity is at least medium; no hospital treatment, read as medium; the letter of S9 does not exclude high"
+        },
+        {
+          "field": "injury_reported",
+          "kind": "exact",
+          "value": true,
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S10: whether any injury is reported"
+        },
+        {
+          "field": "summary",
+          "kind": "regex",
+          "value": null,
+          "values": null,
+          "pattern": "(?i)burn",
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S11: the reporter's account concerns a burn"
+        }
+      ],
+      "held_fixed": "all facts as rendered",
+      "varied": null,
+      "pair_of": null,
+      "reference_output": null,
+      "rival_expected": [],
+      "notes": null
+    },
+    {
+      "case_id": "ORD-006",
+      "boundary": false,
+      "rendering": "email",
+      "renderings": {
+        "email": "From: Sam Taylor\nTo: WHS Team\nSubject: Slip in cold store 2\n\nOn 12 August 2025 Ivy Chen (DOB 29 February 2000) slipped on ice on the floor of cold store 2 but caught the shelving and stayed upright. No injury. Low, in my view, but the floor needs attention.\n\nSam Taylor, 0499 888 777",
+        "prose": "Sam Taylor (0499 888 777) reports that on 12 August 2025 Ivy Chen, date of birth 29 February 2000, slipped on ice on the floor of cold store 2 but caught the shelving and stayed upright. There was no injury. Sam rates it low but says the floor needs attention.",
+        "table": "Field | Value\nReported by | Sam Taylor\nReporter contact | 0499 888 777\nPerson involved | Ivy Chen\nDate of birth | 29 February 2000\nDate of incident | 12 August 2025\nTime | not stated\nLocation | Cold store 2\nInjury | None\nReporter's rating | low\nReporter's account | Ivy slipped on ice on the floor of cold store 2 but caught the shelving and stayed upright; the floor needs attention."
+      },
+      "expected": [
+        {
+          "field": "reporter_name",
+          "kind": "exact",
+          "value": "Sam Taylor",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S2: the name written as the person who reported"
+        },
+        {
+          "field": "subject_name",
+          "kind": "exact",
+          "value": "Ivy Chen",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S3: the name written as the person the incident happened to"
+        },
+        {
+          "field": "date_of_birth",
+          "kind": "exact",
+          "value": "2000-02-29",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S4: the stated date of birth in ISO 8601"
+        },
+        {
+          "field": "incident_date",
+          "kind": "exact",
+          "value": "2025-08-12",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S5: the stated incident date in ISO 8601"
+        },
+        {
+          "field": "incident_time",
+          "kind": "absent",
+          "value": null,
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S6: no time is stated, so the key must be omitted"
+        },
+        {
+          "field": "phone",
+          "kind": "exact",
+          "value": "+61499888777",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S7: the reporter's number in E.164 with +61"
+        },
+        {
+          "field": "site",
+          "kind": "any_of",
+          "value": null,
+          "values": [
+            "Cold store 2",
+            "cold store 2"
+          ],
+          "pattern": null,
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S8 says 'as named in the document'; the documents use sentence case and, where several renderings exist, name the place with small wording differences. The verbatim forms from every rendering and the capitalised proper-name reading are all admitted; none is endorsed. A baseline run against gpt-oss:20b exposed the earlier title-cased exact oracle as a TEST defect (model output matched the document, oracle did not)."
+        },
+        {
+          "field": "severity",
+          "kind": "exact",
+          "value": "low",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S9 sets no floor when no injury is reported; the reporter rates it low"
+        },
+        {
+          "field": "injury_reported",
+          "kind": "exact",
+          "value": false,
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S10: whether any injury is reported"
+        },
+        {
+          "field": "summary",
+          "kind": "regex",
+          "value": null,
+          "values": null,
+          "pattern": "(?i)slip|ice",
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S11: the reporter's account concerns a slip on ice"
+        }
+      ],
+      "held_fixed": "all facts as rendered",
+      "varied": null,
+      "pair_of": null,
+      "reference_output": null,
+      "rival_expected": [],
+      "notes": null
+    },
+    {
+      "case_id": "ORD-001-P",
+      "boundary": false,
+      "rendering": "prose",
+      "renderings": {
+        "prose": "Incident report filed by Alice Nguyen (contact 0412 345 678). On 3 April 2025 at about 2:30 pm, Tom Baker (date of birth 12 June 1988) slipped on a wet patch at Warehouse B, Dock 3. In Alice's words: \"Tom slipped on a wet patch near dock 3 but caught the rail and stayed on his feet; no harm done.\" Alice reports no injury and rates it low."
+      },
+      "expected": [
+        {
+          "field": "reporter_name",
+          "kind": "exact",
+          "value": "Alice Nguyen",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S2: the name written as the person who reported"
+        },
+        {
+          "field": "subject_name",
+          "kind": "exact",
+          "value": "Tom Baker",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S3: the name written as the person the incident happened to"
+        },
+        {
+          "field": "date_of_birth",
+          "kind": "exact",
+          "value": "1988-06-12",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S4: the stated date of birth in ISO 8601"
+        },
+        {
+          "field": "incident_date",
+          "kind": "exact",
+          "value": "2025-04-03",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S5: the stated incident date in ISO 8601"
+        },
+        {
+          "field": "incident_time",
+          "kind": "exact",
+          "value": "14:30",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S6: the stated time in 24-hour HH:MM"
+        },
+        {
+          "field": "phone",
+          "kind": "exact",
+          "value": "+61412345678",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S7: the reporter's number in E.164 with +61"
+        },
+        {
+          "field": "site",
+          "kind": "any_of",
+          "value": null,
+          "values": [
+            "Warehouse B, Dock 3",
+            "warehouse B, Dock 3"
+          ],
+          "pattern": null,
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S8 says 'as named in the document'; the documents use sentence case and, where several renderings exist, name the place with small wording differences. The verbatim forms from every rendering and the capitalised proper-name reading are all admitted; none is endorsed. A baseline run against gpt-oss:20b exposed the earlier title-cased exact oracle as a TEST defect (model output matched the document, oracle did not)."
+        },
+        {
+          "field": "severity",
+          "kind": "exact",
+          "value": "low",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "interpretation_provisional",
+          "rationale": "no injury is reported so S9 sets no floor; the reporter rates it low"
+        },
+        {
+          "field": "injury_reported",
+          "kind": "exact",
+          "value": false,
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S10: whether any injury is reported"
+        },
+        {
+          "field": "summary",
+          "kind": "regex",
+          "value": null,
+          "values": null,
+          "pattern": "(?i)rail|wet patch",
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S11: the reporter's account concerns a slip without injury"
+        }
+      ],
+      "held_fixed": "reporter, subject, dates, time, phone, and site identical to ORD-001",
+      "varied": "the injury sentence is replaced by a no-injury sentence and the reporter's rating becomes low",
+      "pair_of": "ORD-001",
+      "reference_output": null,
+      "rival_expected": [],
+      "notes": null
+    },
+    {
+      "case_id": "ORD-002-P",
+      "boundary": false,
+      "rendering": "prose",
+      "renderings": {
+        "prose": "Report from Marcus Hill, phone (02) 9876 5432. On 18 February 2025 a pallet fell from the top rack at the loading bay, Site 4 Parramatta, landing about a metre from Priya Raman (born 3 November 1979). Marcus writes: \"A pallet came off the top rack and hit the floor next to Priya. Nobody was hurt but it was close.\" He rates the risk as low and reports no injury."
+      },
+      "expected": [
+        {
+          "field": "reporter_name",
+          "kind": "exact",
+          "value": "Marcus Hill",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S2: the name written as the person who reported"
+        },
+        {
+          "field": "subject_name",
+          "kind": "exact",
+          "value": "Priya Raman",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S3: the name written as the person the incident happened to"
+        },
+        {
+          "field": "date_of_birth",
+          "kind": "exact",
+          "value": "1979-11-03",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S4: the stated date of birth in ISO 8601"
+        },
+        {
+          "field": "incident_date",
+          "kind": "exact",
+          "value": "2025-02-18",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S5: the stated incident date in ISO 8601"
+        },
+        {
+          "field": "incident_time",
+          "kind": "absent",
+          "value": null,
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S6: no time is stated, so the key must be omitted"
+        },
+        {
+          "field": "phone",
+          "kind": "exact",
+          "value": "+61298765432",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S7: the reporter's number in E.164 with +61"
+        },
+        {
+          "field": "site",
+          "kind": "any_of",
+          "value": null,
+          "values": [
+            "Loading bay, Site 4 Parramatta",
+            "loading bay, Site 4 Parramatta"
+          ],
+          "pattern": null,
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S8 says 'as named in the document'; the documents use sentence case and, where several renderings exist, name the place with small wording differences. The verbatim forms from every rendering and the capitalised proper-name reading are all admitted; none is endorsed. A baseline run against gpt-oss:20b exposed the earlier title-cased exact oracle as a TEST defect (model output matched the document, oracle did not)."
+        },
+        {
+          "field": "severity",
+          "kind": "exact",
+          "value": "low",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S9 sets no floor when no injury is reported; the reporter rates it low"
+        },
+        {
+          "field": "injury_reported",
+          "kind": "exact",
+          "value": false,
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S10: whether any injury is reported"
+        },
+        {
+          "field": "summary",
+          "kind": "regex",
+          "value": null,
+          "values": null,
+          "pattern": "(?i)pallet",
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S11: the reporter's account concerns a fallen pallet"
+        }
+      ],
+      "held_fixed": "dates, phone, site, event, rating, and account structure identical to ORD-002",
+      "varied": "the two people exchange roles: Marcus Hill reports and Priya Raman is the person involved",
+      "pair_of": "ORD-002",
+      "reference_output": null,
+      "rival_expected": [],
+      "notes": null
+    },
+    {
+      "case_id": "ORD-003-P",
+      "boundary": false,
+      "rendering": "email",
+      "renderings": {
+        "email": "From: Daniel O'Connor\nTo: WHS Team\nSubject: Chemical splash, plant room B2\n\nAt 9:05 am on 19 March 2025 Wei Zhang (DOB 25/08/1992) was splashed on the forearm with cleaning concentrate while changing a drum in the plant room, Level B2. Wei was taken to hospital for assessment. In my words: Wei got a splash of concentrate on the forearm while swapping a drum and we sent her to hospital to be safe.\n\nDaniel O'Connor, +61 3 9123 4567"
+      },
+      "expected": [
+        {
+          "field": "reporter_name",
+          "kind": "exact",
+          "value": "Daniel O'Connor",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S2: the name written as the person who reported"
+        },
+        {
+          "field": "subject_name",
+          "kind": "exact",
+          "value": "Wei Zhang",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S3: the name written as the person the incident happened to"
+        },
+        {
+          "field": "date_of_birth",
+          "kind": "exact",
+          "value": "1992-08-25",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S4: the stated date of birth in ISO 8601"
+        },
+        {
+          "field": "incident_date",
+          "kind": "exact",
+          "value": "2025-03-19",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S5: the stated incident date in ISO 8601"
+        },
+        {
+          "field": "incident_time",
+          "kind": "exact",
+          "value": "09:05",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S6: the stated time in 24-hour HH:MM"
+        },
+        {
+          "field": "phone",
+          "kind": "exact",
+          "value": "+61391234567",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S7: the reporter's number in E.164 with +61"
+        },
+        {
+          "field": "site",
+          "kind": "any_of",
+          "value": null,
+          "values": [
+            "Plant room, Level B2",
+            "plant room, Level B2"
+          ],
+          "pattern": null,
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S8 says 'as named in the document'; the documents use sentence case and, where several renderings exist, name the place with small wording differences. The verbatim forms from every rendering and the capitalised proper-name reading are all admitted; none is endorsed. A baseline run against gpt-oss:20b exposed the earlier title-cased exact oracle as a TEST defect (model output matched the document, oracle did not)."
+        },
+        {
+          "field": "severity",
+          "kind": "exact",
+          "value": "high",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S9: hospital treatment means high"
+        },
+        {
+          "field": "injury_reported",
+          "kind": "exact",
+          "value": true,
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S10: whether any injury is reported"
+        },
+        {
+          "field": "summary",
+          "kind": "regex",
+          "value": null,
+          "values": null,
+          "pattern": "(?i)splash|concentrate",
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S11: the reporter's account concerns a chemical splash"
+        }
+      ],
+      "held_fixed": "everything except the day of the incident identical to ORD-003",
+      "varied": "incident date 9 March 2025 becomes 19 March 2025",
+      "pair_of": "ORD-003",
+      "reference_output": null,
+      "rival_expected": [],
+      "notes": null
+    },
+    {
+      "case_id": "BND-001",
+      "boundary": true,
+      "rendering": "prose",
+      "renderings": {
+        "prose": "Noah Smith reports (contact number: not provided) that at 8:00 am on 1 July 2025 Ella Brown, born 5 May 1995, walked into the glass door at reception because the safety decal had fallen off. Noah writes: \"Ella walked straight into the reception door; the decal was missing. She was startled but fine.\" No injury; Noah rates it low."
+      },
+      "expected": [
+        {
+          "field": "reporter_name",
+          "kind": "exact",
+          "value": "Noah Smith",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S2: the name written as the person who reported"
+        },
+        {
+          "field": "subject_name",
+          "kind": "exact",
+          "value": "Ella Brown",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S3: the name written as the person the incident happened to"
+        },
+        {
+          "field": "date_of_birth",
+          "kind": "exact",
+          "value": "1995-05-05",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S4: the stated date of birth in ISO 8601"
+        },
+        {
+          "field": "incident_date",
+          "kind": "exact",
+          "value": "2025-07-01",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S5: the stated incident date in ISO 8601"
+        },
+        {
+          "field": "incident_time",
+          "kind": "exact",
+          "value": "08:00",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S6: the stated time in 24-hour HH:MM"
+        },
+        {
+          "field": "phone",
+          "kind": "any_of",
+          "value": null,
+          "values": [
+            ""
+          ],
+          "pattern": null,
+          "oracle_status": "interpretation_provisional",
+          "rationale": "no number is stated; the form requires one and its pattern admits no 'not provided' value, so no schema-valid answer exists; the empty string is recorded as the least-inventive reading and every output is routed to TEST and SCOPE"
+        },
+        {
+          "field": "site",
+          "kind": "any_of",
+          "value": null,
+          "values": [
+            "Reception",
+            "reception"
+          ],
+          "pattern": null,
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S8 says 'as named in the document'; the documents use sentence case and, where several renderings exist, name the place with small wording differences. The verbatim forms from every rendering and the capitalised proper-name reading are all admitted; none is endorsed. A baseline run against gpt-oss:20b exposed the earlier title-cased exact oracle as a TEST defect (model output matched the document, oracle did not)."
+        },
+        {
+          "field": "severity",
+          "kind": "exact",
+          "value": "low",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "interpretation_provisional",
+          "rationale": "no injury is reported so S9 sets no floor; the reporter rates it low"
+        },
+        {
+          "field": "injury_reported",
+          "kind": "exact",
+          "value": false,
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S10: whether any injury is reported"
+        },
+        {
+          "field": "summary",
+          "kind": "regex",
+          "value": null,
+          "values": null,
+          "pattern": "(?i)door|decal",
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S11: the reporter's account concerns a glass door"
+        }
+      ],
+      "held_fixed": "an ordinary incident; only the contact number is missing",
+      "varied": null,
+      "pair_of": null,
+      "reference_output": null,
+      "rival_expected": [],
+      "notes": "empty phone: the document states no number, the field is required, and the pattern admits no representation of 'not provided'; every output is contestable"
+    },
+    {
+      "case_id": "BND-002",
+      "boundary": true,
+      "rendering": "prose",
+      "renderings": {
+        "prose": "Chris Park (0433 444 555) reports that at 1:15 pm on 2 October 2025 Zoë Müller-O'Neil, born 17 September 1990, cut her finger on a broken beaker in Lab 3. First aid was given; no hospital. Chris's words: \"Zoë caught her finger on the broken rim of a beaker while clearing the bench; a small cut, dressed on site.\" Chris calls it minor."
+      },
+      "expected": [
+        {
+          "field": "reporter_name",
+          "kind": "exact",
+          "value": "Chris Park",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S2: the name written as the person who reported"
+        },
+        {
+          "field": "subject_name",
+          "kind": "exact",
+          "value": "Zoë Müller-O'Neil",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S3: the name written as the person the incident happened to"
+        },
+        {
+          "field": "date_of_birth",
+          "kind": "exact",
+          "value": "1990-09-17",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S4: the stated date of birth in ISO 8601"
+        },
+        {
+          "field": "incident_date",
+          "kind": "exact",
+          "value": "2025-10-02",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S5: the stated incident date in ISO 8601"
+        },
+        {
+          "field": "incident_time",
+          "kind": "exact",
+          "value": "13:15",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S6: the stated time in 24-hour HH:MM"
+        },
+        {
+          "field": "phone",
+          "kind": "exact",
+          "value": "+61433444555",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S7: the reporter's number in E.164 with +61"
+        },
+        {
+          "field": "site",
+          "kind": "any_of",
+          "value": null,
+          "values": [
+            "Lab 3",
+            "lab 3"
+          ],
+          "pattern": null,
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S8 says 'as named in the document'; the documents use sentence case and, where several renderings exist, name the place with small wording differences. The verbatim forms from every rendering and the capitalised proper-name reading are all admitted; none is endorsed. A baseline run against gpt-oss:20b exposed the earlier title-cased exact oracle as a TEST defect (model output matched the document, oracle did not)."
+        },
+        {
+          "field": "severity",
+          "kind": "exact",
+          "value": "medium",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S9: an injury is reported so severity is at least medium; no hospital treatment, read as medium"
+        },
+        {
+          "field": "injury_reported",
+          "kind": "exact",
+          "value": true,
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S10: whether any injury is reported"
+        },
+        {
+          "field": "summary",
+          "kind": "regex",
+          "value": null,
+          "values": null,
+          "pattern": "(?i)cut|beaker|finger",
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S11: the reporter's account concerns a cut finger"
+        }
+      ],
+      "held_fixed": "an ordinary incident; only the subject's name carries diacritics, a hyphen, and an apostrophe",
+      "varied": null,
+      "pair_of": null,
+      "reference_output": null,
+      "rival_expected": [],
+      "notes": "unicode name: the exact oracle requires the diacritics and punctuation to be preserved verbatim"
+    },
+    {
+      "case_id": "BND-003",
+      "boundary": true,
+      "rendering": "prose",
+      "renderings": {
+        "prose": "Maria Santos (0466 777 888) reports that on 15 January 2025 a carton fell from the mezzanine store shelf near Ben Carter, born 8 December 1975. No injury; Maria rates it low. Her account, in her words: \"Ben was reaching for a carton on the mezzanine store shelf when the one next to it slid forward, tipped over the edge, and landed on the floor about a metre in front of him, bursting open and spilling packing foam across the walkway; nobody was hit, nothing was damaged apart from the carton, and we have since moved the heavy stock to the lower shelf and put a note in the shift log.\""
+      },
+      "expected": [
+        {
+          "field": "reporter_name",
+          "kind": "exact",
+          "value": "Maria Santos",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S2: the name written as the person who reported"
+        },
+        {
+          "field": "subject_name",
+          "kind": "exact",
+          "value": "Ben Carter",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S3: the name written as the person the incident happened to"
+        },
+        {
+          "field": "date_of_birth",
+          "kind": "exact",
+          "value": "1975-12-08",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S4: the stated date of birth in ISO 8601"
+        },
+        {
+          "field": "incident_date",
+          "kind": "exact",
+          "value": "2025-01-15",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S5: the stated incident date in ISO 8601"
+        },
+        {
+          "field": "incident_time",
+          "kind": "absent",
+          "value": null,
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S6: no time is stated, so the key must be omitted"
+        },
+        {
+          "field": "phone",
+          "kind": "exact",
+          "value": "+61466777888",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S7: the reporter's number in E.164 with +61"
+        },
+        {
+          "field": "site",
+          "kind": "any_of",
+          "value": null,
+          "values": [
+            "Mezzanine store",
+            "mezzanine store"
+          ],
+          "pattern": null,
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S8 says 'as named in the document'; the documents use sentence case and, where several renderings exist, name the place with small wording differences. The verbatim forms from every rendering and the capitalised proper-name reading are all admitted; none is endorsed. A baseline run against gpt-oss:20b exposed the earlier title-cased exact oracle as a TEST defect (model output matched the document, oracle did not)."
+        },
+        {
+          "field": "severity",
+          "kind": "exact",
+          "value": "low",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "interpretation_provisional",
+          "rationale": "no injury is reported so S9 sets no floor; the reporter rates it low"
+        },
+        {
+          "field": "injury_reported",
+          "kind": "exact",
+          "value": false,
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S10: whether any injury is reported"
+        },
+        {
+          "field": "summary",
+          "kind": "regex",
+          "value": null,
+          "values": null,
+          "pattern": "(?i)carton|shelf",
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S11: the reporter's account concerns a fallen carton; a verbatim copy exceeds 200 characters and violates the length bound"
+        }
+      ],
+      "held_fixed": "an ordinary incident; only the length of the reporter's account is unusual",
+      "varied": null,
+      "pair_of": null,
+      "reference_output": null,
+      "rival_expected": [],
+      "notes": "over-length account: the reporter's own words run to 384 characters; S11 caps the summary at 200, so a compliant summary must shorten while staying in the reporter's words, which is contestable"
+    },
+    {
+      "case_id": "BND-004",
+      "boundary": true,
+      "rendering": "prose",
+      "renderings": {
+        "prose": "Jack Wilson (0477 123 456) reports that at 10:10 on 03/04/2025 Amelia Ross (DOB 14/06/1983) was on a stepladder in the yard when it wobbled; she stepped down safely. No injury. Jack's words: \"The ladder wobbled on the uneven yard surface and Amelia stepped off it; nothing happened but it could have.\" Jack rates it low."
+      },
+      "expected": [
+        {
+          "field": "reporter_name",
+          "kind": "exact",
+          "value": "Jack Wilson",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S2: the name written as the person who reported"
+        },
+        {
+          "field": "subject_name",
+          "kind": "exact",
+          "value": "Amelia Ross",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S3: the name written as the person the incident happened to"
+        },
+        {
+          "field": "date_of_birth",
+          "kind": "exact",
+          "value": "1983-06-14",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S4: the stated date of birth in ISO 8601"
+        },
+        {
+          "field": "incident_date",
+          "kind": "any_of",
+          "value": null,
+          "values": [
+            "2025-04-03",
+            "2025-03-04"
+          ],
+          "pattern": null,
+          "oracle_status": "interpretation_provisional",
+          "rationale": "03/04/2025 is numerically ambiguous; without a disambiguating rule both readings are live and neither is endorsed"
+        },
+        {
+          "field": "incident_time",
+          "kind": "exact",
+          "value": "10:10",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S6: the stated time in 24-hour HH:MM"
+        },
+        {
+          "field": "phone",
+          "kind": "exact",
+          "value": "+61477123456",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S7: the reporter's number in E.164 with +61"
+        },
+        {
+          "field": "site",
+          "kind": "any_of",
+          "value": null,
+          "values": [
+            "Yard",
+            "yard"
+          ],
+          "pattern": null,
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S8 says 'as named in the document'; the documents use sentence case and, where several renderings exist, name the place with small wording differences. The verbatim forms from every rendering and the capitalised proper-name reading are all admitted; none is endorsed. A baseline run against gpt-oss:20b exposed the earlier title-cased exact oracle as a TEST defect (model output matched the document, oracle did not)."
+        },
+        {
+          "field": "severity",
+          "kind": "exact",
+          "value": "low",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "interpretation_provisional",
+          "rationale": "no injury is reported so S9 sets no floor; the reporter rates it low"
+        },
+        {
+          "field": "injury_reported",
+          "kind": "exact",
+          "value": false,
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S10: whether any injury is reported"
+        },
+        {
+          "field": "summary",
+          "kind": "regex",
+          "value": null,
+          "values": null,
+          "pattern": "(?i)ladder",
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S11: the reporter's account concerns a stepladder"
+        }
+      ],
+      "held_fixed": "an ordinary incident; only the numeric incident date is ambiguous",
+      "varied": null,
+      "pair_of": null,
+      "reference_output": null,
+      "rival_expected": [
+        {
+          "field": "incident_date",
+          "label": "day_first",
+          "oracle": {
+            "field": "incident_date",
+            "kind": "exact",
+            "value": "2025-04-03",
+            "values": null,
+            "pattern": null,
+            "oracle_status": "source_scoped",
+            "rationale": "with the day-first rule appended, 03/04/2025 is 3 April 2025"
+          }
+        },
+        {
+          "field": "incident_date",
+          "label": "month_first",
+          "oracle": {
+            "field": "incident_date",
+            "kind": "exact",
+            "value": "2025-03-04",
+            "values": null,
+            "pattern": null,
+            "oracle_status": "source_scoped",
+            "rationale": "with the month-first rule appended, 03/04/2025 is 4 March 2025"
+          }
+        }
+      ],
+      "notes": "ambiguous date: 03/04/2025 reads as 3 April (day-first) or 4 March (month-first); the baseline accepts either and the RIVAL_SUBSTITUTION variants test whether an appended rule is followed"
+    },
+    {
+      "case_id": "BND-005",
+      "boundary": true,
+      "rendering": "prose",
+      "renderings": {
+        "prose": "Olivia Martin (0488 999 000) reports that at 3:00 pm on 7 July 2025 Ethan Clarke, born 21 March 1998, knocked his knee on a fixture at assembly line 2 and has a bruise. No treatment beyond an ice pack. Olivia's words: \"Ethan clipped his knee on the corner of the fixture; bruised but he kept working.\" Olivia writes: \"I'd rate this low.\""
+      },
+      "expected": [
+        {
+          "field": "reporter_name",
+          "kind": "exact",
+          "value": "Olivia Martin",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S2: the name written as the person who reported"
+        },
+        {
+          "field": "subject_name",
+          "kind": "exact",
+          "value": "Ethan Clarke",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S3: the name written as the person the incident happened to"
+        },
+        {
+          "field": "date_of_birth",
+          "kind": "exact",
+          "value": "1998-03-21",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S4: the stated date of birth in ISO 8601"
+        },
+        {
+          "field": "incident_date",
+          "kind": "exact",
+          "value": "2025-07-07",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S5: the stated incident date in ISO 8601"
+        },
+        {
+          "field": "incident_time",
+          "kind": "exact",
+          "value": "15:00",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S6: the stated time in 24-hour HH:MM"
+        },
+        {
+          "field": "phone",
+          "kind": "exact",
+          "value": "+61488999000",
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S7: the reporter's number in E.164 with +61"
+        },
+        {
+          "field": "site",
+          "kind": "any_of",
+          "value": null,
+          "values": [
+            "Assembly line 2",
+            "assembly line 2"
+          ],
+          "pattern": null,
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S8 says 'as named in the document'; the documents use sentence case and, where several renderings exist, name the place with small wording differences. The verbatim forms from every rendering and the capitalised proper-name reading are all admitted; none is endorsed. A baseline run against gpt-oss:20b exposed the earlier title-cased exact oracle as a TEST defect (model output matched the document, oracle did not)."
+        },
+        {
+          "field": "severity",
+          "kind": "any_of",
+          "value": null,
+          "values": [
+            "medium",
+            "high"
+          ],
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S9: any injury means at least medium, so the reporter's own rating of low is overridden; high is not excluded by the letter of S9"
+        },
+        {
+          "field": "injury_reported",
+          "kind": "exact",
+          "value": true,
+          "values": null,
+          "pattern": null,
+          "oracle_status": "source_scoped",
+          "rationale": "S10: whether any injury is reported"
+        },
+        {
+          "field": "summary",
+          "kind": "regex",
+          "value": null,
+          "values": null,
+          "pattern": "(?i)knee",
+          "oracle_status": "interpretation_provisional",
+          "rationale": "S11: the reporter's account concerns a bruised knee"
+        }
+      ],
+      "held_fixed": "an ordinary injury incident; only the reporter's rating conflicts with S9",
+      "varied": null,
+      "pair_of": null,
+      "reference_output": null,
+      "rival_expected": [],
+      "notes": "injury with a low rating: exercises the S9 mapping rule against the reporter's stated severity"
+    }
+  ]
+}

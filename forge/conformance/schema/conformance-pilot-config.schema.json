@@ -1,0 +1,369 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ahepi.example/smf/0.5/conformance-pilot-config.schema.json",
+  "title": "SMF-0.5 task-conformance pilot configuration",
+  "description": "Declares one form-filling conformance pilot: the form, the instructions, the corpus, the models, the endpoint, and the family-specific configuration. Nothing here is a verdict about any model.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "pilot_id",
+    "title",
+    "form_schema",
+    "instructions",
+    "corpus",
+    "models",
+    "endpoint",
+    "charter",
+    "load_bearing",
+    "negations",
+    "twins",
+    "ambiguity",
+    "controls",
+    "refusal_phrases"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "creib.conformance-pilot.config.v1"
+    },
+    "pilot_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "title": {
+      "$ref": "#/$defs/nonempty_string"
+    },
+    "form_schema": {
+      "$ref": "#/$defs/relative_path"
+    },
+    "instructions": {
+      "$ref": "#/$defs/relative_path"
+    },
+    "corpus": {
+      "$ref": "#/$defs/relative_path"
+    },
+    "models": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/model_id"
+      }
+    },
+    "endpoint": {
+      "$ref": "#/$defs/endpoint"
+    },
+    "charter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "purpose",
+        "output",
+        "scope_in",
+        "scope_out"
+      ],
+      "properties": {
+        "purpose": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "output": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "scope_in": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonempty_string"
+          }
+        },
+        "scope_out": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonempty_string"
+          }
+        }
+      }
+    },
+    "load_bearing": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/sentence_id"
+      }
+    },
+    "negations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "field",
+          "sentence_id",
+          "replacement_sentence",
+          "replacement_pattern",
+          "value_transform"
+        ],
+        "properties": {
+          "field": {
+            "$ref": "#/$defs/field_name"
+          },
+          "sentence_id": {
+            "$ref": "#/$defs/sentence_id"
+          },
+          "replacement_sentence": {
+            "$ref": "#/$defs/nonempty_string"
+          },
+          "replacement_pattern": {
+            "$ref": "#/$defs/nonempty_string"
+          },
+          "value_transform": {
+            "type": "string",
+            "enum": [
+              "iso_date_to_dmy",
+              "e164_au_to_national_spaced"
+            ]
+          }
+        }
+      }
+    },
+    "twins": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 2,
+        "uniqueItems": true,
+        "items": {
+          "$ref": "#/$defs/field_name"
+        }
+      }
+    },
+    "ambiguity": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "field",
+          "question",
+          "rivals"
+        ],
+        "properties": {
+          "field": {
+            "$ref": "#/$defs/field_name"
+          },
+          "question": {
+            "$ref": "#/$defs/nonempty_string"
+          },
+          "rivals": {
+            "type": "array",
+            "minItems": 2,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "label",
+                "instruction"
+              ],
+              "properties": {
+                "label": {
+                  "$ref": "#/$defs/identifier"
+                },
+                "instruction": {
+                  "$ref": "#/$defs/nonempty_string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "controls": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "control_id",
+          "corruption"
+        ],
+        "properties": {
+          "control_id": {
+            "$ref": "#/$defs/identifier"
+          },
+          "corruption": {
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "none"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "fields"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "swap_fields"
+                  },
+                  "fields": {
+                    "type": "array",
+                    "minItems": 2,
+                    "maxItems": 2,
+                    "uniqueItems": true,
+                    "items": {
+                      "$ref": "#/$defs/field_name"
+                    }
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "field"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "drop_required"
+                  },
+                  "field": {
+                    "$ref": "#/$defs/field_name"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "key",
+                  "value"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "extra_key"
+                  },
+                  "key": {
+                    "$ref": "#/$defs/field_name"
+                  },
+                  "value": {
+                    "$ref": "#/$defs/scalar"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "refusal_phrases": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/nonempty_string"
+      }
+    }
+  },
+  "$defs": {
+    "nonempty_string": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": ".*\\S.*"
+    },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+    },
+    "sentence_id": {
+      "type": "string",
+      "pattern": "^S[1-9][0-9]{0,3}$"
+    },
+    "field_name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{0,63}$"
+    },
+    "model_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$"
+    },
+    "relative_path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]{0,255}$"
+    },
+    "scalar": {
+      "type": [
+        "string",
+        "boolean",
+        "integer",
+        "null"
+      ]
+    },
+    "endpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "base_url",
+        "timeout_seconds",
+        "options",
+        "think"
+      ],
+      "properties": {
+        "kind": {
+          "const": "ollama-chat"
+        },
+        "base_url": {
+          "type": "string",
+          "pattern": "^https?://[^\\s/]+(/[^\\s]*)?$"
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3600
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "temperature",
+            "seed"
+          ],
+          "properties": {
+            "temperature": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2
+            },
+            "seed": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "think": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,128 @@
+{
+  "schema_version": "creib.conformance-pilot.config.v1",
+  "pilot_id": "SMF-CONFORMANCE-INCIDENT-FORM-001",
+  "title": "Incident-report form filling from short case documents",
+  "form_schema": "form.schema.json",
+  "instructions": "instructions.md",
+  "corpus": "corpus.json",
+  "models": [
+    "gpt-oss:20b",
+    "nemotron-3-nano:30b",
+    "gemma4:31b",
+    "gpt-oss:120b",
+    "qwen3.5:397b",
+    "glm-5.3-flash",
+    "glm-5.3",
+    "deepseek-v4-flash:0731",
+    "mistral-large-3:675b"
+  ],
+  "endpoint": {
+    "kind": "ollama-chat",
+    "base_url": "https://ollama.com",
+    "timeout_seconds": 180,
+    "options": {
+      "temperature": 0,
+      "seed": 7
+    },
+    "think": false
+  },
+  "charter": {
+    "purpose": "Expose ways in which a model filling the incident form from a case document fails to meet the stated instructions, and route each failure to the loci that could be at fault.",
+    "output": "Per-model observation and run records with plural verdicts and live loci, plus an unranked report for human triage.",
+    "scope_in": [
+      "Short English case documents rendered as prose, a two-column table, or an email.",
+      "Australian phone numbers and dates written in words or day-first numerals.",
+      "The nine declared fields of the incident form."
+    ],
+    "scope_out": [
+      "Any claim that a model understands incidents, safety, or forms in general.",
+      "Ranking models, scoring them, or declaring any model fit for use.",
+      "Documents in other languages, scanned images, or multi-incident reports."
+    ]
+  },
+  "load_bearing": [
+    "S1",
+    "S5",
+    "S7",
+    "S9"
+  ],
+  "negations": [
+    {
+      "field": "incident_date",
+      "sentence_id": "S5",
+      "replacement_sentence": "`incident_date` is the date of the incident written as DD/MM/YYYY.",
+      "replacement_pattern": "^[0-9]{2}/[0-9]{2}/[0-9]{4}$",
+      "value_transform": "iso_date_to_dmy"
+    },
+    {
+      "field": "phone",
+      "sentence_id": "S7",
+      "replacement_sentence": "`phone` is the reporter's contact number in Australian national format with a leading 0 and spaces: 04XX XXX XXX for mobiles or 0X XXXX XXXX for landlines.",
+      "replacement_pattern": "^(04[0-9]{2} [0-9]{3} [0-9]{3}|0[2378] [0-9]{4} [0-9]{4})$",
+      "value_transform": "e164_au_to_national_spaced"
+    }
+  ],
+  "twins": [
+    [
+      "reporter_name",
+      "subject_name"
+    ]
+  ],
+  "ambiguity": [
+    {
+      "field": "incident_date",
+      "question": "When the document writes a date as two numeric fields NN/NN/YYYY, which field is the day?",
+      "rivals": [
+        {
+          "label": "day_first",
+          "instruction": "Read numeric dates of the form NN/NN/YYYY as DD/MM/YYYY (Australian convention)."
+        },
+        {
+          "label": "month_first",
+          "instruction": "Read numeric dates of the form NN/NN/YYYY as MM/DD/YYYY (United States convention)."
+        }
+      ]
+    }
+  ],
+  "controls": [
+    {
+      "control_id": "C-SWAP-DATES",
+      "corruption": {
+        "kind": "swap_fields",
+        "fields": [
+          "date_of_birth",
+          "incident_date"
+        ]
+      }
+    },
+    {
+      "control_id": "C-DROP-PHONE",
+      "corruption": {
+        "kind": "drop_required",
+        "field": "phone"
+      }
+    },
+    {
+      "control_id": "C-EXTRA-NOTES",
+      "corruption": {
+        "kind": "extra_key",
+        "key": "notes",
+        "value": "n/a"
+      }
+    },
+    {
+      "control_id": "C-CORRECT",
+      "corruption": {
+        "kind": "none"
+      }
+    }
+  ],
+  "refusal_phrases": [
+    "I cannot",
+    "I can't",
+    "I'm sorry",
+    "I am unable",
+    "as an AI",
+    "cannot assist"
+  ]
+}

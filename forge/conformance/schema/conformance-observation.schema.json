@@ -1,0 +1,844 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ahepi.example/smf/0.5/conformance-observation.schema.json",
+  "title": "SMF-0.5 task-conformance observation",
+  "description": "One executed variant: the exact request digest, the raw response, the plural-verdict scoring, and the plural failure routing. An observation never confirms a model; an empty live-locus set means only that this one variant did not refute the declared expectation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "observation_id",
+    "run_id",
+    "pilot_id",
+    "plan_id",
+    "planned_variant_id",
+    "spec_bindings",
+    "model",
+    "variant",
+    "request_digest",
+    "response",
+    "scoring",
+    "routing",
+    "baseline_observation_id",
+    "created_on"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "creib.conformance-pilot.observation.v1"
+    },
+    "observation_id": {
+      "$ref": "#/$defs/hex_digest"
+    },
+    "run_id": {
+      "$ref": "#/$defs/hex_digest"
+    },
+    "pilot_id": {
+      "$ref": "#/$defs/identifier"
+    },
+    "plan_id": {
+      "$ref": "#/$defs/hex_digest"
+    },
+    "planned_variant_id": {
+      "$ref": "#/$defs/hex_digest"
+    },
+    "spec_bindings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/binding"
+      }
+    },
+    "model": {
+      "$ref": "#/$defs/model_id"
+    },
+    "variant": {
+      "$ref": "#/$defs/variant"
+    },
+    "request_digest": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "response": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/response"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "scoring": {
+      "$ref": "#/$defs/scoring"
+    },
+    "routing": {
+      "$ref": "#/$defs/routing"
+    },
+    "baseline_observation_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "created_on": {
+      "$ref": "#/$defs/rfc3339"
+    }
+  },
+  "$defs": {
+    "nonempty_string": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": ".*\\S.*"
+    },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+    },
+    "sentence_id": {
+      "type": "string",
+      "pattern": "^S[1-9][0-9]{0,3}$"
+    },
+    "field_name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{0,63}$"
+    },
+    "model_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$"
+    },
+    "hex_digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "rfc3339": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(Z|[+-][0-9]{2}:[0-9]{2})$"
+    },
+    "scalar": {
+      "type": [
+        "string",
+        "boolean",
+        "integer",
+        "null"
+      ]
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]{0,255}$"
+        },
+        "sha256": {
+          "$ref": "#/$defs/hex_digest"
+        }
+      }
+    },
+    "family": {
+      "type": "string",
+      "enum": [
+        "BASELINE",
+        "DELETION",
+        "NEGATION",
+        "RIVAL_SUBSTITUTION",
+        "SEMANTIC_ROLE_TWIN",
+        "SUBSTRATE_SWAP",
+        "BOUNDARY_SHIFT",
+        "IMPORT_DEPENDENCY",
+        "NON_VACUITY",
+        "ROUND_TRIP"
+      ]
+    },
+    "oracle_status": {
+      "type": "string",
+      "enum": [
+        "source_scoped",
+        "interpretation_provisional",
+        "project_import_provisional"
+      ]
+    },
+    "oracle_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "field",
+        "kind",
+        "value",
+        "values",
+        "pattern",
+        "oracle_status",
+        "rationale"
+      ],
+      "properties": {
+        "field": {
+          "$ref": "#/$defs/field_name"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "exact",
+            "regex",
+            "enum",
+            "absent",
+            "any_of"
+          ]
+        },
+        "value": {
+          "$ref": "#/$defs/scalar"
+        },
+        "values": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/scalar"
+          }
+        },
+        "pattern": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "oracle_status": {
+          "$ref": "#/$defs/oracle_status"
+        },
+        "rationale": {
+          "$ref": "#/$defs/nonempty_string"
+        }
+      }
+    },
+    "field_value": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "field",
+        "value"
+      ],
+      "properties": {
+        "field": {
+          "$ref": "#/$defs/field_name"
+        },
+        "value": {
+          "$ref": "#/$defs/scalar"
+        }
+      }
+    },
+    "field_schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "string",
+            "boolean",
+            "integer"
+          ]
+        },
+        "description": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "pattern": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "enum": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "maxLength": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "minLength": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "format": {
+          "$ref": "#/$defs/nonempty_string"
+        }
+      }
+    },
+    "form_schema": {
+      "description": "The restricted JSON Schema profile a pilot form may use. The properties map is the one place where keys are data (field names); every field schema is itself closed.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "additionalProperties",
+        "required",
+        "properties"
+      ],
+      "properties": {
+        "$schema": {
+          "const": "https://json-schema.org/draft/2020-12/schema"
+        },
+        "title": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "description": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "type": {
+          "const": "object"
+        },
+        "additionalProperties": {
+          "const": false
+        },
+        "required": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/field_name"
+          }
+        },
+        "properties": {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]{0,63}$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/field_schema"
+          }
+        }
+      }
+    },
+    "variant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "variant_id",
+        "family",
+        "base_case_id",
+        "form_schema",
+        "field_order",
+        "instructions",
+        "input_document",
+        "expected",
+        "held_fixed",
+        "controlled_difference",
+        "expectation_kind",
+        "substrate",
+        "control_id",
+        "control_output",
+        "model_call",
+        "round_trip_of",
+        "rival_label",
+        "removed_sentence_id"
+      ],
+      "properties": {
+        "variant_id": {
+          "$ref": "#/$defs/hex_digest"
+        },
+        "family": {
+          "$ref": "#/$defs/family"
+        },
+        "base_case_id": {
+          "$ref": "#/$defs/identifier"
+        },
+        "form_schema": {
+          "$ref": "#/$defs/form_schema"
+        },
+        "field_order": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/field_name"
+          }
+        },
+        "instructions": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "input_document": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "expected": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/oracle_entry"
+          }
+        },
+        "held_fixed": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "controlled_difference": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "expectation_kind": {
+          "type": "string",
+          "enum": [
+            "ORACLE",
+            "RECORD_DEPENDENCE",
+            "ROUND_TRIP",
+            "CONTROL_REJECT",
+            "CONTROL_ACCEPT"
+          ]
+        },
+        "substrate": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "prose",
+            "table",
+            "email",
+            null
+          ]
+        },
+        "control_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+        },
+        "control_output": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/$defs/field_value"
+          }
+        },
+        "model_call": {
+          "type": "boolean"
+        },
+        "round_trip_of": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "rival_label": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[A-Za-z][A-Za-z0-9._:-]{0,127}$"
+        },
+        "removed_sentence_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^S[1-9][0-9]{0,3}$"
+        }
+      }
+    },
+    "response_attempt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "content",
+        "thinking_present",
+        "done",
+        "done_reason",
+        "prompt_eval_count",
+        "eval_count",
+        "total_duration_ns",
+        "http_status",
+        "transport_error",
+        "response_digest",
+        "attempt"
+      ],
+      "properties": {
+        "content": {
+          "type": "string"
+        },
+        "thinking_present": {
+          "type": "boolean"
+        },
+        "done": {
+          "type": "boolean"
+        },
+        "done_reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "prompt_eval_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "eval_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "total_duration_ns": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "http_status": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 100,
+          "maximum": 599
+        },
+        "transport_error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "response_digest": {
+          "$ref": "#/$defs/hex_digest"
+        },
+        "attempt": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "response": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "content",
+        "thinking_present",
+        "done",
+        "done_reason",
+        "prompt_eval_count",
+        "eval_count",
+        "total_duration_ns",
+        "http_status",
+        "transport_error",
+        "response_digest",
+        "attempt",
+        "prior_attempts"
+      ],
+      "properties": {
+        "content": {
+          "type": "string"
+        },
+        "thinking_present": {
+          "type": "boolean"
+        },
+        "done": {
+          "type": "boolean"
+        },
+        "done_reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "prompt_eval_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "eval_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "total_duration_ns": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "http_status": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 100,
+          "maximum": 599
+        },
+        "transport_error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "response_digest": {
+          "$ref": "#/$defs/hex_digest"
+        },
+        "attempt": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "prior_attempts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/response_attempt"
+          }
+        }
+      }
+    },
+    "response_verdict": {
+      "type": "string",
+      "enum": [
+        "JSON_OBJECT",
+        "TRANSPORT_ERROR",
+        "EMPTY_RESPONSE",
+        "TRUNCATED",
+        "INVALID_JSON",
+        "NOT_AN_OBJECT",
+        "REFUSAL_SUSPECTED",
+        "NO_MODEL_CALL",
+        "PREREQUISITE_UNAVAILABLE"
+      ]
+    },
+    "field_verdict_kind": {
+      "type": "string",
+      "enum": [
+        "MATCH",
+        "MISMATCH",
+        "MISSING_REQUIRED",
+        "EXTRA_FIELD",
+        "TYPE_VIOLATION",
+        "PATTERN_VIOLATION",
+        "ENUM_VIOLATION",
+        "LENGTH_VIOLATION",
+        "UNEXPECTED_PRESENT",
+        "NOT_SCORED"
+      ]
+    },
+    "field_verdict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "field",
+        "verdict",
+        "observed_present",
+        "observed_canonical",
+        "expected_summary",
+        "oracle_status",
+        "detail"
+      ],
+      "properties": {
+        "field": {
+          "type": "string",
+          "minLength": 1
+        },
+        "verdict": {
+          "$ref": "#/$defs/field_verdict_kind"
+        },
+        "observed_present": {
+          "type": "boolean"
+        },
+        "observed_canonical": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "expected_summary": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "oracle_status": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/oracle_status"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "detail": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "scoring": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "response_verdict",
+        "response_detail",
+        "recovered_from_prose",
+        "recovery_status",
+        "parsed_output_canonical",
+        "schema_valid",
+        "field_verdicts",
+        "changed_vs_baseline"
+      ],
+      "properties": {
+        "response_verdict": {
+          "$ref": "#/$defs/response_verdict"
+        },
+        "response_detail": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "recovered_from_prose": {
+          "type": "boolean"
+        },
+        "recovery_status": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "project_import_provisional",
+            null
+          ]
+        },
+        "parsed_output_canonical": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "schema_valid": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "field_verdicts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/field_verdict"
+          }
+        },
+        "changed_vs_baseline": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "trigger": {
+      "type": "string",
+      "enum": [
+        "TRANSPORT_ERROR",
+        "EMPTY_RESPONSE",
+        "TRUNCATED",
+        "INVALID_JSON",
+        "NOT_AN_OBJECT",
+        "REFUSAL_SUSPECTED",
+        "PREREQUISITE_UNAVAILABLE",
+        "MISMATCH",
+        "MISSING_REQUIRED",
+        "EXTRA_FIELD",
+        "TYPE_VIOLATION",
+        "PATTERN_VIOLATION",
+        "ENUM_VIOLATION",
+        "LENGTH_VIOLATION",
+        "UNEXPECTED_PRESENT",
+        "SCHEMA_INVALID",
+        "IDENTICAL_TO_BASELINE",
+        "CONTROL_ACCEPTED",
+        "CONTROL_REJECTED",
+        "DEPENDENCE_CHANGED",
+        "DEPENDENCE_UNCHANGED",
+        "FORMAT_NOT_ENFORCED"
+      ]
+    },
+    "routing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "live_loci",
+        "route",
+        "unrefuted_for_variant",
+        "triggers",
+        "format_enforced_by_server"
+      ],
+      "properties": {
+        "live_loci": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "locus",
+              "reason"
+            ],
+            "properties": {
+              "locus": {
+                "type": "string",
+                "enum": [
+                  "CANDIDATE",
+                  "AUXILIARY",
+                  "TEST",
+                  "SCOPE"
+                ]
+              },
+              "reason": {
+                "$ref": "#/$defs/nonempty_string"
+              }
+            }
+          }
+        },
+        "route": {
+          "const": "AWAITING_HUMAN_TRIAGE"
+        },
+        "unrefuted_for_variant": {
+          "type": "boolean"
+        },
+        "triggers": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/trigger"
+          }
+        },
+        "format_enforced_by_server": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    }
+  }
+}
