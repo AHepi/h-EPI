@@ -43,7 +43,7 @@ from .common import (
     scalar,
     text,
 )
-from .corpus import Case, Corpus, Oracle, Scalar, parse_oracle
+from .corpus import Case, Corpus, Oracle, Scalar, parse_oracle, RENDERINGS
 from .spec import TaskSpec, render_instructions, validate_form_schema
 
 
@@ -464,7 +464,7 @@ def substrate_swap(spec: TaskSpec, case: Case) -> list[Variant]:
     if case.boundary:
         return []
     variants: list[Variant] = []
-    for rendering in ("prose", "table", "email"):
+    for rendering in RENDERINGS:
         if rendering == case.rendering or rendering not in case.renderings:
             continue
         fields = _base_fields(spec, case, document=case.renderings[rendering])

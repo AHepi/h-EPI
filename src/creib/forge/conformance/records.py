@@ -149,6 +149,10 @@ def observation_from_dict(raw: Any) -> ObservationRecord:
     )
     if rebuilt.observation_id != hex_digest(record["observation_id"], "observation.observation_id"):
         raise RecordError("observation_id does not replay from the record content")
+    if rebuilt.variant.model_call and len(rebuilt.routing.live_loci) == 1:
+        raise PolicyViolation(
+            "a model-involved observation cannot carry a single live locus; the record is not one this harness produces"
+        )
     if (request_digest is None) != (response is None):
         raise RecordError("observation must carry a request digest exactly when it carries a response")
     # A model-call variant whose prerequisite (its baseline output) was unusable is

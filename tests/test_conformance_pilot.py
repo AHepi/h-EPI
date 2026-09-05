@@ -682,3 +682,79 @@ class RobustnessRegressionTests(unittest.TestCase):
         self.assertIn("UNEXPECTED_PRESENT", routing.triggers)
         self.assertIn("FORMAT_NOT_ENFORCED", routing.triggers)
         self.assertIs(routing.format_enforced_by_server, False)
+
+
+class SecondReviewRegressionTests(unittest.TestCase):
+    """Findings on which several independent reviewers agreed, confirmed by reading the code."""
+
+    def setUp(self) -> None:
+        self.baseline = _variant(Family.BASELINE, "ORD-001")
+        self.output = _correct_output("ORD-001")
+
+    def test_http_error_whose_body_read_raises_is_still_a_transport_error(self) -> None:
+        import http.client
+
+        class BrokenHTTPError(urllib.error.HTTPError):
+            def read(self, *args, **kwargs):  # noqa: D401 - test double
+                raise http.client.IncompleteRead(b"half")
+
+        error = BrokenHTTPError("https://example.invalid/api/chat", 502, "Bad Gateway", {}, None)
+        executor = OllamaChatExecutor(base_url="https://example.invalid", timeout_seconds=1)
+        request = build_chat_request(self.baseline, model="gpt-oss:20b", endpoint=_CONFIG.spec.endpoint)
+        with patch.dict(os.environ, {"OLLAMA_API_KEY": DUMMY_KEY}), patch("urllib.request.urlopen", side_effect=error):
+            response = executor.complete(request)
+        self.assertEqual(response.http_status, 502)
+        self.assertIn("HTTPError", response.transport_error or "")
+        self.assertEqual(score(self.baseline, response).response_verdict, "TRANSPORT_ERROR")
+
+    def test_executor_that_raises_becomes_a_recorded_transport_error_not_an_aborted_run(self) -> None:
+        class Exploding:
+            def complete(self, request: ChatRequest) -> ChatResponse:
+                raise RuntimeError("secret-looking text " + DUMMY_KEY)
+
+        with tempfile.TemporaryDirectory() as directory:
+            result = run_pilot(
+                spec=_CONFIG.spec, corpus=_CORPUS, plan=_PLAN, model="gpt-oss:20b",
+                executor=Exploding(), executor_kind="fake",
+                output_dir=Path(directory), created_on=CREATED_ON, families=(Family.BASELINE,), limit=2,
+            )
+            errors = [o for o in result.observations if o.scoring.response_verdict == "TRANSPORT_ERROR"]
+            self.assertEqual(len(errors), 2)
+            self.assertTrue(all(o.response.transport_error == "ExecutorException: RuntimeError" for o in errors))
+            self.assertEqual(result.run_record.scope_label, "INCONCLUSIVE_NO_SCORED_OUTPUT")
+            for path in (*result.observation_paths, result.run_path):
+                self.assertNotIn(DUMMY_KEY, path.read_text(encoding="utf-8"))
+
+    def test_missing_api_key_still_aborts_before_any_call(self) -> None:
+        executor = OllamaChatExecutor(base_url="https://example.invalid", timeout_seconds=1)
+        request = build_chat_request(self.baseline, model="gpt-oss:20b", endpoint=_CONFIG.spec.endpoint)
+        env = {k: v for k, v in os.environ.items() if k != "OLLAMA_API_KEY"}
+        with patch.dict(os.environ, env, clear=True), self.assertRaises(RecordError):
+            executor.complete(request)
+
+    def test_loader_rejects_a_consistent_record_with_a_single_locus_on_a_model_call(self) -> None:
+        import dataclasses
+        from creib.forge.conformance.common import content_id
+        from creib.forge.conformance.records import OBSERVATION_DOMAIN, observation_from_dict
+
+        wrong = FakeExecutor(lambda req: response_from_content(json.dumps({**self.output, "site": "elsewhere"})))
+        with tempfile.TemporaryDirectory() as directory:
+            result = run_pilot(
+                spec=_CONFIG.spec, corpus=_CORPUS, plan=_PLAN, model="gpt-oss:20b",
+                executor=wrong, executor_kind="fake",
+                output_dir=Path(directory), created_on=CREATED_ON, families=(Family.BASELINE,), limit=1,
+            )
+        observation = result.observations[0]
+        self.assertGreaterEqual(len(observation.routing.live_loci), 2)
+        forged_routing = dataclasses.replace(observation.routing, live_loci=observation.routing.live_loci[:1])
+        draft = dataclasses.replace(observation, routing=forged_routing, observation_id="0" * 64)
+        forged = dataclasses.replace(draft, observation_id=content_id(OBSERVATION_DOMAIN, draft.body()))
+        with self.assertRaises(PolicyViolation):
+            observation_from_dict(forged.to_dict())
+
+    def test_substrate_swap_uses_the_corpus_rendering_vocabulary(self) -> None:
+        from creib.forge.conformance.corpus import RENDERINGS
+
+        swaps = [v for v in _PLAN.variants if v.family is Family.SUBSTRATE_SWAP]
+        self.assertTrue(swaps)
+        self.assertTrue(all(v.substrate in RENDERINGS for v in swaps))

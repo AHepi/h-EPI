@@ -19,7 +19,7 @@ from creib.errors import RecordError
 
 from .common import SCOPE_INCONCLUSIVE, SCOPE_REFUTED, SCOPE_UNREFUTED, rfc3339
 from .corpus import Corpus
-from .executor import ModelExecutor
+from .executor import ChatRequest, ChatResponse, ModelExecutor, executor_failure_response
 from .families import ExpectationKind, Family, Plan, Variant, materialize_round_trip
 from .oracle import RESPONSE_VERDICTS, FIELD_VERDICTS, prerequisite_unavailable, score
 from .prompt import build_chat_request
@@ -69,6 +69,19 @@ def select_variants(plan: Plan, *, families: Iterable[Family] | None = None, lim
         if variant.family is not Family.BASELINE and variant.variant_id in selected_ids:
             ordered.append(variant)
     return tuple(ordered)
+
+
+def _complete(executor: ModelExecutor, request: ChatRequest) -> ChatResponse:
+    """One model call; an executor that raises becomes a recorded transport error."""
+
+    try:
+        return executor.complete(request)
+    except RecordError:
+        # Configuration failures (for example a missing API key) are the
+        # operator's to fix before any call is made; they abort deliberately.
+        raise
+    except Exception as exc:  # noqa: BLE001 - recorded, not swallowed
+        return executor_failure_response(exc)
 
 
 def run_pilot(
@@ -137,13 +150,13 @@ def run_pilot(
                 else:
                     request = build_chat_request(variant, model=model, endpoint=spec.endpoint)
                     request_digest = request.request_digest
-                    response = executor.complete(request)
+                    response = _complete(executor, request)
                     scoring = score(variant, response, refusal_phrases=spec.refusal_phrases, baseline_output=baseline_output)
                     routing = route(variant, scoring, format_sent=True)
         else:
             request = build_chat_request(planned, model=model, endpoint=spec.endpoint)
             request_digest = request.request_digest
-            response = executor.complete(request)
+            response = _complete(executor, request)
             comparison = baseline_output if planned.family in _BASELINE_DEPENDENT else None
             scoring = score(planned, response, refusal_phrases=spec.refusal_phrases, baseline_output=comparison)
             routing = route(planned, scoring, format_sent=True)

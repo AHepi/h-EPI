@@ -305,7 +305,7 @@ class OllamaChatExecutor:
         except urllib.error.HTTPError as exc:
             try:
                 body = exc.read()
-            except OSError:
+            except (OSError, ValueError, http.client.HTTPException):
                 body = b""
             snippet = redact(body.decode("utf-8", errors="replace")[:500], secret)
             return _error_response(
@@ -353,6 +353,22 @@ class FakeExecutor:
             return self._responses[request.request_digest]
         except KeyError as exc:
             raise RecordError(f"FakeExecutor has no response for request {request.request_digest}") from exc
+
+
+def executor_failure_response(exc: BaseException) -> ChatResponse:
+    """Record an executor that raised instead of returning; only the type is kept.
+
+    The exception message is deliberately not recorded: it could carry request
+    or environment text. The type name is enough to route the observation to
+    AUXILIARY and SCOPE and to make the failure visible in the run counts.
+    """
+
+    return _error_response(
+        f"ExecutorException: {type(exc).__name__}",
+        http_status=None,
+        body=None,
+        attempt=1,
+    )
 
 
 def response_from_content(content: str, *, done_reason: str | None = "stop", thinking_present: bool = False) -> ChatResponse:
