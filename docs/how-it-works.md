@@ -92,7 +92,7 @@ Where each thing goes:
 | Repeats | `pilot.json` → `repeats` | `0` sends each request once. `N` sends every baseline request `N` more times as REPEAT variants and records whether the form values came back the same, so the run measures its own noise floor. Costs `N` calls per case; a model that reproduces its output under a fixed seed needs `0`. |
 | Provenance and abstention | `pilot.json` → `grounding` | `"mode": "none"` leaves the fill exactly as the form describes it. `"mode": "spans"` asks the model to quote, for each listed field, the words of the document it took the value from, and lets the listed `abstain_fields` be `null` when the document does not state them. See "Grounding and abstention" below. |
 | The LLM endpoint | `pilot.json` → `endpoint` | `kind` is `ollama-chat`, `base_url` is the server (`https://ollama.com` for the cloud, `http://localhost:11434` for a local Ollama), `models` lists the model ids you may pass to `--model`. The key comes from `OLLAMA_API_KEY` only; add `"auth": "none"` for a local server that needs no key, and no Authorization header is sent. |
-| The results | `--output-dir` | One `observation.*.json` per fill holding the request digest, the raw reply, the parsed form, per-field verdicts, and live loci; one `run.*.json` per model. Content-addressed; never overwritten. |
+| The results | `--output-dir` | One `observation.*.json` per fill holding the request digest, the raw reply, the parsed form, per-field verdicts, and live loci; one `run.*.json` per model. Content-addressed; never overwritten. A results directory is read by enumeration: anything in it that is not one of these, or a record file named for a different record than it holds, is refused by name, never passed over (H19). |
 
 `fills` prints one JSON line per fill: `filled_form` is what the model returned, `structural_issues` lists violations of the form's own rules (wrong type, outside the enum, pattern, length, missing required key, extra key), `unjudged_fields` lists fields with no answer key, and `live_loci` is empty when nothing was flagged. A plain-fill run is labelled `INCONCLUSIVE_NO_SCORED_OUTPUT`: the form was filled and its rules held, and nothing about the values was confirmed. That label is deliberate. If you later add answer keys for some fields, those fields become judged and the labels change accordingly.
 
@@ -110,7 +110,7 @@ PYTHONPATH=src python tools/run_conformance_pilot.py claims --claims forge/confo
 
 A `never` claim ("a model never emits a key the schema does not define") is refuted by one observation where its condition holds; an `always` claim by one where it does not. The condition vocabulary is small and fixed: a trigger, a live locus, a response verdict, a field verdict (optionally on a named field, optionally only where the value is null), a grounding verdict (optionally only where a relaxation was used), the change-against-baseline flag, a null value, a present key, the thinking channel, the kind of recovery, `all_of`, `any_of`, `not`, and `baseline`, which evaluates a nested condition on the baseline observation of the same run and case, so that "a swapped rendering mismatched where the baseline did not" can be said. Anything outside the vocabulary fails closed.
 
-Survival is not confirmation. A claim unrefuted across eighteen models and three thousand observations is unrefuted for exactly those records, and the next record may refute it; every result carries the non-inductive limit, and no output of the command counts survivals as evidence. What the command adds is that a general statement about language models made in a document can be checked, by anyone, against the records the document cites, and that a refutation names its counterexamples. `docs/what-the-records-refute.md` is the travel-claim conjectures read this way.
+Survival is not confirmation. A claim unrefuted across eighteen models and three thousand observations is unrefuted for exactly those records, and the next record may refute it; every result carries the non-inductive limit, and no output of the command counts survivals as evidence. A survival is also only as good as the check behind it. For every claim the command counts how many supplied observations outside the declared scope satisfied the refuting predicate, and an unrefuted claim whose predicate held nowhere, in or out of scope, is reported as not shown able to fail: its condition names a trigger or verdict that no supplied record ever carried, so the records could not have refuted it whatever the models did. A claim about refusals tested on records with no refusal in them survives vacuously, and the output says so rather than listing it beside a survival that was tested. The summary line names these claims. What the command adds is that a general statement about language models made in a document can be checked, by anyone, against the records the document cites, and that a refutation names its counterexamples. `docs/what-the-records-refute.md` is the travel-claim conjectures read this way.
 
 ## Readings under criticism
 
@@ -279,6 +279,31 @@ Six Ollama models reviewed the module across five lenses (92 raw findings, 52 di
 - The ROUND_TRIP re-rendering uses a fixed header sentence and derives labels from field names. Both are generic, but a pilot wanting different prose supplies neither from configuration yet.
 - A missing `OLLAMA_API_KEY` aborts the run before any call, deliberately; every other executor failure is a recorded `TRANSPORT_ERROR` observation.
 - Grounding spans are matched verbatim (whitespace-normalised, case-sensitive) against the document as sent. There is no fuzzy or offset-based matching, and no check that a span was taken from the right sentence; a quotation of the wrong sentence that does occur in the document is `GROUNDED`.
+
+## What each check cannot see
+
+Every check in the machine is invariant under some transformation of the reply: change the reply that way and the verdict does not move. That set is the check's blind spot, and a criticism the check cannot raise is not absent, only unseen. The table lists it for each check so that a survival can be read against it.
+
+| Check | What it sees | What it cannot see (the verdict is unchanged under) |
+|---|---|---|
+| Schema validation (keys, types, patterns, enumerations, lengths) | The shape of the object | Any value that fits the shape; a wrong date in the right format is valid |
+| `exact` oracle | The declared field's value | Nothing on that field; everything on fields with no oracle |
+| `any_of` oracle | Membership in the admitted readings | Which admitted reading was taken, and why |
+| `unknown` oracle | Nothing; it records the value | Everything; the field is `NOT_SCORED` whatever it holds |
+| Expected abstention (`any_of` containing `null`) | Whether the field is null | Whether the model abstained because it read the document or because it did not try |
+| Span occurrence | Whether the quoted words occur in the document, after whitespace normalisation and any configured relaxation | Quoting the wrong sentence that does occur; under `case_insensitive`, case; under `date_range_completion`, that the date was completed rather than quoted |
+| Value in span | Substring containment | A span that contains the value by coincidence; a value derived from the span rather than read from it |
+| Change against the baseline (REPEAT, ROUND_TRIP, IMPORT_DEPENDENCY, SUBSTRATE_SWAP) | Exact equality of the form fields | Direction and size of a change; a wrong value that is wrong identically on both sides counts as stable; anything outside the form fields (H12) |
+| Refusal detection | A phrase list | A refusal phrased outside the list; and it fires on a non-refusal that contains a listed phrase |
+| Thinking channel | Whether the reply carried the channel | Reasoning written into the content; whether the channel's contents bore on the answer |
+| Output tokens (claims `output_tokens`) | A count | What the tokens said |
+| `format_enforced_by_server` | An extra or missing key, which refutes enforcement | Anything else; it stays `null` for a model that never sends such a key |
+| Model-free controls (NON_VACUITY) | Whether the oracle rejects three corruption kinds and accepts the reference | Faults outside those kinds; a wrong, schema-valid value in a field with an `unknown` oracle is not a corruption the controls exercise. A corruption that changes nothing is refused when the plan is built (H20) |
+| Routing | The triggers raised | Which live locus is at fault; that is the point, and it is why every locus after a model call is plural |
+| Claims | The record fields the predicate names | Everything else in the record; and a survival is a survival only where the predicate has been shown able to fire (H21) |
+| Appraisal | The readiness a person recorded, propagated through recorded attacks and supports | Whether a reading is true; the labelling is bookkeeping over decisions, not a judgement of them |
+
+The list is finite because the checks are, and it is the reason the harness never promotes: a survival of every check is a survival of exactly these checks, with these blind spots, on these records.
 
 ## What this pilot does not establish
 

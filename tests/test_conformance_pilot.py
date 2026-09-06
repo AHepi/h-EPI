@@ -536,6 +536,77 @@ class RecordVersionTests(unittest.TestCase):
                     publish_record(record, out)
 
 
+class AccountingTests(unittest.TestCase):
+    """What was loaded plus what was refused equals what was there; a check that cannot fail is named as such (H19, H20)."""
+
+    LEAVE = ROOT / "forge" / "conformance" / "runs" / "leave-request"
+
+    def test_records_directory_is_enumerated_and_anything_else_is_refused_by_name(self) -> None:
+        from creib.forge.conformance.records import enumerate_record_directory
+        with tempfile.TemporaryDirectory() as temporary:
+            copy = Path(temporary) / "records"
+            shutil.copytree(self.LEAVE, copy)
+            listing = enumerate_record_directory(copy)
+            self.assertEqual(len(listing.observation_paths), 24)
+            self.assertEqual(len(listing.run_paths), 6)
+            self.assertEqual(listing.entries, len(list(copy.iterdir())))
+            self.assertEqual(len(load_observation_directory(copy)), 24)
+            stray = copy / "notes.md"
+            stray.write_text("scratch\n")
+            with self.assertRaisesRegex(RecordError, "not a record: notes.md"):
+                load_observation_directory(copy)
+            stray.unlink()
+            (copy / "more").mkdir()
+            with self.assertRaisesRegex(RecordError, "not a record file: more"):
+                load_observation_directory(copy)
+            (copy / "more").rmdir()
+            link = copy / "observation.0000000000000000.json"
+            link.symlink_to(listing.observation_paths[0].name)
+            with self.assertRaisesRegex(RecordError, "symlink"):
+                load_observation_directory(copy)
+            link.unlink()
+            self.assertEqual(len(load_observation_directory(copy)), 24)
+
+    def test_record_file_name_must_carry_the_id_of_the_record_it_holds(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            copy = Path(temporary) / "records"
+            shutil.copytree(self.LEAVE, copy)
+            observation = sorted(copy.glob("observation.*.json"))[0]
+            run = sorted(copy.glob("run.*.json"))[0]
+            moved = copy / "observation.ffffffffffffffff.json"
+            observation.rename(moved)
+            with self.assertRaisesRegex(RecordError, "named for a different record"):
+                load_observation(moved)
+            with self.assertRaisesRegex(RecordError, "named for a different record"):
+                load_observation_directory(copy)
+            moved.rename(observation)
+            wrong_run = copy / "run.ffffffffffffffff.json"
+            run.rename(wrong_run)
+            with self.assertRaisesRegex(RecordError, "named for a different record"):
+                load_run(wrong_run)
+            # a record under any other name is still readable by its own id
+            elsewhere = Path(temporary) / "kept.json"
+            elsewhere.write_bytes(wrong_run.read_bytes())
+            self.assertEqual(load_run(elsewhere).run_id, load_strict(elsewhere)["run_id"])
+
+    def test_a_control_whose_corruption_changes_nothing_is_refused_at_plan_time(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            copy = Path(temporary) / "pilot"
+            shutil.copytree(PILOT.parent, copy)
+            corpus_path = copy / "corpus.json"
+            raw = load_strict(corpus_path)
+            case = next(c for c in raw["cases"] if c["case_id"] == "ORD-001")
+            values = {item["field"]: item["value"] for item in case["reference_output"]}
+            for item in case["reference_output"]:
+                if item["field"] == "incident_date":
+                    item["value"] = values["date_of_birth"]
+            corpus_path.write_text(json.dumps(raw, indent=2) + "\n", encoding="utf-8")
+            config = load_pilot_config(copy / "pilot.json")
+            corpus = load_corpus(config.corpus_path, config.spec)
+            with self.assertRaisesRegex(RecordError, "control C-SWAP-DATES is vacuous on ORD-001"):
+                plan(config.spec, corpus)
+
+
 class SecrecyTests(unittest.TestCase):
     def test_key_never_reaches_records_or_errors(self) -> None:
         executor = OllamaChatExecutor(base_url="https://ollama.example", timeout_seconds=5, retries=1)
@@ -1131,6 +1202,28 @@ class ClaimsTests(unittest.TestCase):
             self.assertIn("epistemic_limit", result.to_dict())
             self.assertNotIn("confirmed", json.dumps(result.to_dict()).lower())
 
+    def test_survival_says_whether_the_check_was_shown_able_to_fail(self) -> None:
+        from creib.forge.conformance.claims import evaluate_claims, render_claims_markdown
+        observations = load_observation_directory(self.LEAVE)
+        results = evaluate_claims((
+            self._claim("no-refusal", "never", {"trigger": "REFUSAL_SUSPECTED"}),
+            self._claim("length-elsewhere", "never", {"trigger": "LENGTH_VIOLATION"}, models=["gpt-oss:120b"]),
+            self._claim("spans-real", "never", {"grounding_verdict": {"verdict": "SPAN_NOT_IN_DOCUMENT"}}),
+        ), observations)
+        by_id = {r.claim.claim_id: r for r in results}
+        self.assertEqual(by_id["no-refusal"].status, "UNREFUTED_FOR_DECLARED_SCOPE")
+        self.assertEqual(by_id["no-refusal"].witnesses_outside_scope, 0)
+        self.assertFalse(by_id["no-refusal"].shown_able_to_fail)
+        self.assertEqual(by_id["length-elsewhere"].status, "UNREFUTED_FOR_DECLARED_SCOPE")
+        self.assertEqual(by_id["length-elsewhere"].witnesses_outside_scope, 6, "deepseek and nemotron each raised LENGTH_VIOLATION three times")
+        self.assertTrue(by_id["length-elsewhere"].shown_able_to_fail)
+        self.assertTrue(by_id["spans-real"].shown_able_to_fail)
+        self.assertEqual(by_id["spans-real"].witnesses_outside_scope, 0)
+        self.assertEqual(by_id["no-refusal"].to_dict()["shown_able_to_fail"], False)
+        text = render_claims_markdown(results)
+        self.assertIn("has not been shown able to fail", text)
+        self.assertIn("held on 6 supplied observations outside the declared scope", text)
+
     def test_conditions_fail_closed(self) -> None:
         from creib.forge.conformance.claims import compile_condition
         for bad in ({"trigger": "NOPE"}, {"response_verdict": "NOPE"}, {"field_verdict": {"verdict": "NOPE"}}, {"locus": "MODEL"}, {"recovered": "sometimes"}, {"trigger": "MISMATCH", "locus": "TEST"}, {"unknown": 1}, {"all_of": []}, {"baseline": {"nope": 1}}, {"output_tokens": {}}, {"output_tokens": {"min": -1}}):
@@ -1171,6 +1264,7 @@ class ClaimsTests(unittest.TestCase):
             lines = [json.loads(line) for line in completed.stdout.splitlines() if line.strip()]
             self.assertEqual(lines[-1]["claims"], len(claims))
             self.assertEqual(set(lines[-1]["status_counts"]), {"REFUTED", "REFUTED_ON_CONTESTED_READING", "UNREFUTED_FOR_DECLARED_SCOPE", "NOT_TESTED"})
+            self.assertIsInstance(lines[-1]["unrefuted_not_shown_able_to_fail"], list)
             text = markdown.read_text()
             self.assertIn("`UNREFUTED_FOR_DECLARED_SCOPE` means no supplied record refuted the claim, or every refutation rests on a reading of the key that the appraisal labels out; it is not a proof.", text)
             self.assertTrue(text.rstrip().endswith(NON_INDUCTIVE_LIMIT))

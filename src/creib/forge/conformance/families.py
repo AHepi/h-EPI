@@ -662,6 +662,13 @@ def non_vacuity(spec: TaskSpec, case: Case) -> list[Variant]:
     variants: list[Variant] = []
     for control in spec.controls:
         output = _corrupt(case.reference_output, control, case.case_id)
+        if control.kind != "none" and dict(output) == dict(case.reference_output):
+            # A corruption that changes nothing cannot be rejected, so its acceptance would
+            # say nothing about the oracle; the control is vacuous on this case and the
+            # configuration is refused before any call is planned.
+            raise RecordError(
+                f"control {control.control_id} is vacuous on {case.case_id}: corruption {control.kind} leaves the reference output unchanged"
+            )
         fields = _base_fields(spec, case)
         fields.update(
             family=Family.NON_VACUITY,

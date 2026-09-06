@@ -370,6 +370,14 @@ class ClaimResult:
     refuting_contested: int = 0
     refuting_defeated: int = 0
     readings: tuple[str, ...] = ()
+    # Liveness of the check: how many supplied observations outside the declared scope
+    # satisfy the refuting predicate. A survival whose predicate held nowhere, in or out of
+    # scope, has not been shown to be a survival of anything the records could have said.
+    witnesses_outside_scope: int = 0
+
+    @property
+    def shown_able_to_fail(self) -> bool:
+        return self.refuting > 0 or self.witnesses_outside_scope > 0
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -385,6 +393,8 @@ class ClaimResult:
             "refuting_contested": self.refuting_contested,
             "refuting_defeated": self.refuting_defeated,
             "readings": list(self.readings),
+            "witnesses_outside_scope": self.witnesses_outside_scope,
+            "shown_able_to_fail": self.shown_able_to_fail,
             "per_model": [{"model": m, "tested": t, "refuting": r} for m, t, r in self.per_model],
             "examples": [{"observation_id": i, "model": m, "case_id": c, "family": f} for i, m, c, f in self.examples],
             "note": self.claim.note,
@@ -402,12 +412,15 @@ def evaluate_claim(claim: Claim, observations: list[ObservationRecord], context:
     standing = {"usable": 0, "contested": 0, "defeated": 0}
     readings: set[str] = set()
     examples: list[tuple[str, str, str, str]] = []
+    witnesses = 0
     for observation in observations:
-        if not claim.scope.admits(observation):
-            continue
-        tested[observation.model] = tested.get(observation.model, 0) + 1
         holds = predicate(observation, context)
         refutes = holds if claim.kind == "never" else not holds
+        if not claim.scope.admits(observation):
+            if refutes:
+                witnesses += 1
+            continue
+        tested[observation.model] = tested.get(observation.model, 0) + 1
         if refutes:
             refuting[observation.model] = refuting.get(observation.model, 0) + 1
             if appraisal is None:
@@ -440,6 +453,7 @@ def evaluate_claim(claim: Claim, observations: list[ObservationRecord], context:
         refuting_contested=standing["contested"],
         refuting_defeated=standing["defeated"],
         readings=tuple(sorted(readings)),
+        witnesses_outside_scope=witnesses,
     )
 
 
@@ -454,7 +468,7 @@ def _plural(count: int, noun: str) -> str:
 
 def render_claims_markdown(results: tuple[ClaimResult, ...]) -> str:
     parts = ["# Conjectures tested against the records", ""]
-    parts.append("A `never` claim is refuted by one observation where its condition holds; an `always` claim by one where it does not. `UNREFUTED_FOR_DECLARED_SCOPE` means no supplied record refuted the claim, or every refutation rests on a reading of the key that the appraisal labels out; it is not a proof. `REFUTED_ON_CONTESTED_READING` means every refutation rests on a reading that is under criticism and undecided. Counts are of observations, not of quality, and imply no ranking.")
+    parts.append("A `never` claim is refuted by one observation where its condition holds; an `always` claim by one where it does not. `UNREFUTED_FOR_DECLARED_SCOPE` means no supplied record refuted the claim, or every refutation rests on a reading of the key that the appraisal labels out; it is not a proof. `REFUTED_ON_CONTESTED_READING` means every refutation rests on a reading that is under criticism and undecided. An unrefuted claim also says whether its refuting condition held on any supplied record outside the declared scope: a condition that never held anywhere has not been shown able to fail. Counts are of observations, not of quality, and imply no ranking.")
     parts.append("")
     for result in results:
         parts.append(f"## {result.claim.claim_id}: {result.status}")
@@ -468,6 +482,11 @@ def render_claims_markdown(results: tuple[ClaimResult, ...]) -> str:
             if result.readings:
                 parts.append(f"- standing under the appraisal: {result.refuting_usable} usable, {result.refuting_contested} on a contested reading, {result.refuting_defeated} on a defeated reading; readings involved: {', '.join(result.readings)}")
             parts.append("- examples: " + "; ".join(f"`{i[:16]}` ({m}, {c}, {f})" for i, m, c, f in result.examples))
+        elif result.status != "NOT_TESTED":
+            if result.shown_able_to_fail:
+                parts.append(f"- the refuting condition held on {_plural(result.witnesses_outside_scope, 'supplied observation')} outside the declared scope, so the check has been shown able to fail")
+            else:
+                parts.append("- the refuting condition held on no supplied observation, in or out of scope; this check has not been shown able to fail, and the survival should be read accordingly")
         if result.claim.note:
             parts.append(f"- note: {result.claim.note}")
         parts.append("")

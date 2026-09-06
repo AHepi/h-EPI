@@ -40,6 +40,7 @@ python tools/run_conformance_pilot.py fills    --observations-dir forge/conforma
 | `docs/failure-modes.md` | The register of failure modes, model limitations, and harness defects, each pointing at the observation records that show it. |
 | `docs/small-models.md` | What the records show about the smaller models on the hard battery, with the larger sibling as contrast, and what they do not show. |
 | `docs/what-the-records-refute.md` | Forty-odd general claims about language models filling a form, each machine-tested against every record: refuted with counterexamples, or unrefuted for the records run, with each refutation classed by whether the reading of the key it rests on is itself under criticism. |
+| `docs/reviews/` | Five literature reviews on checks whose verdicts have come loose from what they judge, kept as advisory external syntheses; their README lists what the harness took from them and what it did not. |
 | `docs/history.md` | Where this came from and how to recover the earlier project. |
 
 ## Rules of the machine

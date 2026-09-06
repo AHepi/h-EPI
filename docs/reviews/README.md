@@ -1,0 +1,31 @@
+# Reviews kept for reference
+
+Five literature reviews prepared between 1 and 4 September 2026 against the earlier project in this repository (the CR-1.0 semantic-model work now on the branch `archive/cr-eib-0.6-full`, see `docs/history.md`). They are kept here because their subject, checks whose verdicts have come loose from the thing they judge, is the subject of this harness, and because several of their concrete rules were adopted. They are advisory external syntheses: the papers they cite have not been inspected at source by this repository, every figure in them is the review's own report of a paper's text, and the repository they describe (HRC-1, CR-1.0, nine semantic attack families, a 339-candidate corpus, a 527-test suite) is the archived tree, not the conformance harness. Nothing in them is a finding of this harness, and nothing in the harness cites them as evidence about a model.
+
+| File | Subject |
+|---|---|
+| `synthesis-verifier-kernels.md` | The editorial synthesis: a verifier fails when some transformation of the artifact leaves its verdict unchanged; the certificate asymmetry between refuting and certifying; seven rules the four reviews jointly license. |
+| `artifact-requirements.md` | Requiring an artifact proves that bytes are present, not that work was done; honest exits, model-authored receipts, format constraints that make the work unreachable. |
+| `unreliable-eliminators.md` | A grader as a binary channel; a saturated objection carries no information; correlated resampling; majority voting on hard problems; argumentation semantics over an unvalidated attack graph. |
+| `checks-that-cannot-fail.md` | A taxonomy of self-confirmation (dead guards, anchored oracles, unexecuted assertions, pseudo-tested code, dead refusal sites, silent skips, over-mocking, weak acceptance) and what detects each. |
+| `refuting-versus-certifying.md` | Why a suite can be shown not to hold a clause but not shown to hold it; the necessary conditions for detection; a decision procedure by tier. |
+
+## What the harness took from them
+
+Each item names the register entry or document where the change is recorded with its evidence.
+
+- **A records directory is read by enumeration, and everything that is not a record is refused by name** (`checks-that-cannot-fail.md`, class C6, the identity-keyed accounting invariant). The loader used to select `observation.*.json` by pattern and pass over anything else. Register entry H19.
+- **A record file's name must carry the prefix of the id it holds** (the same review's distinction between intrinsic and contextual self-confirmation: a record can be internally valid and still be the wrong record for its place). Register entry H19.
+- **A control whose corruption leaves the reference output unchanged is refused when the plan is built** (`checks-that-cannot-fail.md`, the liveness control: a check must be shown able to fire). Register entry H20.
+- **An unrefuted claim says whether its refuting condition held on any supplied record outside its scope** (`refuting-versus-certifying.md` §1.4 and `checks-that-cannot-fail.md` §6, the interesting-witness requirement: a valid formula needs a witness that its validity was non-trivial; a negative grep needs a positive control). Register entry H21; `docs/how-it-works.md`, "Conjectures, tested by the records".
+- **A table of what each check cannot see** (`synthesis-verifier-kernels.md` §0.1: the kernel of a verifier is the set of transformations under which its verdict is invariant). `docs/how-it-works.md`, "What each check cannot see".
+- **Conjectures for a run are committed before the run** (`checks-that-cannot-fail.md` §8, pre-register predictions). `CLAUDE.md`; `docs/what-the-records-refute.md` says which of its own conjectures were written after the records.
+- **The appraisal's attack graph is written by a person and never extracted by a model** (`unreliable-eliminators.md` §3: argumentation semantics cannot validate or repair an unvalidated attack relation). `docs/how-it-works.md`, "Readings under criticism".
+- **The abstention finding is read as a conditional and set beside the reviews' honest-exit results** (`artifact-requirements.md` §5), with the caveat that those are external syntheses. `docs/what-the-records-refute.md`.
+
+## What was not taken, and why
+
+- A refusal-site deletion sweep over the harness's own source (`checks-that-cannot-fail.md`, class C5) has not been run. The harness's `raise RecordError` sites are its refusal sites; deleting each in turn and checking that the offline suite fails would measure how many of them a test actually reaches. It is recorded here as open work, not as done.
+- The channel model of a critic (`unreliable-eliminators.md` §0) applies to a grader in the loop. The harness has no model in the loop as a critic; the only judges are the answer key, the schema, and the span matcher, and their misreadings are handled by the appraisal, not by a rate.
+- Majority voting, consensus, reranking, and learned selection are excluded by the harness's constitution (agreement between models never confirms), which the reviews' negative results on those methods support but did not motivate.
+- Evidence-carrying termination (`artifact-requirements.md` §4) is the receipt discipline the grounding spans already implement in miniature: the model's quoted words are a claimant-written receipt, and the harness checks them against the document rather than believing them.

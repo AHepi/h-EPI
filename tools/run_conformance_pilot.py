@@ -256,7 +256,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             for result in results:
                 _emit(result.to_dict())
             counts = {status: sum(1 for r in results if r.status == status) for status in CLAIM_STATUSES}
-            summary = {"claims": len(results), "observations": len(observations), "models": sorted({o.model for o in observations}), "status_counts": counts, "semantic_verdict": None}
+            unwitnessed = sorted(r.claim.claim_id for r in results if r.status == "UNREFUTED_FOR_DECLARED_SCOPE" and not r.shown_able_to_fail)
+            summary = {
+                "claims": len(results),
+                "observations": len(observations),
+                "models": sorted({o.model for o in observations}),
+                "status_counts": counts,
+                "unrefuted_not_shown_able_to_fail": unwitnessed,
+                "semantic_verdict": None,
+            }
             if appraisal is not None:
                 summary["appraisal_labels"] = appraisal.labels.to_dict()
             _emit(summary)
