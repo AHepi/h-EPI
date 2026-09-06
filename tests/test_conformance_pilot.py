@@ -1304,6 +1304,86 @@ class ClaimsTests(unittest.TestCase):
             self.assertTrue(text.rstrip().endswith(NON_INDUCTIVE_LIMIT))
 
 
+class CompareTests(unittest.TestCase):
+    """Two runs of one model are paired request by request; identity never consults the oracle and nothing is ranked."""
+
+    LEAVE = ROOT / "forge" / "conformance" / "runs" / "leave-request"
+
+    def _runs(self, model):
+        runs = sorted((load_run(path) for path in self.LEAVE.glob("run.*.json") if load_run(path).model == model), key=lambda r: r.created_on)
+        self.assertEqual(len(runs), 2, model)
+        return runs
+
+    def test_shared_requests_are_paired_and_accounted_for(self) -> None:
+        from creib.forge.conformance.compare import compare_runs, render_compare_markdown
+        observations = load_observation_directory(self.LEAVE)
+        earlier, later = self._runs("gpt-oss:120b")
+        comparison = compare_runs(earlier, later, observations)
+        self.assertEqual(comparison["left"]["run_id"], earlier.run_id)
+        self.assertEqual(comparison["shared_requests"], 2, "the later run repeated the two baseline requests only")
+        self.assertEqual(comparison["only_left"], 4)
+        self.assertEqual(comparison["only_right"], 0)
+        self.assertEqual(comparison["identical"] + comparison["differing"] + comparison["not_comparable"], comparison["shared_requests"])
+        self.assertEqual(sum(r["shared"] for r in comparison["by_family"]), comparison["shared_requests"])
+        self.assertEqual({r["family"] for r in comparison["by_family"]}, {"BASELINE"})
+        self.assertEqual(sum(e["fields"] != [] for e in comparison["examples"]), comparison["differing"])
+        self.assertEqual(comparison["left"]["repeat_floor"]["repeats"], 0, "no repeats were configured for that run")
+        # symmetry of the pairing: swapping the runs swaps the sides and nothing else
+        swapped = compare_runs(later, earlier, observations)
+        self.assertEqual((swapped["shared_requests"], swapped["identical"], swapped["differing"]), (comparison["shared_requests"], comparison["identical"], comparison["differing"]))
+        self.assertEqual(swapped["only_left"], comparison["only_right"])
+        text = render_compare_markdown(comparison)
+        self.assertTrue(text.rstrip().endswith(NON_INDUCTIVE_LIMIT))
+        import re
+        for word in ("score", "scores", "best", "worst", "accuracy", "ranking"):
+            self.assertIsNone(re.search(rf"\b{word}\b", text.lower()), word)
+        self.assertIn("a difference is drift, not a wrong answer", text)
+
+    def test_field_differences_and_verdict_moves_are_counted_by_field(self) -> None:
+        from creib.forge.conformance.compare import compare_runs
+        observations = load_observation_directory(self.LEAVE)
+        for model in ("nemotron-3-nano:30b", "deepseek-v4-flash:0731"):
+            earlier, later = self._runs(model)
+            comparison = compare_runs(earlier, later, observations)
+            self.assertEqual(comparison["shared_requests"], 2)
+            counted = sum(r["count"] for r in comparison["differing_fields"])
+            listed = sum(len(e["fields"]) for e in comparison["examples"])
+            self.assertEqual(counted, listed, "every differing field of every differing pair is counted once")
+            for move in comparison["field_verdict_moves"]:
+                self.assertNotEqual(move["left"], move["right"])
+            if comparison["differing"] == 0:
+                self.assertEqual(comparison["differing_fields"], [])
+
+    def test_different_models_and_the_same_run_are_refused(self) -> None:
+        from creib.forge.conformance.compare import compare_runs
+        observations = load_observation_directory(self.LEAVE)
+        gpt = self._runs("gpt-oss:120b")[0]
+        nemotron = self._runs("nemotron-3-nano:30b")[0]
+        with self.assertRaisesRegex(RecordError, "different models"):
+            compare_runs(gpt, nemotron, observations)
+        with self.assertRaisesRegex(RecordError, "two different runs"):
+            compare_runs(gpt, gpt, observations)
+        with self.assertRaisesRegex(RecordError, "was not supplied"):
+            compare_runs(gpt, self._runs("gpt-oss:120b")[1], [])
+
+    def test_cli_compare_runs_and_writes_markdown(self) -> None:
+        earlier, later = self._runs("gpt-oss:120b")
+        paths = {load_run(p).run_id: p for p in self.LEAVE.glob("run.*.json")}
+        with tempfile.TemporaryDirectory() as directory:
+            markdown = Path(directory) / "compare.md"
+            completed = subprocess.run(
+                [sys.executable, str(TOOL), "compare", "--run", str(paths[earlier.run_id]), "--run", str(paths[later.run_id]), "--observations-dir", str(self.LEAVE), "--markdown", str(markdown)],
+                capture_output=True, text=True, env={**os.environ, "PYTHONPATH": str(ROOT / "src")},
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            emitted = json.loads(completed.stdout.strip().splitlines()[-1])
+            self.assertEqual(emitted["shared_requests"], 2)
+            self.assertIn("epistemic_limit", emitted)
+            self.assertTrue(markdown.exists())
+            one = subprocess.run([sys.executable, str(TOOL), "compare", "--run", str(paths[earlier.run_id]), "--observations-dir", str(self.LEAVE)], capture_output=True, text=True, env={**os.environ, "PYTHONPATH": str(ROOT / "src")})
+            self.assertNotEqual(one.returncode, 0)
+
+
 class AppraisalTests(unittest.TestCase):
     """Readings a refutation rests on are labelled in, out, or undecided; refutations become usable, contested, or defeated."""
 

@@ -46,6 +46,7 @@ from .records import (
     load_run,
     publish_record,
 )
+from .compare import compare_runs, render_compare_markdown
 from .report import build_report, render_markdown
 from .appraisal import Appraisal, Argument, appraise, load_appraisal
 from .claims import Claim, ClaimResult, evaluate_claims, load_claims, render_claims_markdown
@@ -99,6 +100,8 @@ __all__ = [
     "load_run",
     "publish_record",
     "build_report",
+    "compare_runs",
+    "render_compare_markdown",
     "render_markdown",
     "ROUTING_TABLE",
     "LiveLocus",

@@ -133,6 +133,20 @@ The travel-claim appraisal has eleven arguments. Two round-one readings of "N ni
 
 A reading nobody has argued about is treated as usable. That is absence of argument, not endorsement, and it is exactly the position every refutation was in before: the appraisal only ever weakens a refutation, never strengthens one, and a claims file run without `--appraisal` gives the same counts as before.
 
+## Comparing two runs
+
+The request digest is a function of the prompt, the schema, the options, and the model name, so two runs of one model on one plan send byte-identical requests, and a repeat is the same request sent again. `compare` pairs each request of one run with the same request of another, repeat by repeat, and reports how many pairs returned identical form values, which fields differed and how often, and how the oracle's verdicts moved between the two sides.
+
+```sh
+PYTHONPATH=src python tools/run_conformance_pilot.py compare \
+    --run forge/conformance/runs/travel-claim-round3/run.dd5bc9ae4cf55b46.json \
+    --run forge/conformance/runs/travel-claim-sweep/run.ede862c99337c1f4.json \
+    --observations-dir forge/conformance/runs/travel-claim-round3 --observations-dir forge/conformance/runs/travel-claim-sweep \
+    --markdown gemma-drift.md
+```
+
+Identity compares the declared form fields of the two replies and never consults the oracle, so a difference is drift and not a wrong answer; the verdict moves say separately how each side was read, so drift in a total can be told from drift in a field nobody scored. Each run's own repeat floor is printed beside the comparison, because a difference across runs means nothing until it is read against the difference within one. Requests only one run made are counted and not paired; a round trip is such a request whenever the baseline it was built from differed, since its document is the model's own earlier answer. The two runs must be of the same model, because the model name is inside every digest, and the command refuses anything else. Nothing in the output ranks or prefers either run.
+
 ## The hard battery
 
 `forge/conformance/pilots/travel-claim/` is the third pilot, built to be difficult for a small model rather than representative. It keeps the machine unchanged and pushes every configuration surface at once:

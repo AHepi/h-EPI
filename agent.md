@@ -86,7 +86,14 @@ Run each model into the same output directory with its own `--created-on`, then 
 
 ## Use 4: catch drift and regressions
 
-The request digest is a function of the prompt, the schema, the options, and the model name, so the same pilot re-run later sends byte-identical requests. Run again with a new `--created-on` and compare fills per request digest; `fills --run <run record>` restricts to one run. Differences on identical requests are either the endpoint's noise floor (see the repeat counts of both runs) or a change in the model or endpoint. Do not compare across an edit to `pilot.json` without checking the plan id: an edited configuration is a new plan even when no variant changed.
+The request digest is a function of the prompt, the schema, the options, and the model name, so the same pilot re-run later sends byte-identical requests. Run again with a new `--created-on`, then pair the two runs:
+
+```sh
+python tools/run_conformance_pilot.py compare --run forge/conformance/runs/my-form/run.<earlier>.json --run forge/conformance/runs/my-form/run.<later>.json \
+    --observations-dir forge/conformance/runs/my-form --markdown my-form-drift.md
+```
+
+The output pairs every shared request, repeat by repeat, and gives identical, differing, and not-comparable counts, the fields that differed with counts, the verdict moves per field (`MISMATCH` to `MATCH` and back), and each run's own repeat floor. Read the differences against that floor: a model whose repeats differ half the time within one run will differ across runs for the same reason. A request that only one run made is counted and not paired; round trips are the usual case, since their document is the model's own earlier answer. Both runs must be of the same model. Do not compare across an edit to `pilot.json` without checking the plan id: an edited configuration is a new plan even when no variant changed, and the command prints both plan ids.
 
 ## Use 5: measure the noise floor
 

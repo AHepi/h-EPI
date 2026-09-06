@@ -81,6 +81,10 @@ def _parser() -> argparse.ArgumentParser:
     report.add_argument("--run", type=Path, action="append", required=True)
     report.add_argument("--observations-dir", type=Path, required=True)
     report.add_argument("--markdown", type=Path, default=None)
+    compare = subparsers.add_parser("compare", help="pair the requests two runs of one model share and report identical forms, differing fields, and verdict moves; drift, never a score")
+    compare.add_argument("--run", type=Path, action="append", required=True, help="exactly two run records")
+    compare.add_argument("--observations-dir", type=Path, required=True, action="append", help="the directories holding both runs' observations; may be given more than once")
+    compare.add_argument("--markdown", type=Path, default=None)
     return parser
 
 
@@ -292,6 +296,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             if args.markdown is not None:
                 publish_no_clobber(args.markdown, render_markdown(report).encode("utf-8"))
             _emit(report)
+            return 0
+        if args.command == "compare":
+            from creib.forge.conformance.compare import compare_runs, render_compare_markdown
+            if len(args.run) != 2:
+                raise RecordError("compare needs exactly two --run records")
+            observations = []
+            for directory in args.observations_dir:
+                observations.extend(load_observation_directory(directory))
+            comparison = compare_runs(load_run(args.run[0]), load_run(args.run[1]), observations)
+            if args.markdown is not None:
+                publish_no_clobber(args.markdown, render_compare_markdown(comparison).encode("utf-8"))
+            _emit(comparison)
             return 0
         raise RecordError(f"unknown command {args.command!r}")
     except CREIBError as exc:
