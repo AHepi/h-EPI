@@ -1221,6 +1221,14 @@ class AppraisalTests(unittest.TestCase):
         self.assertTrue(bnd104)
         self.assertTrue(all(appraisal.standing_of(o) == "defeated" for o in bnd104))
         self.assertTrue(all("R-BND104-NIGHTLY-R1" in appraisal.readings_of(o) for o in bnd104))
+        # a conjecture about a different field, or about a trigger, does not rest on that reading
+        self.assertTrue(all(appraisal.standing_of(o, frozenset({"destination_city"}), frozenset()) == "usable" for o in bnd104))
+        self.assertTrue(all(appraisal.standing_of(o, frozenset(), frozenset({"EXTRA_FIELD"})) == "usable" for o in bnd104))
+        from creib.forge.conformance.claims import condition_footprint
+        self.assertEqual(condition_footprint({"trigger": "EXTRA_FIELD"}), (frozenset(), frozenset({"EXTRA_FIELD"})))
+        self.assertEqual(condition_footprint({"field_verdict": {"verdict": "MISMATCH"}}), (None, frozenset()))
+        self.assertEqual(condition_footprint({"all_of": [{"output_tokens": {"min": 1}}, {"field_verdict": {"verdict": "MISMATCH", "field": "total_claimed_cents"}}]}), (frozenset({"total_claimed_cents"}), frozenset()))
+        self.assertEqual(condition_footprint({"grounding_verdict": {"verdict": "SPAN_NOT_IN_DOCUMENT"}}), (frozenset(), frozenset({"SPAN_NOT_IN_DOCUMENT"})))
         claims = tuple(c for c in load_claims(self.CLAIMS) if c.claim_id in ("ARITH-02", "READ-07", "STRUCT-01"))
         plain = {r.claim.claim_id: r for r in evaluate_claims(claims, observations)}
         judged = {r.claim.claim_id: r for r in evaluate_claims(claims, observations, appraisal)}

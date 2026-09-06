@@ -248,6 +248,42 @@ def compile_condition(raw: Any, where: str = "condition") -> Predicate:
     raise RecordError(f"{where} has unknown predicate {key!r}")
 
 
+def condition_footprint(raw: Any) -> tuple[frozenset[str] | None, frozenset[str] | None]:
+    """The fields and triggers a condition looks at: (fields, triggers), each None for "any".
+
+    Predicates that look at no field verdict and no trigger (a token count, the thinking
+    channel, recovery, the change flag) contribute nothing, so a refutation through them
+    rests on no reading and is usable whatever the appraisal says.
+    """
+
+    fields: set[str] = set(); triggers: set[str] = set(); any_field = False
+    def walk(node: Any) -> None:
+        nonlocal any_field
+        record = object_value(node, "condition")
+        (key, value), = record.items()
+        if key in ("all_of", "any_of"):
+            for item in value:
+                walk(item)
+        elif key in ("not", "baseline"):
+            walk(value)
+        elif key == "trigger":
+            triggers.add(str(value))
+        elif key == "field_verdict":
+            field = object_value(value, "field_verdict").get("field")
+            if field is None:
+                any_field = True
+            else:
+                fields.add(str(field))
+        elif key == "grounding_verdict":
+            verdict = str(object_value(value, "grounding_verdict")["verdict"])
+            if verdict in TRIGGERS:
+                triggers.add(verdict)
+        elif key == "value_null":
+            fields.add(str(object_value(value, "value_null")["field"]))
+    walk(raw)
+    return (None if any_field else frozenset(fields)), frozenset(triggers)
+
+
 # --------------------------------------------------------------------------
 # loading
 # --------------------------------------------------------------------------
@@ -360,6 +396,7 @@ def evaluate_claim(claim: Claim, observations: list[ObservationRecord], context:
     predicate = compile_condition(claim.condition)
     if context is None:
         context = Context(observations)
+    fields, triggers = condition_footprint(claim.condition)
     tested: dict[str, int] = {}
     refuting: dict[str, int] = {}
     standing = {"usable": 0, "contested": 0, "defeated": 0}
@@ -376,8 +413,8 @@ def evaluate_claim(claim: Claim, observations: list[ObservationRecord], context:
             if appraisal is None:
                 standing["usable"] += 1
             else:
-                standing[appraisal.standing_of(observation)] += 1
-                readings.update(appraisal.readings_of(observation))
+                standing[appraisal.standing_of(observation, fields, triggers)] += 1
+                readings.update(appraisal.readings_of(observation, fields, triggers))
             if len(examples) < _MAX_EXAMPLES:
                 examples.append((observation.observation_id, observation.model, observation.variant.base_case_id, observation.variant.family.value))
     total = sum(tested.values())

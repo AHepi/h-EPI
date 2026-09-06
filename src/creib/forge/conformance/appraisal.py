@@ -213,13 +213,23 @@ class Appraisal:
     def build(cls, arguments: tuple[Argument, ...]) -> "Appraisal":
         return cls(arguments=arguments, labels=appraise(arguments))
 
-    def readings_of(self, observation: ObservationRecord) -> tuple[str, ...]:
-        """Arguments whose supported reading this observation's criticisms rest on."""
+    def readings_of(self, observation: ObservationRecord, fields: frozenset[str] | None = None, triggers: frozenset[str] | None = None) -> tuple[str, ...]:
+        """Arguments whose supported reading this observation's criticisms rest on.
+
+        ``fields`` and ``triggers`` restrict the question to the part of the observation a
+        conjecture actually looked at: a refutation of "never emits an extra key" does not
+        rest on the oracle's reading of a total that the same reply also got wrong. ``None``
+        means every criticised field, or every raised trigger.
+        """
 
         corpus = next((b.sha256 for b in observation.spec_bindings if b.path == "corpus.json"), None)
         pilot = next((b.sha256 for b in observation.spec_bindings if b.path == "pilot.json"), None)
         criticised = {v.field for v in observation.scoring.field_verdicts if v.verdict not in ("MATCH", "NOT_SCORED")}
-        triggers = set(observation.routing.triggers)
+        if fields is not None:
+            criticised &= set(fields)
+        raised = set(observation.routing.triggers)
+        if triggers is not None:
+            raised &= set(triggers)
         found: list[str] = []
         for a in self.arguments:
             s = a.supports
@@ -231,14 +241,14 @@ class Appraisal:
                 continue
             if s.case_id is not None and s.case_id == observation.variant.base_case_id and s.field in criticised:
                 found.append(a.argument_id)
-            elif s.trigger is not None and s.trigger in triggers:
+            elif s.trigger is not None and s.trigger in raised:
                 found.append(a.argument_id)
         return tuple(found)
 
-    def standing_of(self, observation: ObservationRecord) -> str:
+    def standing_of(self, observation: ObservationRecord, fields: frozenset[str] | None = None, triggers: frozenset[str] | None = None) -> str:
         """usable, contested, or defeated, from the labels of the readings the observation rests on."""
 
-        labels = [self.labels.of(x) for x in self.readings_of(observation)]
+        labels = [self.labels.of(x) for x in self.readings_of(observation, fields, triggers)]
         if "out" in labels:
             return "defeated"
         if "undecided" in labels:
