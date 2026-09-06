@@ -90,6 +90,14 @@ Tested against 3,974 observations from 18 models. Status counts: 31 refuted, 15 
 | `STAB-03` | The same facts rendered as prose, a table, or an email are filled the same way. | `REFUTED` | 9 of 18 models, 23 observations | 318 observations, 18 models |
 | `STAB-04` | Exchanging the positions of two role-bearing labels never makes a value follow position rather than label. | `REFUTED` | 7 of 18 models, 10 observations | 262 observations, 18 models |
 
+### Reasoning length
+
+| Claim | Statement | Status | Refuted by | Tested on |
+|---|---|---|---|---|
+| `LEN-01` | A reply that carries at least 800 generated tokens, which on this battery means the model reasoned before answering, never gets an unambiguous multiplied total wrong. | `UNREFUTED_FOR_DECLARED_SCOPE` | - | 231 observations, 18 models |
+| `LEN-02` | A reply of fewer than 400 generated tokens never gets an unambiguous multiplied total right. | `REFUTED` | 6 of 18 models, 21 observations | 231 observations, 18 models |
+| `LEN-03` | A model that reasons before answering, visibly or in a thinking channel, never returns null for a date the document fixes by a weekday or an interval. | `REFUTED` | 5 of 18 models, 37 observations (glm-5.1, gpt-oss:120b, gpt-oss:20b, minimax-m3, mistral-large-3:675b) | 549 observations, 18 models |
+
 ### Transport and refusal
 
 | Claim | Statement | Status | Refuted by | Tested on |
