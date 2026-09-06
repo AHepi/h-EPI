@@ -1,0 +1,62 @@
+{
+  "schema_version": "creib.conformance-pilot.config.v1",
+  "pilot_id": "LEAVE-REQUEST-TEMPLATE-001",
+  "title": "Template: fill a leave-request form from an email, with no answer key",
+  "form_schema": "form.schema.json",
+  "instructions": "instructions.md",
+  "corpus": "corpus.json",
+  "models": [
+    "gpt-oss:120b"
+  ],
+  "endpoint": {
+    "kind": "ollama-chat",
+    "base_url": "https://ollama.com",
+    "timeout_seconds": 180,
+    "options": {
+      "temperature": 0,
+      "seed": 7
+    },
+    "think": false
+  },
+  "charter": {
+    "purpose": "Fill one form from one document and record exactly what the model returned, without judging field values.",
+    "output": "One observation record per fill holding the returned form, its structural check, and no verdict on content.",
+    "scope_in": [
+      "One English email requesting leave.",
+      "The seven declared fields of the leave-request form."
+    ],
+    "scope_out": [
+      "Any claim that the returned values are correct.",
+      "Ranking or scoring models."
+    ]
+  },
+  "load_bearing": [
+    "S1"
+  ],
+  "negations": [],
+  "twins": [],
+  "ambiguity": [],
+  "controls": [
+    {
+      "control_id": "C-CORRECT",
+      "corruption": {
+        "kind": "none"
+      }
+    },
+    {
+      "control_id": "C-DROP-NAME",
+      "corruption": {
+        "kind": "drop_required",
+        "field": "employee_name"
+      }
+    }
+  ],
+  "refusal_phrases": [
+    "I cannot",
+    "I can't",
+    "I'm sorry",
+    "I am unable",
+    "as an AI",
+    "cannot assist"
+  ]
+}

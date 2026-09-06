@@ -49,6 +49,46 @@ PYTHONPATH=src python tools/run_conformance_pilot.py report --run forge/conforma
 
 `run` exits 1 when any observation carries live loci. That means unresolved criticisms are present, not that the run failed.
 
+## Using it for your own form
+
+The incident form above is a test battery with an answer key. Most real use is simpler: you have a form and a document and you want the filled form back, with the form's own rules enforced and nothing pretended about correctness. That is a plain fill. The template under `forge/conformance/pilots/leave-request/` is the smallest working example and was run live once (`forge/conformance/runs/leave-request/`).
+
+Starting inside the repository's virtual environment:
+
+```sh
+export PYTHONPATH=src
+export OLLAMA_API_KEY=…                      # read only from the environment, never written anywhere
+
+# 1. Copy the template and edit the four files.
+cp -r forge/conformance/pilots/leave-request forge/conformance/pilots/my-form
+
+# 2. Check the configuration before spending any model calls.
+python tools/run_conformance_pilot.py validate --pilot forge/conformance/pilots/my-form/pilot.json
+python tools/run_conformance_pilot.py plan     --pilot forge/conformance/pilots/my-form/pilot.json
+
+# 3. Fill: one model call per case.
+python tools/run_conformance_pilot.py run --pilot forge/conformance/pilots/my-form/pilot.json \
+    --model gpt-oss:120b --family BASELINE \
+    --output-dir forge/conformance/runs/my-form --created-on "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+# 4. Read the filled forms back.
+python tools/run_conformance_pilot.py fills --observations-dir forge/conformance/runs/my-form
+```
+
+Where each thing goes:
+
+| What | Where | Notes |
+|---|---|---|
+| The form | `form.schema.json` | JSON Schema 2020-12 with `additionalProperties: false` and a `required` list. Each field may use only `type` plus `pattern`, `enum`, `maxLength`, `minLength`, `format`. Other keywords are rejected by name. |
+| The rules | `instructions.md` | A heading, one preamble line, a blank line, then numbered sentences `1.` … one per line, ending with a newline. Sentence 1 should demand JSON only. Mention each field by its backticked name in exactly one sentence so the obligation can cite it. |
+| The document(s) | `corpus.json` | One case per document. `renderings` holds the text under `prose`, `table`, or `email`; `rendering` names the one used by default. Every required field needs an oracle entry; use `"kind": "unknown"` when you have no answer key. `varied` must be null unless `pair_of` names another case. |
+| The LLM endpoint | `pilot.json` → `endpoint` | `kind` is `ollama-chat`, `base_url` is the server (`https://ollama.com` for the cloud, `http://localhost:11434` for a local Ollama), `models` lists the model ids you may pass to `--model`. The key comes from `OLLAMA_API_KEY` only. |
+| The results | `--output-dir` | One `observation.*.json` per fill holding the request digest, the raw reply, the parsed form, per-field verdicts, and live loci; one `run.*.json` per model. Content-addressed; never overwritten. |
+
+`fills` prints one JSON line per fill: `filled_form` is what the model returned, `structural_issues` lists violations of the form's own rules (wrong type, outside the enum, pattern, length, missing required key, extra key), `unjudged_fields` lists fields with no answer key, and `live_loci` is empty when nothing was flagged. A plain-fill run is labelled `INCONCLUSIVE_NO_SCORED_OUTPUT`: the form was filled and its rules held, and nothing about the values was confirmed. That label is deliberate. If you later add answer keys for some fields, those fields become judged and the labels change accordingly.
+
+`run` exits 1 when any observation carries live loci and 0 otherwise is reserved; treat exit 1 as "look at the loci", not as failure. The full battery (drop `--family BASELINE`) needs pairs, renderings, negations, and controls to produce variants; with a single plain case it adds only an instruction-removal probe and a round trip.
+
 ## First oracle defect, found by the first live run
 
 The first live baseline run (gpt-oss:20b, six cases) returned 56 field matches and 4 mismatches, all on `site`. The model wrote `cold store 2`, `plant room, Level B2`, `kitchen, Building C`, and `loading bay, Site 4 Parramatta`, exactly as the documents do; the oracle expected title-cased forms (`Cold store 2`, …). Instruction 8 says "as named in the document", so the oracle, not the model, had departed from the source. The routing had already kept TEST live alongside CANDIDATE on every one of those observations.

@@ -379,7 +379,7 @@ def route(variant: Variant, scoring: Scoring, *, format_sent: bool = True) -> Ro
     return Routing(
         live_loci=live,
         route=ROUTE_AWAITING_HUMAN_TRIAGE,
-        unrefuted_for_variant=not triggers,
+        unrefuted_for_variant=not triggers and not any(v.verdict == "NOT_SCORED" for v in scoring.field_verdicts),
         triggers=triggers,
         format_enforced_by_server=format_enforced,
     )

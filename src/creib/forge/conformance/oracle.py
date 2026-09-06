@@ -240,6 +240,8 @@ def _constraint_verdict(value: Any, property_schema: Mapping[str, Any]) -> tuple
 
 
 def _oracle_verdict(value: Any, oracle: Oracle) -> tuple[str, str | None]:
+    if oracle.kind == "unknown":
+        return "NOT_SCORED", "no expectation declared; value recorded, not judged"
     if oracle.kind == "exact":
         return ("MATCH", None) if value == oracle.value and type(value) is type(oracle.value) else ("MISMATCH", f"expected {oracle.value!r}")
     if oracle.kind in ("enum", "any_of"):
@@ -283,8 +285,8 @@ def score_output(variant: Variant, output: Mapping[str, Any]) -> tuple[bool, tup
                 verdicts.append(_field_verdict(field, "MATCH", output, oracle, None))
             elif field in required:
                 verdicts.append(_field_verdict(field, "MISSING_REQUIRED", output, oracle, "required key absent"))
-            elif oracle is None:
-                verdicts.append(_field_verdict(field, "NOT_SCORED", output, None, "optional key absent; no oracle"))
+            elif oracle is None or oracle.kind == "unknown":
+                verdicts.append(_field_verdict(field, "NOT_SCORED", output, oracle, "optional key absent; no expectation"))
             else:
                 verdicts.append(_field_verdict(field, "MISMATCH", output, oracle, "optional key absent but a value was expected"))
             continue

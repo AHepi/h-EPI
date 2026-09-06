@@ -40,7 +40,7 @@ from .spec import TaskSpec
 
 
 RENDERINGS: tuple[str, ...] = ("prose", "table", "email")
-ORACLE_KINDS: tuple[str, ...] = ("exact", "regex", "enum", "absent", "any_of")
+ORACLE_KINDS: tuple[str, ...] = ("exact", "regex", "enum", "absent", "any_of", "unknown")
 _JSON_TYPES: Mapping[str, type] = {"string": str, "boolean": bool, "integer": int}
 
 Scalar = str | bool | int | None
@@ -227,6 +227,12 @@ def parse_oracle(
             allowed = properties[field].get("enum") if field in properties else None
             if allowed is not None and any(item not in allowed for item in values):
                 raise RecordError(f"{where} enum oracle lists values outside the form enum")
+    elif kind == "unknown":
+        # No expectation is declared: the model's value is recorded and its
+        # form constraints are still enforced, but nothing is judged right or
+        # wrong. This is the "fill my form, I have no answer key" case.
+        if value is not None or values is not None or pattern is not None:
+            raise RecordError(f"{where} unknown oracle carries no value")
     else:
         if value is not None or values is not None or pattern is not None:
             raise RecordError(f"{where} absent oracle carries no value")

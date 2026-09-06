@@ -59,6 +59,10 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--dry-run", action="store_true", help="use the canned executor; no network")
     run.add_argument("--retries", type=int, default=0)
 
+    fills = subparsers.add_parser("fills", help="print the filled forms from recorded observations (what the model actually returned)")
+    fills.add_argument("--observations-dir", type=Path, required=True)
+    fills.add_argument("--run", type=Path, help="restrict to one run record")
+    fills.add_argument("--family", default="BASELINE", choices=[family.value for family in Family] + ["ALL"])
     report = subparsers.add_parser("report", help="aggregate run records into an unranked report")
     report.add_argument("--run", type=Path, action="append", required=True)
     report.add_argument("--observations-dir", type=Path, required=True)
@@ -188,6 +192,33 @@ def main(argv: Sequence[str] | None = None) -> int:
                 }
             )
             return 1 if result.unresolved else 0
+        if args.command == "fills":
+            observations = load_observation_directory(args.observations_dir)
+            if args.run is not None:
+                run_id = load_run(args.run).run_id
+                observations = [o for o in observations if o.run_id == run_id]
+            if args.family != "ALL":
+                observations = [o for o in observations if o.variant.family.value == args.family]
+            structural = {"MISSING_REQUIRED", "EXTRA_FIELD", "TYPE_VIOLATION", "PATTERN_VIOLATION", "ENUM_VIOLATION", "LENGTH_VIOLATION"}
+            for observation in sorted(observations, key=lambda o: (o.model, o.variant.base_case_id, o.variant.family.value)):
+                scoring = observation.scoring
+                _emit({
+                    "case_id": observation.variant.base_case_id,
+                    "model": observation.model,
+                    "family": observation.variant.family.value,
+                    "response_verdict": scoring.response_verdict,
+                    "filled_form": scoring.parsed_output,
+                    "structural_issues": [
+                        {"field": v.field, "issue": v.verdict} for v in scoring.field_verdicts if v.verdict in structural
+                    ],
+                    "judged_against_answer_key": [
+                        {"field": v.field, "verdict": v.verdict} for v in scoring.field_verdicts if v.verdict in ("MATCH", "MISMATCH", "UNEXPECTED_PRESENT")
+                    ],
+                    "unjudged_fields": [v.field for v in scoring.field_verdicts if v.verdict == "NOT_SCORED"],
+                    "live_loci": list(observation.routing.loci),
+                    "observation_id": observation.observation_id,
+                })
+            return 0
         if args.command == "report":
             runs = [load_run(path) for path in args.run]
             observations = load_observation_directory(args.observations_dir)

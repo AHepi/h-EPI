@@ -197,7 +197,11 @@ def run_pilot(
     # transport errors has refuted nothing and confirmed nothing.
     if candidate_live:
         scope_label = SCOPE_REFUTED
-    elif scored_model_outputs > 0 and response_counter.get("TRANSPORT_ERROR", 0) == 0:
+    elif (
+        scored_model_outputs > 0
+        and response_counter.get("TRANSPORT_ERROR", 0) == 0
+        and all(o.routing.unrefuted_for_variant for o in observations if o.response is not None)
+    ):
         scope_label = SCOPE_UNREFUTED
     else:
         scope_label = SCOPE_INCONCLUSIVE

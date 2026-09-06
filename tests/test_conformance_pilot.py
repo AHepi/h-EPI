@@ -758,3 +758,56 @@ class SecondReviewRegressionTests(unittest.TestCase):
         swaps = [v for v in _PLAN.variants if v.family is Family.SUBSTRATE_SWAP]
         self.assertTrue(swaps)
         self.assertTrue(all(v.substrate in RENDERINGS for v in swaps))
+
+
+class PlainFillTests(unittest.TestCase):
+    """A form with no answer key can be filled and recorded without any verdict on content."""
+
+    TEMPLATE = ROOT / "forge" / "conformance" / "pilots" / "leave-request" / "pilot.json"
+
+    def test_template_pilot_validates_and_plans_without_code_changes(self) -> None:
+        config = load_pilot_config(self.TEMPLATE)
+        corpus = load_corpus(config.corpus_path, config.spec)
+        planned = plan(config.spec, corpus)
+        self.assertEqual({f for f in (o.field for o in config.spec.obligations)}, set(config.spec.form_schema["properties"]))
+        self.assertEqual(sorted(v.family.value for v in planned.variants), ["BASELINE", "IMPORT_DEPENDENCY", "ROUND_TRIP"])
+        self.assertTrue(all(o.kind == "unknown" for o in corpus.cases[0].expected))
+
+    def test_unknown_oracle_records_without_judging_and_keeps_form_constraints(self) -> None:
+        config = load_pilot_config(self.TEMPLATE)
+        corpus = load_corpus(config.corpus_path, config.spec)
+        baseline = next(v for v in plan(config.spec, corpus).variants if v.family is Family.BASELINE)
+        good = {"employee_name": "Maya Patel", "leave_type": "annual", "start_date": "2025-10-13", "end_date": "2025-10-17", "total_days": 5, "reason": "Family wedding.", "manager_notified": True}
+        scoring = score(baseline, response_from_content(json.dumps(good)))
+        self.assertEqual({v.verdict for v in scoring.field_verdicts}, {"NOT_SCORED"})
+        routing = route(baseline, scoring)
+        self.assertEqual(routing.live_loci, ())
+        self.assertFalse(routing.unrefuted_for_variant, "unscored fields must not read as unrefuted")
+        bad = {**good, "leave_type": "holiday", "total_days": "five"}
+        verdicts = {v.field: v.verdict for v in score(baseline, response_from_content(json.dumps(bad))).field_verdicts}
+        self.assertEqual(verdicts["leave_type"], "ENUM_VIOLATION")
+        self.assertEqual(verdicts["total_days"], "TYPE_VIOLATION")
+        self.assertIn("CANDIDATE", route(baseline, score(baseline, response_from_content(json.dumps(bad)))).loci)
+
+    def test_plain_fill_run_is_inconclusive_not_unrefuted(self) -> None:
+        config = load_pilot_config(self.TEMPLATE)
+        corpus = load_corpus(config.corpus_path, config.spec)
+        planned = plan(config.spec, corpus)
+        good = {"employee_name": "Maya Patel", "leave_type": "annual", "start_date": "2025-10-13", "end_date": "2025-10-17", "total_days": 5, "reason": "Family wedding.", "manager_notified": True}
+        with tempfile.TemporaryDirectory() as directory:
+            result = run_pilot(
+                spec=config.spec, corpus=corpus, plan=planned, model="gpt-oss:120b",
+                executor=FakeExecutor(lambda req: response_from_content(json.dumps(good))), executor_kind="fake",
+                output_dir=Path(directory), created_on=CREATED_ON, families=(Family.BASELINE,),
+            )
+            self.assertEqual(result.run_record.scope_label, "INCONCLUSIVE_NO_SCORED_OUTPUT")
+            completed = subprocess.run(
+                [sys.executable, str(TOOL), "fills", "--observations-dir", directory],
+                capture_output=True, text=True, env={**os.environ, "PYTHONPATH": str(ROOT / "src")},
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            lines = [json.loads(line) for line in completed.stdout.splitlines() if line.strip()]
+            self.assertEqual(len(lines), 1)
+            self.assertEqual(lines[0]["filled_form"], good)
+            self.assertEqual(lines[0]["structural_issues"], [])
+            self.assertEqual(sorted(lines[0]["unjudged_fields"]), sorted(good))
