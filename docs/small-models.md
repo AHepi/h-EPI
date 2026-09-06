@@ -68,4 +68,4 @@ python tools/run_conformance_pilot.py fills    --observations-dir forge/conforma
 python tools/run_conformance_pilot.py evidence --observations-dir forge/conformance/runs/travel-claim-local
 ```
 
-With `auth` set to `none` no Authorization header is sent and `OLLAMA_API_KEY` is not read; if the variable happens to be set, replies are still redacted against it. Expect 82 calls per model for the full battery; a 12B model on a laptop GPU takes a few seconds per call. Use `--family BASELINE --limit 3` first. Once records exist, add what they show to this document and to `docs/failure-modes.md`, with observation ids from `evidence`.
+With `auth` set to `none` no Authorization header is sent and `OLLAMA_API_KEY` is not read; if the variable happens to be set, replies are still redacted against it. Expect 117 calls per model for the full battery (the round-two plan); a 12B model on a laptop GPU takes a few seconds per call. Use `--family BASELINE --limit 3` first. Once records exist, add what they show to this document and to `docs/failure-modes.md`, with observation ids from `evidence`.

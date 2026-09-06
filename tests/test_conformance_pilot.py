@@ -965,9 +965,10 @@ class HardPilotTests(unittest.TestCase):
     def test_plan_exercises_every_family(self) -> None:
         counts = dict(self.plan.counts)
         self.assertEqual(set(counts), {f.value for f in Family})
-        self.assertEqual(counts["BASELINE"], 7)
-        self.assertEqual(counts["NON_VACUITY"], 8)
-        self.assertEqual(sum(1 for v in self.plan.variants if v.model_call), 82)
+        self.assertEqual(counts["BASELINE"], 9)
+        self.assertEqual(counts["NON_VACUITY"], 12)
+        self.assertEqual(counts["RIVAL_SUBSTITUTION"], 6)
+        self.assertEqual(sum(1 for v in self.plan.variants if v.model_call), 117)
 
     def test_model_free_controls_are_scored_against_the_bound_form_not_the_prompt_schema(self) -> None:
         # Regression: with grounding on, the prompt schema requires companion span keys; reference
@@ -988,8 +989,9 @@ class HardPilotTests(unittest.TestCase):
     def test_prompt_carries_generated_grounding_sentences_and_nullable_abstain_fields(self) -> None:
         variant = next(v for v in self.plan.variants if v.family is Family.BOUNDARY_SHIFT and v.base_case_id == "BND-107")
         request = build_chat_request(variant, model="gemma4:31b", endpoint=self.config.spec.endpoint)
-        self.assertIn("15. For each of `claimant_name`", request.user)
-        self.assertIn("16. For `trip_end`, `nights_away`", request.user)
+        self.assertIn("16. For each of `claimant_name`", request.user)
+        self.assertIn("17. For `trip_end`, `nights_away`", request.user)
+        self.assertNotIn("project_code", request.format_schema["required"])
         self.assertEqual(request.format_schema["properties"]["nights_away"]["type"], ["integer", "null"])
         self.assertIn("claimant_name_span", request.format_schema["required"])
         self.assertNotIn("cost_centre", request.format_schema["required"])

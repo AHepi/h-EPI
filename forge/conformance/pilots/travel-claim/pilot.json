@@ -1,7 +1,7 @@
 {
   "schema_version": "creib.conformance-pilot.config.v1",
   "pilot_id": "TRAVEL-CLAIM-HARD-001",
-  "title": "Hard battery: travel expense claim from cluttered documents, with derivation, arithmetic, distractors, corrections, grounding spans, and abstention",
+  "title": "Hard battery: travel expense claim from cluttered documents, with derivation, arithmetic, distractors, corrections, conflicts, grounding spans, and abstention",
   "form_schema": "form.schema.json",
   "instructions": "instructions.md",
   "corpus": "corpus.json",
@@ -27,7 +27,7 @@
     "scope_in": [
       "Short English claim documents rendered as prose, a two-column table, or an email.",
       "Australian phone numbers, Australian dollar amounts, and dates written in words, with weekdays, or as day-first numerals.",
-      "The thirteen declared fields of the travel claim form."
+      "The fourteen declared fields of the travel claim form."
     ],
     "scope_out": [
       "Any claim that a model understands travel, expenses, or forms in general.",
@@ -88,6 +88,20 @@
         {
           "label": "stated_total",
           "instruction": "When a stated total disagrees with the sum of the itemised amounts, the amount claimed is the stated total."
+        }
+      ]
+    },
+    {
+      "field": "nights_away",
+      "question": "When the document states a number of nights that disagrees with its departure and return dates, which is the number of nights away?",
+      "rivals": [
+        {
+          "label": "dates_govern",
+          "instruction": "When a stated number of nights disagrees with the departure and return dates, the number of nights away is the number of nights between those dates."
+        },
+        {
+          "label": "stated_nights_govern",
+          "instruction": "When a stated number of nights disagrees with the departure and return dates, the number of nights away is the number the document states."
         }
       ]
     }
