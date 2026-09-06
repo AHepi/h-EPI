@@ -1302,6 +1302,62 @@ class AppraisalTests(unittest.TestCase):
         with self.assertRaisesRegex(RecordError, "itself"):
             appraise((self._arg("self", essential=["self"]),))
 
+    def test_labels_are_the_least_fixed_point_on_every_two_node_graph_and_on_sampled_larger_ones(self) -> None:
+        """Every two-node graph (4 essential edge sets, 16 attack edge sets, 9 readiness assignments: 576 cases)
+        and 150 seeded random graphs of three or four nodes: the iterative labels are closed under the two
+        rules and contained in every other closed labelling. Self-support is refused by the loader, which is
+        why the two-node count is 576 and not 2,304."""
+        from itertools import product
+        import random
+        from creib.forge.conformance.appraisal import appraise
+
+        def closed(args, inside, outside):
+            attackers = {a.argument_id: {b.argument_id for b in args if a.argument_id in b.attacks} for a in args}
+            for a in args:
+                should_in = a.readiness == "PASS" and set(a.essential) <= inside and attackers[a.argument_id] <= outside
+                should_out = a.readiness == "FAIL" or bool(set(a.essential) & outside) or bool(attackers[a.argument_id] & inside)
+                if (should_in and a.argument_id not in inside) or (should_out and a.argument_id not in outside):
+                    return False
+            return True
+
+        def check(args):
+            labels = appraise(args)
+            ids = [a.argument_id for a in args]
+            self.assertTrue(closed(args, set(labels.inside), set(labels.outside)))
+            for assignment in product(("in", "out", "undecided"), repeat=len(ids)):
+                inside = {i for i, l in zip(ids, assignment) if l == "in"}
+                outside = {i for i, l in zip(ids, assignment) if l == "out"}
+                if closed(args, inside, outside):
+                    self.assertTrue(labels.inside <= inside and labels.outside <= outside, (ids, assignment))
+
+        pairs = [("a", "b"), ("b", "a")]
+        loops = [("a", "a"), ("b", "b")]
+        count = 0
+        for ess_bits, att_bits, ready in product(range(4), range(16), product(("PASS", "FAIL", "UNKNOWN"), repeat=2)):
+            essential = {x: [] for x in "ab"}; attacks = {x: [] for x in "ab"}
+            for bit, (src, dst) in enumerate(pairs):
+                if ess_bits >> bit & 1:
+                    essential[src].append(dst)
+            for bit, (src, dst) in enumerate(pairs + loops):
+                if att_bits >> bit & 1:
+                    attacks[src].append(dst)
+            args = tuple(self._arg(x, readiness=r, essential=essential[x], attacks=attacks[x]) for x, r in zip("ab", ready))
+            check(args); count += 1
+        self.assertEqual(count, 576)
+        rng = random.Random(7)
+        for _ in range(150):
+            ids = [f"n{i}" for i in range(rng.randint(3, 4))]
+            args = tuple(
+                self._arg(
+                    x,
+                    readiness=rng.choice(("PASS", "PASS", "FAIL", "UNKNOWN")),
+                    essential=[y for y in ids if y != x and rng.random() < 0.25],
+                    attacks=[y for y in ids if rng.random() < 0.25],
+                )
+                for x in ids
+            )
+            check(args)
+
     def test_pilot_appraisal_loads_and_classes_refutations(self) -> None:
         from creib.forge.conformance.appraisal import Appraisal, load_appraisal
         from creib.forge.conformance.claims import evaluate_claims, load_claims
