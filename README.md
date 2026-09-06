@@ -30,16 +30,16 @@ python tools/run_conformance_pilot.py fills    --observations-dir forge/conforma
 |---|---|
 | `forge/conformance/pilots/leave-request/` | The smallest working configuration: one form, two emails, no answer key, grounding spans and abstention switched on. Copy this. Run live against three models; its records are in `forge/conformance/runs/leave-request/`. |
 | `forge/conformance/pilots/incident-form/` | The full test battery: nine fields, fourteen documents in three renderings, an answer key, declared ambiguities, negations, controls. Nine models were run against it; the findings are in the document below. |
-| `forge/conformance/pilots/travel-claim/` | The hard battery: thirteen fields that need normalising, deriving, counting, and summing, with distractors, corrections, double negations, an abstention case, grounding spans on, and every test family exercised. Built to probe small models; the findings are in `docs/small-models.md`. |
-| `forge/conformance/schema/` | The five schemas: pilot config, corpus, observation, run, claims. |
+| `forge/conformance/pilots/travel-claim/` | The hard battery: thirteen fields that need normalising, deriving, counting, and summing, with distractors, corrections, double negations, an abstention case, grounding spans on, and every test family exercised. Built to probe small models; carries the forty-six conjectures of `claims.json` and, in `appraisal.json`, the readings they rest on that have been argued about. The findings are in `docs/small-models.md`. |
+| `forge/conformance/schema/` | The six schemas: pilot config, corpus, observation, run, claims, appraisal. |
 | `src/creib/forge/conformance/` | The machine: spec, corpus, the ten test families, prompt, executor, oracle, routing, records, runner, report. |
 | `src/creib/{canonical,strict_json,errors}.py`, `src/creib/forge/schema_validation.py` | Shared foundations: canonical bytes and digests, strict JSON, typed errors, offline schema validation. |
-| `tools/run_conformance_pilot.py` | The command line: `validate`, `plan`, `oracle-check`, `run` (live, `--dry-run`, or `--replay-dir` to re-score recorded replies), `fills`, `evidence`, `report`, `claims`. |
+| `tools/run_conformance_pilot.py` | The command line: `validate`, `plan`, `oracle-check`, `run` (live, `--dry-run`, or `--replay-dir` to re-score recorded replies), `fills`, `evidence`, `report`, `claims` (with `--appraisal` to class each refutation by the standing of the readings it rests on). |
 | `tools/check.py` | Every repository check: `lint`, `test`, `pilots`, `all`, `bootstrap`. |
 | `docs/how-it-works.md` | The method, the ten test families, the grounding, abstention, and repeat configuration, what nine models did on the incident form, and the limits. |
 | `docs/failure-modes.md` | The register of failure modes, model limitations, and harness defects, each pointing at the observation records that show it. |
 | `docs/small-models.md` | What the records show about the smaller models on the hard battery, with the larger sibling as contrast, and what they do not show. |
-| `docs/what-the-records-refute.md` | Forty-odd general claims about language models filling a form, each machine-tested against every record: refuted with counterexamples, or unrefuted for the records run. |
+| `docs/what-the-records-refute.md` | Forty-odd general claims about language models filling a form, each machine-tested against every record: refuted with counterexamples, or unrefuted for the records run, with each refutation classed by whether the reading of the key it rests on is itself under criticism. |
 | `docs/history.md` | Where this came from and how to recover the earlier project. |
 
 ## Rules of the machine
