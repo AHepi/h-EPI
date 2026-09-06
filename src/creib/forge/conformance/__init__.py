@@ -28,14 +28,17 @@ from .executor import (
 from .families import (
     FAMILY_GENERATORS,
     TEST_FAMILIES,
+    Criticism,
     ExpectationKind,
     Family,
     Plan,
     Variant,
+    materialize_cycle,
     materialize_round_trip,
     plan,
     render_round_trip_document,
 )
+from .cycles import render_cycles_markdown, summarise_cycles
 from .oracle import FieldVerdict, Scoring, score
 from .prompt import build_chat_request
 from .records import (
@@ -102,6 +105,10 @@ __all__ = [
     "build_report",
     "compare_runs",
     "render_compare_markdown",
+    "Criticism",
+    "materialize_cycle",
+    "render_cycles_markdown",
+    "summarise_cycles",
     "render_markdown",
     "ROUTING_TABLE",
     "LiveLocus",

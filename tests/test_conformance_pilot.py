@@ -222,6 +222,7 @@ class FamilyTests(unittest.TestCase):
                 "NON_VACUITY": 8,
                 "ROUND_TRIP": 9,
                 "REPEAT": 0,
+                "CYCLE": 0,
             },
         )
         again = plan(load_pilot_config(PILOT).spec, load_corpus(_CONFIG.corpus_path, _CONFIG.spec))
@@ -1786,7 +1787,8 @@ class HardPilotTests(unittest.TestCase):
         self.assertEqual(counts["NON_VACUITY"], 12)
         self.assertEqual(counts["RIVAL_SUBSTITUTION"], 6)
         self.assertEqual(counts["REPEAT"], 18)
-        self.assertEqual(sum(1 for v in self.plan.variants if v.model_call), 135)
+        self.assertEqual(counts["CYCLE"], 54, "nine ordinary cases, two criticism sources, three cycles each")
+        self.assertEqual(sum(1 for v in self.plan.variants if v.model_call), 189)
 
     def test_model_free_controls_are_scored_against_the_bound_form_not_the_prompt_schema(self) -> None:
         # Regression: with grounding on, the prompt schema requires companion span keys; reference

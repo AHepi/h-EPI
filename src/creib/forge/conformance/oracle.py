@@ -39,7 +39,7 @@ from .common import (
 )
 from .corpus import Oracle
 from .executor import ChatResponse
-from .families import ExpectationKind, Variant
+from .families import ORACLE_FREE_FIELD_VERDICTS, ORACLE_FREE_GROUNDING_VERDICTS, Criticism, ExpectationKind, Variant
 
 
 RESPONSE_VERDICTS: tuple[str, ...] = (
@@ -557,3 +557,27 @@ def prerequisite_unavailable(detail: str) -> Scoring:
     """Scoring for a chained variant whose prerequisite output was unusable."""
 
     return Scoring("PREREQUISITE_UNAVAILABLE", detail, False, None, None, None, (), None)
+
+
+def external_criticisms(scoring: Scoring, variant: Variant) -> tuple[Criticism, ...]:
+    """The oracle-free criticisms of one scoring: what an external-criticism cycle may show the model.
+
+    Only verdicts the form schema or the document alone produce are taken (a missing required
+    key, an extra key, a type, pattern, enum, or length violation, a span that is missing, not
+    in the document, or does not contain its value). MISMATCH and UNEXPECTED_PRESENT come from
+    the answer key and are left out, so a cycle never learns which values the key disagrees with.
+    A grounding criticism names the field and says which companion key carried the span.
+    """
+
+    found: list[Criticism] = []
+    for item in scoring.field_verdicts:
+        if item.verdict in ORACLE_FREE_FIELD_VERDICTS:
+            found.append(Criticism(field=item.field, verdict=item.verdict, detail=item.detail))
+    for item in scoring.grounding_verdicts:
+        if item.verdict in ORACLE_FREE_GROUNDING_VERDICTS:
+            companion = variant.span_key(item.field) if variant.grounding is not None and variant.grounding.active else None
+            detail = item.detail
+            if companion is not None:
+                detail = f"companion key {companion}" + (f": {item.detail}" if item.detail else "")
+            found.append(Criticism(field=item.field, verdict=item.verdict, detail=detail))
+    return tuple(found)

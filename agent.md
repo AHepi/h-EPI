@@ -67,7 +67,8 @@ Give the corpus an answer key and switch the surfaces on, then run the full batt
 6. **Controls.** `swap_fields`, `drop_required`, `extra_key`, and `none` on cases with a reference output. They are mutation tests of your oracle and cost no calls.
 7. **Repeats.** `"repeats": 2` sends every baseline request twice more and records `REPEAT_DIFFERS` when the form values differ. Any comparison family inherits this floor; measure it in the same run.
 8. **Grounding.** `"mode": "spans"` with `span_fields`, `value_in_span_fields`, `abstain_fields`, and `span_relaxations` (`case_insensitive`, `date_range_completion`). A relaxation that accepted a span is named in the verdict.
-9. **Boundary and distractor cases.** Put the hard material in the documents: a correction mid-sentence, a transit city, a colleague copied in, a rate to multiply, a date fixed by a weekday, a document that is silent on a field the form has. T27 in `docs/small-models.md` says which probes discriminated across eighteen models and which sat at the floor.
+9. **Cycles.** `"cycles": {"count": 3, "criticism": ["none", "external"]}` chains three further calls after each baseline, per source: the model sees its previous answer and is asked to check and correct it, alone or with the schema and grounding checks that answer failed. The key is never shown. Read the result with `cycles` beside the repeat floor (Use 10).
+10. **Boundary and distractor cases.** Put the hard material in the documents: a correction mid-sentence, a transit city, a colleague copied in, a rate to multiply, a date fixed by a weekday, a document that is silent on a field the form has. T27 in `docs/small-models.md` says which probes discriminated across eighteen models and which sat at the floor.
 
 Then, per model:
 
@@ -140,6 +141,16 @@ python tools/run_conformance_pilot.py run --pilot forge/conformance/pilots/my-fo
 ```
 
 The replay executor pairs each request with the reply that same request received in the recorded run, repeat by repeat, and makes no network call. The result is a new run with new observation ids; the original records stand. Decide deliberately where re-scored records go: a re-scored run committed beside its original counts that model twice in every table.
+
+## Use 10: ask whether a further cycle helps
+
+Switch on `cycles` and `repeats` in the same pilot, run `--family BASELINE --family REPEAT --family CYCLE`, and table the result:
+
+```sh
+python tools/run_conformance_pilot.py cycles --observations-dir forge/conformance/runs/my-form --markdown cycles.md
+```
+
+One row per model, criticism source, and cycle index says how many cycles returned the same form as the step before, how many differed, and how the key's verdict per field moved between the two records; the `repeat` row of the same model is the floor, the same moves with nothing asked to change. A cycle count that does not clear that floor has shown nothing, and one that does has shown a difference on these cases, not an improvement in general: the harness never says a later answer is better, only which fields moved which way. Write what a move would refute as conjectures before the run (`cycle`, `previous`, `verdict_move`, `criticised_field` are the predicates; the travel-claim pilot's CYC-01 to CYC-14 are an example) and let `claims` say what survived. The criticism a cycle is shown is drawn from the form schema and the document only; if you want the model to see the key's verdicts you are measuring how well it copies a correction, and the harness will not build that plan.
 
 ## Reading the output
 

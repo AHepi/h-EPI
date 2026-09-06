@@ -157,7 +157,8 @@
         "IMPORT_DEPENDENCY",
         "NON_VACUITY",
         "ROUND_TRIP",
-        "REPEAT"
+        "REPEAT",
+        "CYCLE"
       ]
     },
     "oracle_status": {
@@ -468,6 +469,70 @@
           "type": "integer",
           "minimum": 1,
           "description": "REPEAT only: which repetition of the baseline request this is. Absent for every other family."
+        },
+        "cycle_index": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "CYCLE only: which cycle after the baseline this is. Absent for every other family, and the four keys below are present exactly when it is."
+        },
+        "cycle_criticism": {
+          "enum": [
+            "none",
+            "external"
+          ],
+          "description": "CYCLE only: what the model was shown beside its previous answer."
+        },
+        "cycle_of": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "CYCLE only: the planned variant id of the step this cycle follows (the baseline for cycle 1)."
+        },
+        "cycle_previous_output": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "CYCLE only: the previous answer shown to the model, as canonical JSON text; null on the planned variant, set on the materialised one."
+        },
+        "cycle_criticisms": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "field",
+              "verdict",
+              "detail"
+            ],
+            "properties": {
+              "field": {
+                "type": "string"
+              },
+              "verdict": {
+                "enum": [
+                  "MISSING_REQUIRED",
+                  "EXTRA_FIELD",
+                  "TYPE_VIOLATION",
+                  "PATTERN_VIOLATION",
+                  "ENUM_VIOLATION",
+                  "LENGTH_VIOLATION",
+                  "SPAN_MISSING",
+                  "SPAN_NOT_IN_DOCUMENT",
+                  "VALUE_NOT_IN_SPAN"
+                ]
+              },
+              "detail": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "description": "CYCLE only: the failed checks shown to the model with the previous answer; the vocabulary is the oracle-free one, so the answer key can never appear here. Empty for a self-revision cycle."
         }
       }
     },

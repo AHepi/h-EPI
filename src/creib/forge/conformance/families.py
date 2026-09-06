@@ -13,7 +13,10 @@ Case selection per family:
 * BOUNDARY_SHIFT selects boundary cases unchanged (it is their baseline);
 * RIVAL_SUBSTITUTION acts on any case that declares ``rival_expected``;
 * NON_VACUITY acts on any case that supplies a ``reference_output`` and makes
-  no model call.
+  no model call;
+* CYCLE acts on ordinary cases when the pilot asks for cycles: the model is shown
+  its previous answer and asked to check and correct it, with or without the failed
+  schema and grounding checks of that answer; the answer key is never fed back.
 
 A variant records what was held fixed and what was changed.  It does not
 record what the "right" answer is beyond the case's non-final oracles, and a
@@ -47,7 +50,7 @@ from .common import (
     text,
 )
 from .corpus import Case, Corpus, Oracle, Scalar, parse_oracle, RENDERINGS
-from .spec import TaskSpec, render_instructions, validate_form_schema, Grounding, grounding_from_dict
+from .spec import CYCLE_CRITICISMS, TaskSpec, render_instructions, validate_form_schema, Grounding, grounding_from_dict
 
 
 VARIANT_DOMAIN = "creib.conformance-pilot.variant.v1"
@@ -66,6 +69,7 @@ class Family(str, Enum):
     NON_VACUITY = "NON_VACUITY"
     ROUND_TRIP = "ROUND_TRIP"
     REPEAT = "REPEAT"
+    CYCLE = "CYCLE"
 
 
 TEST_FAMILIES: tuple[Family, ...] = tuple(family for family in Family if family is not Family.BASELINE)
@@ -77,6 +81,24 @@ class ExpectationKind(str, Enum):
     ROUND_TRIP = "ROUND_TRIP"
     CONTROL_REJECT = "CONTROL_REJECT"
     CONTROL_ACCEPT = "CONTROL_ACCEPT"
+
+
+# The verdicts a cycle may feed back. Each comes from the form schema or the document alone;
+# MISMATCH and UNEXPECTED_PRESENT come from the answer key and are never in this list.
+ORACLE_FREE_FIELD_VERDICTS: tuple[str, ...] = ("MISSING_REQUIRED", "EXTRA_FIELD", "TYPE_VIOLATION", "PATTERN_VIOLATION", "ENUM_VIOLATION", "LENGTH_VIOLATION")
+ORACLE_FREE_GROUNDING_VERDICTS: tuple[str, ...] = ("SPAN_MISSING", "SPAN_NOT_IN_DOCUMENT", "VALUE_NOT_IN_SPAN")
+
+
+@dataclass(frozen=True)
+class Criticism:
+    """One failed check of a previous answer, as shown to the model in an external-criticism cycle."""
+
+    field: str
+    verdict: str
+    detail: str | None
+
+    def to_dict(self) -> dict[str, object]:
+        return {"field": self.field, "verdict": self.verdict, "detail": self.detail}
 
 
 @dataclass(frozen=True)
@@ -102,6 +124,24 @@ class Variant:
     grounding: Grounding | None = None
     # REPEAT only: 1..N. Written to the body only when set, so every earlier variant keeps its id.
     repeat_index: int | None = None
+    # CYCLE only, written to the body only when cycle_index is set. The planned variant carries
+    # the index, the criticism source, and the planned id of the step it follows; the materialised
+    # variant adds the previous answer (canonical JSON text) and the criticisms shown with it.
+    cycle_index: int | None = None
+    cycle_criticism: str | None = None
+    cycle_of: str | None = None
+    cycle_previous_output: str | None = None
+    cycle_criticisms: tuple[Criticism, ...] | None = None
+
+    @property
+    def criticised_fields(self) -> tuple[str, ...]:
+        """Fields named by this cycle's criticisms, in order of first mention; empty for every other variant."""
+
+        seen: list[str] = []
+        for item in self.cycle_criticisms or ():
+            if item.field not in seen:
+                seen.append(item.field)
+        return tuple(seen)
 
     @property
     def required_fields(self) -> tuple[str, ...]:
@@ -244,6 +284,12 @@ class Variant:
         }
         if self.repeat_index is not None:
             body["repeat_index"] = self.repeat_index
+        if self.cycle_index is not None:
+            body["cycle_index"] = self.cycle_index
+            body["cycle_criticism"] = self.cycle_criticism
+            body["cycle_of"] = self.cycle_of
+            body["cycle_previous_output"] = self.cycle_previous_output
+            body["cycle_criticisms"] = None if self.cycle_criticisms is None else [item.to_dict() for item in self.cycle_criticisms]
         return body
 
     def to_dict(self) -> dict[str, object]:
@@ -306,10 +352,47 @@ def variant_from_dict(raw: Any) -> Variant:
         removed_sentence_id=optional_text(record["removed_sentence_id"], "variant.removed_sentence_id"),
         grounding=None if record["grounding"] is None else grounding_from_dict(record["grounding"], field_order, "variant.grounding"),
         repeat_index=None if record.get("repeat_index") is None else integer(record["repeat_index"], "variant.repeat_index", minimum=1),
+        **_cycle_fields_from_dict(record),
     )
     if rebuilt.variant_id != hex_digest(record["variant_id"], "variant.variant_id"):
         raise RecordError("variant_id does not replay from the variant content")
     return rebuilt
+
+
+def _cycle_fields_from_dict(record: Mapping[str, Any]) -> dict[str, Any]:
+    """The CYCLE keys of a variant record; all absent for every other family."""
+
+    if record.get("cycle_index") is None:
+        for key in ("cycle_criticism", "cycle_of", "cycle_previous_output", "cycle_criticisms"):
+            if record.get(key) is not None:
+                raise RecordError(f"variant.{key} is set without cycle_index")
+        return {}
+    criticism = text(record["cycle_criticism"], "variant.cycle_criticism")
+    if criticism not in CYCLE_CRITICISMS:
+        raise RecordError(f"variant.cycle_criticism {criticism!r} is not a known criticism source")
+    criticisms: tuple[Criticism, ...] | None = None
+    if record.get("cycle_criticisms") is not None:
+        criticisms = tuple(
+            Criticism(
+                field=field_name(object_value(item, f"variant.cycle_criticisms[{index}]")["field"], f"variant.cycle_criticisms[{index}].field"),
+                verdict=text(object_value(item, f"variant.cycle_criticisms[{index}]")["verdict"], f"variant.cycle_criticisms[{index}].verdict"),
+                detail=optional_text(object_value(item, f"variant.cycle_criticisms[{index}]")["detail"], f"variant.cycle_criticisms[{index}].detail"),
+            )
+            for index, item in enumerate(array_value(record["cycle_criticisms"], "variant.cycle_criticisms"))
+        )
+        for item in criticisms:
+            if item.verdict not in ORACLE_FREE_FIELD_VERDICTS + ORACLE_FREE_GROUNDING_VERDICTS:
+                raise RecordError(f"variant.cycle_criticisms carries {item.verdict!r}, which is not an oracle-free verdict")
+    previous = optional_text(record.get("cycle_previous_output"), "variant.cycle_previous_output")
+    if (previous is None) != (criticisms is None):
+        raise RecordError("variant.cycle_previous_output and variant.cycle_criticisms are set together or not at all")
+    return {
+        "cycle_index": integer(record["cycle_index"], "variant.cycle_index", minimum=1),
+        "cycle_criticism": criticism,
+        "cycle_of": hex_digest(record["cycle_of"], "variant.cycle_of"),
+        "cycle_previous_output": previous,
+        "cycle_criticisms": criticisms,
+    }
 
 
 # --------------------------------------------------------------------------
@@ -730,6 +813,42 @@ def repeat(spec: TaskSpec, case: Case) -> list[Variant]:
     return variants
 
 
+def cycle(spec: TaskSpec, case: Case) -> list[Variant]:
+    """Plan the cycles that follow each baseline; off unless the pilot asks for them.
+
+    For each criticism source the pilot names, cycle 1 follows the baseline and cycle k
+    follows cycle k-1 of the same source. The planned variant names the step it follows;
+    the previous answer and the criticisms are filled in at run time from that step's
+    observation (see :func:`materialize_cycle`), as ROUND_TRIP fills in its document.
+    """
+
+    if case.boundary or not spec.cycles.active:
+        return []
+    base = baseline(spec, case)[0]
+    variants: list[Variant] = []
+    for criticism in spec.cycles.criticism:
+        previous_id = base.variant_id
+        for index in range(1, spec.cycles.count + 1):
+            fields = _base_fields(spec, case)
+            shown = (
+                "the previous answer and nothing else"
+                if criticism == "none"
+                else "the previous answer and the schema and grounding checks it failed, never the answer key"
+            )
+            fields.update(
+                family=Family.CYCLE,
+                cycle_index=index,
+                cycle_criticism=criticism,
+                cycle_of=previous_id,
+                held_fixed="form schema, instructions, document, and every request option; the oracle is the case's own",
+                controlled_difference=f"cycle {index} of {spec.cycles.count} with criticism {criticism}: the model is shown {shown} and asked to check and correct it",
+            )
+            variant = make_variant(**fields)
+            variants.append(variant)
+            previous_id = variant.variant_id
+    return variants
+
+
 FAMILY_GENERATORS: Mapping[Family, Callable[[TaskSpec, Case], list[Variant]]] = {
     Family.BASELINE: baseline,
     Family.DELETION: deletion,
@@ -742,6 +861,7 @@ FAMILY_GENERATORS: Mapping[Family, Callable[[TaskSpec, Case], list[Variant]]] = 
     Family.NON_VACUITY: non_vacuity,
     Family.ROUND_TRIP: round_trip,
     Family.REPEAT: repeat,
+    Family.CYCLE: cycle,
 }
 
 
@@ -836,6 +956,26 @@ def materialize_round_trip(variant: Variant, baseline_output: Mapping[str, Any])
         removed_sentence_id=None,
         grounding=variant.grounding,
     )
+
+
+def materialize_cycle(variant: Variant, previous_output_canonical: str, criticisms: tuple[Criticism, ...]) -> Variant:
+    """Fill a planned CYCLE variant with the previous answer and the criticisms it is shown.
+
+    ``criticisms`` must be empty for criticism source ``none`` and may only carry oracle-free
+    verdicts otherwise; the check is repeated here so that no caller can feed the key back.
+    """
+
+    if variant.family is not Family.CYCLE or variant.cycle_index is None:
+        raise RecordError("only CYCLE variants can be materialised as cycles")
+    if variant.cycle_criticism == "none" and criticisms:
+        raise RecordError("a self-revision cycle shows no criticism")
+    for item in criticisms:
+        if item.verdict not in ORACLE_FREE_FIELD_VERDICTS + ORACLE_FREE_GROUNDING_VERDICTS:
+            raise RecordError(f"criticism {item.verdict!r} on {item.field} is not oracle-free and cannot be shown to the model")
+    fields = {name: getattr(variant, name) for name in variant.__dataclass_fields__ if name != "variant_id"}
+    fields["cycle_previous_output"] = text(previous_output_canonical, "previous output")
+    fields["cycle_criticisms"] = tuple(criticisms)
+    return make_variant(**fields)
 
 
 @dataclass(frozen=True)

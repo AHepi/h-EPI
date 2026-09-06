@@ -27,6 +27,7 @@ Table (trigger -> loci; family restrictions in brackets):
         [SUBSTRATE_SWAP]       -> CANDIDATE, SCOPE, TEST
         [BOUNDARY_SHIFT]       -> CANDIDATE, TEST, SCOPE
         [ROUND_TRIP]           -> CANDIDATE, AUXILIARY, TEST
+        [CYCLE]                -> CANDIDATE, AUXILIARY, TEST
     IDENTICAL_TO_BASELINE [NEGATION]        -> CANDIDATE, AUXILIARY, SCOPE
         (subsumes the field-level mismatch triggers of the same observation)
     CONTROL_ACCEPTED [NON_VACUITY]          -> TEST, AUXILIARY
@@ -147,6 +148,11 @@ _MISMATCH_FAMILY_LOCI: dict[Family, tuple[tuple[str, str], ...]] = {
         ("CANDIDATE", "The model's output is not stable under a re-rendering of its own output."),
         ("AUXILIARY", "The fixed prose rendering template may lose or distort information."),
         ("TEST", "The round-trip expectation is derived from the model's own output and is provisional."),
+    ),
+    Family.CYCLE: (
+        ("CANDIDATE", "After a further cycle at least one field still misses, or newly misses, the oracle."),
+        ("AUXILIARY", "The previous answer and the revision text the harness appends are part of the request and may steer the model."),
+        _TEST_ORACLE,
     ),
 }
 

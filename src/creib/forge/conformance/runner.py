@@ -1,7 +1,8 @@
 """Execute a plan for one model and publish observation and run records.
 
 The runner orders baseline variants first, materialises ROUND_TRIP variants
-from the model's own baseline output, compares NEGATION and IMPORT_DEPENDENCY
+from the model's own baseline output, materialises each CYCLE variant from the
+observation of the step it follows, compares NEGATION and IMPORT_DEPENDENCY
 outputs with the baseline, and never calls a model for NON_VACUITY controls.
 It tallies verdicts and loci for human reading.  It does not compute a
 score, rank a model, or declare a run passed: the run status is always
@@ -17,18 +18,18 @@ from typing import Iterable
 
 from creib.errors import RecordError
 
-from .common import RUN_SCHEMA_VERSION, SCOPE_INCONCLUSIVE, SCOPE_REFUTED, SCOPE_UNREFUTED, rfc3339
+from .common import RUN_SCHEMA_VERSION, SCOPE_INCONCLUSIVE, SCOPE_REFUTED, SCOPE_UNREFUTED, canonical_text, rfc3339
 from .corpus import Corpus
 from .executor import ChatRequest, ChatResponse, ModelExecutor, executor_failure_response
-from .families import ExpectationKind, Family, Plan, Variant, materialize_round_trip
-from .oracle import GROUNDING_VERDICTS, RESPONSE_VERDICTS, FIELD_VERDICTS, prerequisite_unavailable, score
+from .families import ExpectationKind, Family, Plan, Variant, materialize_cycle, materialize_round_trip
+from .oracle import GROUNDING_VERDICTS, RESPONSE_VERDICTS, FIELD_VERDICTS, external_criticisms, prerequisite_unavailable, score
 from .prompt import build_chat_request
 from .records import EXECUTOR_KINDS, ObservationRecord, RunRecord, build_observation, build_run_record, compute_run_id, publish_record
 from .routing import route
 from .spec import TaskSpec
 
 
-_BASELINE_DEPENDENT = frozenset({Family.NEGATION, Family.IMPORT_DEPENDENCY, Family.ROUND_TRIP, Family.REPEAT})
+_BASELINE_DEPENDENT = frozenset({Family.NEGATION, Family.IMPORT_DEPENDENCY, Family.ROUND_TRIP, Family.REPEAT, Family.CYCLE})
 
 
 @dataclass(frozen=True)
@@ -127,15 +128,40 @@ def run_pilot(
     observations: list[ObservationRecord] = []
     paths: list[Path] = []
     baseline_by_case: dict[str, ObservationRecord] = {}
+    # CYCLE: the observation each cycle follows, by (case, criticism source, cycle index).
+    cycle_by_step: dict[tuple[str, str, int], ObservationRecord] = {}
     for planned in variants:
         baseline = baseline_by_case.get(planned.base_case_id)
         baseline_output = None if baseline is None else baseline.scoring.parsed_output
+        # The observation this one is compared with and chained to: the baseline, or for a cycle
+        # the step it follows.
+        previous = baseline
         variant = planned
         request_digest: str | None = None
         response = None
         if not planned.model_call:
             scoring = score(planned, None)
             routing = route(planned, scoring, format_sent=False)
+        elif planned.family is Family.CYCLE:
+            index = planned.cycle_index or 0
+            source = planned.cycle_criticism or "none"
+            previous = baseline if index == 1 else cycle_by_step.get((planned.base_case_id, source, index - 1))
+            previous_output = None if previous is None else previous.scoring.parsed_output
+            if previous is None or previous_output is None:
+                detail = (
+                    "previous step missing" if previous is None
+                    else f"previous step response verdict {previous.scoring.response_verdict}"
+                )
+                scoring = prerequisite_unavailable(detail)
+                routing = route(planned, scoring, format_sent=True)
+            else:
+                criticisms = external_criticisms(previous.scoring, previous.variant) if source == "external" else ()
+                variant = materialize_cycle(planned, canonical_text(previous_output), criticisms)
+                request = build_chat_request(variant, model=model, endpoint=spec.endpoint)
+                request_digest = request.request_digest
+                response = _complete(executor, request)
+                scoring = score(variant, response, refusal_phrases=spec.refusal_phrases, baseline_output=previous_output)
+                routing = route(variant, scoring, format_sent=True)
         elif planned.expectation_kind is ExpectationKind.ROUND_TRIP:
             if baseline is None or baseline_output is None:
                 detail = "baseline observation missing" if baseline is None else f"baseline response verdict {baseline.scoring.response_verdict}"
@@ -172,13 +198,15 @@ def run_pilot(
             response=response,
             scoring=scoring,
             routing=routing,
-            baseline_observation_id=None if baseline is None or planned.family not in _BASELINE_DEPENDENT else baseline.observation_id,
+            baseline_observation_id=None if previous is None or planned.family not in _BASELINE_DEPENDENT else previous.observation_id,
             created_on=created_on,
         )
         paths.append(publish_record(observation, output_dir))
         observations.append(observation)
         if planned.family is Family.BASELINE:
             baseline_by_case[planned.base_case_id] = observation
+        if planned.family is Family.CYCLE and planned.cycle_index is not None:
+            cycle_by_step[(planned.base_case_id, planned.cycle_criticism or "none", planned.cycle_index)] = observation
 
     family_counter = Counter(observation.variant.family.value for observation in observations)
     response_counter = Counter(observation.scoring.response_verdict for observation in observations)

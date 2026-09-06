@@ -85,6 +85,9 @@ def _parser() -> argparse.ArgumentParser:
     compare.add_argument("--run", type=Path, action="append", required=True, help="exactly two run records")
     compare.add_argument("--observations-dir", type=Path, required=True, action="append", help="the directories holding both runs' observations; may be given more than once")
     compare.add_argument("--markdown", type=Path, default=None)
+    cycles = subparsers.add_parser("cycles", help="per run, criticism source, and cycle index: forms identical to or differing from the step before and the verdict moves between them, beside the run's own REPEAT floor; never a score")
+    cycles.add_argument("--observations-dir", type=Path, required=True, action="append", help="directories holding the runs and their observations; may be given more than once")
+    cycles.add_argument("--markdown", type=Path, default=None)
     return parser
 
 
@@ -308,6 +311,19 @@ def main(argv: Sequence[str] | None = None) -> int:
             if args.markdown is not None:
                 publish_no_clobber(args.markdown, render_compare_markdown(comparison).encode("utf-8"))
             _emit(comparison)
+            return 0
+        if args.command == "cycles":
+            from creib.forge.conformance.cycles import render_cycles_markdown, summarise_cycles
+            from creib.forge.conformance.records import enumerate_record_directory
+            runs = []
+            observations = []
+            for directory in args.observations_dir:
+                runs.extend(load_run(path) for path in enumerate_record_directory(directory).run_paths)
+                observations.extend(load_observation_directory(directory))
+            summary = summarise_cycles(runs, observations)
+            if args.markdown is not None:
+                publish_no_clobber(args.markdown, render_cycles_markdown(summary).encode("utf-8"))
+            _emit(summary)
             return 0
         raise RecordError(f"unknown command {args.command!r}")
     except CREIBError as exc:

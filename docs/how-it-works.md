@@ -15,7 +15,7 @@ The method was developed for a formal semantic-model project (see `docs/history.
 | Obligations | One per form field: type, required, constraint, and the verbatim instruction sentence that grounds it; an obligation with no sentence is flagged `unsourced` |
 | Rival interpretations | Declared ambiguities with at least two rival rules (here: whether `NN/NN/YYYY` is day-first or month-first) |
 | Project imports | The oracle's own reading of contestable fields, marked `interpretation_provisional` or `project_import_provisional`, never `source_scoped` unless the instruction settles it |
-| Ten test families | See below (the tenth, REPEAT, is off unless a pilot asks for it) |
+| Eleven test families | See below (the tenth, REPEAT, and the eleventh, CYCLE, are off unless a pilot asks for them) |
 | Failure routing | Every non-matching observation carries `live_loci`, a non-empty subset of CANDIDATE (the model), AUXILIARY (prompt, executor, format plumbing), TEST (the oracle), SCOPE (the task as framed). No family that involved a model call ever routes to a single locus |
 | Human triage | The run stops at `AWAITING_HUMAN_TRIAGE`; nothing is promoted |
 
@@ -33,8 +33,9 @@ The method was developed for a formal semantic-model project (see `docs/history.
 | NON_VACUITY | Corrupted reference outputs with no model call | The oracle accepts a wrong output: TEST is live |
 | ROUND_TRIP | Fill, render the filled form back to prose, fill again | Second output differs from the first |
 | REPEAT | Send the baseline request again, `repeats` times, byte-identical | The form values differ between identical requests: the run's own noise floor, which every comparison family inherits. Off when `repeats` is 0 |
+| CYCLE | Show the model its previous answer and ask it to check and correct it, `cycles.count` times in a chain, with nothing else (`none`) or with the schema and grounding checks that answer failed (`external`); the answer key is never shown | Scored against the case's own oracle like the baseline, and compared with the step before: whether the form changed, and how each field's verdict moved. Off unless `cycles` is configured |
 
-A `BASELINE` pseudo-family supplies the reference output that NEGATION, IMPORT_DEPENDENCY, and ROUND_TRIP compare against.
+A `BASELINE` pseudo-family supplies the reference output that NEGATION, IMPORT_DEPENDENCY, ROUND_TRIP, REPEAT, and the first CYCLE compare against.
 
 ## Configurability
 
@@ -92,6 +93,7 @@ Where each thing goes:
 | The rules | `instructions.md` | A heading, one preamble line, a blank line, then numbered sentences `1.` … one per line, ending with a newline. Sentence 1 should demand JSON only. Mention each field by its backticked name in exactly one sentence so the obligation can cite it. |
 | The document(s) | `corpus.json` | One case per document. `renderings` holds the text under `prose`, `table`, or `email`; `rendering` names the one used by default. Every required field needs an oracle entry; use `"kind": "unknown"` when you have no answer key. `varied` must be null unless `pair_of` names another case. |
 | Repeats | `pilot.json` → `repeats` | `0` sends each request once. `N` sends every baseline request `N` more times as REPEAT variants and records whether the form values came back the same, so the run measures its own noise floor. Costs `N` calls per case; a model that reproduces its output under a fixed seed needs `0`. |
+| Cycles | `pilot.json` → `cycles` | Absent, or `{"count": 0}`, leaves every plan unchanged. `{"count": N, "criticism": ["none", "external"]}` adds, per case and per criticism source, a chain of `N` CYCLE variants: each shows the model its previous answer and asks it to check and correct it, with nothing else (`none`) or with the schema and grounding checks the previous answer failed (`external`). The answer key is never part of a criticism. Costs `N` calls per case per source. See "Cycles, beside the repeat floor" below. |
 | Provenance and abstention | `pilot.json` → `grounding` | `"mode": "none"` leaves the fill exactly as the form describes it. `"mode": "spans"` asks the model to quote, for each listed field, the words of the document it took the value from, and lets the listed `abstain_fields` be `null` when the document does not state them. See "Grounding and abstention" below. |
 | The LLM endpoint | `pilot.json` → `endpoint` | `kind` is `ollama-chat`, `base_url` is the server (`https://ollama.com` for the cloud, `http://localhost:11434` for a local Ollama), `models` lists the model ids you may pass to `--model`. The key comes from `OLLAMA_API_KEY` only; add `"auth": "none"` for a local server that needs no key, and no Authorization header is sent. |
 | The results | `--output-dir` | One `observation.*.json` per fill holding the request digest, the raw reply, the parsed form, per-field verdicts, and live loci; one `run.*.json` per model. Content-addressed; never overwritten. A results directory is read by enumeration: anything in it that is not one of these, or a record file named for a different record than it holds, is refused by name, never passed over (H19). |
@@ -148,6 +150,18 @@ PYTHONPATH=src python tools/run_conformance_pilot.py compare \
 ```
 
 Identity compares the declared form fields of the two replies and never consults the oracle, so a difference is drift and not a wrong answer; the verdict moves say separately how each side was read, so drift in a total can be told from drift in a field nobody scored. Each run's own repeat floor is printed beside the comparison, because a difference across runs means nothing until it is read against the difference within one. Requests only one run made are counted and not paired; a round trip is such a request whenever the baseline it was built from differed, since its document is the model's own earlier answer. The two runs must be of the same model, because the model name is inside every digest, and the command refuses anything else. Nothing in the output ranks or prefers either run.
+
+## Cycles, beside the repeat floor
+
+Whether a further cycle helps is a question the harness can put but not answer in the affirmative. The CYCLE family asks it in the only form it can test: each cycle shows the model its previous answer, appended after the document with a fixed revision sentence, and asks for the complete form again. With criticism `none` nothing else is shown, which is self-revision, the model as its own critic. With criticism `external` the failed checks of the previous answer are listed by field and verdict, drawn only from the vocabulary that the form schema and the document produce on their own: a missing required key, an extra key, a type, pattern, enum, or length violation, a span that is missing, absent from the document, or not containing its value. `MISMATCH` and `UNEXPECTED_PRESENT` come from the answer key and are excluded in code, in the record schema, and by a test; a cycle that fed the key back would measure copying, not revision. A cycle whose previous step returned no usable object is `PREREQUISITE_UNAVAILABLE`, and the chain stays unavailable from there.
+
+Each cycle is scored against the case's own oracle, exactly as the baseline is, and its `changed_vs_baseline` and `baseline_observation_id` refer to the step it follows, so a chain is readable record by record. The materialised variant carries the previous answer as canonical JSON text and the criticisms shown, and the request digest covers both, so a cycle replays through `--replay-dir` like any other call.
+
+```sh
+PYTHONPATH=src python tools/run_conformance_pilot.py cycles --observations-dir forge/conformance/runs/travel-claim-cycles --markdown cycles.md
+```
+
+The `cycles` command tables, per run, criticism source, and cycle index, how many cycles returned the form of the step before and how many differed, and how the oracle's verdict per field moved between the two records: a match that became a miss, a miss that became a match, anything else. The same counts for the run's REPEAT variants sit in the same table as the floor, because a repeat is a cycle that was shown nothing and asked nothing, and a move a repeat makes on its own is not a move the cycle made. The criticised-field columns say how many fields an external cycle was told about, how many of those it changed, and how many still fail the same check afterwards. Nothing in the table is a score: a miss that became a match is two records and the key's reading of each, and the conjectures in a pilot's `claims.json` (`cycle`, `previous`, `verdict_move`, `criticised_field`) are the place to say what such a move would refute.
 
 ## The hard battery
 
@@ -310,6 +324,7 @@ Every check in the machine is invariant under some transformation of the reply: 
 | Span occurrence | Whether the quoted words occur in the document, after whitespace normalisation and any configured relaxation | Quoting the wrong sentence that does occur; under `case_insensitive`, case; under `date_range_completion`, that the date was completed rather than quoted |
 | Value in span | Substring containment | A span that contains the value by coincidence; a value derived from the span rather than read from it |
 | Change against the baseline (REPEAT, ROUND_TRIP, IMPORT_DEPENDENCY, SUBSTRATE_SWAP) | Exact equality of the form fields | Direction and size of a change; a wrong value that is wrong identically on both sides counts as stable; anything outside the form fields (H12) |
+| Cycles (CYCLE, and the `cycles` table) | Whether the form changed against the step before and how each field's verdict moved | Why it changed; whether a move exceeds what a repeat does on its own, which only the REPEAT row beside it can say; a model that changes a field the criticism named to another wrong value, which counts as changed and still a miss |
 | Refusal detection | A phrase list, compared after folding typographic apostrophes and quotes to their plain forms (H22) | A refusal phrased outside the list; and it fires on a non-refusal that contains a listed phrase |
 | Thinking channel | Whether the reply carried the channel | Reasoning written into the content; whether the channel's contents bore on the answer |
 | Output tokens (claims `output_tokens`) | A count | What the tokens said |

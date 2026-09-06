@@ -1105,6 +1105,415 @@
         ]
       },
       "note": "Recovered-from-prose stands in for visible reasoning here because the models that reason in the message also fence or precede the JSON; a plainly fenced reply with no reasoning also satisfies it."
+    },
+    {
+      "claim_id": "CYC-01",
+      "statement": "A further cycle never turns a field that matched the key into one that misses it, when no criticism named that field.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "CYCLE"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "cycle": {}
+          },
+          {
+            "verdict_move": {
+              "from": "MATCH",
+              "to": "miss",
+              "criticised": false
+            }
+          }
+        ]
+      },
+      "note": "Monotonicity of revision. Read the refuting count beside CYC-09, the same move on a repeat, before attributing it to the cycle."
+    },
+    {
+      "claim_id": "CYC-02",
+      "statement": "Asked to check its own answer with nothing else shown, a model never turns a field that missed the key into one that matches it.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "CYCLE"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "cycle": {
+              "criticism": "none"
+            }
+          },
+          {
+            "verdict_move": {
+              "from": "miss",
+              "to": "MATCH"
+            }
+          }
+        ]
+      },
+      "note": "Self-revision repairs nothing. Refuted means a self-revision cycle can move a field onto the key; read the count beside CYC-10, the floor."
+    },
+    {
+      "claim_id": "CYC-03",
+      "statement": "Shown the failed schema and grounding checks of its previous answer, a model never turns a field that missed the key into one that matches it.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "CYCLE"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "cycle": {
+              "criticism": "external"
+            }
+          },
+          {
+            "verdict_move": {
+              "from": "miss",
+              "to": "MATCH"
+            }
+          }
+        ]
+      },
+      "note": "External criticism repairs nothing. The checks shown never include the key's own verdicts, so a repair here is a repair the model made from a schema or document check."
+    },
+    {
+      "claim_id": "CYC-04",
+      "statement": "Asked to check its own answer with nothing else shown, a model never changes it.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "CYCLE"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "cycle": {
+              "criticism": "none"
+            }
+          },
+          {
+            "changed_vs_baseline": true
+          }
+        ]
+      },
+      "note": "Refuted means self-revision is not a fixed point; the size of the count against the repeat floor (STAB-01) says whether it is more than resampling."
+    },
+    {
+      "claim_id": "CYC-05",
+      "statement": "Told that no automatic check failed on its previous answer, a model never changes it.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "CYCLE"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "cycle": {
+              "criticism": "external",
+              "criticised": false
+            }
+          },
+          {
+            "changed_vs_baseline": true
+          }
+        ]
+      },
+      "note": "A cycle that says nothing failed is a request to leave the answer alone; a change is the model revising against no criticism."
+    },
+    {
+      "claim_id": "CYC-06",
+      "statement": "A field named by an external criticism is never left unchanged in the next cycle.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "CYCLE"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "cycle": {
+              "criticism": "external",
+              "criticised": true
+            }
+          },
+          {
+            "criticised_field": {
+              "changed": false
+            }
+          }
+        ]
+      },
+      "note": "Refuted means a model was told a check failed on a field, and its companion span where there is one, and returned the same value."
+    },
+    {
+      "claim_id": "CYC-07",
+      "statement": "A schema check named by an external criticism never fails on the same field after the next cycle.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "CYCLE"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "cycle": {
+              "criticism": "external",
+              "criticised": true
+            }
+          },
+          {
+            "criticised_field": {
+              "verdict": [
+                "MISSING_REQUIRED",
+                "EXTRA_FIELD",
+                "TYPE_VIOLATION",
+                "PATTERN_VIOLATION",
+                "ENUM_VIOLATION",
+                "LENGTH_VIOLATION"
+              ]
+            }
+          }
+        ]
+      },
+      "note": "Persistence of a named schema violation through a cycle that named it."
+    },
+    {
+      "claim_id": "CYC-08",
+      "statement": "A grounding check named by an external criticism never fails on the same field after the next cycle.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "CYCLE"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "cycle": {
+              "criticism": "external",
+              "criticised": true
+            }
+          },
+          {
+            "criticised_field": {
+              "grounding_verdict": [
+                "SPAN_MISSING",
+                "SPAN_NOT_IN_DOCUMENT",
+                "VALUE_NOT_IN_SPAN"
+              ]
+            }
+          }
+        ]
+      },
+      "note": "Persistence of a named span defect through a cycle that named it."
+    },
+    {
+      "claim_id": "CYC-09",
+      "statement": "A repeat of the same request never turns a field that matched the key into one that misses it.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "REPEAT"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "verdict_move": {
+          "from": "MATCH",
+          "to": "miss"
+        }
+      },
+      "note": "The floor for CYC-01: the same move with nothing asked to change."
+    },
+    {
+      "claim_id": "CYC-10",
+      "statement": "A repeat of the same request never turns a field that missed the key into one that matches it.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "REPEAT"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "verdict_move": {
+          "from": "miss",
+          "to": "MATCH"
+        }
+      },
+      "note": "The floor for CYC-02 and CYC-03: the same move with nothing asked to change."
+    },
+    {
+      "claim_id": "CYC-11",
+      "statement": "A later cycle never changes an answer that the cycle before it left unchanged.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "CYCLE"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "cycle": {}
+          },
+          {
+            "not": {
+              "cycle": {
+                "index": 1
+              }
+            }
+          },
+          {
+            "changed_vs_baseline": true
+          },
+          {
+            "previous": {
+              "changed_vs_baseline": false
+            }
+          }
+        ]
+      },
+      "note": "Convergence: once a cycle returns its previous answer, the next cycle does too. Refuted means a chain that had settled moved again."
+    },
+    {
+      "claim_id": "CYC-12",
+      "statement": "A cycle never returns a reply that is not a JSON object.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "CYCLE"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "cycle": {}
+          },
+          {
+            "not": {
+              "response_verdict": "JSON_OBJECT"
+            }
+          },
+          {
+            "not": {
+              "response_verdict": "PREREQUISITE_UNAVAILABLE"
+            }
+          }
+        ]
+      },
+      "note": "The cycle prompt is longer and carries the previous answer inside a code fence; a model that then answers in prose or refuses is recorded here."
+    },
+    {
+      "claim_id": "CYC-13",
+      "statement": "A cycle never withdraws a return date the previous answer stated, answering null where the step before gave a value.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "CYCLE"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "cycle": {}
+          },
+          {
+            "value_null": {
+              "field": "trip_end"
+            }
+          },
+          {
+            "not": {
+              "previous": {
+                "value_null": {
+                  "field": "trip_end"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "note": "Revision moving a derived date to an abstention; the abstention sentence competes with derivation (T3, T10) and a cycle is another chance for it to win."
+    },
+    {
+      "claim_id": "CYC-14",
+      "statement": "Asked to check its own answer with nothing else shown, a model never moves the total it claimed onto the key.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "CYCLE"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "cycle": {
+              "criticism": "none"
+            }
+          },
+          {
+            "verdict_move": {
+              "field": "total_claimed_cents",
+              "from": "miss",
+              "to": "MATCH"
+            }
+          }
+        ]
+      },
+      "note": "The arithmetic that a re-check could plausibly repair (T1, T23): a sub-case of CYC-02 on the one field where most of the key's criticisms fall."
     }
   ]
 }

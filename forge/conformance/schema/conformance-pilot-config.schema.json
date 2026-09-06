@@ -343,6 +343,33 @@
       "minimum": 0,
       "maximum": 10,
       "description": "How many times each baseline request is sent again as a REPEAT variant, to measure the endpoint's own noise floor. 0 switches the family off; larger models that reproduce their output need none."
+    },
+    "cycles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "count"
+      ],
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5,
+          "description": "How many further cycles follow each baseline: the model is shown its previous answer and asked to check and correct it. 0 (and an absent cycles object) switches the CYCLE family off and leaves every plan unchanged."
+        },
+        "criticism": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "none",
+              "external"
+            ]
+          },
+          "description": "What each cycle is shown beside the previous answer: none (self-revision) or external (the failed schema and grounding checks of the previous answer). The answer key is never fed back."
+        }
+      },
+      "description": "Optional CYCLE family configuration; absent means off."
     }
   },
   "$defs": {

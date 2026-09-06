@@ -31,6 +31,7 @@ from .common import (
     validate_instance,
 )
 from .families import Family
+from .spec import CYCLE_CRITICISMS
 from .oracle import FIELD_VERDICTS, GROUNDING_VERDICTS, RESPONSE_VERDICTS
 from .appraisal import Appraisal
 from .records import ObservationRecord
@@ -91,6 +92,19 @@ class Claim:
         }
 
 
+def _grounding_set(raw: Any, where: str) -> frozenset[str]:
+    items = [raw] if isinstance(raw, str) else list(array_value(raw, where))
+    if not items:
+        raise RecordError(f"{where} must name at least one grounding verdict")
+    verdicts = []
+    for index, item in enumerate(items):
+        verdict = text(item, f"{where}[{index}]")
+        if verdict not in GROUNDING_VERDICTS:
+            raise RecordError(f"{where}[{index}] {verdict!r} is not a known grounding verdict")
+        verdicts.append(verdict)
+    return frozenset(verdicts)
+
+
 def _plain(value: Any) -> Any:
     if isinstance(value, Mapping):
         return {str(k): _plain(v) for k, v in value.items()}
@@ -104,16 +118,27 @@ def _plain(value: Any) -> Any:
 # --------------------------------------------------------------------------
 
 class Context:
-    """The other observations a predicate may refer to: here, the baseline of the same run and case."""
+    """The other observations a predicate may refer to: the baseline of the same run and case, and the step an observation follows."""
 
     def __init__(self, observations: list[ObservationRecord]) -> None:
         self._baselines: dict[tuple[str, str], ObservationRecord] = {}
+        self._by_id: dict[str, ObservationRecord] = {}
         for observation in observations:
+            self._by_id[observation.observation_id] = observation
             if observation.variant.family is Family.BASELINE:
                 self._baselines[(observation.run_id, observation.variant.base_case_id)] = observation
 
     def baseline_of(self, observation: ObservationRecord) -> ObservationRecord | None:
         return self._baselines.get((observation.run_id, observation.variant.base_case_id))
+
+    def previous_of(self, observation: ObservationRecord) -> ObservationRecord | None:
+        """The observation this one was compared with: the record it names, else the baseline of its run and case."""
+
+        if observation.baseline_observation_id is not None:
+            named = self._by_id.get(observation.baseline_observation_id)
+            if named is not None:
+                return named
+        return self.baseline_of(observation)
 
 
 Predicate = Callable[[ObservationRecord, Context], bool]
@@ -121,6 +146,46 @@ Predicate = Callable[[ObservationRecord, Context], bool]
 
 def _output(observation: ObservationRecord) -> Mapping[str, Any]:
     return observation.scoring.parsed_output or {}
+
+
+_MISS_VERDICTS: tuple[str, ...] = tuple(v for v in FIELD_VERDICTS if v not in ("MATCH", "NOT_SCORED"))
+
+
+def _verdict_set(raw: Any, where: str) -> frozenset[str]:
+    """A field verdict, a list of them, or the shorthand ``miss`` for every criticising verdict."""
+
+    if raw == "miss":
+        return frozenset(_MISS_VERDICTS)
+    items = [raw] if isinstance(raw, str) else list(array_value(raw, where))
+    if not items:
+        raise RecordError(f"{where} must name at least one verdict")
+    verdicts = []
+    for index, item in enumerate(items):
+        verdict = text(item, f"{where}[{index}]")
+        if verdict not in FIELD_VERDICTS:
+            raise RecordError(f"{where}[{index}] {verdict!r} is not a known field verdict")
+        verdicts.append(verdict)
+    return frozenset(verdicts)
+
+
+def _field_verdicts_by_name(observation: ObservationRecord) -> dict[str, str]:
+    return {item.field: item.verdict for item in observation.scoring.field_verdicts}
+
+
+def _value_changed(field: str, observation: ObservationRecord, previous: ObservationRecord) -> bool:
+    """Whether a key's value or presence differs between an observation and the step it follows.
+
+    A field's companion span key, where grounding is active, counts as part of the field: a
+    criticism of a span is repaired by changing the span.
+    """
+
+    keys = [field]
+    variant = observation.variant
+    if variant.grounding is not None and variant.grounding.active and field in variant.active_span_fields:
+        keys.append(variant.span_key(field))
+    now = _output(observation)
+    before = _output(previous)
+    return any((key in now) != (key in before) or now.get(key) != before.get(key) for key in keys)
 
 
 def compile_condition(raw: Any, where: str = "condition") -> Predicate:
@@ -154,6 +219,93 @@ def compile_condition(raw: Any, where: str = "condition") -> Predicate:
             return base is not None and inner(base, c)
 
         return on_baseline
+    if key == "previous":
+        # The nested condition is evaluated on the step this observation follows (for a cycle, the
+        # previous cycle or the baseline; for any other comparison family, the baseline); false
+        # when that record was not supplied.
+        inner = compile_condition(value, f"{where}.previous")
+
+        def on_previous(o: ObservationRecord, c: Context) -> bool:
+            before = c.previous_of(o)
+            return before is not None and inner(before, c)
+
+        return on_previous
+    if key == "cycle":
+        spec = object_value(value, f"{where}.cycle")
+        index = spec.get("index")
+        if index is not None and (type(index) is not int or index < 1):
+            raise RecordError(f"{where}.cycle.index must be a positive integer or null")
+        criticism = optional_text(spec.get("criticism"), f"{where}.cycle.criticism")
+        if criticism is not None and criticism not in CYCLE_CRITICISMS:
+            raise RecordError(f"{where}.cycle.criticism {criticism!r} is not a known criticism source")
+        criticised = optional_boolean(spec.get("criticised"), f"{where}.cycle.criticised")
+
+        def is_cycle(o: ObservationRecord, c: Context) -> bool:
+            v = o.variant
+            if v.family is not Family.CYCLE or v.cycle_index is None:
+                return False
+            if index is not None and v.cycle_index != index:
+                return False
+            if criticism is not None and v.cycle_criticism != criticism:
+                return False
+            if criticised is not None and bool(v.criticised_fields) is not criticised:
+                return False
+            return True
+
+        return is_cycle
+    if key == "verdict_move":
+        spec = object_value(value, f"{where}.verdict_move")
+        field = optional_text(spec.get("field"), f"{where}.verdict_move.field")
+        source = _verdict_set(spec["from"], f"{where}.verdict_move.from")
+        target = _verdict_set(spec["to"], f"{where}.verdict_move.to")
+        criticised = optional_boolean(spec.get("criticised"), f"{where}.verdict_move.criticised")
+
+        def verdict_move(o: ObservationRecord, c: Context) -> bool:
+            before = c.previous_of(o)
+            if before is None or before.scoring.parsed_output is None or o.scoring.parsed_output is None:
+                return False
+            earlier = _field_verdicts_by_name(before)
+            later = _field_verdicts_by_name(o)
+            named = set(o.variant.criticised_fields)
+            for name in sorted(set(earlier) | set(later)):
+                if field is not None and name != field:
+                    continue
+                if criticised is not None and (name in named) is not criticised:
+                    continue
+                if earlier.get(name, "NOT_SCORED") in source and later.get(name, "NOT_SCORED") in target:
+                    return True
+            return False
+
+        return verdict_move
+    if key == "criticised_field":
+        spec = object_value(value, f"{where}.criticised_field")
+        changed = optional_boolean(spec.get("changed"), f"{where}.criticised_field.changed")
+        verdicts = None if spec.get("verdict") is None else _verdict_set(spec["verdict"], f"{where}.criticised_field.verdict")
+        grounding = None if spec.get("grounding_verdict") is None else _grounding_set(spec["grounding_verdict"], f"{where}.criticised_field.grounding_verdict")
+        if changed is None and verdicts is None and grounding is None:
+            raise RecordError(f"{where}.criticised_field needs changed, verdict, or grounding_verdict")
+
+        def criticised_field(o: ObservationRecord, c: Context) -> bool:
+            names = o.variant.criticised_fields
+            if not names or o.scoring.parsed_output is None:
+                return False
+            before = c.previous_of(o)
+            later = _field_verdicts_by_name(o)
+            grounded = {item.field: item.verdict for item in o.scoring.grounding_verdicts}
+            for name in names:
+                if changed is not None:
+                    if before is None or before.scoring.parsed_output is None:
+                        continue
+                    if _value_changed(name, o, before) is not changed:
+                        continue
+                if verdicts is not None and later.get(name, "NOT_SCORED") not in verdicts:
+                    continue
+                if grounding is not None and grounded.get(name) not in grounding:
+                    continue
+                return True
+            return False
+
+        return criticised_field
     if key == "trigger":
         trigger = text(value, f"{where}.trigger")
         if trigger not in TRIGGERS:
@@ -265,8 +417,16 @@ def condition_footprint(raw: Any) -> tuple[frozenset[str] | None, frozenset[str]
         if key in ("all_of", "any_of"):
             for item in value:
                 walk(item)
-        elif key in ("not", "baseline"):
+        elif key in ("not", "baseline", "previous"):
             walk(value)
+        elif key == "verdict_move":
+            field = object_value(value, "verdict_move").get("field")
+            if field is None:
+                any_field = True
+            else:
+                fields.add(str(field))
+        elif key == "criticised_field":
+            any_field = True
         elif key == "trigger":
             triggers.add(str(value))
         elif key == "field_verdict":

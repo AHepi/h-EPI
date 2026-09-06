@@ -196,6 +196,52 @@ GROUNDING_MODES: tuple[str, ...] = ("none", "spans")
 #   date_range_completion  - accept "24 June 2025" when the document says "24 to 26 June 2025"
 SPAN_RELAXATIONS: tuple[str, ...] = ("case_insensitive", "date_range_completion")
 MAX_REPEATS = 10
+MAX_CYCLES = 5
+CYCLE_CRITICISMS: tuple[str, ...] = ("none", "external")
+
+
+@dataclass(frozen=True)
+class Cycles:
+    """Configuration of the CYCLE family; ``count`` 0 (the default) leaves every plan unchanged.
+
+    A cycle shows the model its previous answer and asks it to check and correct it. With
+    criticism ``none`` nothing else is added (self-revision); with ``external`` the failed
+    schema and grounding checks of the previous answer are listed. The answer key is never
+    part of a criticism: a cycle that fed the oracle back would be measuring how well a
+    model copies a correction, not whether a further cycle helps.
+    """
+
+    count: int
+    criticism: tuple[str, ...]
+
+    @property
+    def active(self) -> bool:
+        return self.count > 0
+
+    def to_dict(self) -> dict[str, object]:
+        return {"count": self.count, "criticism": list(self.criticism)}
+
+
+def cycles_from_dict(raw: Any, where: str = "cycles") -> Cycles:
+    if raw is None:
+        return Cycles(count=0, criticism=())
+    record = object_value(raw, where)
+    count = integer(record["count"], f"{where}.count", minimum=0)
+    if count > MAX_CYCLES:
+        raise RecordError(f"{where}.count must be at most {MAX_CYCLES}")
+    criticism: list[str] = []
+    for index, item in enumerate(array_value(record.get("criticism", []), f"{where}.criticism")):
+        name = text(item, f"{where}.criticism[{index}]")
+        if name not in CYCLE_CRITICISMS:
+            raise RecordError(f"{where}.criticism[{index}] {name!r} is not a known criticism source; known: {list(CYCLE_CRITICISMS)}")
+        if name in criticism:
+            raise RecordError(f"{where}.criticism repeats {name!r}")
+        criticism.append(name)
+    if count > 0 and not criticism:
+        raise RecordError(f"{where}.count is {count} but no criticism source is named")
+    if count == 0 and criticism:
+        raise RecordError(f"{where}.criticism names a source but count is 0")
+    return Cycles(count=count, criticism=tuple(criticism))
 
 
 @dataclass(frozen=True)
@@ -328,6 +374,7 @@ class TaskSpec:
     refusal_phrases: tuple[str, ...]
     grounding: Grounding
     repeats: int
+    cycles: Cycles = Cycles(count=0, criticism=())
 
     @property
     def required_fields(self) -> tuple[str, ...]:
@@ -667,6 +714,7 @@ def build_task_spec(
     repeats = integer(raw_config["repeats"], "repeats", minimum=0)
     if repeats > MAX_REPEATS:
         raise RecordError(f"repeats must be at most {MAX_REPEATS}")
+    cycles = cycles_from_dict(raw_config.get("cycles"))
     refusal_phrases = unique_texts(raw_config["refusal_phrases"], "refusal_phrases")
     models = tuple(model_id(item, f"models[{index}]") for index, item in enumerate(raw_config["models"]))
     if len(models) != len(set(models)):
@@ -693,6 +741,7 @@ def build_task_spec(
         refusal_phrases=refusal_phrases,
         grounding=grounding,
         repeats=repeats,
+        cycles=cycles,
     )
 
 
