@@ -1304,6 +1304,34 @@ class ClaimsTests(unittest.TestCase):
             self.assertTrue(text.rstrip().endswith(NON_INDUCTIVE_LIMIT))
 
 
+class SupportFamiliesTests(unittest.TestCase):
+    """A reading's support may name the families it applies to; a rival variant's explicit rule is not the baseline reading (H24)."""
+
+    def test_families_restrict_which_observations_rest_on_a_reading(self) -> None:
+        from creib.forge.conformance.appraisal import Appraisal, load_appraisal
+        from creib.forge.conformance.claims import evaluate_claims, load_claims
+        pilot = ROOT / "forge" / "conformance" / "pilots" / "explanatory-distinctions"
+        observations = load_observation_directory(ROOT / "forge" / "conformance" / "runs" / "explanatory-distinctions")
+        appraisal = Appraisal.build(load_appraisal(pilot / "appraisal.json"))
+        rivals = [o for o in observations if o.variant.family is Family.RIVAL_SUBSTITUTION and o.variant.base_case_id == "D-02"]
+        baselines = [o for o in observations if o.variant.family is Family.BASELINE and o.variant.base_case_id == "D-02"]
+        self.assertTrue(rivals and baselines)
+        for o in rivals:
+            self.assertEqual(appraisal.readings_of(o, frozenset({"originative_contribution"}), frozenset()), ())
+        criticised = [o for o in baselines if any(v.field == "originative_contribution" and v.verdict == "MISMATCH" for v in o.scoring.field_verdicts)]
+        self.assertTrue(criticised)
+        self.assertIn("R-D02-RECONSTRUCTION-ORIGINATIVE", appraisal.readings_of(criticised[0], frozenset({"originative_contribution"}), frozenset()))
+        results = {r.claim.claim_id: r for r in evaluate_claims(load_claims(pilot / "claims.json"), observations, appraisal)}
+        self.assertEqual(results["DIS-13"].status, "REFUTED", "the rival rule states the expected answer; nothing about it is contested")
+        self.assertEqual(results["DIS-13"].refuting_contested, 0)
+        with tempfile.TemporaryDirectory() as directory:
+            raw = json.loads((pilot / "appraisal.json").read_text(encoding="utf-8"))
+            raw["arguments"][0]["supports"]["families"] = ["NOT_A_FAMILY"]
+            path = Path(directory) / "appraisal.json"; path.write_text(json.dumps(raw), encoding="utf-8")
+            with self.assertRaisesRegex(RecordError, "not a family"):
+                load_appraisal(path)
+
+
 class GeneratedCorpusTests(unittest.TestCase):
     """The generated corpora are reproducible from their generators, so their answer keys come from code, not memory."""
 

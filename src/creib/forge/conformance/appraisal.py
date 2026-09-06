@@ -27,6 +27,7 @@ from creib.strict_json import load_strict
 
 from .common import array_value, identifier, object_value, optional_text, text, validate_instance
 from .records import ObservationRecord
+from .families import Family
 from .routing import TRIGGERS
 
 APPRAISAL_SCHEMA_NAME = "conformance-appraisal.schema.json"
@@ -45,9 +46,15 @@ class Support:
     corpus_sha256: str | None
     pilot_sha256: str | None
     trigger: str | None
+    # The families the reading applies to; empty means every family. A baseline reading of a
+    # field is not the reading a rival rule states explicitly for the same field (H24).
+    families: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, object]:
-        return {"case_id": self.case_id, "field": self.field, "corpus_sha256": self.corpus_sha256, "pilot_sha256": self.pilot_sha256, "trigger": self.trigger}
+        record: dict[str, object] = {"case_id": self.case_id, "field": self.field, "corpus_sha256": self.corpus_sha256, "pilot_sha256": self.pilot_sha256, "trigger": self.trigger}
+        if self.families:
+            record["families"] = list(self.families)
+        return record
 
 
 @dataclass(frozen=True)
@@ -153,7 +160,15 @@ def _support_from_dict(raw: Any, where: str) -> Support | None:
         raise RecordError(f"{where} supports nothing: give case_id and field, or trigger")
     if case_id is not None and trigger is not None:
         raise RecordError(f"{where} supports either a field reading or a trigger reading, not both")
-    return Support(case_id=case_id, field=field, corpus_sha256=corpus, pilot_sha256=pilot, trigger=trigger)
+    families: list[str] = []
+    for index, item in enumerate(array_value(record.get("families", []), f"{where}.families")):
+        name = text(item, f"{where}.families[{index}]")
+        if name not in {family.value for family in Family}:
+            raise RecordError(f"{where}.families[{index}] {name!r} is not a family")
+        if name in families:
+            raise RecordError(f"{where}.families repeats {name!r}")
+        families.append(name)
+    return Support(case_id=case_id, field=field, corpus_sha256=corpus, pilot_sha256=pilot, trigger=trigger, families=tuple(families))
 
 
 def appraisal_from_dict(raw: Any) -> tuple[Argument, ...]:
@@ -238,6 +253,8 @@ class Appraisal:
             if s.corpus_sha256 is not None and (corpus is None or not corpus.startswith(s.corpus_sha256)):
                 continue
             if s.pilot_sha256 is not None and (pilot is None or not pilot.startswith(s.pilot_sha256)):
+                continue
+            if s.families and observation.variant.family.value not in s.families:
                 continue
             if s.case_id is not None and s.case_id == observation.variant.base_case_id and s.field in criticised:
                 found.append(a.argument_id)
