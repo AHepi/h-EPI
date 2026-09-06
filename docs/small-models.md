@@ -125,6 +125,28 @@ The table is generated from the run records. Counts are of observations over 135
 - **T22. Placeholder fabrication on unstated optional fields is a family trait, not a size trait.** All three nemotron sizes and deepseek-flash did it (24 to 63 times each); twelve other models did it never or once. Where it happens, the values are placeholders (`P-0001`, `CC-1234`, `P-5678`) or a code copied from another field in the same document.
 - **T23. Arithmetic on a multiplied line is the battery's most reliable criticism.** Fifteen of the seventeen finished models got at least one total wrong; the misses concentrate on the four cases where a nightly rate must be multiplied, and the errors are usually small. The two exceptions are the two thinking models (T21); the two nearly-exceptions are the two glm-5.3 variants.
 - **T24. Across runs, the same request returns the same form most of the time for most models, and almost never for one.** For the four models run in both round three and the sweep, the requests shared by both runs (identical digests) returned identical form values on 104 of 117 for gemma4:31b (every difference in the total), 105 of 117 for gpt-oss:120b (differences in the derivable date, the purpose, and once a phone number), and 12 of 108 for nemotron-3-nano. Within-run repeats (the "repeats identical" column) tell the same story with less data.
+- **T26. The models whose arithmetic held were the models that reasoned before answering, in whichever channel they had.** Every record carries the endpoint's count of generated tokens. Thirteen models generated between 230 and 310 tokens per reply, which is the JSON and nothing else. Four generated far more: gpt-oss:120b (median 1,775) and minimax-m2.7 (805) in a thinking channel that the request had asked them not to use, glm-5.3 (1,457) and glm-5.3-flash (1,010) as plain text before the JSON ("Let me work through this carefully..."), which the parser recovers as prose. Those four are the four with no wrong total or one. The conjecture that makes this checkable is `LEN-01`: no reply of 800 tokens or more got an unambiguous multiplied total wrong, unrefuted over 231 such observations from 18 models. Its converse, `LEN-02`, that a reply under 400 tokens never gets one right, is refuted by six models, so reasoning is not necessary for the multiplication, only reliably sufficient here. The same reasoning did not protect the derivable date: `LEN-03` is refuted by both gpt-oss models, which reasoned and still returned null. The price of the reasoning is in the next two columns.
+
+| Model | Median tokens generated per reply | 90th percentile | Median seconds per call | Where the reasoning is | Totals wrong |
+|---|---|---|---|---|---|
+| nemotron-3-nano:30b | 295 | 310 | 3.0 | - | 89 |
+| nemotron-3-super | 292 | 304 | 3.0 | - | 45 |
+| nemotron-3-ultra | 285 | 302 | 20.2 | - | 39 |
+| deepseek-v4-flash:0731 | 255 | 265 | 1.7 | - | 30 |
+| deepseek-v4-pro:0813 | 244 | 257 | 1.2 | - | 17 |
+| minimax-m2.7 | 805 | 1,186 | 7.6 | thinking channel | 0 |
+| minimax-m3 | 233 | 245 | 1.9 | - | 24 |
+| glm-5.1 | 233 | 250 | 2.6 | - | 31 |
+| glm-5.2 | 235 | 251 | 1.9 | - | 38 |
+| glm-5.3-flash | 1,010 | 1,694 | 4.4 | in the message, before the JSON | 1 |
+| glm-5.3 | 1,457 | 3,422 | 12.7 | in the message, before the JSON | 1 |
+| kimi-k2.6 | 237 | 249 | 7.1 | - | 36 |
+| kimi-k2.7-code | 239 | 249 | 1.7 | - | 37 |
+| gemma4:31b | 307 | 740 | 1.9 | - | 27 |
+| gpt-oss:120b | 1,775 | 2,141 | 6.4 | thinking channel | 0 |
+| qwen3.5:397b | 286 | 296 | 3.2 | - | 33 |
+| mistral-large-3:675b | 290 | 301 | 3.0 | - | 46 |
+
 - **T25. No model, in 17 times 135 calls, refused, was truncated, failed in transport, returned a value for the silent case's unstated fields, took the copied-in colleague as the approver, took a transit city as the destination, misread a double negation, or left a formatting inversion without effect.** These are the claims that survived the sweep; they are unrefuted for these records and nothing more. `docs/what-the-records-refute.md` lists all forty-three conjectures with their status and counterexamples.
 
 ## Running it locally
