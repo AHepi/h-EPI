@@ -2,7 +2,7 @@
 
 A small, fail-closed harness for one question: **when a language model fills a form from a document, what exactly did it do, and where should the blame go when it is wrong?**
 
-You give it three things: a form (a JSON Schema), the rules for filling it (numbered sentences), and one or more documents. It calls a model, records the returned form byte-for-byte in a content-addressed record, enforces the form's own constraints, compares each field to whatever expectation you declared, and routes every failure to a *plural* set of suspects: the model, the prompt and plumbing, the answer key, or the task as framed. It never declares a model correct. If you declare no expectation for a field, it records the value and judges nothing.
+You give it three things: a form (a JSON Schema), the rules for filling it (numbered sentences), and one or more documents. It calls a model, records the returned form byte-for-byte in a content-addressed record, enforces the form's own constraints, compares each field to whatever expectation you declared, and routes every failure to a *plural* set of suspects: the model, the prompt and plumbing, the answer key, or the task as framed. It never declares a model correct. If you declare no expectation for a field, it records the value and judges nothing. Switched on in configuration, it also asks the model to quote the words each value came from and checks that they exist in the document, and lets the model answer `null` on fields you say may be unstated, so that "the document does not say" is recorded instead of an invented value.
 
 [![ci](https://github.com/AHepi/h-EPI/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AHepi/h-EPI/actions/workflows/ci.yml)
 
@@ -22,20 +22,21 @@ python tools/run_conformance_pilot.py run      --pilot forge/conformance/pilots/
 python tools/run_conformance_pilot.py fills    --observations-dir forge/conformance/runs/my-form
 ```
 
-`fills` prints one JSON line per document: the returned form, any violations of the form's own rules, which fields were judged against an expectation and how, which were not judged, and the live suspects. `run` exits 1 when any observation carries live suspects, which means "look", not "failed".
+`fills` prints one JSON line per document: the returned form, any violations of the form's own rules, which fields were judged against an expectation and how, which were not judged, the grounding verdict and quoted span for each configured field, which fields the model left `null`, and the live suspects. `run` exits 1 when any observation carries live suspects, which means "look", not "failed".
 
 ## What is where
 
 | Path | What it is |
 |---|---|
-| `forge/conformance/pilots/leave-request/` | The smallest working configuration: one form, one email, no answer key. Copy this. Run live once; its records are in `forge/conformance/runs/leave-request/`. |
+| `forge/conformance/pilots/leave-request/` | The smallest working configuration: one form, two emails, no answer key, grounding spans and abstention switched on. Copy this. Run live against three models; its records are in `forge/conformance/runs/leave-request/`. |
 | `forge/conformance/pilots/incident-form/` | The full test battery: nine fields, fourteen documents in three renderings, an answer key, declared ambiguities, negations, controls. Nine models were run against it; the findings are in the document below. |
 | `forge/conformance/schema/` | The four record schemas: pilot config, corpus, observation, run. |
 | `src/creib/forge/conformance/` | The machine: spec, corpus, the nine test families, prompt, executor, oracle, routing, records, runner, report. |
 | `src/creib/{canonical,strict_json,errors}.py`, `src/creib/forge/schema_validation.py` | Shared foundations: canonical bytes and digests, strict JSON, typed errors, offline schema validation. |
-| `tools/run_conformance_pilot.py` | The command line: `validate`, `plan`, `oracle-check`, `run`, `fills`, `report`. |
+| `tools/run_conformance_pilot.py` | The command line: `validate`, `plan`, `oracle-check`, `run`, `fills`, `evidence`, `report`. |
 | `tools/check.py` | Every repository check: `lint`, `test`, `pilots`, `all`, `bootstrap`. |
-| `docs/how-it-works.md` | The method, the nine test families, what nine models did on the incident form, and the limits. |
+| `docs/how-it-works.md` | The method, the nine test families, the grounding and abstention configuration, what nine models did on the incident form, and the limits. |
+| `docs/failure-modes.md` | The register of failure modes, model limitations, and harness defects, each pointing at the observation records that show it. |
 | `docs/history.md` | Where this came from and how to recover the earlier project. |
 
 ## Rules of the machine

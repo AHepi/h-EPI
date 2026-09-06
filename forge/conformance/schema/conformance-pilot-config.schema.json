@@ -20,7 +20,8 @@
     "twins",
     "ambiguity",
     "controls",
-    "refusal_phrases"
+    "refusal_phrases",
+    "grounding"
   ],
   "properties": {
     "schema_version": {
@@ -277,6 +278,51 @@
       "uniqueItems": true,
       "items": {
         "$ref": "#/$defs/nonempty_string"
+      }
+    },
+    "grounding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "span_suffix",
+        "span_fields",
+        "value_in_span_fields",
+        "abstain_fields"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "none",
+            "spans"
+          ]
+        },
+        "span_suffix": {
+          "type": "string",
+          "pattern": "^_[a-z][a-z0-9_]{0,31}$"
+        },
+        "span_fields": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/field_name"
+          }
+        },
+        "value_in_span_fields": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/field_name"
+          }
+        },
+        "abstain_fields": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/field_name"
+          }
+        }
       }
     }
   },

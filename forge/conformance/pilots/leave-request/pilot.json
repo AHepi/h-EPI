@@ -1,12 +1,14 @@
 {
   "schema_version": "creib.conformance-pilot.config.v1",
   "pilot_id": "LEAVE-REQUEST-TEMPLATE-001",
-  "title": "Template: fill a leave-request form from an email, with no answer key",
+  "title": "Template: fill a leave-request form from an email, with grounding spans and abstention, no answer key",
   "form_schema": "form.schema.json",
   "instructions": "instructions.md",
   "corpus": "corpus.json",
   "models": [
-    "gpt-oss:120b"
+    "gpt-oss:120b",
+    "deepseek-v4-flash:0731",
+    "nemotron-3-nano:30b"
   ],
   "endpoint": {
     "kind": "ollama-chat",
@@ -19,8 +21,8 @@
     "think": false
   },
   "charter": {
-    "purpose": "Fill one form from one document and record exactly what the model returned, without judging field values.",
-    "output": "One observation record per fill holding the returned form, its structural check, and no verdict on content.",
+    "purpose": "Fill one form from one document, record exactly what the model returned, check that cited spans exist in the document, and let the model say null rather than invent a value; judge no field value.",
+    "output": "One observation record per fill holding the returned form, its structural check, per-field grounding verdicts, and no verdict on content.",
     "scope_in": [
       "One English email requesting leave.",
       "The seven declared fields of the leave-request form."
@@ -58,5 +60,24 @@
     "I am unable",
     "as an AI",
     "cannot assist"
-  ]
+  ],
+  "grounding": {
+    "mode": "spans",
+    "span_suffix": "_span",
+    "span_fields": [
+      "employee_name",
+      "leave_type",
+      "start_date",
+      "end_date",
+      "total_days",
+      "reason"
+    ],
+    "value_in_span_fields": [
+      "employee_name"
+    ],
+    "abstain_fields": [
+      "end_date",
+      "total_days"
+    ]
+  }
 }

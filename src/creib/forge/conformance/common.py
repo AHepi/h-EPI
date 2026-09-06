@@ -34,8 +34,8 @@ RUN_SCHEMA_NAME = "conformance-run.schema.json"
 
 CONFIG_SCHEMA_VERSION = "creib.conformance-pilot.config.v1"
 CORPUS_SCHEMA_VERSION = "creib.conformance-pilot.corpus.v1"
-OBSERVATION_SCHEMA_VERSION = "creib.conformance-pilot.observation.v1"
-RUN_SCHEMA_VERSION = "creib.conformance-pilot.run.v1"
+OBSERVATION_SCHEMA_VERSION = "creib.conformance-pilot.observation.v2"
+RUN_SCHEMA_VERSION = "creib.conformance-pilot.run.v2"
 
 OBSERVATION_SCHEMA_ID = "https://ahepi.example/smf/0.5/conformance-observation.schema.json"
 

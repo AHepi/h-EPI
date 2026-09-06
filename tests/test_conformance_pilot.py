@@ -508,6 +508,31 @@ class RecordsAndRunnerTests(unittest.TestCase):
                 self.assertNotIn(word, markdown.lower().replace("scope", ""))
 
 
+class RecordVersionTests(unittest.TestCase):
+    """Records name their schema version; a record from an earlier version is refused by name, not by a missing key."""
+
+    def test_v1_records_are_refused_by_version(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory)
+            result = run_pilot(
+                spec=_CONFIG.spec, corpus=_CORPUS, plan=_PLAN, model="gpt-oss:20b", executor=_fake(), executor_kind="fake",
+                output_dir=out, created_on=CREATED_ON, families=(Family.BASELINE,), limit=1,
+            )
+            observation_path = out / f"observation.{result.observations[0].observation_id[:16]}.json"
+            self.assertTrue(observation_path.exists())
+            for path in (observation_path, out / f"run.{result.run_record.run_id[:16]}.json"):
+                record = load_strict(path)
+                self.assertTrue(str(record["schema_version"]).endswith(".v2"))
+                record["schema_version"] = str(record["schema_version"]).replace(".v2", ".v1")
+                old = out / ("old-" + path.name)
+                old.write_bytes(canonical_bytes(record) + b"\n")
+                loader = load_observation if path.name.startswith("observation.") else load_run
+                with self.assertRaisesRegex(RecordError, r"schema_version 'creib\.conformance-pilot\.(observation|run)\.v1'"):
+                    loader(old)
+                with self.assertRaisesRegex(RecordError, "unknown conformance record schema_version"):
+                    publish_record(record, out)
+
+
 class SecrecyTests(unittest.TestCase):
     def test_key_never_reaches_records_or_errors(self) -> None:
         executor = OllamaChatExecutor(base_url="https://ollama.example", timeout_seconds=5, retries=1)
@@ -759,47 +784,55 @@ class SecondReviewRegressionTests(unittest.TestCase):
         self.assertTrue(all(v.substrate in RENDERINGS for v in swaps))
 
 
+
+LR_GOOD = {
+    "employee_name": "Maya Patel", "leave_type": "annual", "start_date": "2025-10-13", "end_date": "2025-10-17",
+    "total_days": 5, "reason": "Family wedding in Adelaide.", "manager_notified": True,
+}
+LR_SPANS = {
+    "employee_name_span": "Maya Patel", "leave_type_span": "annual leave", "start_date_span": "Monday 13 October 2025",
+    "end_date_span": "Friday 17 October 2025", "total_days_span": "five working days", "reason_span": "for a family wedding in Adelaide",
+}
+
+
 class PlainFillTests(unittest.TestCase):
     """A form with no answer key can be filled and recorded without any verdict on content."""
 
     TEMPLATE = ROOT / "forge" / "conformance" / "pilots" / "leave-request" / "pilot.json"
 
+    def setUp(self) -> None:
+        self.config = load_pilot_config(self.TEMPLATE)
+        self.corpus = load_corpus(self.config.corpus_path, self.config.spec)
+        self.plan = plan(self.config.spec, self.corpus)
+        self.baseline = next(v for v in self.plan.variants if v.family is Family.BASELINE and v.base_case_id == "LR-001")
+
     def test_template_pilot_validates_and_plans_without_code_changes(self) -> None:
-        config = load_pilot_config(self.TEMPLATE)
-        corpus = load_corpus(config.corpus_path, config.spec)
-        planned = plan(config.spec, corpus)
-        self.assertEqual({f for f in (o.field for o in config.spec.obligations)}, set(config.spec.form_schema["properties"]))
-        self.assertEqual(sorted(v.family.value for v in planned.variants), ["BASELINE", "IMPORT_DEPENDENCY", "ROUND_TRIP"])
-        self.assertTrue(all(o.kind == "unknown" for o in corpus.cases[0].expected))
+        self.assertEqual({o.field for o in self.config.spec.obligations}, set(self.config.spec.form_schema["properties"]))
+        self.assertEqual(sorted(v.family.value for v in self.plan.variants), ["BASELINE", "BASELINE", "IMPORT_DEPENDENCY", "IMPORT_DEPENDENCY", "ROUND_TRIP", "ROUND_TRIP"])
+        self.assertTrue(all(o.kind == "unknown" for case in self.corpus.cases for o in case.expected))
 
     def test_unknown_oracle_records_without_judging_and_keeps_form_constraints(self) -> None:
-        config = load_pilot_config(self.TEMPLATE)
-        corpus = load_corpus(config.corpus_path, config.spec)
-        baseline = next(v for v in plan(config.spec, corpus).variants if v.family is Family.BASELINE)
-        good = {"employee_name": "Maya Patel", "leave_type": "annual", "start_date": "2025-10-13", "end_date": "2025-10-17", "total_days": 5, "reason": "Family wedding.", "manager_notified": True}
-        scoring = score(baseline, response_from_content(json.dumps(good)))
+        scoring = score(self.baseline, response_from_content(json.dumps({**LR_GOOD, **LR_SPANS})))
         self.assertEqual({v.verdict for v in scoring.field_verdicts}, {"NOT_SCORED"})
-        routing = route(baseline, scoring)
+        self.assertEqual({g.verdict for g in scoring.grounding_verdicts}, {"GROUNDED"})
+        routing = route(self.baseline, scoring)
         self.assertEqual(routing.live_loci, ())
         self.assertFalse(routing.unrefuted_for_variant, "unscored fields must not read as unrefuted")
-        bad = {**good, "leave_type": "holiday", "total_days": "five"}
-        verdicts = {v.field: v.verdict for v in score(baseline, response_from_content(json.dumps(bad))).field_verdicts}
+        bad = {**LR_GOOD, **LR_SPANS, "leave_type": "holiday", "total_days": "five"}
+        verdicts = {v.field: v.verdict for v in score(self.baseline, response_from_content(json.dumps(bad))).field_verdicts}
         self.assertEqual(verdicts["leave_type"], "ENUM_VIOLATION")
         self.assertEqual(verdicts["total_days"], "TYPE_VIOLATION")
-        self.assertIn("CANDIDATE", route(baseline, score(baseline, response_from_content(json.dumps(bad)))).loci)
+        self.assertIn("CANDIDATE", route(self.baseline, score(self.baseline, response_from_content(json.dumps(bad)))).loci)
 
     def test_plain_fill_run_is_inconclusive_not_unrefuted(self) -> None:
-        config = load_pilot_config(self.TEMPLATE)
-        corpus = load_corpus(config.corpus_path, config.spec)
-        planned = plan(config.spec, corpus)
-        good = {"employee_name": "Maya Patel", "leave_type": "annual", "start_date": "2025-10-13", "end_date": "2025-10-17", "total_days": 5, "reason": "Family wedding.", "manager_notified": True}
         with tempfile.TemporaryDirectory() as directory:
             result = run_pilot(
-                spec=config.spec, corpus=corpus, plan=planned, model="gpt-oss:120b",
-                executor=FakeExecutor(lambda req: response_from_content(json.dumps(good))), executor_kind="fake",
-                output_dir=Path(directory), created_on=CREATED_ON, families=(Family.BASELINE,),
+                spec=self.config.spec, corpus=self.corpus, plan=self.plan, model="gpt-oss:120b",
+                executor=FakeExecutor(lambda req: response_from_content(json.dumps({**LR_GOOD, **LR_SPANS}))), executor_kind="fake",
+                output_dir=Path(directory), created_on=CREATED_ON, families=(Family.BASELINE,), limit=1,
             )
             self.assertEqual(result.run_record.scope_label, "INCONCLUSIVE_NO_SCORED_OUTPUT")
+            self.assertEqual(dict(result.run_record.grounding_verdict_counts), {"GROUNDED": 6})
             completed = subprocess.run(
                 [sys.executable, str(TOOL), "fills", "--observations-dir", directory],
                 capture_output=True, text=True, env={**os.environ, "PYTHONPATH": str(ROOT / "src")},
@@ -807,6 +840,187 @@ class PlainFillTests(unittest.TestCase):
             self.assertEqual(completed.returncode, 0, completed.stderr)
             lines = [json.loads(line) for line in completed.stdout.splitlines() if line.strip()]
             self.assertEqual(len(lines), 1)
-            self.assertEqual(lines[0]["filled_form"], good)
+            self.assertEqual(lines[0]["filled_form"], LR_GOOD, "companion span keys are stripped from the filled form")
             self.assertEqual(lines[0]["structural_issues"], [])
-            self.assertEqual(sorted(lines[0]["unjudged_fields"]), sorted(good))
+            self.assertEqual(sorted(lines[0]["unjudged_fields"]), sorted(LR_GOOD))
+            self.assertEqual({g["verdict"] for g in lines[0]["grounding"]}, {"GROUNDED"})
+            self.assertEqual(load_observation_directory(Path(directory))[0].variant.grounding.mode, "spans")
+
+
+class GroundingTests(unittest.TestCase):
+    """Provenance spans and abstention are configuration; the default leaves behaviour unchanged."""
+
+    TEMPLATE = ROOT / "forge" / "conformance" / "pilots" / "leave-request" / "pilot.json"
+
+    def setUp(self) -> None:
+        self.config = load_pilot_config(self.TEMPLATE)
+        self.corpus = load_corpus(self.config.corpus_path, self.config.spec)
+        variants = plan(self.config.spec, self.corpus).variants
+        self.lr1 = next(v for v in variants if v.family is Family.BASELINE and v.base_case_id == "LR-001")
+        self.lr2 = next(v for v in variants if v.family is Family.BASELINE and v.base_case_id == "LR-002")
+
+    def _score(self, variant, output):
+        return score(variant, response_from_content(json.dumps(output)))
+
+    def test_default_mode_none_changes_nothing(self) -> None:
+        incident = _variant(Family.BASELINE, "ORD-001")
+        self.assertIsNone(incident.grounding)
+        self.assertEqual(incident.prompt_form_schema(), incident.form_schema)
+        self.assertEqual(incident.prompt_instructions(), incident.instructions)
+        self.assertEqual(incident.prompt_field_order, incident.field_order)
+        scoring = score(incident, response_from_content(json.dumps(_correct_output("ORD-001"))))
+        self.assertEqual(scoring.grounding_verdicts, ())
+
+    def test_prompt_schema_and_instructions_are_derived_from_config(self) -> None:
+        schema = self.lr1.prompt_form_schema()
+        self.assertEqual(schema["properties"]["end_date"]["type"], ["string", "null"])
+        self.assertEqual(schema["properties"]["total_days"]["type"], ["integer", "null"])
+        self.assertEqual(schema["properties"]["employee_name"]["type"], "string")
+        self.assertIn("employee_name_span", schema["properties"])
+        self.assertEqual(schema["properties"]["end_date_span"]["type"], ["string", "null"])
+        self.assertIn("employee_name_span", schema["required"])
+        self.assertNotIn("manager_notified_span", schema["properties"])
+        self.assertEqual(self.lr1.prompt_field_order[:2], ("employee_name", "employee_name_span"))
+        text = self.lr1.prompt_instructions()
+        self.assertTrue(text.startswith(self.lr1.instructions.rstrip("\n")))
+        self.assertIn("9. For each of `employee_name`", text)
+        self.assertIn("10. For `end_date`, `total_days`: when the document does not state the value, output null", text)
+        self.assertNotIn("_span", self.lr1.form_schema["properties"], "the bound form schema itself is untouched")
+
+    def test_grounding_verdicts(self) -> None:
+        good = {**LR_GOOD, **LR_SPANS}
+        self.assertEqual({g.verdict for g in self._score(self.lr1, good).grounding_verdicts}, {"GROUNDED"})
+        missing = {k: v for k, v in good.items() if k != "reason_span"}
+        by_field = {g.field: g.verdict for g in self._score(self.lr1, missing).grounding_verdicts}
+        self.assertEqual(by_field["reason"], "SPAN_MISSING")
+        invented = {**good, "start_date_span": "Monday 13 September 2025"}
+        by_field = {g.field: g.verdict for g in self._score(self.lr1, invented).grounding_verdicts}
+        self.assertEqual(by_field["start_date"], "SPAN_NOT_IN_DOCUMENT")
+        wrong_span = {**good, "employee_name_span": "Thanks,"}
+        by_field = {g.field: g.verdict for g in self._score(self.lr1, wrong_span).grounding_verdicts}
+        self.assertEqual(by_field["employee_name"], "VALUE_NOT_IN_SPAN")
+        whitespace = {**good, "reason_span": "for a family   wedding in\nAdelaide"}
+        by_field = {g.field: g.verdict for g in self._score(self.lr1, whitespace).grounding_verdicts}
+        self.assertEqual(by_field["reason"], "GROUNDED", "whitespace differences are normalised")
+
+    def test_abstention(self) -> None:
+        # LR-001 states every value; abstaining is still allowed on the configured fields, and the
+        # remaining spans are verbatim from that document, so nothing is flagged.
+        abstained = {**LR_GOOD, **LR_SPANS, "end_date": None, "end_date_span": None, "total_days": None, "total_days_span": None}
+        scoring = self._score(self.lr1, abstained)
+        self.assertTrue(scoring.schema_valid)
+        verdicts = {v.field: v.verdict for v in scoring.field_verdicts}
+        self.assertEqual(verdicts["end_date"], "NOT_SCORED")
+        grounding = {g.field: g.verdict for g in scoring.grounding_verdicts}
+        self.assertEqual(grounding["end_date"], "ABSTAINED")
+        self.assertEqual(grounding["total_days"], "ABSTAINED")
+        self.assertEqual(route(self.lr1, scoring).live_loci, ())
+        # Against LR-002 (Tom's email) the same spans are not in the document: invented provenance is flagged.
+        flagged = route(self.lr2, self._score(self.lr2, abstained))
+        self.assertIn("SPAN_NOT_IN_DOCUMENT", flagged.triggers)
+        # null on a field that may not abstain is a type violation, as before
+        not_allowed = {**LR_GOOD, **LR_SPANS, "employee_name": None, "employee_name_span": None}
+        verdicts = {v.field: v.verdict for v in self._score(self.lr1, not_allowed).field_verdicts}
+        self.assertEqual(verdicts["employee_name"], "TYPE_VIOLATION")
+
+    def test_round_trip_of_an_abstained_baseline_materialises_reloads_and_scores(self) -> None:
+        # Regression: the first live grounding run wrote records whose ROUND_TRIP variants carried an
+        # exact oracle with a null value (the baseline had abstained); every record then failed to reload.
+        planned = next(v for v in plan(self.config.spec, self.corpus).variants if v.family is Family.ROUND_TRIP and v.base_case_id == "LR-002")
+        baseline_output = {
+            **LR_GOOD, **LR_SPANS, "employee_name": "Tom Nguyen", "employee_name_span": "Tom Nguyen",
+            "end_date": None, "end_date_span": None, "total_days": None, "total_days_span": None,
+        }
+        materialised = materialize_round_trip(planned, baseline_output)
+        kinds = {o.field: o.kind for o in materialised.expected}
+        self.assertEqual((kinds["end_date"], kinds["total_days"], kinds["employee_name"]), ("unknown", "unknown", "exact"))
+        self.assertIn("End date: not stated", materialised.input_document)
+        self.assertIsNotNone(materialised.grounding, "grounding configuration survives materialisation")
+        self.assertEqual(materialised.prompt_form_schema()["properties"]["end_date"]["type"], ["string", "null"])
+        rebuilt = variant_from_dict(loads_strict(canonical_bytes(materialised.to_dict()).decode("utf-8")))
+        self.assertEqual(rebuilt.variant_id, materialised.variant_id)
+        # A stable re-fill (same nulls; spans quoted from the rendered document) raises nothing.
+        stable = {
+            "employee_name": "Tom Nguyen", "employee_name_span": "Tom Nguyen", "leave_type": "annual", "leave_type_span": "annual",
+            "start_date": "2025-10-13", "start_date_span": "2025-10-13", "end_date": None, "end_date_span": None,
+            "total_days": None, "total_days_span": None, "reason": "Family wedding in Adelaide.",
+            "reason_span": "Family wedding in Adelaide.", "manager_notified": True,
+        }
+        scoring = score(materialised, response_from_content(json.dumps(stable)), baseline_output=baseline_output)
+        self.assertIs(scoring.changed_vs_baseline, False)
+        self.assertEqual(route(materialised, scoring).triggers, ())
+        # Filling a value the baseline abstained on is recorded as a change against the baseline, not judged.
+        drifted = {**stable, "end_date": "2025-10-17", "end_date_span": "2025-10-13"}
+        scoring = score(materialised, response_from_content(json.dumps(drifted)), baseline_output=baseline_output)
+        self.assertIs(scoring.changed_vs_baseline, True)
+        self.assertEqual({v.field: v.verdict for v in scoring.field_verdicts}["end_date"], "NOT_SCORED")
+        # Different provenance wording alone is not a change in the filled values.
+        reworded = {**stable, "reason_span": "Reason: Family wedding in Adelaide."}
+        self.assertIs(score(materialised, response_from_content(json.dumps(reworded)), baseline_output=baseline_output).changed_vs_baseline, False)
+
+    def test_abstaining_against_a_declared_expectation_is_a_mismatch(self) -> None:
+        import dataclasses
+        from creib.forge.conformance.corpus import Oracle
+
+        expecting = tuple(
+            dataclasses.replace(o, kind="exact", value="2025-10-17", oracle_status="source_scoped", rationale="stated") if o.field == "end_date" else o
+            for o in self.lr1.expected
+        )
+        variant = dataclasses.replace(self.lr1, expected=expecting)
+        abstained = {**LR_GOOD, **LR_SPANS, "end_date": None, "end_date_span": None}
+        verdicts = {v.field: v.verdict for v in score(variant, response_from_content(json.dumps(abstained))).field_verdicts}
+        self.assertEqual(verdicts["end_date"], "MISMATCH")
+
+    def test_grounding_criticisms_route_plurally_and_are_recorded(self) -> None:
+        invented = {**LR_GOOD, **LR_SPANS, "start_date_span": "Monday 13 September 2025"}
+        scoring = self._score(self.lr1, invented)
+        routing = route(self.lr1, scoring)
+        self.assertIn("SPAN_NOT_IN_DOCUMENT", routing.triggers)
+        self.assertEqual(set(routing.loci), {"CANDIDATE", "TEST", "SCOPE"})
+        with tempfile.TemporaryDirectory() as directory:
+            result = run_pilot(
+                spec=self.config.spec, corpus=self.corpus, plan=plan(self.config.spec, self.corpus), model="gpt-oss:120b",
+                executor=FakeExecutor(lambda req: response_from_content(json.dumps(invented))), executor_kind="fake",
+                output_dir=Path(directory), created_on=CREATED_ON, families=(Family.BASELINE,), limit=1,
+            )
+            self.assertEqual(result.run_record.scope_label, "REFUTED_CASES_PRESENT")
+            reloaded = load_observation_directory(Path(directory))[0]
+            self.assertEqual({g.field: g.verdict for g in reloaded.scoring.grounding_verdicts}["start_date"], "SPAN_NOT_IN_DOCUMENT")
+            completed = subprocess.run(
+                [sys.executable, str(TOOL), "evidence", "--observations-dir", directory, "--trigger", "SPAN_NOT_IN_DOCUMENT"],
+                capture_output=True, text=True, env={**os.environ, "PYTHONPATH": str(ROOT / "src")},
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            row = json.loads(completed.stdout.splitlines()[0])
+            self.assertEqual((row["model"], row["trigger"], row["count"]), ("gpt-oss:120b", "SPAN_NOT_IN_DOCUMENT", 1))
+
+    def test_deleting_a_field_drops_its_companion(self) -> None:
+        import dataclasses
+        from creib.forge.conformance.spec import Grounding
+
+        deletion = _variant(Family.DELETION, "ORD-001")
+        grounded = dataclasses.replace(deletion, grounding=Grounding("spans", "_span", ("incident_time", "site"), ("site",), ()))
+        self.assertNotIn("incident_time", grounded.field_order)
+        self.assertEqual(grounded.active_span_fields, ("site",))
+        self.assertNotIn("incident_time_span", grounded.prompt_form_schema()["properties"])
+        self.assertIn("site_span", grounded.prompt_form_schema()["properties"])
+
+    def test_config_validation_fails_closed(self) -> None:
+        from creib.forge.conformance.spec import grounding_from_dict
+
+        fields = ("a", "b")
+        base = {"mode": "spans", "span_suffix": "_span", "span_fields": ["a"], "value_in_span_fields": [], "abstain_fields": []}
+        grounding_from_dict(base, fields)
+        for broken in (
+            {**base, "mode": "maybe"},
+            {**base, "span_suffix": "span"},
+            {**base, "span_fields": ["zzz"]},
+            {**base, "value_in_span_fields": ["b"]},
+            {**base, "mode": "none"},
+            {**base, "span_fields": [], "abstain_fields": []},
+            {**base, "span_fields": ["a", "a"]},
+        ):
+            with self.subTest(broken=broken), self.assertRaises(RecordError):
+                grounding_from_dict(broken, fields)
+        with self.assertRaises(RecordError):
+            grounding_from_dict(base, ("a", "a_span"))

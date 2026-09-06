@@ -63,6 +63,9 @@ def _parser() -> argparse.ArgumentParser:
     fills.add_argument("--observations-dir", type=Path, required=True)
     fills.add_argument("--run", type=Path, help="restrict to one run record")
     fills.add_argument("--family", default="BASELINE", choices=[family.value for family in Family] + ["ALL"])
+    evidence = subparsers.add_parser("evidence", help="list observation ids per model and criticism trigger, for the failure-mode register")
+    evidence.add_argument("--observations-dir", type=Path, required=True)
+    evidence.add_argument("--trigger", help="restrict to one trigger or grounding verdict")
     report = subparsers.add_parser("report", help="aggregate run records into an unranked report")
     report.add_argument("--run", type=Path, action="append", required=True)
     report.add_argument("--observations-dir", type=Path, required=True)
@@ -202,12 +205,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             structural = {"MISSING_REQUIRED", "EXTRA_FIELD", "TYPE_VIOLATION", "PATTERN_VIOLATION", "ENUM_VIOLATION", "LENGTH_VIOLATION"}
             for observation in sorted(observations, key=lambda o: (o.model, o.variant.base_case_id, o.variant.family.value)):
                 scoring = observation.scoring
+                companions = set(observation.variant.span_keys)
+                filled = None if scoring.parsed_output is None else {k: v for k, v in scoring.parsed_output.items() if k not in companions}
                 _emit({
                     "case_id": observation.variant.base_case_id,
                     "model": observation.model,
                     "family": observation.variant.family.value,
                     "response_verdict": scoring.response_verdict,
-                    "filled_form": scoring.parsed_output,
+                    "filled_form": filled,
+                    "grounding": [{"field": g.field, "verdict": g.verdict, "span": g.span} for g in scoring.grounding_verdicts],
+                    "abstained_fields": [g.field for g in scoring.grounding_verdicts if g.verdict == "ABSTAINED"],
                     "structural_issues": [
                         {"field": v.field, "issue": v.verdict} for v in scoring.field_verdicts if v.verdict in structural
                     ],
@@ -218,6 +225,20 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "live_loci": list(observation.routing.loci),
                     "observation_id": observation.observation_id,
                 })
+            return 0
+        if args.command == "evidence":
+            observations = load_observation_directory(args.observations_dir)
+            rows: dict[tuple[str, str], list[dict[str, object]]] = {}
+            for observation in observations:
+                keys = list(observation.routing.triggers) + [f"GROUNDING:{g.verdict}" for g in observation.scoring.grounding_verdicts]
+                for key in keys:
+                    if args.trigger is not None and key != args.trigger:
+                        continue
+                    rows.setdefault((observation.model, key), []).append(
+                        {"observation_id": observation.observation_id, "case_id": observation.variant.base_case_id, "family": observation.variant.family.value}
+                    )
+            for (model, key), items in sorted(rows.items()):
+                _emit({"model": model, "trigger": key, "count": len(items), "observations": sorted(items, key=lambda i: (i["case_id"], i["family"]))})
             return 0
         if args.command == "report":
             runs = [load_run(path) for path in args.run]

@@ -180,6 +180,80 @@ class Negation:
     value_transform: str
 
 
+_SPAN_SUFFIX = re.compile(r"^_[a-z][a-z0-9_]{0,31}$")
+GROUNDING_MODES: tuple[str, ...] = ("none", "spans")
+
+
+@dataclass(frozen=True)
+class Grounding:
+    """Configuration for provenance spans and abstention; ``mode`` none leaves behaviour unchanged.
+
+    ``span_fields`` must each be accompanied in the model's output by a companion
+    key ``<field><span_suffix>`` holding the exact words of the document the value
+    was taken from. ``value_in_span_fields`` additionally require the value to
+    occur inside that span (for extractive fields; leave normalised fields such
+    as dates out). ``abstain_fields`` may be ``null`` when the document does not
+    state the value, so a model has an honest alternative to inventing one.
+    """
+
+    mode: str
+    span_suffix: str
+    span_fields: tuple[str, ...]
+    value_in_span_fields: tuple[str, ...]
+    abstain_fields: tuple[str, ...]
+
+    @property
+    def active(self) -> bool:
+        return self.mode == "spans"
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "mode": self.mode,
+            "span_suffix": self.span_suffix,
+            "span_fields": list(self.span_fields),
+            "value_in_span_fields": list(self.value_in_span_fields),
+            "abstain_fields": list(self.abstain_fields),
+        }
+
+
+def grounding_from_dict(raw: Any, field_order: tuple[str, ...], where: str = "grounding") -> Grounding:
+    record = object_value(raw, where)
+    for key in ("mode", "span_suffix", "span_fields", "value_in_span_fields", "abstain_fields"):
+        if key not in record:
+            raise RecordError(f"{where} is missing {key!r}")
+    mode = text(record["mode"], f"{where}.mode")
+    if mode not in GROUNDING_MODES:
+        raise RecordError(f"{where}.mode must be one of {list(GROUNDING_MODES)}")
+    suffix = text(record["span_suffix"], f"{where}.span_suffix")
+    if _SPAN_SUFFIX.match(suffix) is None:
+        raise RecordError(f"{where}.span_suffix must match {_SPAN_SUFFIX.pattern}")
+
+    def fields(key: str) -> tuple[str, ...]:
+        items = tuple(field_name(item, f"{where}.{key}[{index}]") for index, item in enumerate(array_value(record[key], f"{where}.{key}")))
+        if len(items) != len(set(items)):
+            raise RecordError(f"{where}.{key} must not repeat a field")
+        for item in items:
+            if item not in field_order:
+                raise RecordError(f"{where}.{key} names unknown field {item!r}")
+        return items
+
+    span_fields = fields("span_fields")
+    value_in_span = fields("value_in_span_fields")
+    abstain = fields("abstain_fields")
+    if mode == "none":
+        if span_fields or value_in_span or abstain:
+            raise RecordError(f"{where}.mode none requires every field list to be empty")
+    else:
+        if not span_fields and not abstain:
+            raise RecordError(f"{where}.mode spans requires span_fields or abstain_fields")
+        if any(item not in span_fields for item in value_in_span):
+            raise RecordError(f"{where}.value_in_span_fields must be a subset of span_fields")
+        for item in span_fields:
+            if item + suffix in field_order:
+                raise RecordError(f"{where}: companion key {item + suffix!r} collides with a form field")
+    return Grounding(mode=mode, span_suffix=suffix, span_fields=span_fields, value_in_span_fields=value_in_span, abstain_fields=abstain)
+
+
 @dataclass(frozen=True)
 class Control:
     """A model-free corruption template for the NON_VACUITY family."""
@@ -224,6 +298,7 @@ class TaskSpec:
     ambiguities: tuple[Ambiguity, ...]
     controls: tuple[Control, ...]
     refusal_phrases: tuple[str, ...]
+    grounding: Grounding
 
     @property
     def required_fields(self) -> tuple[str, ...]:
@@ -258,6 +333,7 @@ class TaskSpec:
             "charter": self.charter.to_dict(),
             "source_bindings": self.bindings_dict(),
             "load_bearing": list(self.load_bearing),
+            "grounding": self.grounding.to_dict(),
         }
 
 
@@ -553,6 +629,7 @@ def build_task_spec(
         twins.append((first, second))
 
     controls = _controls(array_value(raw_config["controls"], "controls"), field_order, required)
+    grounding = grounding_from_dict(raw_config["grounding"], field_order)
     refusal_phrases = unique_texts(raw_config["refusal_phrases"], "refusal_phrases")
     models = tuple(model_id(item, f"models[{index}]") for index, item in enumerate(raw_config["models"]))
     if len(models) != len(set(models)):
@@ -577,6 +654,7 @@ def build_task_spec(
         ambiguities=tuple(ambiguities),
         controls=controls,
         refusal_phrases=refusal_phrases,
+        grounding=grounding,
     )
 
 

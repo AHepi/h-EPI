@@ -24,7 +24,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "creib.conformance-pilot.observation.v1"
+      "const": "creib.conformance-pilot.observation.v2"
     },
     "observation_id": {
       "$ref": "#/$defs/hex_digest"
@@ -185,7 +185,14 @@
         },
         "kind": {
           "type": "string",
-          "enum": ["exact", "regex", "enum", "absent", "any_of", "unknown"]
+          "enum": [
+            "exact",
+            "regex",
+            "enum",
+            "absent",
+            "any_of",
+            "unknown"
+          ]
         },
         "value": {
           "$ref": "#/$defs/scalar"
@@ -339,7 +346,8 @@
         "model_call",
         "round_trip_of",
         "rival_label",
-        "removed_sentence_id"
+        "removed_sentence_id",
+        "grounding"
       ],
       "properties": {
         "variant_id": {
@@ -444,6 +452,16 @@
             "null"
           ],
           "pattern": "^S[1-9][0-9]{0,3}$"
+        },
+        "grounding": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/grounding_config"
+            }
+          ]
         }
       }
     },
@@ -699,7 +717,8 @@
         "parsed_output_canonical",
         "schema_valid",
         "field_verdicts",
-        "changed_vs_baseline"
+        "changed_vs_baseline",
+        "grounding_verdicts"
       ],
       "properties": {
         "response_verdict": {
@@ -747,6 +766,12 @@
             "boolean",
             "null"
           ]
+        },
+        "grounding_verdicts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/grounding_verdict"
+          }
         }
       }
     },
@@ -774,7 +799,10 @@
         "CONTROL_REJECTED",
         "DEPENDENCE_CHANGED",
         "DEPENDENCE_UNCHANGED",
-        "FORMAT_NOT_ENFORCED"
+        "FORMAT_NOT_ENFORCED",
+        "SPAN_MISSING",
+        "SPAN_NOT_IN_DOCUMENT",
+        "VALUE_NOT_IN_SPAN"
       ]
     },
     "routing": {
@@ -829,6 +857,88 @@
         "format_enforced_by_server": {
           "type": [
             "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "grounding_config": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "span_suffix",
+        "span_fields",
+        "value_in_span_fields",
+        "abstain_fields"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "none",
+            "spans"
+          ]
+        },
+        "span_suffix": {
+          "type": "string",
+          "pattern": "^_[a-z][a-z0-9_]{0,31}$"
+        },
+        "span_fields": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/field_name"
+          }
+        },
+        "value_in_span_fields": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/field_name"
+          }
+        },
+        "abstain_fields": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/field_name"
+          }
+        }
+      }
+    },
+    "grounding_verdict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "field",
+        "verdict",
+        "span",
+        "detail"
+      ],
+      "properties": {
+        "field": {
+          "$ref": "#/$defs/field_name"
+        },
+        "verdict": {
+          "type": "string",
+          "enum": [
+            "GROUNDED",
+            "SPAN_MISSING",
+            "SPAN_NOT_IN_DOCUMENT",
+            "VALUE_NOT_IN_SPAN",
+            "ABSTAINED"
+          ]
+        },
+        "span": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "detail": {
+          "type": [
+            "string",
             "null"
           ]
         }

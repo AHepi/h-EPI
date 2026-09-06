@@ -22,6 +22,8 @@ family never asserts that a model passes or fails.
 
 from __future__ import annotations
 
+import json
+
 from dataclasses import dataclass
 from enum import Enum
 import re
@@ -44,7 +46,7 @@ from .common import (
     text,
 )
 from .corpus import Case, Corpus, Oracle, Scalar, parse_oracle, RENDERINGS
-from .spec import TaskSpec, render_instructions, validate_form_schema
+from .spec import TaskSpec, render_instructions, validate_form_schema, Grounding, grounding_from_dict
 
 
 VARIANT_DOMAIN = "creib.conformance-pilot.variant.v1"
@@ -95,10 +97,106 @@ class Variant:
     round_trip_of: str | None
     rival_label: str | None
     removed_sentence_id: str | None
+    grounding: Grounding | None = None
 
     @property
     def required_fields(self) -> tuple[str, ...]:
         return tuple(self.form_schema.get("required", ()))
+
+    # ---- grounding and abstention, derived from configuration only ----
+
+    @property
+    def active_span_fields(self) -> tuple[str, ...]:
+        if self.grounding is None or not self.grounding.active:
+            return ()
+        return tuple(field for field in self.grounding.span_fields if field in self.field_order)
+
+    @property
+    def active_value_in_span_fields(self) -> tuple[str, ...]:
+        if self.grounding is None or not self.grounding.active:
+            return ()
+        return tuple(field for field in self.grounding.value_in_span_fields if field in self.field_order)
+
+    @property
+    def active_abstain_fields(self) -> tuple[str, ...]:
+        if self.grounding is None or not self.grounding.active:
+            return ()
+        return tuple(field for field in self.grounding.abstain_fields if field in self.field_order)
+
+    def span_key(self, field: str) -> str:
+        if self.grounding is None:
+            raise RecordError("variant has no grounding configuration")
+        return field + self.grounding.span_suffix
+
+    @property
+    def span_keys(self) -> tuple[str, ...]:
+        return tuple(self.span_key(field) for field in self.active_span_fields)
+
+    @property
+    def prompt_field_order(self) -> tuple[str, ...]:
+        """Form fields with each companion span key placed right after its field."""
+
+        spans = set(self.active_span_fields)
+        order: list[str] = []
+        for field in self.field_order:
+            order.append(field)
+            if field in spans:
+                order.append(self.span_key(field))
+        return tuple(order)
+
+    def prompt_form_schema(self) -> dict[str, Any]:
+        """The schema actually sent: nullable abstain fields plus companion span keys."""
+
+        schema = json.loads(json.dumps(frozen_mapping_to_dict(self.form_schema)))
+        if not self.active_span_fields and not self.active_abstain_fields:
+            return schema
+        properties = schema["properties"]
+        required = list(schema.get("required", []))
+        abstain = set(self.active_abstain_fields)
+        for field in abstain:
+            prop = dict(properties[field])
+            declared = prop.get("type")
+            if type(declared) is str:
+                prop["type"] = [declared, "null"]
+            if "enum" in prop and None not in prop["enum"]:
+                prop["enum"] = list(prop["enum"]) + [None]
+            properties[field] = prop
+        for field in self.active_span_fields:
+            key = self.span_key(field)
+            properties[key] = {
+                "type": ["string", "null"] if field in abstain else "string",
+                "description": f"The exact words from the document, copied verbatim, that `{field}` was taken from.",
+            }
+            if field in required:
+                required.append(key)
+        schema["required"] = required
+        return schema
+
+    def prompt_instructions(self) -> str:
+        """The instructions actually sent: the bound text plus generated grounding sentences."""
+
+        spans = self.active_span_fields
+        abstain = self.active_abstain_fields
+        if not spans and not abstain:
+            return self.instructions
+        numbers = [int(match) for match in re.findall(r"^(\d+)\. ", self.instructions, re.M)]
+        next_number = (max(numbers) if numbers else 0) + 1
+        extra: list[str] = []
+        if spans:
+            listed = ", ".join(f"`{field}`" for field in spans)
+            companions = ", ".join(f"`{self.span_key(field)}`" for field in spans)
+            extra.append(
+                f"{next_number}. For each of {listed}, also output the companion key ({companions}): "
+                "the exact words from the document, copied verbatim without any change, that the value was taken from."
+            )
+            next_number += 1
+        if abstain:
+            listed = ", ".join(f"`{field}`" for field in abstain)
+            extra.append(
+                f"{next_number}. For {listed}: when the document does not state the value, output null for the field "
+                "(and null for its companion key, if it has one); never invent a value."
+            )
+        return self.instructions.rstrip("\n") + "\n" + "\n".join(extra) + "\n"
 
     def oracle(self, field: str) -> Oracle | None:
         for oracle in self.expected:
@@ -129,6 +227,7 @@ class Variant:
             "round_trip_of": self.round_trip_of,
             "rival_label": self.rival_label,
             "removed_sentence_id": self.removed_sentence_id,
+            "grounding": None if self.grounding is None else self.grounding.to_dict(),
         }
 
     def to_dict(self) -> dict[str, object]:
@@ -189,6 +288,7 @@ def variant_from_dict(raw: Any) -> Variant:
         round_trip_of=None if record["round_trip_of"] is None else hex_digest(record["round_trip_of"], "variant.round_trip_of"),
         rival_label=optional_text(record["rival_label"], "variant.rival_label"),
         removed_sentence_id=optional_text(record["removed_sentence_id"], "variant.removed_sentence_id"),
+        grounding=None if record["grounding"] is None else grounding_from_dict(record["grounding"], field_order, "variant.grounding"),
     )
     if rebuilt.variant_id != hex_digest(record["variant_id"], "variant.variant_id"):
         raise RecordError("variant_id does not replay from the variant content")
@@ -305,6 +405,7 @@ def _base_fields(spec: TaskSpec, case: Case, document: str | None = None) -> dic
         "round_trip_of": None,
         "rival_label": None,
         "removed_sentence_id": None,
+        "grounding": spec.grounding if spec.grounding.active else None,
     }
 
 
@@ -606,7 +707,9 @@ def render_round_trip_document(output: Mapping[str, Any], field_order: tuple[str
         if field not in output:
             continue
         value = output[field]
-        if type(value) is bool:
+        if value is None:
+            rendered = "not stated"
+        elif type(value) is bool:
             rendered = "yes" if value else "no"
         elif type(value) is int or type(value) is str:
             rendered = str(value)
@@ -625,7 +728,22 @@ def materialize_round_trip(variant: Variant, baseline_output: Mapping[str, Any])
     document = render_round_trip_document(baseline_output, variant.field_order)
     expected: list[Oracle] = []
     for field in variant.field_order:
-        if field in baseline_output:
+        if field in baseline_output and baseline_output[field] is None:
+            # The baseline abstained (null on a field configured to allow it). An exact oracle
+            # cannot hold null, and asserting the identity of an abstention is not the point:
+            # stability under re-rendering is carried by changed_vs_baseline, which does compare nulls.
+            expected.append(
+                Oracle(
+                    field=field,
+                    kind="unknown",
+                    value=None,
+                    values=None,
+                    pattern=None,
+                    oracle_status=OracleStatus.PROJECT_IMPORT_PROVISIONAL.value,
+                    rationale="the model's own baseline output abstained (null); identity is not asserted, stability is covered by changed_vs_baseline",
+                )
+            )
+        elif field in baseline_output:
             expected.append(
                 Oracle(
                     field=field,
@@ -667,6 +785,7 @@ def materialize_round_trip(variant: Variant, baseline_output: Mapping[str, Any])
         round_trip_of=variant.round_trip_of,
         rival_label=None,
         removed_sentence_id=None,
+        grounding=variant.grounding,
     )
 
 

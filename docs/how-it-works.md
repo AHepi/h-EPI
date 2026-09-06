@@ -37,7 +37,7 @@ A `BASELINE` pseudo-family supplies the reference output that NEGATION, IMPORT_D
 
 ## Configurability
 
-Everything problem-specific lives under `forge/conformance/pilots/<name>/`: `pilot.json` (models, endpoint, negations, twins, ambiguities, load-bearing sentence ids, controls, refusal phrases), `form.schema.json`, `instructions.md`, `corpus.json`. Nothing about the incident form is in `src/`. A second pilot is a new directory, not a code change. The executor is an `ollama-chat` adapter reading its key only from `OLLAMA_API_KEY`; a `ReplayExecutor` re-scores recorded observations without any network call, so an oracle correction never requires re-spending model calls.
+Everything problem-specific lives under `forge/conformance/pilots/<name>/`: `pilot.json` (models, endpoint, negations, twins, ambiguities, load-bearing sentence ids, controls, refusal phrases, grounding), `form.schema.json`, `instructions.md`, `corpus.json`. Nothing about the incident form is in `src/`. A second pilot is a new directory, not a code change. The executor is an `ollama-chat` adapter reading its key only from `OLLAMA_API_KEY`; a `ReplayExecutor` re-scores recorded observations without any network call, so an oracle correction never requires re-spending model calls.
 
 ```sh
 PYTHONPATH=src python tools/run_conformance_pilot.py validate --pilot forge/conformance/pilots/incident-form/pilot.json
@@ -45,13 +45,16 @@ PYTHONPATH=src python tools/run_conformance_pilot.py plan     --pilot forge/conf
 PYTHONPATH=src python tools/run_conformance_pilot.py oracle-check --pilot forge/conformance/pilots/incident-form/pilot.json
 OLLAMA_API_KEY=… PYTHONPATH=src python tools/run_conformance_pilot.py run --pilot … --model gpt-oss:20b --output-dir forge/conformance/runs/incident-form --created-on 2026-09-05T22:00:00Z
 PYTHONPATH=src python tools/run_conformance_pilot.py report --run forge/conformance/runs/incident-form/run.*.json --observations-dir forge/conformance/runs/incident-form --markdown report.md
+PYTHONPATH=src python tools/run_conformance_pilot.py evidence --observations-dir forge/conformance/runs/leave-request --trigger SPAN_NOT_IN_DOCUMENT
 ```
+
+`evidence` lists, per model and per criticism trigger (or grounding verdict, written `GROUNDING:<verdict>`), the observation ids that carry it. It exists so that `docs/failure-modes.md` can point at records instead of paraphrasing them.
 
 `run` exits 1 when any observation carries live loci. That means unresolved criticisms are present, not that the run failed.
 
 ## Using it for your own form
 
-The incident form above is a test battery with an answer key. Most real use is simpler: you have a form and a document and you want the filled form back, with the form's own rules enforced and nothing pretended about correctness. That is a plain fill. The template under `forge/conformance/pilots/leave-request/` is the smallest working example and was run live once; its four records are committed under `forge/conformance/runs/leave-request/`.
+The incident form above is a test battery with an answer key. Most real use is simpler: you have a form and a document and you want the filled form back, with the form's own rules enforced and nothing pretended about correctness. That is a plain fill. The template under `forge/conformance/pilots/leave-request/` is the smallest working example. It was run live against three models with grounding spans and abstention switched on (see the next section); its 30 records (24 observations, 6 runs) are committed under `forge/conformance/runs/leave-request/`.
 
 Starting inside the repository's virtual environment:
 
@@ -82,6 +85,7 @@ Where each thing goes:
 | The form | `form.schema.json` | JSON Schema 2020-12 with `additionalProperties: false` and a `required` list. Each field may use only `type` plus `pattern`, `enum`, `maxLength`, `minLength`, `format`. Other keywords are rejected by name. |
 | The rules | `instructions.md` | A heading, one preamble line, a blank line, then numbered sentences `1.` … one per line, ending with a newline. Sentence 1 should demand JSON only. Mention each field by its backticked name in exactly one sentence so the obligation can cite it. |
 | The document(s) | `corpus.json` | One case per document. `renderings` holds the text under `prose`, `table`, or `email`; `rendering` names the one used by default. Every required field needs an oracle entry; use `"kind": "unknown"` when you have no answer key. `varied` must be null unless `pair_of` names another case. |
+| Provenance and abstention | `pilot.json` → `grounding` | `"mode": "none"` leaves the fill exactly as the form describes it. `"mode": "spans"` asks the model to quote, for each listed field, the words of the document it took the value from, and lets the listed `abstain_fields` be `null` when the document does not state them. See "Grounding and abstention" below. |
 | The LLM endpoint | `pilot.json` → `endpoint` | `kind` is `ollama-chat`, `base_url` is the server (`https://ollama.com` for the cloud, `http://localhost:11434` for a local Ollama), `models` lists the model ids you may pass to `--model`. The key comes from `OLLAMA_API_KEY` only. |
 | The results | `--output-dir` | One `observation.*.json` per fill holding the request digest, the raw reply, the parsed form, per-field verdicts, and live loci; one `run.*.json` per model. Content-addressed; never overwritten. |
 
@@ -89,11 +93,42 @@ Where each thing goes:
 
 `run` exits 1 when any observation carries live loci and 0 otherwise is reserved; treat exit 1 as "look at the loci", not as failure. The full battery (drop `--family BASELINE`) needs pairs, renderings, negations, and controls to produce variants; with a single plain case it adds only an instruction-removal probe and a round trip.
 
+## Grounding and abstention
+
+A plain fill records what the model returned and enforces the form's rules. It cannot see two of the most common ways a fill goes wrong: a value that is well-formed but came from nowhere in the document, and a value the model invented because the form demanded one and the document did not supply it. The `grounding` block in `pilot.json` adds both checks as configuration. No code changes; the default mode `none` leaves every existing pilot byte-for-byte unchanged, and the incident form runs that way.
+
+```json
+"grounding": {
+  "mode": "spans",
+  "span_suffix": "_span",
+  "span_fields": ["employee_name", "leave_type", "start_date", "end_date", "total_days", "reason"],
+  "value_in_span_fields": ["employee_name"],
+  "abstain_fields": ["end_date", "total_days"]
+}
+```
+
+What the machine does with it:
+
+- **Prompt.** For each field in `span_fields` a companion key `<field><span_suffix>` is added to the schema the model sees, placed directly after its field, required whenever the field is required. Each field in `abstain_fields` becomes nullable (`["type", "null"]`, and `null` is appended to its enum if it has one), and its companion is nullable too. Two numbered sentences are appended to the instructions, continuing the numbering, which say to quote verbatim and when to answer `null`. The bound `form.schema.json` and `instructions.md` are not changed; the record stores both the bound text and the grounding block, so the prompt is reproducible from the record alone.
+- **Scoring.** The reply is validated against the widened schema. Companion keys are never `EXTRA_FIELD`; they are stripped from `filled_form` in `fills` output and ignored by the change-against-baseline comparison, so a differently worded quotation is not a changed fill. Each span field gets a grounding verdict: `GROUNDED` (the quoted text occurs in the document, whitespace-normalised), `SPAN_MISSING` (a value was given with no quotation), `SPAN_NOT_IN_DOCUMENT` (the quotation does not occur in the document as sent), `VALUE_NOT_IN_SPAN` (for `value_in_span_fields` only: the value is not a case-insensitive substring of its own quotation), or `ABSTAINED` (`null` on a field allowed to abstain). Fields in `abstain_fields` are configured, not guessed: `null` on any other field is a `TYPE_VIOLATION`, as before.
+- **Routing.** `SPAN_MISSING` keeps CANDIDATE and AUXILIARY live (the model did not quote, or the prompt did not make it quote). `SPAN_NOT_IN_DOCUMENT` and `VALUE_NOT_IN_SPAN` keep CANDIDATE, TEST, and SCOPE live: invented provenance, or a matcher that is too strict, or a rendering that changed the text. `ABSTAINED` and `GROUNDED` are not criticisms and route nowhere. Grounding never judges the value: a `GROUNDED` field with an `unknown` oracle is still `NOT_SCORED`, and a run of plain fills stays `INCONCLUSIVE_NO_SCORED_OUTPUT`.
+- **Records.** Every observation stores `variant.grounding`, `scoring.grounding_verdicts` (field, verdict, span, detail), and the triggers; every run record stores `grounding_verdict_counts`. `fills` prints `grounding` and `abstained_fields` per fill; `evidence --trigger GROUNDING:ABSTAINED` lists the observations that abstained.
+- **Round trips.** A ROUND_TRIP variant renders the baseline fill back to prose (`End date: not stated` for a null) and asks the model to fill again with the same grounding block. Fields the baseline abstained on get an `unknown` oracle rather than an exact one: the identity of a null is not asserted, and stability is carried by the change-against-baseline comparison, which does compare nulls. The first live run wrote records with an exact oracle holding `null`; none of them could be reloaded, and the regression test `test_round_trip_of_an_abstained_baseline_materialises_reloads_and_scores` now guards it.
+
+Limits of the check, so that no one reads more into a verdict than it carries:
+
+- A `GROUNDED` span shows that the quoted words exist in the document. It does not show that the value was correctly derived from them, or that they were the right words to use.
+- The span match is verbatim after whitespace normalisation and is case-sensitive, so `sick` is not found in a document that says `Sick leave`. That is a deliberate reading of "verbatim"; it is also why TEST stays live on `SPAN_NOT_IN_DOCUMENT`.
+- `value_in_span` is a substring test. It is meaningful for fields copied as written (a name) and meaningless for fields that are normalised (`2025-10-13` will never occur inside `Monday 13 October 2025`), which is why it is a separate list and the template applies it to one field only.
+- Abstention is only checked where the configuration allows it. Whether a model abstains where it should is a question the corpus has to pose (LR-002 poses it); the harness cannot know which values a document leaves unstated.
+
+The live runs of the template (three models, 2026-09-06: the full six-variant plan, then the two baselines repeated 30 minutes later to test repeatability; 24 model calls; records under `forge/conformance/runs/leave-request/`) are written up in `docs/failure-modes.md`, entries G1 to G5.
+
 ## First oracle defect, found by the first live run
 
 The first live baseline run (gpt-oss:20b, six cases) returned 56 field matches and 4 mismatches, all on `site`. The model wrote `cold store 2`, `plant room, Level B2`, `kitchen, Building C`, and `loading bay, Site 4 Parramatta`, exactly as the documents do; the oracle expected title-cased forms (`Cold store 2`, …). Instruction 8 says "as named in the document", so the oracle, not the model, had departed from the source. The routing had already kept TEST live alongside CANDIDATE on every one of those observations.
 
-Every `site` oracle was changed from `exact` to `any_of` over the verbatim form found in each rendering plus the capitalised reading, status `interpretation_provisional`, before the multi-model run. ORD-004 also showed that the three renderings of one case name the place three different ways (`Car park, Gate 2`, `the car park at Gate 2`, `car park Gate 2`), so a substrate swap would otherwise have blamed the model for the source's own variation. The corrected corpus has digest `f21d38e7…f8e38`; the plan derived from it is `e450b2c9…b087`. Re-running the same six baselines gave 60 of 60 matches and no live loci.
+Every `site` oracle was changed from `exact` to `any_of` over the verbatim form found in each rendering plus the capitalised reading, status `interpretation_provisional`, before the multi-model run. ORD-004 also showed that the three renderings of one case name the place three different ways (`Car park, Gate 2`, `the car park at Gate 2`, `car park Gate 2`), so a substrate swap would otherwise have blamed the model for the source's own variation. The corrected corpus has digest `f21d38e7…f8e38`; the plan derived from it at the time was `e450b2c9…b087`. Re-running the same six baselines gave 60 of 60 matches and no live loci. (The plan id of the same corpus is now `5683d72e…`, because every variant's body gained its `grounding` entry when that configuration was added; the archived records are bound to the plan id that wrote them.)
 
 Two further oracle readings were left as they were and are reported as live criticisms rather than corrected between runs, because the instruction does not settle them:
 
@@ -102,7 +137,7 @@ Two further oracle readings were left as they were and are reported as live crit
 
 ## Runs
 
-Nine Ollama-hosted models were run against the full plan (117 variants each: 109 model calls and 8 model-free controls) on 2026-09-05 through the `ollama-chat` executor with `temperature 0`, `seed 7`, `think false`, and the form schema sent as `format`. Kimi K3 was excluded by the operator on cost. The 1,053 observation records and 9 run records from those runs were removed from this tree with the rest of the earlier project; they are preserved, content-addressed and bound to corpus digest `f21d38e7…f8e38`, on the branch `archive/cr-eib-0.6-full` under `forge/conformance/runs/incident-form/`. The tables below were generated from those records by a script, not typed by hand.
+Nine Ollama-hosted models were run against the full plan (117 variants each: 109 model calls and 8 model-free controls) on 2026-09-05 through the `ollama-chat` executor with `temperature 0`, `seed 7`, `think false`, and the form schema sent as `format`. Kimi K3 was excluded by the operator on cost. The 1,053 observation records and 9 run records from those runs were removed from this tree with the rest of the earlier project; they are preserved, content-addressed and bound to corpus digest `f21d38e7…f8e38`, on the branch `archive/cr-eib-0.6-full` under `forge/conformance/runs/incident-form/`. They are `v1` records; the observation and run records became `v2` when the grounding keys were added, so the current loader refuses them by version and they are read with the code on that branch. The tables below were generated from those records by a script, not typed by hand; `docs/failure-modes.md` gives observation ids for each mode.
 
 ### Per-model outcome (nine models, 117 variants each: 109 model calls, 8 model-free controls)
 
@@ -183,6 +218,7 @@ Six Ollama models reviewed the module across five lenses (92 raw findings, 52 di
 - NEGATION value transforms (`iso_date_to_dmy`, `e164_au_to_national_spaced`) are a small registry in `families.py`. A pilot whose formatting instructions need a different inversion adds a transform there; the corpus cannot define one.
 - The ROUND_TRIP re-rendering uses a fixed header sentence and derives labels from field names. Both are generic, but a pilot wanting different prose supplies neither from configuration yet.
 - A missing `OLLAMA_API_KEY` aborts the run before any call, deliberately; every other executor failure is a recorded `TRANSPORT_ERROR` observation.
+- Grounding spans are matched verbatim (whitespace-normalised, case-sensitive) against the document as sent. There is no fuzzy or offset-based matching, and no check that a span was taken from the right sentence; a quotation of the wrong sentence that does occur in the document is `GROUNDED`.
 
 ## What this pilot does not establish
 
@@ -190,3 +226,4 @@ Six Ollama models reviewed the module across five lenses (92 raw findings, 52 di
 - It does not establish that the oracles are right. Every contestable oracle is marked provisional, and one was already wrong (see above).
 - It does not establish that `format` structured output is unenforced everywhere; it records `format_enforced_by_server: false` only where an extra or missing key proves it for that call.
 - It does not compare models. Cross-model tables show which failure modes each model exhibited; they are not a ranking.
+- It does not establish that a grounded value is right. `GROUNDED` says the cited words exist in the document; `ABSTAINED` says the model returned `null` where it was allowed to. Neither is a verdict on content.

@@ -87,6 +87,9 @@ TRIGGERS: tuple[str, ...] = (
     "DEPENDENCE_CHANGED",
     "DEPENDENCE_UNCHANGED",
     "FORMAT_NOT_ENFORCED",
+    "SPAN_MISSING",
+    "SPAN_NOT_IN_DOCUMENT",
+    "VALUE_NOT_IN_SPAN",
 )
 
 
@@ -206,6 +209,29 @@ ROUTING_TABLE: tuple[RoutingRule, ...] = (
         (
             ("CANDIDATE", "The model omitted a required key."),
             ("AUXILIARY", "The format constraint or prompt did not enforce the required list."),
+        ),
+    ),
+    _rule(
+        "SPAN_MISSING",
+        (
+            ("CANDIDATE", "The model gave a value but did not cite the words it came from."),
+            ("AUXILIARY", "The generated companion-key instruction or schema may not have been followed as intended."),
+        ),
+    ),
+    _rule(
+        "SPAN_NOT_IN_DOCUMENT",
+        (
+            ("CANDIDATE", "The cited words do not occur in the document; fabricated provenance is one reading of this."),
+            ("TEST", "The verbatim match normalises only whitespace; punctuation or quote changes would fail it."),
+            ("SCOPE", "The rendering may have altered the text the model saw (tables, line breaks)."),
+        ),
+    ),
+    _rule(
+        "VALUE_NOT_IN_SPAN",
+        (
+            ("CANDIDATE", "The value does not appear inside the words the model cited for it."),
+            ("TEST", "This field may legitimately normalise its value; if so it does not belong in value_in_span_fields."),
+            ("SCOPE", "The task may require inference the citation cannot show."),
         ),
     ),
     _rule(
@@ -340,6 +366,7 @@ def derive_triggers(variant: Variant, scoring: Scoring, *, format_sent: bool) ->
     if scoring.schema_valid is False and not any(t in _CRITICISM_FIELD_VERDICTS | _STRUCTURAL_FIELD_VERDICTS for t in field_triggers):
         field_triggers.append("SCHEMA_INVALID")
     triggers.extend(field_triggers)
+    triggers.extend(trigger for trigger in scoring.grounding_kinds() if trigger not in triggers)
     if format_sent and variant.model_call and any(t in _STRUCTURAL_FIELD_VERDICTS or t == "UNEXPECTED_PRESENT" for t in field_triggers):
         triggers.append("FORMAT_NOT_ENFORCED")
     if variant.family is Family.NEGATION and scoring.changed_vs_baseline is False:

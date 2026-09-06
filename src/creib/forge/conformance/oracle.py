@@ -66,6 +66,8 @@ FIELD_VERDICTS: tuple[str, ...] = (
     "NOT_SCORED",
 )
 _JSON_TYPES: Mapping[str, type] = {"string": str, "boolean": bool, "integer": int}
+GROUNDING_VERDICTS: tuple[str, ...] = ("GROUNDED", "SPAN_MISSING", "SPAN_NOT_IN_DOCUMENT", "VALUE_NOT_IN_SPAN", "ABSTAINED")
+GROUNDING_CRITICISMS: tuple[str, ...] = ("SPAN_MISSING", "SPAN_NOT_IN_DOCUMENT", "VALUE_NOT_IN_SPAN")
 _FENCE = re.compile(r"```(?:json|JSON)?\s*(.*?)```", re.DOTALL)
 
 
@@ -92,6 +94,23 @@ class FieldVerdict:
 
 
 @dataclass(frozen=True)
+class GroundingVerdict:
+    """Provenance check for one field: is the cited span real, and does the value come from it?
+
+    GROUNDED is a structural property of the reply (the cited text exists and
+    contains the value); it is not a judgement that the value is correct.
+    """
+
+    field: str
+    verdict: str
+    span: str | None
+    detail: str | None
+
+    def to_dict(self) -> dict[str, object]:
+        return {"field": self.field, "verdict": self.verdict, "span": self.span, "detail": self.detail}
+
+
+@dataclass(frozen=True)
 class Scoring:
     response_verdict: str
     response_detail: str | None
@@ -101,6 +120,7 @@ class Scoring:
     schema_valid: bool | None
     field_verdicts: tuple[FieldVerdict, ...]
     changed_vs_baseline: bool | None
+    grounding_verdicts: tuple[GroundingVerdict, ...] = ()
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -112,7 +132,17 @@ class Scoring:
             "schema_valid": self.schema_valid,
             "field_verdicts": [verdict.to_dict() for verdict in self.field_verdicts],
             "changed_vs_baseline": self.changed_vs_baseline,
+            "grounding_verdicts": [verdict.to_dict() for verdict in self.grounding_verdicts],
         }
+
+    def grounding_kinds(self) -> tuple[str, ...]:
+        """Distinct grounding criticisms (never GROUNDED or ABSTAINED), in field order."""
+
+        seen: list[str] = []
+        for verdict in self.grounding_verdicts:
+            if verdict.verdict in GROUNDING_CRITICISMS and verdict.verdict not in seen:
+                seen.append(verdict.verdict)
+        return tuple(seen)
 
     def verdict_kinds(self) -> tuple[str, ...]:
         """Distinct field verdicts other than MATCH and NOT_SCORED, in field order."""
@@ -141,6 +171,20 @@ def scoring_from_dict(raw: Any, where: str = "scoring") -> Scoring:
         parsed = object_value(loads_strict(text(parsed_raw, f"{where}.parsed_output_canonical")), f"{where}.parsed_output_canonical")
         if canonical_text(parsed) != parsed_raw:
             raise RecordError(f"{where}.parsed_output_canonical is not canonical")
+    grounding: list[GroundingVerdict] = []
+    for index, item in enumerate(array_value(record["grounding_verdicts"], f"{where}.grounding_verdicts")):
+        entry = object_value(item, f"{where}.grounding_verdicts[{index}]")
+        kind = text(entry["verdict"], f"{where}.grounding_verdicts[{index}].verdict")
+        if kind not in GROUNDING_VERDICTS:
+            raise RecordError(f"{where}.grounding_verdicts[{index}].verdict is unknown")
+        grounding.append(
+            GroundingVerdict(
+                field=any_string(entry["field"], f"{where}.grounding_verdicts[{index}].field"),
+                verdict=kind,
+                span=None if entry["span"] is None else any_string(entry["span"], f"{where}.grounding_verdicts[{index}].span"),
+                detail=optional_text(entry["detail"], f"{where}.grounding_verdicts[{index}].detail"),
+            )
+        )
     verdicts: list[FieldVerdict] = []
     for index, item in enumerate(array_value(record["field_verdicts"], f"{where}.field_verdicts")):
         entry = object_value(item, f"{where}.field_verdicts[{index}]")
@@ -167,6 +211,7 @@ def scoring_from_dict(raw: Any, where: str = "scoring") -> Scoring:
         schema_valid=optional_boolean(record["schema_valid"], f"{where}.schema_valid"),
         field_verdicts=tuple(verdicts),
         changed_vs_baseline=optional_boolean(record["changed_vs_baseline"], f"{where}.changed_vs_baseline"),
+        grounding_verdicts=tuple(grounding),
     )
 
 
@@ -266,15 +311,36 @@ def _field_verdict(field: str, verdict: str, output: Mapping[str, Any], oracle: 
     )
 
 
-def score_output(variant: Variant, output: Mapping[str, Any]) -> tuple[bool, tuple[FieldVerdict, ...]]:
-    """Schema validity plus one verdict per schema field and per extra key."""
+def _normalise_whitespace(value: str) -> str:
+    return " ".join(value.split())
 
-    validator = Draft202012Validator(variant.form_schema, format_checker=Draft202012Validator.FORMAT_CHECKER)
+
+def _grounding_verdict(variant: Variant, field: str, value: Any, output: Mapping[str, Any]) -> GroundingVerdict:
+    key = variant.span_key(field)
+    span = output.get(key)
+    if type(span) is not str or not span.strip():
+        return GroundingVerdict(field, "SPAN_MISSING", None, f"companion key {key!r} is absent, null, or empty")
+    document = variant.input_document or ""
+    if _normalise_whitespace(span) not in _normalise_whitespace(document):
+        return GroundingVerdict(field, "SPAN_NOT_IN_DOCUMENT", span, "the cited text does not occur verbatim in the document (whitespace-normalised)")
+    if field in variant.active_value_in_span_fields and str(value).casefold() not in span.casefold():
+        return GroundingVerdict(field, "VALUE_NOT_IN_SPAN", span, "the value does not occur inside the cited span (case-insensitive)")
+    return GroundingVerdict(field, "GROUNDED", span, None)
+
+
+def score_output(variant: Variant, output: Mapping[str, Any]) -> tuple[bool, tuple[FieldVerdict, ...], tuple[GroundingVerdict, ...]]:
+    """Schema validity, one verdict per schema field and per extra key, and grounding verdicts."""
+
+    validator = Draft202012Validator(variant.prompt_form_schema(), format_checker=Draft202012Validator.FORMAT_CHECKER)
     schema_valid = not any(True for _ in validator.iter_errors(dict(output)))
     verdicts: list[FieldVerdict] = []
     record_only = variant.expectation_kind is ExpectationKind.RECORD_DEPENDENCE
     required = set(variant.required_fields)
     properties = variant.form_schema["properties"]
+    abstain = set(variant.active_abstain_fields)
+    span_fields = set(variant.active_span_fields) if variant.model_call else set()
+    companion_keys = {variant.span_key(field) for field in variant.active_span_fields} if variant.grounding is not None and variant.grounding.active else set()
+    grounding: list[GroundingVerdict] = []
     for field in variant.field_order:
         oracle = variant.oracle(field)
         if record_only:
@@ -294,6 +360,14 @@ def score_output(variant: Variant, output: Mapping[str, Any]) -> tuple[bool, tup
         if oracle is not None and oracle.kind == "absent":
             verdicts.append(_field_verdict(field, "UNEXPECTED_PRESENT", output, oracle, "key present although expected absent"))
             continue
+        if value is None and field in abstain:
+            # The model declined to state a value it was allowed to decline.
+            grounding.append(GroundingVerdict(field, "ABSTAINED", None, "null returned for a field the configuration allows to be unstated"))
+            if oracle is None or oracle.kind == "unknown":
+                verdicts.append(_field_verdict(field, "NOT_SCORED", output, oracle, "abstained; no expectation declared"))
+            else:
+                verdicts.append(_field_verdict(field, "MISMATCH", output, oracle, "abstained where the oracle expected a value"))
+            continue
         constraint_verdict, constraint_detail = _constraint_verdict(value, properties[field])
         if constraint_verdict is not None:
             verdicts.append(_field_verdict(field, constraint_verdict, output, oracle, constraint_detail))
@@ -303,7 +377,10 @@ def score_output(variant: Variant, output: Mapping[str, Any]) -> tuple[bool, tup
             continue
         verdict, detail = _oracle_verdict(value, oracle)
         verdicts.append(_field_verdict(field, verdict, output, oracle, detail))
-    for key in sorted(k for k in output if k not in variant.field_order):
+    for field in variant.field_order:
+        if field in span_fields and field in output and output[field] is not None and not record_only:
+            grounding.append(_grounding_verdict(variant, field, output[field], output))
+    for key in sorted(k for k in output if k not in variant.field_order and k not in companion_keys):
         oracle = variant.oracle(key)
         if record_only:
             verdicts.append(_field_verdict(key, "NOT_SCORED", output, oracle, "dependence is recorded, not scored"))
@@ -311,13 +388,18 @@ def score_output(variant: Variant, output: Mapping[str, Any]) -> tuple[bool, tup
             verdicts.append(_field_verdict(key, "UNEXPECTED_PRESENT", output, oracle, "key present although removed from the form"))
         else:
             verdicts.append(_field_verdict(key, "EXTRA_FIELD", output, oracle, "key is not defined by the form schema"))
-    return schema_valid, tuple(verdicts)
+    return schema_valid, tuple(verdicts), tuple(grounding)
 
 
-def _changed(parsed: Mapping[str, Any] | None, baseline_output: Mapping[str, Any] | None) -> bool | None:
+def _changed(parsed: Mapping[str, Any] | None, baseline_output: Mapping[str, Any] | None, ignore_keys: tuple[str, ...] = ()) -> bool | None:
+    """Whether the form values changed against the baseline; companion span keys are provenance, not answers."""
+
     if parsed is None or baseline_output is None:
         return None
-    return canonical_bytes(dict(parsed)) != canonical_bytes(dict(baseline_output))
+    ignored = set(ignore_keys)
+    left = {k: v for k, v in parsed.items() if k not in ignored}
+    right = {k: v for k, v in baseline_output.items() if k not in ignored}
+    return canonical_bytes(left) != canonical_bytes(right)
 
 
 def score(
@@ -333,8 +415,8 @@ def score(
         if variant.control_output is None or variant.model_call:
             raise RecordError("a response is required unless the variant is a model-free control")
         output = dict(variant.control_output)
-        schema_valid, verdicts = score_output(variant, output)
-        return Scoring("NO_MODEL_CALL", None, False, None, output, schema_valid, verdicts, None)
+        schema_valid, verdicts, grounding = score_output(variant, output)
+        return Scoring("NO_MODEL_CALL", None, False, None, output, schema_valid, verdicts, None, grounding)
     if not response.usable:
         detail = response.transport_error or f"HTTP status {response.http_status}"
         return Scoring("TRANSPORT_ERROR", detail, False, None, None, None, (), None)
@@ -347,7 +429,7 @@ def score(
         return Scoring(verdict, detail, False, None, None, None, (), None)
     if type(parsed) is not dict:
         return Scoring("NOT_AN_OBJECT", f"parsed JSON is {type(parsed).__name__}", recovered, None, None, None, (), None)
-    schema_valid, verdicts = score_output(variant, parsed)
+    schema_valid, verdicts, grounding = score_output(variant, parsed)
     return Scoring(
         response_verdict="JSON_OBJECT",
         response_detail=detail,
@@ -356,7 +438,8 @@ def score(
         parsed_output=parsed,
         schema_valid=schema_valid,
         field_verdicts=verdicts,
-        changed_vs_baseline=_changed(parsed, baseline_output),
+        changed_vs_baseline=_changed(parsed, baseline_output, variant.span_keys),
+        grounding_verdicts=grounding,
     )
 
 

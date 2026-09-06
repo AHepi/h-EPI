@@ -13,7 +13,7 @@ git fetch origin archive/cr-eib-0.6-full
 git switch --detach origin/archive/cr-eib-0.6-full
 ```
 
-That branch holds the CR-1.0 bridge (`bridge/`, `formal/`, `baseline/`, `authority/`), the forge runtimes and their 28 record schemas (`src/creib/forge/*.py`, `forge/schema/`), the calibration record and inquiry plan, the four orchestrator handovers (`docs/handoff/`), the external audit transcripts (`docs/audits/`), the pinned Docker replay image (`.devcontainer/`), the Lean and container CI jobs, and the 1,053 incident-form observation records from the nine-model run. Its `CLAUDE.md` and `docs/handoff/STATUS.md` describe the state of that project as it was left.
+That branch holds the CR-1.0 bridge (`bridge/`, `formal/`, `baseline/`, `authority/`), the forge runtimes and their 28 record schemas (`src/creib/forge/*.py`, `forge/schema/`), the calibration record and inquiry plan, the four orchestrator handovers (`docs/handoff/`), the external audit transcripts (`docs/audits/`), the pinned Docker replay image (`.devcontainer/`), the Lean and container CI jobs, and the 1,053 incident-form observation records from the nine-model run. Its `CLAUDE.md` and `docs/handoff/STATUS.md` describe the state of that project as it was left. Those observation and run records are `v1`; the record schemas on `main` became `v2` when grounding was added, so read them with the branch's own `fills` and `report`, or with a raw JSON scan. `docs/failure-modes.md` cites them by observation id.
 
 ## What was kept, and why
 

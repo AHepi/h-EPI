@@ -68,9 +68,9 @@ def build_user_prompt(variant: Variant) -> str:
         raise RecordError(f"variant {variant.variant_id} has no document; materialise it first")
     return (
         "## Instructions\n\n"
-        + variant.instructions
+        + variant.prompt_instructions()
         + "\n## Form schema (JSON Schema draft 2020-12)\n\n"
-        + render_schema_for_prompt(variant.form_schema, variant.field_order)
+        + render_schema_for_prompt(variant.prompt_form_schema(), variant.prompt_field_order)
         + "\n\n## Case document\n\n<<<DOCUMENT\n"
         + variant.input_document
         + ("\n" if not variant.input_document.endswith("\n") else "")
@@ -83,7 +83,7 @@ def build_chat_request(variant: Variant, *, model: str, endpoint: Endpoint) -> C
         model=model,
         system=SYSTEM_PROMPT,
         user=build_user_prompt(variant),
-        format_schema=ordered_form_schema(variant.form_schema, variant.field_order),
+        format_schema=ordered_form_schema(variant.prompt_form_schema(), variant.prompt_field_order),
         options={"temperature": endpoint.temperature, "seed": endpoint.seed},
         think=endpoint.think,
     )

@@ -17,11 +17,11 @@ from typing import Iterable
 
 from creib.errors import RecordError
 
-from .common import SCOPE_INCONCLUSIVE, SCOPE_REFUTED, SCOPE_UNREFUTED, rfc3339
+from .common import RUN_SCHEMA_VERSION, SCOPE_INCONCLUSIVE, SCOPE_REFUTED, SCOPE_UNREFUTED, rfc3339
 from .corpus import Corpus
 from .executor import ChatRequest, ChatResponse, ModelExecutor, executor_failure_response
 from .families import ExpectationKind, Family, Plan, Variant, materialize_round_trip
-from .oracle import RESPONSE_VERDICTS, FIELD_VERDICTS, prerequisite_unavailable, score
+from .oracle import GROUNDING_VERDICTS, RESPONSE_VERDICTS, FIELD_VERDICTS, prerequisite_unavailable, score
 from .prompt import build_chat_request
 from .records import EXECUTOR_KINDS, ObservationRecord, RunRecord, build_observation, build_run_record, compute_run_id, publish_record
 from .routing import route
@@ -111,7 +111,7 @@ def run_pilot(
         raise RecordError("no families selected")
     variants = select_variants(plan, families=families, limit=limit)
     header = {
-        "schema_version": "creib.conformance-pilot.run.v1",
+        "schema_version": RUN_SCHEMA_VERSION,
         "pilot_id": spec.pilot_id,
         "plan_id": plan.plan_id,
         "model": model,
@@ -184,9 +184,11 @@ def run_pilot(
     response_counter = Counter(observation.scoring.response_verdict for observation in observations)
     field_counter: Counter[str] = Counter()
     locus_counter: Counter[str] = Counter()
+    grounding_counter: Counter[str] = Counter()
     for observation in observations:
         field_counter.update(verdict.verdict for verdict in observation.scoring.field_verdicts)
         locus_counter.update(observation.routing.loci)
+        grounding_counter.update(verdict.verdict for verdict in observation.scoring.grounding_verdicts)
     candidate_live = any("CANDIDATE" in observation.routing.loci for observation in observations)
     scored_model_outputs = sum(
         1 for observation in observations
@@ -221,6 +223,7 @@ def run_pilot(
         response_verdict_counts=tuple((verdict, response_counter[verdict]) for verdict in RESPONSE_VERDICTS if verdict in response_counter),
         field_verdict_counts=tuple((verdict, field_counter[verdict]) for verdict in FIELD_VERDICTS if verdict in field_counter),
         live_locus_counts=tuple((locus, locus_counter[locus]) for locus in ("CANDIDATE", "AUXILIARY", "TEST", "SCOPE") if locus in locus_counter),
+        grounding_verdict_counts=tuple((verdict, grounding_counter[verdict]) for verdict in GROUNDING_VERDICTS if verdict in grounding_counter),
         observations_with_live_loci=sum(1 for observation in observations if observation.routing.live_loci),
         model_call_count=sum(1 for observation in observations if observation.response is not None),
         transport_error_count=response_counter.get("TRANSPORT_ERROR", 0),

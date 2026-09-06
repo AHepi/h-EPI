@@ -56,9 +56,12 @@ from .routing import Routing, routing_from_dict
 from .spec import Binding, Endpoint, endpoint_from_dict
 
 
-OBSERVATION_DOMAIN = "creib.conformance-pilot.observation.v1"
-RUN_HEADER_DOMAIN = "creib.conformance-pilot.run-header.v1"
-RUN_CONTENT_DOMAIN = "creib.conformance-pilot.run-content.v1"
+# v2: the variant carries its grounding configuration, the scoring its grounding verdicts, and the
+# run its grounding verdict counts. v1 records (the archived nine-model incident-form run) are read
+# only by the code that wrote them; this loader names the version it found and stops.
+OBSERVATION_DOMAIN = "creib.conformance-pilot.observation.v2"
+RUN_HEADER_DOMAIN = "creib.conformance-pilot.run-header.v2"
+RUN_CONTENT_DOMAIN = "creib.conformance-pilot.run-content.v2"
 EXECUTOR_KINDS: tuple[str, ...] = ("ollama-chat", "fake", "replay", "canned")
 _SCHEMA_SHORT_NAMES: Mapping[str, tuple[str, str, str]] = {
     OBSERVATION_SCHEMA_VERSION: ("observation", "observation_id", OBSERVATION_SCHEMA_NAME),
@@ -185,6 +188,7 @@ class RunRecord:
     response_verdict_counts: tuple[tuple[str, int], ...]
     field_verdict_counts: tuple[tuple[str, int], ...]
     live_locus_counts: tuple[tuple[str, int], ...]
+    grounding_verdict_counts: tuple[tuple[str, int], ...]
     observations_with_live_loci: int
     model_call_count: int
     transport_error_count: int
@@ -230,6 +234,7 @@ class RunRecord:
                 "response_verdict_counts": [{"verdict": verdict, "count": count} for verdict, count in self.response_verdict_counts],
                 "field_verdict_counts": [{"verdict": verdict, "count": count} for verdict, count in self.field_verdict_counts],
                 "live_locus_counts": [{"locus": locus, "count": count} for locus, count in self.live_locus_counts],
+                "grounding_verdict_counts": [{"verdict": verdict, "count": count} for verdict, count in self.grounding_verdict_counts],
                 "observations_with_live_loci": self.observations_with_live_loci,
                 "model_call_count": self.model_call_count,
                 "transport_error_count": self.transport_error_count,
@@ -300,6 +305,7 @@ def run_from_dict(raw: Any) -> RunRecord:
         response_verdict_counts=_count_pairs(record["response_verdict_counts"], "run.response_verdict_counts", "verdict"),
         field_verdict_counts=_count_pairs(record["field_verdict_counts"], "run.field_verdict_counts", "verdict"),
         live_locus_counts=_count_pairs(record["live_locus_counts"], "run.live_locus_counts", "locus"),
+        grounding_verdict_counts=_count_pairs(record["grounding_verdict_counts"], "run.grounding_verdict_counts", "verdict"),
         observations_with_live_loci=integer(record["observations_with_live_loci"], "run.observations_with_live_loci"),
         model_call_count=integer(record["model_call_count"], "run.model_call_count"),
         transport_error_count=integer(record["transport_error_count"], "run.transport_error_count"),
@@ -364,14 +370,20 @@ def _load_canonical(path: Path) -> dict[str, Any]:
 def load_observation(path: Path) -> ObservationRecord:
     record = _load_canonical(path)
     if record.get("schema_version") != OBSERVATION_SCHEMA_VERSION:
-        raise RecordError(f"{path} is not a conformance observation record")
+        raise RecordError(
+            f"{path} is not a {OBSERVATION_SCHEMA_VERSION} record (schema_version {record.get('schema_version')!r}); "
+            "a record written under an earlier version is read by the code that wrote it"
+        )
     return observation_from_dict(record)
 
 
 def load_run(path: Path) -> RunRecord:
     record = _load_canonical(path)
     if record.get("schema_version") != RUN_SCHEMA_VERSION:
-        raise RecordError(f"{path} is not a conformance run record")
+        raise RecordError(
+            f"{path} is not a {RUN_SCHEMA_VERSION} record (schema_version {record.get('schema_version')!r}); "
+            "a record written under an earlier version is read by the code that wrote it"
+        )
     return run_from_dict(record)
 
 

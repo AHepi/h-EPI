@@ -30,11 +30,12 @@
     "overall_status",
     "route",
     "epistemic_limit",
-    "format_enforced_by_server"
+    "format_enforced_by_server",
+    "grounding_verdict_counts"
   ],
   "properties": {
     "schema_version": {
-      "const": "creib.conformance-pilot.run.v1"
+      "const": "creib.conformance-pilot.run.v2"
     },
     "run_id": {
       "$ref": "#/$defs/hex_digest"
@@ -232,6 +233,32 @@
         "boolean",
         "null"
       ]
+    },
+    "grounding_verdict_counts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "verdict",
+          "count"
+        ],
+        "properties": {
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "GROUNDED",
+              "SPAN_MISSING",
+              "SPAN_NOT_IN_DOCUMENT",
+              "VALUE_NOT_IN_SPAN",
+              "ABSTAINED"
+            ]
+          },
+          "count": {
+            "$ref": "#/$defs/count"
+          }
+        }
+      }
     }
   },
   "$defs": {
