@@ -1,0 +1,115 @@
+{
+  "schema_version": "creib.conformance-pilot.config.v1",
+  "pilot_id": "SMF-CONFORMANCE-SIGNED-DERIVATIONS-001",
+  "title": "Deriving signed cases for a claim from the cases on file under the stated finite rules",
+  "form_schema": "form.schema.json",
+  "instructions": "instructions.md",
+  "corpus": "corpus.json",
+  "models": [
+    "gpt-oss:20b",
+    "gemma4:31b",
+    "gpt-oss:120b",
+    "qwen3.5:397b",
+    "mistral-large-3:675b"
+  ],
+  "endpoint": {
+    "kind": "ollama-chat",
+    "base_url": "https://ollama.com",
+    "timeout_seconds": 300,
+    "options": {
+      "temperature": 0,
+      "seed": 7
+    },
+    "think": false
+  },
+  "charter": {
+    "purpose": "Expose where a model, given the finite derivation rules for signed cases and a dossier of leaf cases, derives a case the rules do not license (a universal from finitely many positives without the completeness premise, a negative case from a search that found nothing) or fails to derive one they do (a negative universal from one counterexample, a sign switch through negation), and route each failure to the loci that could be at fault.",
+    "output": "Per-model observation and run records with plural verdicts and live loci, plus an unranked report for human triage.",
+    "scope_in": [
+      "Dossiers with one target claim of depth at most two over named atoms and a range of three recorded members, with leaf cases, a completeness assertion or its absence, and at most one failed search, rendered as prose or as a table.",
+      "The seven declared fields of the derivation form.",
+      "Every answer key computed by the generator's derivation rules, which the offline suite checks against hand-worked dossiers and for monotonicity."
+    ],
+    "scope_out": [
+      "Any claim that a model understands evidence, proof, or the semantics the rules were taken from.",
+      "Ranking models, scoring them, or declaring any model fit for use.",
+      "Claims of greater depth, infinite ranges, or rules other than the ones stated."
+    ]
+  },
+  "load_bearing": [
+    "S7",
+    "S8"
+  ],
+  "negations": [],
+  "twins": [
+    [
+      "positive_derivable",
+      "negative_derivable"
+    ]
+  ],
+  "ambiguity": [
+    {
+      "field": "negative_derivable",
+      "question": "Does a search that returned nothing count as a negative case for the leaf it searched?",
+      "rivals": [
+        {
+          "label": "failed_search_is_a_case",
+          "instruction": "A search for a case against a leaf that returned nothing counts as a negative case for that leaf."
+        },
+        {
+          "label": "failed_search_is_not_a_case",
+          "instruction": "A search that returned nothing counts as no case of either sign for any leaf."
+        }
+      ]
+    }
+  ],
+  "controls": [
+    {
+      "control_id": "C-SWAP-SIGNS",
+      "corruption": {
+        "kind": "swap_fields",
+        "fields": [
+          "positive_derivable",
+          "negative_derivable"
+        ]
+      }
+    },
+    {
+      "control_id": "C-DROP-SUMMARY",
+      "corruption": {
+        "kind": "drop_required",
+        "field": "case_summary"
+      }
+    },
+    {
+      "control_id": "C-EXTRA-GRAMMAR",
+      "corruption": {
+        "kind": "extra_key",
+        "key": "grammar",
+        "value": "signed"
+      }
+    },
+    {
+      "control_id": "C-CORRECT",
+      "corruption": {
+        "kind": "none"
+      }
+    }
+  ],
+  "refusal_phrases": [
+    "I cannot",
+    "I can't",
+    "I'm sorry",
+    "I am unable",
+    "as an AI",
+    "cannot assist"
+  ],
+  "repeats": 2,
+  "grounding": {
+    "mode": "none",
+    "span_suffix": "_span",
+    "span_fields": [],
+    "value_in_span_fields": [],
+    "abstain_fields": []
+  }
+}

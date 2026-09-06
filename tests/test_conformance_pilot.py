@@ -1308,7 +1308,7 @@ class GeneratedCorpusTests(unittest.TestCase):
     """The generated corpora are reproducible from their generators, so their answer keys come from code, not memory."""
 
     def test_generators_reproduce_the_committed_corpora(self) -> None:
-        for script in ("gen_appraisal_labelling_corpus.py", "gen_explanatory_distinctions_corpus.py"):
+        for script in ("gen_appraisal_labelling_corpus.py", "gen_explanatory_distinctions_corpus.py", "gen_signed_derivations_corpus.py"):
             completed = subprocess.run(
                 [sys.executable, str(ROOT / "tools" / script)],
                 capture_output=True, text=True, cwd=str(ROOT), env={**os.environ, "PYTHONPATH": str(ROOT / "src")},
@@ -1358,6 +1358,54 @@ class GeneratedCorpusTests(unittest.TestCase):
             path.write_text(json.dumps(bad), encoding="utf-8")
             with self.assertRaisesRegex(RecordError, "ambiguity's own field"):
                 load_corpus(path, config.spec)
+
+
+class SignedDerivationRulesTests(unittest.TestCase):
+    """The derivation checker behind the signed-derivations keys: hand-worked dossiers and monotonicity."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("gen_signed", ROOT / "tools" / "gen_signed_derivations_corpus.py")
+        cls.gen = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.gen)
+
+    def test_hand_worked_dossiers(self) -> None:
+        g = self.gen; A = g.A; M = ["m1", "m2", "m3"]
+        self.assertEqual(g.derive(("all", "P"), {"P(m1)": g.POS, "P(m2)": g.POS, "P(m3)": g.POS}, M, False), (False, False), "no universal from finitely many positives")
+        self.assertEqual(g.derive(("all", "P"), {"P(m1)": g.POS, "P(m2)": g.POS, "P(m3)": g.POS}, M, True), (True, False))
+        self.assertEqual(g.derive(("all", "P"), {"P(m1)": g.NEG}, M, False), (False, True), "one counterexample refutes")
+        self.assertEqual(g.derive(("some", "P"), {"P(m1)": g.NEG, "P(m2)": g.NEG, "P(m3)": g.NEG}, M, False), (False, False))
+        self.assertEqual(g.derive(("some", "P"), {"P(m1)": g.NEG, "P(m2)": g.NEG, "P(m3)": g.NEG}, M, True), (False, True))
+        self.assertEqual(g.derive(("and", A("p"), A("q")), {"p": g.POS}, [], True, searches=("q",)), (False, False), "a failed search is not a case")
+        self.assertEqual(g.derive(("and", A("p"), A("q")), {"p": g.POS}, [], True, searches=("q",), search_counts=True), (False, True))
+        self.assertEqual(g.derive(("not", A("p")), {"p": g.NEG}, [], True), (True, False))
+        self.assertEqual(g.derive(("not", ("all", "P")), {"P(m2)": g.NEG}, M, False), (True, False))
+        self.assertEqual(g.derive(("or", A("p"), A("q")), {"p": g.NEG, "q": g.NEG}, [], True), (False, True))
+        both = {"p": g.BOTH, "q": g.POS}
+        self.assertEqual(g.derive(("and", A("p"), A("q")), both, [], True), (True, True))
+        self.assertEqual(g.derive(("and", A("p"), A("q")), both, [], True, clean=True), (False, False), "no derivation free of the contested leaf")
+        self.assertEqual(g.blocked_by(("all", "P"), {"P(m1)": g.POS, "P(m2)": g.POS, "P(m3)": g.POS}, M, False, "positive"), "range_not_complete")
+        self.assertEqual(g.blocked_by(("all", "P"), {"P(m1)": g.POS, "P(m2)": g.NEG}, M, False, "positive"), "missing_leaf_case")
+        self.assertEqual(g.blocked_by(("all", "P"), {"P(m1)": g.POS}, M, True, "positive"), "missing_leaf_case")
+
+    def test_adding_cases_or_completeness_never_removes_a_derivation(self) -> None:
+        import itertools, random
+        g = self.gen; A = g.A; M = ["m1", "m2", "m3"]
+        rng = random.Random(7)
+        shapes = [("and", A("p"), A("q")), ("or", A("p"), A("q")), ("not", ("and", A("p"), A("q"))), ("all", "P"), ("some", "P"), ("all", ("or", "P", "Q")), ("not", ("all", "P"))]
+        for _ in range(300):
+            formula = rng.choice(shapes)
+            names = g.leaves_of(formula, M)
+            cases = {n: rng.choice([g.POS, g.NEG, g.NONE, g.BOTH]) for n in names}
+            complete = rng.choice([True, False])
+            before = g.derive(formula, cases, M, complete)
+            richer = {n: tuple(set(cases[n]) | set(rng.choice([g.POS, g.NEG, g.NONE]))) for n in names}
+            after = g.derive(formula, richer, M, complete or rng.choice([True, False]))
+            self.assertTrue(all(b <= a for b, a in zip(before, after)), (formula, cases, richer))
+            # a clean derivation is a derivation
+            clean = g.derive(formula, cases, M, complete, clean=True)
+            self.assertTrue(all(c <= b for c, b in zip(clean, before)))
 
 
 class CompareTests(unittest.TestCase):
