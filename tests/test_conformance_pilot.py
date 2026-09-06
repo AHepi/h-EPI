@@ -1436,6 +1436,129 @@ class SignedDerivationRulesTests(unittest.TestCase):
             self.assertTrue(all(c <= b for c, b in zip(clean, before)))
 
 
+class FailClosedGuardTests(unittest.TestCase):
+    """Refusal sites the deletion sweep found the suite never reached (H26): the constitution's own guards."""
+
+    LEAVE = ROOT / "forge" / "conformance" / "runs" / "leave-request"
+
+    def _run_dict(self):
+        from creib.forge.conformance.records import _load_canonical
+        path = sorted(self.LEAVE.glob("run.*.json"))[0]
+        return path, _load_canonical(path)
+
+    def test_a_run_record_cannot_promote(self) -> None:
+        import dataclasses
+        from creib.errors import PolicyViolation
+        from creib.forge.conformance.records import run_from_dict
+        path, record = self._run_dict()
+        loaded = load_run(path)
+        # In code: the record type refuses to be built with any promoting value.
+        for key, value, kind in (
+            ("overall_status", "PASSED", PolicyViolation),
+            ("route", "DONE", PolicyViolation),
+            ("epistemic_limit", "Enough passes confirm the model.", PolicyViolation),
+            ("scope_label", "CONFIRMED", PolicyViolation),
+            ("executor_kind", "oracle", RecordError),
+        ):
+            with self.assertRaises(kind, msg=key):
+                dataclasses.replace(loaded, **{key: value})
+        # On disk: the schema refuses the same values before the type is built.
+        for key, value in (("overall_status", "PASSED"), ("route", "DONE")):
+            tampered = json.loads(json.dumps(record)); tampered[key] = value
+            with self.assertRaises(RecordError, msg=key):
+                run_from_dict(tampered)
+
+    def test_a_run_record_is_tamper_evident(self) -> None:
+        from creib.forge.conformance.records import run_from_dict
+        _, record = self._run_dict()
+        header = json.loads(json.dumps(record)); header["model"] = header["model"] + "x"
+        with self.assertRaisesRegex(RecordError, "run_id does not replay"):
+            run_from_dict(header)
+        body = json.loads(json.dumps(record)); body["observations_with_live_loci"] = int(body["observations_with_live_loci"]) + 1
+        with self.assertRaisesRegex(RecordError, "content_digest does not replay"):
+            run_from_dict(body)
+
+    def test_a_record_file_must_be_canonical_bytes(self) -> None:
+        path, record = self._run_dict()
+        with tempfile.TemporaryDirectory() as directory:
+            pretty = Path(directory) / path.name
+            pretty.write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(RecordError, "not canonical"):
+                load_run(pretty)
+
+    def test_an_observation_must_carry_a_digest_exactly_when_it_carries_a_response_and_a_canonical_parse(self) -> None:
+        import dataclasses
+        from creib.forge.conformance.records import build_observation, observation_from_dict
+        loaded = next(o for o in load_observation_directory(self.LEAVE) if o.response is not None)
+        fields = {f.name: getattr(loaded, f.name) for f in dataclasses.fields(loaded) if f.name != "observation_id"}
+        # A record whose id replays but whose digest is missing reaches the presence guard, not the id guard.
+        no_digest = build_observation(**{**fields, "request_digest": None})
+        with self.assertRaisesRegex(RecordError, "request digest exactly when"):
+            observation_from_dict(no_digest.to_dict())
+        # The scoring parser checks the canonical text before the id is rebuilt, so a dict tamper reaches it.
+        uncanonical = loaded.to_dict()
+        uncanonical["scoring"]["parsed_output_canonical"] = " " + str(uncanonical["scoring"]["parsed_output_canonical"])
+        with self.assertRaisesRegex(RecordError, "not canonical"):
+            observation_from_dict(uncanonical)
+
+    def test_routing_records_keep_the_route_and_the_vocabularies(self) -> None:
+        from creib.errors import PolicyViolation
+        from creib.forge.conformance.routing import routing_from_dict
+        good = {"live_loci": [{"locus": "CANDIDATE", "reason": "x"}, {"locus": "TEST", "reason": "y"}], "route": "AWAITING_HUMAN_TRIAGE", "triggers": ["MISMATCH"], "unrefuted_for_variant": False, "format_enforced_by_server": None}
+        routing_from_dict(good)
+        with self.assertRaises(PolicyViolation):
+            routing_from_dict({**good, "route": "RESOLVED"})
+        with self.assertRaisesRegex(RecordError, "not a known locus"):
+            routing_from_dict({**good, "live_loci": [{"locus": "MODEL", "reason": "x"}]})
+        with self.assertRaisesRegex(RecordError, "unknown trigger"):
+            routing_from_dict({**good, "triggers": ["WRONG"]})
+
+    def test_a_model_call_never_routes_to_a_single_locus_and_every_trigger_has_a_rule(self) -> None:
+        from unittest import mock
+        from creib.errors import PolicyViolation
+        from creib.forge.conformance import routing as routing_module
+        variant = _variant(Family.BASELINE, "ORD-001")
+        scoring = score(variant, response_from_content(json.dumps({**_correct_output("ORD-001"), "site": "elsewhere"})), refusal_phrases=_CONFIG.spec.refusal_phrases)
+        self.assertIn("MISMATCH", [v.verdict for v in scoring.field_verdicts])
+
+        class OneLocus:
+            loci = (("CANDIDATE", "only the model"),)
+            def applies(self, trigger, family):
+                return trigger == "MISMATCH"
+
+        with mock.patch.object(routing_module, "ROUTING_TABLE", (OneLocus(),)):
+            with self.assertRaisesRegex(PolicyViolation, "single locus"):
+                routing_module.route(variant, scoring, format_sent=False)
+        with mock.patch.object(routing_module, "ROUTING_TABLE", ()):
+            with self.assertRaisesRegex(RecordError, "no rule for trigger"):
+                routing_module.route(variant, scoring, format_sent=False)
+
+    def test_reports_and_comparisons_refuse_an_observation_from_another_run(self) -> None:
+        from creib.forge.conformance.compare import compare_runs
+        observations = load_observation_directory(self.LEAVE)
+        runs = sorted((load_run(p) for p in self.LEAVE.glob("run.*.json")), key=lambda r: (r.model, r.created_on))
+        first = runs[0]
+        foreign = next(o for o in observations if o.run_id != first.run_id)
+        import dataclasses
+        by_id = {o.observation_id: o for o in observations}
+        by_id[first.observation_ids[0]] = dataclasses.replace(foreign, observation_id=first.observation_ids[0])
+        with self.assertRaisesRegex(RecordError, "belongs to a different run"):
+            build_report([first], list(by_id.values()))
+        other = next(r for r in runs if r.model == first.model and r.run_id != first.run_id)
+        with self.assertRaisesRegex(RecordError, "belongs to a different run"):
+            compare_runs(first, other, list(by_id.values()))
+
+    def test_run_pilot_refuses_an_undeclared_model_no_families_and_a_bad_limit(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            common = dict(spec=_CONFIG.spec, corpus=_CORPUS, plan=_PLAN, executor=_fake(), executor_kind="fake", output_dir=Path(directory), created_on=CREATED_ON)
+            with self.assertRaisesRegex(RecordError, "not declared"):
+                run_pilot(model="nobody:1b", families=(Family.BASELINE,), **common)
+            with self.assertRaisesRegex(RecordError, "no families"):
+                run_pilot(model="gpt-oss:20b", families=(), **common)
+            with self.assertRaisesRegex(RecordError, "limit must be"):
+                run_pilot(model="gpt-oss:20b", families=(Family.BASELINE,), limit=0, **common)
+
+
 class CompareTests(unittest.TestCase):
     """Two runs of one model are paired request by request; identity never consults the oracle and nothing is ranked."""
 

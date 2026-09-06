@@ -66,10 +66,14 @@ def run_suite(src_dir: Path) -> tuple[int, int, str]:
     """(exit code, tests run, stderr tail) for one suite run against ``src_dir``."""
 
     env = {**os.environ, "PYTHONPATH": str(src_dir), "PYTHONDONTWRITEBYTECODE": "1"}
-    completed = subprocess.run(
-        [sys.executable, "-m", "unittest", "discover", "-s", str(ROOT / "tests"), "-q"],
-        capture_output=True, text=True, env=env, cwd=str(ROOT), timeout=900,
-    )
+    try:
+        completed = subprocess.run(
+            [sys.executable, "-m", "unittest", "discover", "-s", str(ROOT / "tests"), "-q"],
+            capture_output=True, text=True, env=env, cwd=str(ROOT), timeout=900,
+        )
+    except subprocess.TimeoutExpired as exc:
+        # A deletion that turns a refusal into a loop or a hang is caught by the clock, not the suite.
+        return -1, -1, ((exc.stderr or b"") if isinstance(exc.stderr, bytes) else (exc.stderr or "")).__str__()[-4000:] + "\ntimeout after 900 s"
     match = _RAN.search(completed.stderr)
     ran = int(match.group(1)) if match else 0
     return completed.returncode, ran, completed.stderr[-4000:]
@@ -92,7 +96,9 @@ def one(job: tuple[Path, int, int, str], jobs_dir: Path, expected_tests: int) ->
         target = copy / path.relative_to(SRC)
         target.write_text(mutate(path.read_text(encoding="utf-8"), first, last), encoding="utf-8")
         code, ran, stderr = run_suite(copy)
-    if ran != expected_tests:
+    if ran == -1:
+        outcome = "timeout"
+    elif ran != expected_tests:
         outcome = "broken"
     elif code == 0:
         outcome = "survived"
@@ -124,7 +130,7 @@ def main() -> int:
                 print(f"[{index}/{len(jobs)}] {result['file']}:{result['line']} {result['outcome']}", flush=True)
     per_file: dict[str, dict[str, int]] = {}
     for result in results:
-        row = per_file.setdefault(str(result["file"]), {"sites": 0, "caught": 0, "survived": 0, "broken": 0})
+        row = per_file.setdefault(str(result["file"]), {"sites": 0, "caught": 0, "survived": 0, "broken": 0, "timeout": 0})
         row["sites"] += 1
         row[str(result["outcome"])] += 1
     report = {
@@ -133,13 +139,14 @@ def main() -> int:
         "caught": sum(1 for r in results if r["outcome"] == "caught"),
         "survived": sum(1 for r in results if r["outcome"] == "survived"),
         "broken": sum(1 for r in results if r["outcome"] == "broken"),
+        "timeout": sum(1 for r in results if r["outcome"] == "timeout"),
         "per_file": per_file,
         "results": results,
         "tests_in_suite": baseline_ran,
-        "reading": "A survived site is a refusal the suite never exercises; it says nothing about whether the check is right, only that deleting it was not noticed. A broken site could not be imported after deletion and was not tested. Counts imply no score.",
+        "reading": "A survived site is a refusal the suite never exercises; it says nothing about whether the check is right, only that deleting it was not noticed. A broken site could not be imported after deletion and was not tested; a timeout site turned into a hang, which the clock caught. Counts imply no score.",
     }
     args.report.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
-    print(f"sites {report['sites']}: caught {report['caught']}, survived {report['survived']}, broken {report['broken']}; report at {args.report}")
+    print(f"sites {report['sites']}: caught {report['caught']}, survived {report['survived']}, broken {report['broken']}, timeout {report['timeout']}; report at {args.report}")
     return 0
 
 
