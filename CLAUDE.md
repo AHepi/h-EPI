@@ -12,6 +12,7 @@ A criticism-first harness that checks how a language model fills a form from a d
 - A failed expectation criticises the tested conjunction. Live loci are a subset of CANDIDATE (the model), AUXILIARY (prompt, executor, format plumbing), TEST (the oracle), SCOPE (the task as framed); never a single locus after a model call; empty only when every field matched.
 - Never hand-edit a published record. Records are content-addressed and published no-clobber; a changed oracle means a re-score through `run --replay-dir <observations>` (the `ReplayExecutor`, matched by request digest), which writes new records, not an edited file.
 - The report never ranks models, computes scores, or uses words like best, worst, pass, or accuracy.
+- A general claim about language models is stated as a conjecture in a pilot's `claims.json` and tested with `claims`; a claim is `REFUTED` by one record or `UNREFUTED_FOR_DECLARED_SCOPE`, never confirmed, and a document that makes such a claim cites the claim id and the records.
 
 ## Environment
 
@@ -38,6 +39,7 @@ Run `all` before every commit. No model is called by any check. Do not add `asse
 - Grounding spans and abstention are configuration (`grounding` in `pilot.json`), never code. Mode `none` must leave every existing pilot byte-for-byte unchanged; a test asserts it. The same holds for `span_relaxations` (default empty) and `repeats` (default 0): anything that adds model calls or loosens a check is off unless a pilot asks for it, and an absent or default value is written to no record body, so earlier variant ids keep replaying.
 - The pilot configuration is a source binding of the plan, so any edit to `pilot.json` moves the plan id even when no variant changes. Cite plan ids from run records, not from memory.
 - A live run that shows a new failure mode gets an entry in `docs/failure-modes.md` with observation ids taken from `evidence`, never from memory. Absence of a mode on the cases run is recorded too.
+- Adding a claim predicate means changing `claims.py`, `conformance-claims.schema.json`, and a test together; the vocabulary fails closed on anything unknown.
 - A new form is a new directory under `forge/conformance/pilots/`, never a code change. If a form cannot be expressed, extend the form profile in `spec.py` and say so in `docs/how-it-works.md`.
 - Live model runs are deliberate: they cost money and produce records that get committed. Use `--family BASELINE` for plain fills, `--limit` while developing, and a scratch `--output-dir` for anything you are not ready to commit.
 

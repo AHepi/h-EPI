@@ -98,6 +98,20 @@ Where each thing goes:
 
 `run` exits 1 when any observation carries live loci and 0 otherwise is reserved; treat exit 1 as "look at the loci", not as failure. The full battery (drop `--family BASELINE`) needs pairs, renderings, negations, and controls to produce variants; with a single plain case it adds only an instruction-removal probe and a round trip.
 
+## Conjectures, tested by the records
+
+A pilot may carry a `claims.json` beside its configuration: a list of universal statements about what a language model does when it fills that form, each with a declared scope (families, cases, models, whether a model was called) and a condition over one observation. `claims` tests every statement against every record supplied and reports one of three things per claim: `REFUTED`, with the refuting models, the surviving models, and example observation ids; `UNREFUTED_FOR_DECLARED_SCOPE`, with how many observations from how many models were tested; or `NOT_TESTED`, when the scope matched no record.
+
+```sh
+PYTHONPATH=src python tools/run_conformance_pilot.py claims --claims forge/conformance/pilots/travel-claim/claims.json \
+    --observations-dir forge/conformance/runs/travel-claim-sweep --observations-dir forge/conformance/runs/travel-claim-round3 \
+    --markdown claims.md
+```
+
+A `never` claim ("a model never emits a key the schema does not define") is refuted by one observation where its condition holds; an `always` claim by one where it does not. The condition vocabulary is small and fixed: a trigger, a live locus, a response verdict, a field verdict (optionally on a named field, optionally only where the value is null), a grounding verdict (optionally only where a relaxation was used), the change-against-baseline flag, a null value, a present key, the thinking channel, the kind of recovery, `all_of`, `any_of`, `not`, and `baseline`, which evaluates a nested condition on the baseline observation of the same run and case, so that "a swapped rendering mismatched where the baseline did not" can be said. Anything outside the vocabulary fails closed.
+
+Survival is not confirmation. A claim unrefuted across eighteen models and three thousand observations is unrefuted for exactly those records, and the next record may refute it; every result carries the non-inductive limit, and no output of the command counts survivals as evidence. What the command adds is that a general statement about language models made in a document can be checked, by anyone, against the records the document cites, and that a refutation names its counterexamples. `docs/what-the-records-refute.md` is the travel-claim conjectures read this way.
+
 ## The hard battery
 
 `forge/conformance/pilots/travel-claim/` is the third pilot, built to be difficult for a small model rather than representative. It keeps the machine unchanged and pushes every configuration surface at once:
