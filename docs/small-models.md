@@ -86,6 +86,47 @@ Round three ran the same nineteen cases with two things switched on in `pilot.js
 
 The gpt-oss:20b run of round three had not finished when this section was written; its row and reading follow once its records are committed.
 
+## The wide sweep: eighteen models, one battery
+
+With cost no longer a constraint, every model the endpoint serves was run on the same battery as round three (plan `09e94899…`, which differs from round three's only in the declared model list; 135 calls per model; records under `forge/conformance/runs/travel-claim-sweep/`). The point was not to widen the table for its own sake but to add dimensions the study lacked: size ladders inside one family, a version ladder, a tuning contrast, and the four already-run models again so that repeatability across runs could be measured as well as within one. Kimi K3 was run before the instruction to exclude it arrived; its records were deleted and are not part of anything below.
+
+The table is generated from the run records. Counts are of observations over 135 model calls; a row is a description of what one model did, not a score, and the rows are in ladder order, not merit order.
+
+| Model | Parsed | Fenced | Repeated key | Thinking channel | Field criticisms | Totals wrong | Null on a derivable date | Invented optional values | Keys outside the schema | Repeats identical | Rules followed |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| nemotron-3-nano:30b | 135 | 0 | 5 | 0 | 224 | 89 | 0 | 63 | 61 | 8 of 18 | 3 of 6 |
+| nemotron-3-super | 133 | 0 | 0 | 0 | 139 | 45 | 0 | 54 | 1 | 5 of 18 | 3 of 6 |
+| nemotron-3-ultra | 135 | 0 | 0 | 0 | 69 | 39 | 0 | 24 | 0 | 6 of 18 | 5 of 6 |
+| deepseek-v4-flash:0731 | 134 | 121 | 0 | 0 | 90 | 30 | 0 | 33 | 0 | 10 of 18 | 5 of 6 |
+| deepseek-v4-pro:0813 | 135 | 0 | 0 | 0 | 19 | 17 | 0 | 0 | 0 | 14 of 18 | 5 of 6 |
+| minimax-m2.7 | 135 | 0 | 0 | 135 | 16 | 0 | 0 | 0 | 0 | 13 of 18 | 5 of 6 |
+| minimax-m3 | 134 | 114 | 1 | 0 | 43 | 24 | 9 | 1 | 0 | 8 of 18 | 5 of 6 |
+| glm-5.1 | 135 | 135 | 0 | 0 | 38 | 31 | 3 | 0 | 0 | 12 of 18 | 6 of 6 |
+| glm-5.2 | 135 | 130 | 0 | 0 | 39 | 38 | 0 | 0 | 0 | 16 of 18 | 6 of 6 |
+| glm-5.3-flash | 135 | 135 | 0 | 0 | 1 | 1 | 0 | 0 | 0 | 18 of 18 | 6 of 6 |
+| glm-5.3 | 135 | 135 | 0 | 0 | 1 | 1 | 0 | 0 | 0 | 18 of 18 | 6 of 6 |
+| kimi-k2.6 | 135 | 135 | 0 | 0 | 36 | 36 | 0 | 0 | 0 | 12 of 18 | 6 of 6 |
+| kimi-k2.7-code | 135 | 135 | 0 | 0 | 38 | 37 | 0 | 0 | 0 | 10 of 18 | 6 of 6 |
+| gemma4:31b | 135 | 135 | 0 | 0 | 28 | 27 | 0 | 0 | 0 | 17 of 18 | 6 of 6 |
+| gpt-oss:20b | (run in progress when this was written) | | | | | | | | | | |
+| gpt-oss:120b | 135 | 0 | 0 | 135 | 12 | 0 | 4 | 0 | 0 | 17 of 18 | 6 of 6 |
+| qwen3.5:397b | 135 | 0 | 0 | 0 | 36 | 33 | 1 | 0 | 0 | 14 of 18 | 6 of 6 |
+| mistral-large-3:675b | 135 | 135 | 0 | 0 | 50 | 46 | 1 | 1 | 0 | 14 of 18 | 5 of 6 |
+
+"Field criticisms" counts every field verdict other than a match or an unscored field, over model-call variants; "totals wrong" is the part of that on `total_claimed_cents`; "invented optional values" counts values written for `cost_centre` or `project_code` on documents that state neither; "rules followed" is how many of the six appended rival rules the model applied. Run ids for every row are in the records; the round-three ids above apply to the four repeated models' first runs.
+
+### What the ladders show
+
+- **T17. Within the nemotron family, size buys fewer errors of each kind but not repeatability.** From nano to super to ultra, field criticisms fall from 224 to 139 to 69, invented optional values from 63 to 54 to 24, keys outside the schema from 61 to 1 to 0, and rule-following rises from 3 of 6 to 5 of 6. Repeats identical to the baseline are 8, 5 and 6 of 18: the largest model in the family reproduces its own output no more often than the smallest. Whatever makes this family unstable between identical requests is not its size.
+- **T18. Within the deepseek family, the "pro" tier removed the flash tier's habits entirely.** deepseek-v4-flash fenced 121 of 135 replies, invented 33 optional values and got 30 totals wrong; deepseek-v4-pro fenced none, invented none, and got 17 totals wrong, with repeatability up from 10 to 14 of 18. The two share nothing but a name in this table.
+- **T19. Within the glm family, one version step did what no size step did.** glm-5.1 and 5.2 got 31 and 38 totals wrong and reproduced 12 and 16 of 18 repeats; glm-5.3 and glm-5.3-flash got one total wrong each and reproduced all 18 repeats, followed all six rules, fenced every reply like their predecessors, and are the only two models in the sweep with a single field criticism. The flash variant did this as well as the full one.
+- **T20. Within the kimi family, code tuning changed nothing that this battery measures.** kimi-k2.6 and kimi-k2.7-code got 36 and 37 totals wrong, everything else right, and reproduced 12 and 10 of 18 repeats.
+- **T21. The newer minimax did worse than the older one, and the older one thinks.** minimax-m2.7 carried a thinking channel on all 135 replies although the request said not to think, and was one of only two models in the sweep with no total wrong; its criticisms were eight unnormalised employee numbers and a few enum and night-count readings. minimax-m3 fenced 114 replies, got 24 totals wrong, and returned null for a derivable date nine times. The other model with no total wrong, gpt-oss:120b, also carried a thinking channel on every reply. The records cannot say whether the thinking caused the arithmetic; they say that the two models that reasoned before answering were the two whose sums were right, and that three models that did not (both glm-5.3 variants at one wrong each, and gemma at 27) are spread across the range.
+- **T22. Placeholder fabrication on unstated optional fields is a family trait, not a size trait.** All three nemotron sizes and deepseek-flash did it (24 to 63 times each); twelve other models did it never or once. Where it happens, the values are placeholders (`P-0001`, `CC-1234`, `P-5678`) or a code copied from another field in the same document.
+- **T23. Arithmetic on a multiplied line is the battery's most reliable criticism.** Fifteen of the seventeen finished models got at least one total wrong; the misses concentrate on the four cases where a nightly rate must be multiplied, and the errors are usually small. The two exceptions are the two thinking models (T21); the two nearly-exceptions are the two glm-5.3 variants.
+- **T24. Across runs, the same request returns the same form most of the time for most models, and almost never for one.** For the four models run in both round three and the sweep, the requests shared by both runs (identical digests) returned identical form values on 104 of 117 for gemma4:31b (every difference in the total), 105 of 117 for gpt-oss:120b (differences in the derivable date, the purpose, and once a phone number), and 12 of 108 for nemotron-3-nano. Within-run repeats (the "repeats identical" column) tell the same story with less data.
+- **T25. No model, in 17 times 135 calls, refused, was truncated, failed in transport, returned a value for the silent case's unstated fields, took the copied-in colleague as the approver, took a transit city as the destination, misread a double negation, or left a formatting inversion without effect.** These are the claims that survived the sweep; they are unrefuted for these records and nothing more. `docs/what-the-records-refute.md` lists all forty-three conjectures with their status and counterexamples.
+
 ## Running it locally
 
 The battery was built to be run against a local model, and the machine now supports that without an API key. In `pilot.json`, point the endpoint at the local server and declare that no key is used:
