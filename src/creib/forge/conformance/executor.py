@@ -97,6 +97,10 @@ class ChatRequest:
     format_schema: dict[str, Any] | None
     options: dict[str, int]
     think: bool | None
+    # Which repeat of a byte-identical request this is: None for the first send, 1.. for the
+    # REPEAT family. Not part of the body, the digest, or the record; a replay executor uses it
+    # to pair a repeat with the reply that repeat received, since one digest has several.
+    repeat_index: int | None = None
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -423,26 +427,33 @@ class CannedExecutor:
 
 
 class ReplayExecutor:
-    """Replay recorded responses by request digest; never contacts a network."""
+    """Replay recorded responses by request digest and repeat index; never contacts a network.
+
+    A run with ``repeats`` sends one request several times, so one digest has several recorded
+    replies; the replay pairs each send with the reply the same send received (H23). Two
+    recorded replies for the same digest and repeat are a conflict and are refused.
+    """
 
     def __init__(self, observation_records_dir: Path) -> None:
         from .records import load_observation_directory
 
         if not isinstance(observation_records_dir, Path):
             raise TypeError("observation_records_dir must be pathlib.Path")
-        self._responses: dict[str, ChatResponse] = {}
+        self._responses: dict[tuple[str, int], ChatResponse] = {}
         for record in load_observation_directory(observation_records_dir):
             if record.request_digest is None or record.response is None:
                 continue
-            existing = self._responses.get(record.request_digest)
+            key = (record.request_digest, record.variant.repeat_index or 0)
+            existing = self._responses.get(key)
             if existing is not None and existing != record.response:
                 raise RecordError(
-                    f"replay directory holds conflicting responses for request {record.request_digest}"
+                    f"replay directory holds conflicting responses for request {record.request_digest} repeat {key[1]}"
                 )
-            self._responses[record.request_digest] = record.response
+            self._responses[key] = record.response
 
     def complete(self, request: ChatRequest) -> ChatResponse:
+        key = (request.request_digest, request.repeat_index or 0)
         try:
-            return self._responses[request.request_digest]
+            return self._responses[key]
         except KeyError as exc:
-            raise RecordError(f"no recorded response for request {request.request_digest}") from exc
+            raise RecordError(f"no recorded response for request {request.request_digest} repeat {key[1]}") from exc

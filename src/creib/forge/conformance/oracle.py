@@ -282,6 +282,20 @@ def _refuse_constant(_text: str) -> Any:
     raise ValueError("NaN and Infinity are not admitted")
 
 
+_TYPOGRAPHIC_QUOTES = str.maketrans({"\u2019": "'", "\u2018": "'", "\u02bc": "'", "\u2032": "'", "\u201c": '"', "\u201d": '"'})
+
+
+def _plain_quotes(text: str) -> str:
+    """Fold typographic apostrophes and quotation marks to their ASCII forms.
+
+    The refusal phrase list is written with straight apostrophes; a model that writes
+    "I\u2019m sorry" is refusing all the same, and the first live refusal in these
+    records was missed for exactly that reason (H22).
+    """
+
+    return text.translate(_TYPOGRAPHIC_QUOTES)
+
+
 def parse_content(content: str, refusal_phrases: tuple[str, ...]) -> tuple[Any, str, str | None, bool]:
     """Return (parsed, response_verdict, detail, recovered_from_prose)."""
 
@@ -291,9 +305,9 @@ def parse_content(content: str, refusal_phrases: tuple[str, ...]) -> tuple[Any, 
         try:
             recovered, duplicates = recover_json_object(content)
         except RecordError:
-            lowered = content.lower()
+            lowered = _plain_quotes(content).lower()
             for phrase in refusal_phrases:
-                if phrase.lower() in lowered:
+                if _plain_quotes(phrase).lower() in lowered:
                     return None, "REFUSAL_SUSPECTED", f"matched refusal phrase {phrase!r}; heuristic", False
             return None, "INVALID_JSON", str(strict_error), False
         if duplicates:

@@ -317,6 +317,11 @@ class OracleTests(unittest.TestCase):
         self.assertEqual(self._score("this is not json at all").response_verdict, "INVALID_JSON")
         self.assertEqual(self._score("[1, 2, 3]").response_verdict, "NOT_AN_OBJECT")
         self.assertEqual(self._score("I'm sorry, I cannot help with that request.").response_verdict, "REFUSAL_SUSPECTED")
+        # H22: the first live refusal was written with typographic apostrophes and slipped past the list.
+        curly = self._score("I\u2019m sorry, but I can\u2019t comply with that.")
+        self.assertEqual(curly.response_verdict, "REFUSAL_SUSPECTED")
+        self.assertIn("matched refusal phrase", curly.response_detail or "")
+        self.assertEqual(self._score("I\u2019m not able to comply with that.").response_verdict, "INVALID_JSON", "a phrase outside the list is still not a refusal to this heuristic")
         floaty = self._score('{"reporter_name": 1.5}')
         self.assertEqual(floaty.response_verdict, "INVALID_JSON")
         self.assertIn("floating-point", floaty.response_detail or "")
@@ -984,6 +989,35 @@ class RoundOneImprovementTests(unittest.TestCase):
             self.assertEqual(load_run(next(Path(second).glob("run.*.json"))).executor_kind, "replay")
             both = subprocess.run(base + ["--dry-run", "--replay-dir", first, "--output-dir", second], capture_output=True, text=True, env=env)
             self.assertNotEqual(both.returncode, 0)
+
+    def test_replay_pairs_each_repeat_with_the_reply_that_repeat_received(self) -> None:
+        """H23: with repeats, one request digest has several recorded replies; the replay must not refuse or conflate them."""
+        from creib.forge.conformance.executor import ReplayExecutor
+        from creib.forge.conformance.prompt import build_chat_request
+        round3 = ROOT / "forge" / "conformance" / "runs" / "travel-claim-round3"
+        config = load_pilot_config(ROOT / "forge" / "conformance" / "pilots" / "travel-claim" / "pilot.json")
+        corpus = load_corpus(config.corpus_path, config.spec)
+        travel_plan = plan(config.spec, corpus)
+        recorded = [o for o in load_observation_directory(round3) if o.model == "nemotron-3-nano:30b" and o.response is not None]
+        by_key = {(o.request_digest, o.variant.repeat_index or 0): o for o in recorded}
+        self.assertTrue(any(o.variant.repeat_index for o in recorded), "the round-three records carry repeats")
+        differing = [o for o in recorded if o.variant.family is Family.REPEAT and o.scoring.changed_vs_baseline is True]
+        self.assertTrue(differing, "nemotron's repeats differed, which is what makes the pairing observable")
+        executor = ReplayExecutor(round3)
+        for observation in differing[:3]:
+            variant = next(v for v in travel_plan.variants if v.base_case_id == observation.variant.base_case_id and v.family is Family.REPEAT and v.repeat_index == observation.variant.repeat_index)
+            materialised = variant if variant.input_document is not None else None
+            self.assertIsNotNone(materialised)
+            request = build_chat_request(materialised, model="nemotron-3-nano:30b", endpoint=config.spec.endpoint)
+            self.assertEqual(request.request_digest, observation.request_digest)
+            self.assertEqual(executor.complete(request), observation.response)
+            baseline = by_key[(observation.request_digest, 0)]
+            self.assertNotEqual(executor.complete(request), baseline.response)
+        import dataclasses
+        ninth = dataclasses.replace(build_chat_request(materialised, model="nemotron-3-nano:30b", endpoint=config.spec.endpoint), repeat_index=9)
+        self.assertEqual(ninth.request_digest, observation.request_digest, "the repeat index is outside the digest")
+        with self.assertRaisesRegex(RecordError, "repeat 9"):
+            executor.complete(ninth)
 
     def test_duplicate_keys_are_recovered_last_wins_and_named(self) -> None:
         from creib.forge.conformance.oracle import parse_content

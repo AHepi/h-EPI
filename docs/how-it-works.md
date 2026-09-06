@@ -294,7 +294,7 @@ Every check in the machine is invariant under some transformation of the reply: 
 | Span occurrence | Whether the quoted words occur in the document, after whitespace normalisation and any configured relaxation | Quoting the wrong sentence that does occur; under `case_insensitive`, case; under `date_range_completion`, that the date was completed rather than quoted |
 | Value in span | Substring containment | A span that contains the value by coincidence; a value derived from the span rather than read from it |
 | Change against the baseline (REPEAT, ROUND_TRIP, IMPORT_DEPENDENCY, SUBSTRATE_SWAP) | Exact equality of the form fields | Direction and size of a change; a wrong value that is wrong identically on both sides counts as stable; anything outside the form fields (H12) |
-| Refusal detection | A phrase list | A refusal phrased outside the list; and it fires on a non-refusal that contains a listed phrase |
+| Refusal detection | A phrase list, compared after folding typographic apostrophes and quotes to their plain forms (H22) | A refusal phrased outside the list; and it fires on a non-refusal that contains a listed phrase |
 | Thinking channel | Whether the reply carried the channel | Reasoning written into the content; whether the channel's contents bore on the answer |
 | Output tokens (claims `output_tokens`) | A count | What the tokens said |
 | `format_enforced_by_server` | An extra or missing key, which refutes enforcement | Anything else; it stays `null` for a model that never sends such a key |
