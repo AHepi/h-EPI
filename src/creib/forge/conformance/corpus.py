@@ -19,7 +19,7 @@ from typing import Any, Iterator, Mapping
 
 from creib.canonical import bytes_digest
 from creib.errors import RecordError
-from creib.forge.models import OracleStatus
+from .common import OracleStatus
 from creib.strict_json import loads_strict
 
 from .common import (

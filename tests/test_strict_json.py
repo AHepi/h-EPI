@@ -5,7 +5,6 @@ from pathlib import Path
 from unittest.mock import patch
 
 from creib.errors import RecordError
-from creib.models import validate_manifest
 from creib.strict_json import load_strict, loads_strict
 
 
@@ -36,25 +35,3 @@ class StrictJSONTests(unittest.TestCase):
     def test_lone_unicode_surrogate_is_rejected(self) -> None:
         with self.assertRaises(RecordError):
             loads_strict('{"text": "\\ud800"}')
-
-    def test_boolean_does_not_coerce_to_integer(self) -> None:
-        manifest = loads_strict(
-            """{
-              "schema_version":"cr-eib.source-manifest.v1",
-              "document_id":"CR-1.0",
-              "semantic_authority":true,
-              "supplied_filename":"authority.pdf",
-              "sha256":"0000000000000000000000000000000000000000000000000000000000000000",
-              "byte_length":true,
-              "page_count":1,
-              "page_size_millipoints":[1,1],
-              "active_span":{"physical_pdf_pages":[1,1],"printed_folios":[1,1]},
-              "authority_file_committed":false
-            }"""
-        )
-        with self.assertRaises(RecordError):
-            validate_manifest(manifest)
-
-
-if __name__ == "__main__":
-    unittest.main()

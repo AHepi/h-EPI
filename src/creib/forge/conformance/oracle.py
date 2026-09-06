@@ -24,7 +24,7 @@ from jsonschema import Draft202012Validator
 
 from creib.canonical import canonical_bytes
 from creib.errors import RecordError
-from creib.forge.models import OracleStatus
+from .common import OracleStatus
 from creib.strict_json import loads_strict
 
 from .common import (

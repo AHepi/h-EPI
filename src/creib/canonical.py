@@ -1,4 +1,4 @@
-"""Canonical hashing for the integer/string-only CR-EIB record profile."""
+"""Canonical hashing for the integer/string-only record profile (no floats)."""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ def _validate_profile(value: Any, location: str = "$") -> None:
 
 
 def canonical_bytes(value: Any) -> bytes:
-    """Return deterministic UTF-8 JSON for the CR-EIB no-float profile."""
+    """Return deterministic UTF-8 JSON for the no-float record profile."""
     _validate_profile(value)
     return json.dumps(
         value,

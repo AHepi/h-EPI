@@ -8,6 +8,8 @@ truth, confirmation, or a score to any model output.
 
 from __future__ import annotations
 
+from enum import Enum
+
 from functools import lru_cache
 import hashlib
 import os
@@ -38,10 +40,24 @@ RUN_SCHEMA_VERSION = "creib.conformance-pilot.run.v1"
 OBSERVATION_SCHEMA_ID = "https://ahepi.example/smf/0.5/conformance-observation.schema.json"
 
 # Ordered so that every serialised locus list is deterministic.  The set is
-# the vocabulary already used by creib.forge.generic_inquiry.
+# the four loci a failed expectation can criticise; never one alone after a model call.
 LOCUS_VALUES: tuple[str, ...] = ("CANDIDATE", "AUXILIARY", "TEST", "SCOPE")
 ROUTE_AWAITING_HUMAN_TRIAGE = "AWAITING_HUMAN_TRIAGE"
 OVERALL_STATUS_UNRESOLVED = "UNRESOLVED"
+NON_INDUCTIVE_LIMIT = (
+    "Survival of criticism leaves a claim unrefuted; pass counts, consensus, "
+    "and confidence do not justify it."
+)
+
+
+class OracleStatus(str, Enum):
+    """Explicitly non-final status of a proposed oracle."""
+
+    SOURCE_SCOPED = "source_scoped"
+    INTERPRETATION_PROVISIONAL = "interpretation_provisional"
+    PROJECT_IMPORT_PROVISIONAL = "project_import_provisional"
+
+
 SCOPE_REFUTED = "REFUTED_CASES_PRESENT"
 SCOPE_UNREFUTED = "UNREFUTED_FOR_DECLARED_SCOPE"
 SCOPE_INCONCLUSIVE = "INCONCLUSIVE_NO_SCORED_OUTPUT"

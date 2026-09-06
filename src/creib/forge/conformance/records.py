@@ -20,7 +20,7 @@ from typing import Any, Mapping
 
 from creib.canonical import canonical_bytes
 from creib.errors import PolicyViolation, RecordError
-from creib.forge.models import NON_INDUCTIVE_LIMIT
+from .common import NON_INDUCTIVE_LIMIT
 from creib.strict_json import loads_strict
 
 from .common import (

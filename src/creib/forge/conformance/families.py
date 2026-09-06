@@ -28,7 +28,7 @@ import re
 from typing import Any, Callable, Mapping
 
 from creib.errors import RecordError
-from creib.forge.models import OracleStatus
+from .common import OracleStatus
 
 from .common import (
     array_value,

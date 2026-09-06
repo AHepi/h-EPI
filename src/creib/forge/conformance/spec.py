@@ -23,7 +23,7 @@ from jsonschema import Draft202012Validator
 from jsonschema.exceptions import SchemaError
 
 from creib.errors import RecordError
-from creib.forge.models import NON_INDUCTIVE_LIMIT
+from .common import NON_INDUCTIVE_LIMIT
 from creib.strict_json import loads_strict
 
 from .common import (

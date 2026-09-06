@@ -45,8 +45,7 @@ from creib.forge.conformance import families as families_module
 from creib.forge.conformance.executor import parse_chat_body, redact
 from creib.forge.conformance.families import make_variant, variant_from_dict
 from creib.forge.conformance.oracle import prerequisite_unavailable
-from creib.forge.generic_inquiry import _LOCUS_VALUES
-from creib.forge.models import NON_INDUCTIVE_LIMIT
+from creib.forge.conformance.common import NON_INDUCTIVE_LIMIT
 from creib.forge.schema_validation import load_local_schema_catalog
 from creib.strict_json import load_strict, loads_strict
 
@@ -122,8 +121,8 @@ class SchemaAndVocabularyTests(unittest.TestCase):
     def test_no_conformance_schema_leaks_into_pinned_schema_directory(self) -> None:
         self.assertEqual([], [p.name for p in (ROOT / "forge" / "schema").glob("conformance-*")])
 
-    def test_locus_vocabulary_matches_generic_inquiry(self) -> None:
-        self.assertEqual(frozenset(LOCUS_VALUES), _LOCUS_VALUES)
+    def test_locus_vocabulary_is_the_four_criticism_loci(self) -> None:
+        self.assertEqual(frozenset(LOCUS_VALUES), frozenset({"CANDIDATE", "AUXILIARY", "TEST", "SCOPE"}))
 
 
 class SpecAndCorpusTests(unittest.TestCase):

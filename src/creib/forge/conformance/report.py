@@ -12,7 +12,7 @@ from __future__ import annotations
 from typing import Any, Iterable, Mapping
 
 from creib.errors import RecordError
-from creib.forge.models import NON_INDUCTIVE_LIMIT
+from .common import NON_INDUCTIVE_LIMIT
 
 from .families import Family
 from .oracle import FIELD_VERDICTS, RESPONSE_VERDICTS
