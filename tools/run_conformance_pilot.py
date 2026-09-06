@@ -16,7 +16,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from creib.errors import CREIBError, RecordError  # noqa: E402
 from creib.forge.conformance.common import publish_no_clobber  # noqa: E402
 from creib.forge.conformance.corpus import load_corpus  # noqa: E402
-from creib.forge.conformance.executor import CannedExecutor, OllamaChatExecutor  # noqa: E402
+from creib.forge.conformance.executor import CannedExecutor, OllamaChatExecutor, ReplayExecutor  # noqa: E402
 from creib.forge.conformance.families import Family, plan as build_plan  # noqa: E402
 from creib.forge.conformance.oracle import score  # noqa: E402
 from creib.forge.conformance.records import load_observation_directory, load_run  # noqa: E402
@@ -57,12 +57,23 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--output-dir", type=Path, required=True)
     run.add_argument("--created-on", required=True, help="RFC 3339 timestamp recorded verbatim")
     run.add_argument("--dry-run", action="store_true", help="use the canned executor; no network")
+    run.add_argument(
+        "--replay-dir",
+        type=Path,
+        help="re-score from the responses recorded in this observations directory, matched by request digest; no network. "
+        "Use it after correcting an oracle: the recorded replies are scored again and new records are written to --output-dir",
+    )
     run.add_argument("--retries", type=int, default=0)
 
     fills = subparsers.add_parser("fills", help="print the filled forms from recorded observations (what the model actually returned)")
     fills.add_argument("--observations-dir", type=Path, required=True)
     fills.add_argument("--run", type=Path, help="restrict to one run record")
     fills.add_argument("--family", default="BASELINE", choices=[family.value for family in Family] + ["ALL"])
+    claims = subparsers.add_parser("claims", help="test the conjectures in a claims file against observation records; REFUTED with counterexamples, or UNREFUTED_FOR_DECLARED_SCOPE")
+    claims.add_argument("--claims", type=Path, required=True)
+    claims.add_argument("--observations-dir", type=Path, required=True, action="append", help="may be given more than once")
+    claims.add_argument("--markdown", type=Path, help="also write a Markdown rendering here")
+    claims.add_argument("--appraisal", type=Path, help="arguments about the readings refutations rest on; labelled in, out, or undecided, and refutations classed usable, contested, or defeated")
     evidence = subparsers.add_parser("evidence", help="list observation ids per model and criticism trigger, for the failure-mode register")
     evidence.add_argument("--observations-dir", type=Path, required=True)
     evidence.add_argument("--trigger", help="restrict to one trigger or grounding verdict")
@@ -152,14 +163,20 @@ def main(argv: Sequence[str] | None = None) -> int:
             spec = config.spec
             built = build_plan(spec, corpus)
             families = None if args.family is None else tuple(Family(name) for name in args.family)
+            if args.dry_run and args.replay_dir is not None:
+                raise RecordError("--dry-run and --replay-dir are exclusive")
             if args.dry_run:
                 executor = CannedExecutor()
                 executor_kind = "canned"
+            elif args.replay_dir is not None:
+                executor = ReplayExecutor(args.replay_dir)
+                executor_kind = "replay"
             else:
                 executor = OllamaChatExecutor(
                     base_url=spec.endpoint.base_url,
                     timeout_seconds=spec.endpoint.timeout_seconds,
                     retries=args.retries,
+                    auth=spec.endpoint.auth,
                 )
                 executor_kind = "ollama-chat"
             result = run_pilot(
@@ -186,6 +203,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "response_verdict_counts": dict(record.response_verdict_counts),
                     "field_verdict_counts": dict(record.field_verdict_counts),
                     "live_locus_counts": dict(record.live_locus_counts),
+                    "grounding_verdict_counts": dict(record.grounding_verdict_counts),
                     "scope_label": record.scope_label,
                     "overall_status": record.overall_status,
                     "route": record.route,
@@ -225,6 +243,33 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "live_loci": list(observation.routing.loci),
                     "observation_id": observation.observation_id,
                 })
+            return 0
+        if args.command == "claims":
+            from creib.forge.conformance.appraisal import Appraisal, load_appraisal
+            from creib.forge.conformance.claims import CLAIM_STATUSES, evaluate_claims, load_claims, render_claims_markdown
+            loaded = load_claims(args.claims)
+            observations = []
+            for directory in args.observations_dir:
+                observations.extend(load_observation_directory(directory))
+            appraisal = None if args.appraisal is None else Appraisal.build(load_appraisal(args.appraisal))
+            results = evaluate_claims(loaded, observations, appraisal)
+            for result in results:
+                _emit(result.to_dict())
+            counts = {status: sum(1 for r in results if r.status == status) for status in CLAIM_STATUSES}
+            unwitnessed = sorted(r.claim.claim_id for r in results if r.status == "UNREFUTED_FOR_DECLARED_SCOPE" and not r.shown_able_to_fail)
+            summary = {
+                "claims": len(results),
+                "observations": len(observations),
+                "models": sorted({o.model for o in observations}),
+                "status_counts": counts,
+                "unrefuted_not_shown_able_to_fail": unwitnessed,
+                "semantic_verdict": None,
+            }
+            if appraisal is not None:
+                summary["appraisal_labels"] = appraisal.labels.to_dict()
+            _emit(summary)
+            if args.markdown is not None:
+                args.markdown.write_text(render_claims_markdown(results), encoding="utf-8")
             return 0
         if args.command == "evidence":
             observations = load_observation_directory(args.observations_dir)

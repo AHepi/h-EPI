@@ -33,6 +33,7 @@ from creib.errors import RecordError
 from .common import OracleStatus
 
 from .common import (
+    integer,
     array_value,
     boolean,
     content_id,
@@ -64,6 +65,7 @@ class Family(str, Enum):
     IMPORT_DEPENDENCY = "IMPORT_DEPENDENCY"
     NON_VACUITY = "NON_VACUITY"
     ROUND_TRIP = "ROUND_TRIP"
+    REPEAT = "REPEAT"
 
 
 TEST_FAMILIES: tuple[Family, ...] = tuple(family for family in Family if family is not Family.BASELINE)
@@ -98,6 +100,8 @@ class Variant:
     rival_label: str | None
     removed_sentence_id: str | None
     grounding: Grounding | None = None
+    # REPEAT only: 1..N. Written to the body only when set, so every earlier variant keeps its id.
+    repeat_index: int | None = None
 
     @property
     def required_fields(self) -> tuple[str, ...]:
@@ -187,14 +191,23 @@ class Variant:
             companions = ", ".join(f"`{self.span_key(field)}`" for field in spans)
             extra.append(
                 f"{next_number}. For each of {listed}, also output the companion key ({companions}): "
-                "the exact words from the document, copied verbatim without any change, that the value was taken from."
+                "the exact words from the document, copied verbatim without any change, that the value was taken from. "
+                "Output no companion key for any other field."
             )
             next_number += 1
         if abstain:
+            # Name each field's companion, or its absence, so that a model does not infer a companion
+            # key that the schema does not define (a 30B model did exactly that in the first live run).
             listed = ", ".join(f"`{field}`" for field in abstain)
+            clauses = []
+            for field in abstain:
+                if field in spans:
+                    clauses.append(f"for `{field}` also output null for `{self.span_key(field)}`")
+                else:
+                    clauses.append(f"`{field}` has no companion key")
             extra.append(
                 f"{next_number}. For {listed}: when the document does not state the value, output null for the field "
-                "(and null for its companion key, if it has one); never invent a value."
+                f"({'; '.join(clauses)}); never invent a value."
             )
         return self.instructions.rstrip("\n") + "\n" + "\n".join(extra) + "\n"
 
@@ -205,7 +218,7 @@ class Variant:
         return None
 
     def body(self) -> dict[str, object]:
-        return {
+        body: dict[str, object] = {
             "family": self.family.value,
             "base_case_id": self.base_case_id,
             "form_schema": frozen_mapping_to_dict(self.form_schema),
@@ -229,6 +242,9 @@ class Variant:
             "removed_sentence_id": self.removed_sentence_id,
             "grounding": None if self.grounding is None else self.grounding.to_dict(),
         }
+        if self.repeat_index is not None:
+            body["repeat_index"] = self.repeat_index
+        return body
 
     def to_dict(self) -> dict[str, object]:
         record = self.body()
@@ -289,6 +305,7 @@ def variant_from_dict(raw: Any) -> Variant:
         rival_label=optional_text(record["rival_label"], "variant.rival_label"),
         removed_sentence_id=optional_text(record["removed_sentence_id"], "variant.removed_sentence_id"),
         grounding=None if record["grounding"] is None else grounding_from_dict(record["grounding"], field_order, "variant.grounding"),
+        repeat_index=None if record.get("repeat_index") is None else integer(record["repeat_index"], "variant.repeat_index", minimum=1),
     )
     if rebuilt.variant_id != hex_digest(record["variant_id"], "variant.variant_id"):
         raise RecordError("variant_id does not replay from the variant content")
@@ -645,6 +662,13 @@ def non_vacuity(spec: TaskSpec, case: Case) -> list[Variant]:
     variants: list[Variant] = []
     for control in spec.controls:
         output = _corrupt(case.reference_output, control, case.case_id)
+        if control.kind != "none" and dict(output) == dict(case.reference_output):
+            # A corruption that changes nothing cannot be rejected, so its acceptance would
+            # say nothing about the oracle; the control is vacuous on this case and the
+            # configuration is refused before any call is planned.
+            raise RecordError(
+                f"control {control.control_id} is vacuous on {case.case_id}: corruption {control.kind} leaves the reference output unchanged"
+            )
         fields = _base_fields(spec, case)
         fields.update(
             family=Family.NON_VACUITY,
@@ -682,6 +706,29 @@ def round_trip(spec: TaskSpec, case: Case) -> list[Variant]:
     return [make_variant(**fields)]
 
 
+def repeat(spec: TaskSpec, case: Case) -> list[Variant]:
+    """Send the baseline request again, ``spec.repeats`` times; the difference is the repeat index only.
+
+    Off by default (``repeats`` 0). A repeat is scored against the same oracle as the baseline and
+    compared with the baseline output, so the run records its own noise floor: every family that
+    compares one call with another (NEGATION, IMPORT_DEPENDENCY, ROUND_TRIP) inherits it.
+    """
+
+    if case.boundary or spec.repeats == 0:
+        return []
+    variants: list[Variant] = []
+    for index in range(1, spec.repeats + 1):
+        fields = _base_fields(spec, case)
+        fields.update(
+            family=Family.REPEAT,
+            repeat_index=index,
+            held_fixed="form schema, instructions, document, and every request option; the request is byte-identical to the baseline's",
+            controlled_difference=f"repeat {index} of {spec.repeats} of the baseline request; records whether the endpoint reproduces its own output under the fixed seed",
+        )
+        variants.append(make_variant(**fields))
+    return variants
+
+
 FAMILY_GENERATORS: Mapping[Family, Callable[[TaskSpec, Case], list[Variant]]] = {
     Family.BASELINE: baseline,
     Family.DELETION: deletion,
@@ -693,6 +740,7 @@ FAMILY_GENERATORS: Mapping[Family, Callable[[TaskSpec, Case], list[Variant]]] = 
     Family.IMPORT_DEPENDENCY: import_dependency,
     Family.NON_VACUITY: non_vacuity,
     Family.ROUND_TRIP: round_trip,
+    Family.REPEAT: repeat,
 }
 
 

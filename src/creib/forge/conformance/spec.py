@@ -50,6 +50,8 @@ from .common import (
 
 
 ENDPOINT_KIND = "ollama-chat"
+# bearer: Authorization from OLLAMA_API_KEY (the hosted endpoint); none: no key and no header (a local Ollama).
+ENDPOINT_AUTH_MODES: tuple[str, ...] = ("bearer", "none")
 VALUE_TRANSFORMS: tuple[str, ...] = ("iso_date_to_dmy", "e164_au_to_national_spaced")
 CORRUPTION_KINDS: tuple[str, ...] = ("none", "swap_fields", "drop_required", "extra_key")
 _CONSTRAINT_KEYS: tuple[str, ...] = ("pattern", "enum", "maxLength", "minLength", "format")
@@ -75,15 +77,22 @@ class Endpoint:
     temperature: int
     seed: int
     think: bool | None
+    auth: str = "bearer"
 
     def to_dict(self) -> dict[str, object]:
-        return {
+        # ``auth`` is written only when it is not the default. Records written before the key existed
+        # carry no ``auth`` and mean bearer; writing it unconditionally would change their header bytes
+        # and break every recorded run_id.
+        body: dict[str, object] = {
             "kind": self.kind,
             "base_url": self.base_url,
             "timeout_seconds": self.timeout_seconds,
             "options": {"temperature": self.temperature, "seed": self.seed},
             "think": self.think,
         }
+        if self.auth != "bearer":
+            body["auth"] = self.auth
+        return body
 
 
 @dataclass(frozen=True)
@@ -182,6 +191,11 @@ class Negation:
 
 _SPAN_SUFFIX = re.compile(r"^_[a-z][a-z0-9_]{0,31}$")
 GROUNDING_MODES: tuple[str, ...] = ("none", "spans")
+# Relaxations of the verbatim span match, each a deliberate choice recorded in the variant:
+#   case_insensitive       - accept `sick` for "Sick leave"
+#   date_range_completion  - accept "24 June 2025" when the document says "24 to 26 June 2025"
+SPAN_RELAXATIONS: tuple[str, ...] = ("case_insensitive", "date_range_completion")
+MAX_REPEATS = 10
 
 
 @dataclass(frozen=True)
@@ -201,19 +215,25 @@ class Grounding:
     span_fields: tuple[str, ...]
     value_in_span_fields: tuple[str, ...]
     abstain_fields: tuple[str, ...]
+    span_relaxations: tuple[str, ...] = ()
 
     @property
     def active(self) -> bool:
         return self.mode == "spans"
 
     def to_dict(self) -> dict[str, object]:
-        return {
+        # ``span_relaxations`` is written only when non-empty: records written before it existed
+        # carry no such key and mean verbatim, and their variant ids must keep replaying.
+        body: dict[str, object] = {
             "mode": self.mode,
             "span_suffix": self.span_suffix,
             "span_fields": list(self.span_fields),
             "value_in_span_fields": list(self.value_in_span_fields),
             "abstain_fields": list(self.abstain_fields),
         }
+        if self.span_relaxations:
+            body["span_relaxations"] = list(self.span_relaxations)
+        return body
 
 
 def grounding_from_dict(raw: Any, field_order: tuple[str, ...], where: str = "grounding") -> Grounding:
@@ -240,9 +260,17 @@ def grounding_from_dict(raw: Any, field_order: tuple[str, ...], where: str = "gr
     span_fields = fields("span_fields")
     value_in_span = fields("value_in_span_fields")
     abstain = fields("abstain_fields")
+    relaxations: tuple[str, ...] = ()
+    if "span_relaxations" in record:
+        relaxations = tuple(text(item, f"{where}.span_relaxations[{index}]") for index, item in enumerate(array_value(record["span_relaxations"], f"{where}.span_relaxations")))
+        for item in relaxations:
+            if item not in SPAN_RELAXATIONS:
+                raise RecordError(f"{where}.span_relaxations has unknown relaxation {item!r}; known: {list(SPAN_RELAXATIONS)}")
+        if len(relaxations) != len(set(relaxations)):
+            raise RecordError(f"{where}.span_relaxations must not repeat")
     if mode == "none":
-        if span_fields or value_in_span or abstain:
-            raise RecordError(f"{where}.mode none requires every field list to be empty")
+        if span_fields or value_in_span or abstain or relaxations:
+            raise RecordError(f"{where}.mode none requires every field list and span_relaxations to be empty")
     else:
         if not span_fields and not abstain:
             raise RecordError(f"{where}.mode spans requires span_fields or abstain_fields")
@@ -251,7 +279,7 @@ def grounding_from_dict(raw: Any, field_order: tuple[str, ...], where: str = "gr
         for item in span_fields:
             if item + suffix in field_order:
                 raise RecordError(f"{where}: companion key {item + suffix!r} collides with a form field")
-    return Grounding(mode=mode, span_suffix=suffix, span_fields=span_fields, value_in_span_fields=value_in_span, abstain_fields=abstain)
+    return Grounding(mode=mode, span_suffix=suffix, span_fields=span_fields, value_in_span_fields=value_in_span, abstain_fields=abstain, span_relaxations=relaxations)
 
 
 @dataclass(frozen=True)
@@ -299,6 +327,7 @@ class TaskSpec:
     controls: tuple[Control, ...]
     refusal_phrases: tuple[str, ...]
     grounding: Grounding
+    repeats: int
 
     @property
     def required_fields(self) -> tuple[str, ...]:
@@ -430,6 +459,10 @@ def endpoint_from_dict(raw: dict[str, Any]) -> Endpoint:
     options = object_value(raw["options"], "endpoint.options")
     if raw["kind"] != ENDPOINT_KIND:
         raise RecordError("endpoint.kind must be ollama-chat")
+    # ``auth`` is optional so that records written before it existed still load; absent means bearer.
+    auth = "bearer" if "auth" not in raw else text(raw["auth"], "endpoint.auth")
+    if auth not in ENDPOINT_AUTH_MODES:
+        raise RecordError(f"endpoint.auth must be one of {list(ENDPOINT_AUTH_MODES)}")
     return Endpoint(
         kind=ENDPOINT_KIND,
         base_url=text(raw["base_url"], "endpoint.base_url").rstrip("/"),
@@ -437,6 +470,7 @@ def endpoint_from_dict(raw: dict[str, Any]) -> Endpoint:
         temperature=integer(options["temperature"], "endpoint.options.temperature"),
         seed=integer(options["seed"], "endpoint.options.seed"),
         think=optional_boolean(raw["think"], "endpoint.think"),
+        auth=auth,
     )
 
 
@@ -630,6 +664,9 @@ def build_task_spec(
 
     controls = _controls(array_value(raw_config["controls"], "controls"), field_order, required)
     grounding = grounding_from_dict(raw_config["grounding"], field_order)
+    repeats = integer(raw_config["repeats"], "repeats", minimum=0)
+    if repeats > MAX_REPEATS:
+        raise RecordError(f"repeats must be at most {MAX_REPEATS}")
     refusal_phrases = unique_texts(raw_config["refusal_phrases"], "refusal_phrases")
     models = tuple(model_id(item, f"models[{index}]") for index, item in enumerate(raw_config["models"]))
     if len(models) != len(set(models)):
@@ -655,6 +692,7 @@ def build_task_spec(
         controls=controls,
         refusal_phrases=refusal_phrases,
         grounding=grounding,
+        repeats=repeats,
     )
 
 

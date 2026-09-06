@@ -234,16 +234,66 @@ def recover_json_object(content: str) -> Any:
             continue
         candidates.append(content[index:end])
     best: dict[str, Any] | None = None
+    best_duplicates: tuple[str, ...] = ()
     for candidate in candidates:
+        duplicates: tuple[str, ...] = ()
         try:
             value = loads_strict(candidate.strip())
         except (RecordError, ValueError, RecursionError):
-            continue
+            # Strict JSON refuses duplicate keys. A reply that is otherwise one well-formed object with a
+            # repeated key is still scoreable: take the last value for each key, and say which keys repeated.
+            parsed = _loads_last_wins(candidate.strip())
+            if parsed is None:
+                continue
+            value, duplicates = parsed
         if type(value) is dict and (best is None or len(value) >= len(best)):
-            best = value
+            best, best_duplicates = value, duplicates
     if best is not None:
-        return best
+        return best, best_duplicates
     raise RecordError("no JSON object could be recovered from the response")
+
+
+def _loads_last_wins(candidate: str) -> tuple[Any, tuple[str, ...]] | None:
+    """Parse JSON that strict parsing refused only because of repeated keys; last value wins."""
+
+    seen_duplicates: list[str] = []
+
+    def pairs_hook(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        counts: dict[str, int] = {}
+        for key, _ in pairs:
+            counts[key] = counts.get(key, 0) + 1
+        seen_duplicates.extend(key for key, n in counts.items() if n > 1)
+        return dict(pairs)
+
+    try:
+        value = json.loads(candidate, object_pairs_hook=pairs_hook, parse_float=_refuse_float, parse_constant=_refuse_constant)
+    except (ValueError, RecursionError):
+        return None
+    if not seen_duplicates:
+        return None
+    return value, tuple(sorted(set(seen_duplicates)))
+
+
+def _refuse_float(_text: str) -> Any:
+    raise ValueError("floats are not admitted")
+
+
+def _refuse_constant(_text: str) -> Any:
+    raise ValueError("NaN and Infinity are not admitted")
+
+
+_TYPOGRAPHIC_QUOTES = str.maketrans({"\u2019": "'", "\u2018": "'", "\u02bc": "'", "\u2032": "'", "\u201c": '"', "\u201d": '"'})
+
+
+def _plain_quotes(text: str) -> str:
+    """Fold typographic apostrophes and quotation marks to their ASCII forms.
+
+    The refusal phrase list is written with straight apostrophes; a model that writes
+    "I\u2019m sorry" is refusing all the same, and the first live refusal in these
+    records was missed for exactly that reason (H22).
+    """
+
+    return text.translate(_TYPOGRAPHIC_QUOTES)
 
 
 def parse_content(content: str, refusal_phrases: tuple[str, ...]) -> tuple[Any, str, str | None, bool]:
@@ -253,14 +303,21 @@ def parse_content(content: str, refusal_phrases: tuple[str, ...]) -> tuple[Any, 
         return loads_strict(content), "JSON_OBJECT", None, False
     except (RecordError, ValueError, RecursionError) as strict_error:
         try:
-            recovered = recover_json_object(content)
+            recovered, duplicates = recover_json_object(content)
         except RecordError:
-            lowered = content.lower()
+            lowered = _plain_quotes(content).lower()
             for phrase in refusal_phrases:
-                if phrase.lower() in lowered:
+                if _plain_quotes(phrase).lower() in lowered:
                     return None, "REFUSAL_SUSPECTED", f"matched refusal phrase {phrase!r}; heuristic", False
             return None, "INVALID_JSON", str(strict_error), False
-        return recovered, "JSON_OBJECT", f"strict parse failed ({strict_error}); object recovered from prose", True
+        if duplicates:
+            detail = (
+                f"strict parse failed ({strict_error}); object recovered with duplicate keys "
+                f"{list(duplicates)!r} resolved last-wins"
+            )
+        else:
+            detail = f"strict parse failed ({strict_error}); object recovered from prose"
+        return recovered, "JSON_OBJECT", detail, True
 
 
 def _constraint_verdict(value: Any, property_schema: Mapping[str, Any]) -> tuple[str | None, str | None]:
@@ -315,23 +372,69 @@ def _normalise_whitespace(value: str) -> str:
     return " ".join(value.split())
 
 
+# Date ranges a span may be completed from, under the ``date_range_completion`` relaxation.
+#   "24 to 26 June 2025"            -> "24 June 2025", "26 June 2025"
+#   "Mon 3 Nov to Thu 6 Nov 2025"   -> "Mon 3 Nov 2025", "3 Nov 2025", "Thu 6 Nov 2025", "6 Nov 2025"
+_RANGE_SEP = r"(?:to|-|\u2013|\u2014|until|through)"
+_RANGE_SHARED_MONTH = re.compile(r"\b(\d{1,2})\s*" + _RANGE_SEP + r"\s*(\d{1,2})\s+([A-Z][a-z]{2,8})\s+(\d{4})\b")
+_RANGE_TWO_MONTHS = re.compile(
+    r"\b(?:([A-Z][a-z]{2})\s+)?(\d{1,2})\s+([A-Z][a-z]{2,8})\s*" + _RANGE_SEP + r"\s*(?:([A-Z][a-z]{2})\s+)?(\d{1,2})\s+([A-Z][a-z]{2,8})\s+(\d{4})\b"
+)
+
+
+def _date_range_completions(document: str) -> set[str]:
+    completions: set[str] = set()
+    for d1, d2, month, year in _RANGE_SHARED_MONTH.findall(document):
+        completions.add(f"{d1} {month} {year}")
+        completions.add(f"{d2} {month} {year}")
+    for wd1, d1, m1, wd2, d2, m2, year in _RANGE_TWO_MONTHS.findall(document):
+        completions.add(f"{d1} {m1} {year}")
+        completions.add(f"{d2} {m2} {year}")
+        if wd1:
+            completions.add(f"{wd1} {d1} {m1} {year}")
+        if wd2:
+            completions.add(f"{wd2} {d2} {m2} {year}")
+    return completions
+
+
+def _span_occurs(span: str, document: str, relaxations: tuple[str, ...]) -> str | None:
+    """Return None when the span is not in the document, else how it was matched ("verbatim" or a relaxation)."""
+
+    normal_span, normal_document = _normalise_whitespace(span), _normalise_whitespace(document)
+    if normal_span in normal_document:
+        return "verbatim"
+    if "case_insensitive" in relaxations and normal_span.casefold() in normal_document.casefold():
+        return "case_insensitive"
+    if "date_range_completion" in relaxations:
+        completions = _date_range_completions(normal_document)
+        if normal_span in completions or ("case_insensitive" in relaxations and normal_span.casefold() in {c.casefold() for c in completions}):
+            return "date_range_completion"
+    return None
+
+
 def _grounding_verdict(variant: Variant, field: str, value: Any, output: Mapping[str, Any]) -> GroundingVerdict:
     key = variant.span_key(field)
     span = output.get(key)
     if type(span) is not str or not span.strip():
         return GroundingVerdict(field, "SPAN_MISSING", None, f"companion key {key!r} is absent, null, or empty")
     document = variant.input_document or ""
-    if _normalise_whitespace(span) not in _normalise_whitespace(document):
-        return GroundingVerdict(field, "SPAN_NOT_IN_DOCUMENT", span, "the cited text does not occur verbatim in the document (whitespace-normalised)")
+    relaxations = variant.grounding.span_relaxations if variant.grounding is not None else ()
+    matched = _span_occurs(span, document, relaxations)
+    if matched is None:
+        return GroundingVerdict(field, "SPAN_NOT_IN_DOCUMENT", span, "the cited text does not occur verbatim in the document (whitespace-normalised)" + (f"; relaxations tried: {list(relaxations)}" if relaxations else ""))
     if field in variant.active_value_in_span_fields and str(value).casefold() not in span.casefold():
         return GroundingVerdict(field, "VALUE_NOT_IN_SPAN", span, "the value does not occur inside the cited span (case-insensitive)")
-    return GroundingVerdict(field, "GROUNDED", span, None)
+    return GroundingVerdict(field, "GROUNDED", span, None if matched == "verbatim" else f"accepted by the configured relaxation {matched!r}, not verbatim")
 
 
 def score_output(variant: Variant, output: Mapping[str, Any]) -> tuple[bool, tuple[FieldVerdict, ...], tuple[GroundingVerdict, ...]]:
     """Schema validity, one verdict per schema field and per extra key, and grounding verdicts."""
 
-    validator = Draft202012Validator(variant.prompt_form_schema(), format_checker=Draft202012Validator.FORMAT_CHECKER)
+    # A model reply is validated against the schema the model was sent (companion span keys and
+    # nullable abstain fields included); a model-free control output is a reference output in the
+    # bound form's own shape and is validated against the bound form schema.
+    schema = variant.prompt_form_schema() if variant.model_call else variant.form_schema
+    validator = Draft202012Validator(schema, format_checker=Draft202012Validator.FORMAT_CHECKER)
     schema_valid = not any(True for _ in validator.iter_errors(dict(output)))
     verdicts: list[FieldVerdict] = []
     record_only = variant.expectation_kind is ExpectationKind.RECORD_DEPENDENCE
@@ -365,6 +468,9 @@ def score_output(variant: Variant, output: Mapping[str, Any]) -> tuple[bool, tup
             grounding.append(GroundingVerdict(field, "ABSTAINED", None, "null returned for a field the configuration allows to be unstated"))
             if oracle is None or oracle.kind == "unknown":
                 verdicts.append(_field_verdict(field, "NOT_SCORED", output, oracle, "abstained; no expectation declared"))
+            elif oracle.kind in ("enum", "any_of") and None in (oracle.values or ()):
+                # The answer key says the document does not state this value: abstaining is the expected answer.
+                verdicts.append(_field_verdict(field, "MATCH", output, oracle, None))
             else:
                 verdicts.append(_field_verdict(field, "MISMATCH", output, oracle, "abstained where the oracle expected a value"))
             continue
@@ -391,14 +497,18 @@ def score_output(variant: Variant, output: Mapping[str, Any]) -> tuple[bool, tup
     return schema_valid, tuple(verdicts), tuple(grounding)
 
 
-def _changed(parsed: Mapping[str, Any] | None, baseline_output: Mapping[str, Any] | None, ignore_keys: tuple[str, ...] = ()) -> bool | None:
-    """Whether the form values changed against the baseline; companion span keys are provenance, not answers."""
+def _changed(parsed: Mapping[str, Any] | None, baseline_output: Mapping[str, Any] | None, fields: tuple[str, ...]) -> bool | None:
+    """Whether the form's own field values changed against the baseline.
+
+    Only the declared form fields are compared. Companion span keys are provenance, not answers,
+    and keys outside the form are reported per observation as EXTRA_FIELD; neither makes a fill
+    "unstable" or "dependent" on its own.
+    """
 
     if parsed is None or baseline_output is None:
         return None
-    ignored = set(ignore_keys)
-    left = {k: v for k, v in parsed.items() if k not in ignored}
-    right = {k: v for k, v in baseline_output.items() if k not in ignored}
+    left = {k: parsed[k] for k in fields if k in parsed}
+    right = {k: baseline_output[k] for k in fields if k in baseline_output}
     return canonical_bytes(left) != canonical_bytes(right)
 
 
@@ -438,7 +548,7 @@ def score(
         parsed_output=parsed,
         schema_valid=schema_valid,
         field_verdicts=verdicts,
-        changed_vs_baseline=_changed(parsed, baseline_output, variant.span_keys),
+        changed_vs_baseline=_changed(parsed, baseline_output, variant.field_order),
         grounding_verdicts=grounding,
     )
 

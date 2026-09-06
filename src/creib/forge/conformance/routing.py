@@ -33,6 +33,9 @@ Table (trigger -> loci; family restrictions in brackets):
     CONTROL_REJECTED [NON_VACUITY]          -> TEST
     DEPENDENCE_CHANGED [IMPORT_DEPENDENCY]  -> AUXILIARY, SCOPE
     DEPENDENCE_UNCHANGED [IMPORT_DEPENDENCY]-> AUXILIARY, TEST, SCOPE
+    REPEAT_DIFFERS [REPEAT]                 -> AUXILIARY, CANDIDATE
+    LENGTH_VIOLATION under active grounding -> adds AUXILIARY (the appended quotation
+        instruction may have induced verbatim copying into a bounded value field)
 
 A model-involved variant never routes to a single locus.  The only empty set
 is a variant whose declared expectation was met everywhere; that is recorded
@@ -90,6 +93,7 @@ TRIGGERS: tuple[str, ...] = (
     "SPAN_MISSING",
     "SPAN_NOT_IN_DOCUMENT",
     "VALUE_NOT_IN_SPAN",
+    "REPEAT_DIFFERS",
 )
 
 
@@ -290,6 +294,19 @@ ROUTING_TABLE: tuple[RoutingRule, ...] = (
         ),
         (Family.IMPORT_DEPENDENCY,),
     ),
+    _rule(
+        "REPEAT_DIFFERS",
+        (
+            ("AUXILIARY", "The endpoint returned a different form for a byte-identical request under the fixed seed; every family that compares one call with another inherits this noise."),
+            ("CANDIDATE", "The model's output is not stable between identical requests."),
+        ),
+        (Family.REPEAT,),
+    ),
+)
+
+_GROUNDING_LENGTH_AUXILIARY = (
+    "AUXILIARY",
+    "Grounding is active: the appended instruction to quote verbatim may have induced verbatim copying into a bounded value field.",
 )
 
 
@@ -373,6 +390,11 @@ def derive_triggers(variant: Variant, scoring: Scoring, *, format_sent: bool) ->
         triggers.append("IDENTICAL_TO_BASELINE")
     if variant.family is Family.NEGATION and scoring.changed_vs_baseline is None:
         triggers.append("PREREQUISITE_UNAVAILABLE")
+    if variant.family is Family.REPEAT:
+        if scoring.changed_vs_baseline is None:
+            triggers.append("PREREQUISITE_UNAVAILABLE")
+        elif scoring.changed_vs_baseline:
+            triggers.append("REPEAT_DIFFERS")
     return tuple(triggers)
 
 
@@ -395,6 +417,9 @@ def route(variant: Variant, scoring: Scoring, *, format_sent: bool = True) -> Ro
                     reasons.setdefault(locus, reason)
         if not matched:
             raise RecordError(f"routing table has no rule for trigger {trigger!r} in family {variant.family.value}")
+    if "LENGTH_VIOLATION" in triggers and variant.grounding is not None and variant.grounding.active:
+        # H8: with grounding on, the generated "quote verbatim" sentence is a suspect for an over-long value.
+        reasons.setdefault(*_GROUNDING_LENGTH_AUXILIARY)
     live = tuple(LiveLocus(locus=locus, reason=reasons[locus]) for locus in LOCUS_VALUES if locus in reasons)
     if variant.model_call and len(live) == 1:
         raise PolicyViolation(

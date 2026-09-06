@@ -14,6 +14,7 @@ route is always human triage.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping
@@ -374,7 +375,9 @@ def load_observation(path: Path) -> ObservationRecord:
             f"{path} is not a {OBSERVATION_SCHEMA_VERSION} record (schema_version {record.get('schema_version')!r}); "
             "a record written under an earlier version is read by the code that wrote it"
         )
-    return observation_from_dict(record)
+    observation = observation_from_dict(record)
+    _check_name_binds_id(path, observation.observation_id)
+    return observation
 
 
 def load_run(path: Path) -> RunRecord:
@@ -384,12 +387,58 @@ def load_run(path: Path) -> RunRecord:
             f"{path} is not a {RUN_SCHEMA_VERSION} record (schema_version {record.get('schema_version')!r}); "
             "a record written under an earlier version is read by the code that wrote it"
         )
-    return run_from_dict(record)
+    run = run_from_dict(record)
+    _check_name_binds_id(path, run.run_id)
+    return run
 
 
-def load_observation_directory(directory: Path) -> list[ObservationRecord]:
+_RECORD_NAME = re.compile(r"^(observation|run)\.([0-9a-f]{16})\.json$")
+
+
+@dataclass(frozen=True)
+class RecordDirectory:
+    """Every entry of a records directory, accounted for: observation files, run files, nothing else.
+
+    A records directory is read by enumeration, not by pattern: an entry that is not an
+    observation or run record is refused by name rather than passed over, so that what was
+    loaded plus what was refused equals what was there. A symlink, a subdirectory, a file
+    with another name, or a record file whose name does not carry the prefix of the id it
+    contains is an error, never a silent omission.
+    """
+
+    directory: Path
+    observation_paths: tuple[Path, ...]
+    run_paths: tuple[Path, ...]
+
+    @property
+    def entries(self) -> int:
+        return len(self.observation_paths) + len(self.run_paths)
+
+
+def enumerate_record_directory(directory: Path) -> RecordDirectory:
     if not isinstance(directory, Path):
         raise TypeError("directory must be pathlib.Path")
     if not directory.is_dir():
         raise RecordError(f"observation directory does not exist: {directory}")
-    return [load_observation(path) for path in sorted(directory.glob("observation.*.json"))]
+    observations: list[Path] = []
+    runs: list[Path] = []
+    for entry in sorted(directory.iterdir()):
+        if entry.is_symlink():
+            raise RecordError(f"records directory {directory} contains a symlink, which is not read: {entry.name}")
+        if not entry.is_file():
+            raise RecordError(f"records directory {directory} contains an entry that is not a record file: {entry.name}")
+        match = _RECORD_NAME.match(entry.name)
+        if match is None:
+            raise RecordError(f"records directory {directory} contains a file that is not a record: {entry.name}")
+        (observations if match.group(1) == "observation" else runs).append(entry)
+    return RecordDirectory(directory=directory, observation_paths=tuple(observations), run_paths=tuple(runs))
+
+
+def _check_name_binds_id(path: Path, record_id: str) -> None:
+    match = _RECORD_NAME.match(path.name)
+    if match is not None and not record_id.startswith(match.group(2)):
+        raise RecordError(f"record file {path} is named for a different record than it contains ({record_id[:16]}…)")
+
+
+def load_observation_directory(directory: Path) -> list[ObservationRecord]:
+    return [load_observation(path) for path in enumerate_record_directory(directory).observation_paths]

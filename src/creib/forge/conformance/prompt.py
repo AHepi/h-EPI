@@ -86,4 +86,5 @@ def build_chat_request(variant: Variant, *, model: str, endpoint: Endpoint) -> C
         format_schema=ordered_form_schema(variant.prompt_form_schema(), variant.prompt_field_order),
         options={"temperature": endpoint.temperature, "seed": endpoint.seed},
         think=endpoint.think,
+        repeat_index=variant.repeat_index,
     )

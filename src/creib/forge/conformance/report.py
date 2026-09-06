@@ -37,6 +37,7 @@ HUMAN_READINGS: Mapping[str, str] = {
     "UNEXPECTED_PRESENT": "A field expected to be absent was emitted (schema-ignoring or optional-field over-filling).",
     "SCHEMA_INVALID": "The object fails the form schema for a reason not attributable to one field.",
     "IDENTICAL_TO_BASELINE": "Inverting the formatting instruction changed nothing; the instruction may be ignored or dominated by the schema pattern.",
+    "REPEAT_DIFFERS": "A byte-identical request returned a different form; the run's own noise floor, which every comparison family inherits.",
     "SPAN_MISSING": "The model gave a value without citing the words it came from.",
     "SPAN_NOT_IN_DOCUMENT": "The model cited words that are not in the document; the provenance is invented even if the value happens to be right.",
     "VALUE_NOT_IN_SPAN": "The value does not appear inside the words the model cited for it.",
@@ -98,6 +99,22 @@ def build_report(run_records: list[RunRecord], observations: Iterable[Observatio
                 else:
                     mode["count"] += 1
                     mode["live_loci"] = sorted(set(mode["live_loci"]) | set(observation.routing.loci))
+        repeats = [observation for observation in run_observations if observation.variant.family is Family.REPEAT]
+        repeat_cases = sorted({observation.variant.base_case_id for observation in repeats})
+        differing_cases = sorted({observation.variant.base_case_id for observation in repeats if observation.scoring.changed_vs_baseline is True})
+        repeatability = {
+            "repeat_observations": len(repeats),
+            "cases_repeated": len(repeat_cases),
+            "identical_to_baseline": sum(1 for observation in repeats if observation.scoring.changed_vs_baseline is False),
+            "differing_from_baseline": sum(1 for observation in repeats if observation.scoring.changed_vs_baseline is True),
+            "not_comparable": sum(1 for observation in repeats if observation.scoring.changed_vs_baseline is None),
+            "cases_with_a_difference": differing_cases,
+            "reading": (
+                "No repeats were configured; the noise floor of this run is unmeasured."
+                if not repeats
+                else "Counts of repeated requests whose form values differed from the baseline's; a difference is the endpoint's noise floor, not a criticism of a field."
+            ),
+        }
         runs.append(
             {
                 "model": run.model,
@@ -111,6 +128,8 @@ def build_report(run_records: list[RunRecord], observations: Iterable[Observatio
                 "observations_with_live_loci": run.observations_with_live_loci,
                 "response_verdicts_by_family": response_table,
                 "field_verdicts_by_family": field_table,
+                "grounding_verdicts": [{"verdict": verdict, "count": count} for verdict, count in run.grounding_verdict_counts],
+                "repeatability": repeatability,
                 "failure_modes": [modes[key] for key in sorted(modes)],
                 "format_enforced_by_server": run.format_enforced_by_server,
             }
@@ -162,6 +181,27 @@ def render_markdown(report: Mapping[str, Any]) -> str:
         parts.append("### Field verdicts by family")
         parts.append("")
         parts.append(_md_table(["family", "verdict", "count"], [[str(r["family"]), str(r["verdict"]), str(r["count"])] for r in run["field_verdicts_by_family"]]))
+        parts.append("")
+        parts.append("### Grounding verdicts")
+        parts.append("")
+        if run["grounding_verdicts"]:
+            parts.append(_md_table(["verdict", "count"], [[str(r["verdict"]), str(r["count"])] for r in run["grounding_verdicts"]]))
+            parts.append("")
+            parts.append("GROUNDED means the cited words occur in the document; ABSTAINED means the model returned null where the configuration allows it. Neither is a verdict on the value.")
+        else:
+            parts.append("Grounding was not configured for this pilot; no provenance was requested or checked.")
+        parts.append("")
+        parts.append("### Repeatability")
+        parts.append("")
+        rep_ = run["repeatability"]
+        if rep_["repeat_observations"]:
+            parts.append(
+                f"- repeated requests: {rep_['repeat_observations']} over {rep_['cases_repeated']} cases; "
+                f"identical to the baseline: {rep_['identical_to_baseline']}; differing: {rep_['differing_from_baseline']}; not comparable: {rep_['not_comparable']}"
+            )
+            if rep_["cases_with_a_difference"]:
+                parts.append(f"- cases with a difference: {', '.join(rep_['cases_with_a_difference'])}")
+        parts.append(f"- {rep_['reading']}")
         parts.append("")
         parts.append("### Failure modes")
         parts.append("")

@@ -109,6 +109,8 @@ class SchemaAndVocabularyTests(unittest.TestCase):
         self.assertEqual(
             catalog.schema_names,
             (
+                "conformance-appraisal.schema.json",
+                "conformance-claims.schema.json",
                 "conformance-corpus.schema.json",
                 "conformance-observation.schema.json",
                 "conformance-pilot-config.schema.json",
@@ -219,6 +221,7 @@ class FamilyTests(unittest.TestCase):
                 "IMPORT_DEPENDENCY": 36,
                 "NON_VACUITY": 8,
                 "ROUND_TRIP": 9,
+                "REPEAT": 0,
             },
         )
         again = plan(load_pilot_config(PILOT).spec, load_corpus(_CONFIG.corpus_path, _CONFIG.spec))
@@ -314,6 +317,11 @@ class OracleTests(unittest.TestCase):
         self.assertEqual(self._score("this is not json at all").response_verdict, "INVALID_JSON")
         self.assertEqual(self._score("[1, 2, 3]").response_verdict, "NOT_AN_OBJECT")
         self.assertEqual(self._score("I'm sorry, I cannot help with that request.").response_verdict, "REFUSAL_SUSPECTED")
+        # H22: the first live refusal was written with typographic apostrophes and slipped past the list.
+        curly = self._score("I\u2019m sorry, but I can\u2019t comply with that.")
+        self.assertEqual(curly.response_verdict, "REFUSAL_SUSPECTED")
+        self.assertIn("matched refusal phrase", curly.response_detail or "")
+        self.assertEqual(self._score("I\u2019m not able to comply with that.").response_verdict, "INVALID_JSON", "a phrase outside the list is still not a refusal to this heuristic")
         floaty = self._score('{"reporter_name": 1.5}')
         self.assertEqual(floaty.response_verdict, "INVALID_JSON")
         self.assertIn("floating-point", floaty.response_detail or "")
@@ -531,6 +539,77 @@ class RecordVersionTests(unittest.TestCase):
                     loader(old)
                 with self.assertRaisesRegex(RecordError, "unknown conformance record schema_version"):
                     publish_record(record, out)
+
+
+class AccountingTests(unittest.TestCase):
+    """What was loaded plus what was refused equals what was there; a check that cannot fail is named as such (H19, H20)."""
+
+    LEAVE = ROOT / "forge" / "conformance" / "runs" / "leave-request"
+
+    def test_records_directory_is_enumerated_and_anything_else_is_refused_by_name(self) -> None:
+        from creib.forge.conformance.records import enumerate_record_directory
+        with tempfile.TemporaryDirectory() as temporary:
+            copy = Path(temporary) / "records"
+            shutil.copytree(self.LEAVE, copy)
+            listing = enumerate_record_directory(copy)
+            self.assertEqual(len(listing.observation_paths), 24)
+            self.assertEqual(len(listing.run_paths), 6)
+            self.assertEqual(listing.entries, len(list(copy.iterdir())))
+            self.assertEqual(len(load_observation_directory(copy)), 24)
+            stray = copy / "notes.md"
+            stray.write_text("scratch\n")
+            with self.assertRaisesRegex(RecordError, "not a record: notes.md"):
+                load_observation_directory(copy)
+            stray.unlink()
+            (copy / "more").mkdir()
+            with self.assertRaisesRegex(RecordError, "not a record file: more"):
+                load_observation_directory(copy)
+            (copy / "more").rmdir()
+            link = copy / "observation.0000000000000000.json"
+            link.symlink_to(listing.observation_paths[0].name)
+            with self.assertRaisesRegex(RecordError, "symlink"):
+                load_observation_directory(copy)
+            link.unlink()
+            self.assertEqual(len(load_observation_directory(copy)), 24)
+
+    def test_record_file_name_must_carry_the_id_of_the_record_it_holds(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            copy = Path(temporary) / "records"
+            shutil.copytree(self.LEAVE, copy)
+            observation = sorted(copy.glob("observation.*.json"))[0]
+            run = sorted(copy.glob("run.*.json"))[0]
+            moved = copy / "observation.ffffffffffffffff.json"
+            observation.rename(moved)
+            with self.assertRaisesRegex(RecordError, "named for a different record"):
+                load_observation(moved)
+            with self.assertRaisesRegex(RecordError, "named for a different record"):
+                load_observation_directory(copy)
+            moved.rename(observation)
+            wrong_run = copy / "run.ffffffffffffffff.json"
+            run.rename(wrong_run)
+            with self.assertRaisesRegex(RecordError, "named for a different record"):
+                load_run(wrong_run)
+            # a record under any other name is still readable by its own id
+            elsewhere = Path(temporary) / "kept.json"
+            elsewhere.write_bytes(wrong_run.read_bytes())
+            self.assertEqual(load_run(elsewhere).run_id, load_strict(elsewhere)["run_id"])
+
+    def test_a_control_whose_corruption_changes_nothing_is_refused_at_plan_time(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            copy = Path(temporary) / "pilot"
+            shutil.copytree(PILOT.parent, copy)
+            corpus_path = copy / "corpus.json"
+            raw = load_strict(corpus_path)
+            case = next(c for c in raw["cases"] if c["case_id"] == "ORD-001")
+            values = {item["field"]: item["value"] for item in case["reference_output"]}
+            for item in case["reference_output"]:
+                if item["field"] == "incident_date":
+                    item["value"] = values["date_of_birth"]
+            corpus_path.write_text(json.dumps(raw, indent=2) + "\n", encoding="utf-8")
+            config = load_pilot_config(copy / "pilot.json")
+            corpus = load_corpus(config.corpus_path, config.spec)
+            with self.assertRaisesRegex(RecordError, "control C-SWAP-DATES is vacuous on ORD-001"):
+                plan(config.spec, corpus)
 
 
 class SecrecyTests(unittest.TestCase):
@@ -847,6 +926,579 @@ class PlainFillTests(unittest.TestCase):
             self.assertEqual(load_observation_directory(Path(directory))[0].variant.grounding.mode, "spans")
 
 
+class RoundOneImprovementTests(unittest.TestCase):
+    """Changes made from the first travel-claim run: local endpoints, duplicate keys, change detection, prompt wording."""
+
+    def test_endpoint_auth_none_needs_no_key_and_sends_no_authorization_header(self) -> None:
+        from creib.forge.conformance.executor import OllamaChatExecutor
+        from creib.forge.conformance.spec import endpoint_from_dict
+        raw = {"kind": "ollama-chat", "base_url": "http://localhost:11434", "timeout_seconds": 60, "options": {"temperature": 0, "seed": 7}, "think": False}
+        self.assertEqual(endpoint_from_dict(raw).auth, "bearer", "absent means bearer, so older records keep their meaning")
+        self.assertEqual(endpoint_from_dict({**raw, "auth": "none"}).auth, "none")
+        with self.assertRaisesRegex(RecordError, "endpoint.auth"):
+            endpoint_from_dict({**raw, "auth": "basic"})
+        variant = _variant(Family.BASELINE, "ORD-001")
+        request = build_chat_request(variant, model="gpt-oss:20b", endpoint=_CONFIG.spec.endpoint)
+        captured = []
+        def fake_urlopen(http_request, timeout):
+            captured.append(http_request)
+            raise urllib.error.URLError("connection refused")
+        with patch.dict(os.environ, {}, clear=True), patch("creib.forge.conformance.executor.urllib.request.urlopen", fake_urlopen):
+            with self.assertRaisesRegex(RecordError, "OLLAMA_API_KEY is not set"):
+                OllamaChatExecutor(base_url="http://localhost:11434", auth="bearer")._attempt(request, 1)
+            response = OllamaChatExecutor(base_url="http://localhost:11434", auth="none")._attempt(request, 1)
+        self.assertIsNotNone(response.transport_error, "a refused connection is a recorded transport error, not an exception")
+        self.assertEqual(len(captured), 1)
+        self.assertFalse(captured[0].has_header("Authorization"))
+        self.assertEqual(captured[0].full_url, "http://localhost:11434/api/chat")
+
+    def test_committed_records_still_load_and_replay_their_ids(self) -> None:
+        # Every published run record under forge/conformance/runs/ must keep loading; a serialisation
+        # change that alters header bytes (as adding an always-written endpoint key did) shows up here.
+        runs_root = ROOT / "forge" / "conformance" / "runs"
+        run_paths = sorted(runs_root.glob("*/run.*.json"))
+        self.assertTrue(run_paths, "no committed run records found")
+        for path in run_paths:
+            record = load_run(path)
+            self.assertEqual(path.name, f"run.{record.run_id[:16]}.json")
+            self.assertNotIn("auth", json.loads(path.read_text())["endpoint"], "bearer is the absent default")
+        for directory in sorted({p.parent for p in run_paths}):
+            for path in sorted(directory.glob("observation.*.json"))[:3]:
+                self.assertEqual(path.name, f"observation.{load_observation(path).observation_id[:16]}.json")
+        from creib.forge.conformance.spec import endpoint_from_dict
+        raw = {"kind": "ollama-chat", "base_url": "http://localhost:11434", "timeout_seconds": 60, "options": {"temperature": 0, "seed": 7}, "think": False}
+        self.assertNotIn("auth", endpoint_from_dict(raw).to_dict())
+        self.assertEqual(endpoint_from_dict({**raw, "auth": "none"}).to_dict()["auth"], "none")
+
+    def test_replay_dir_rescores_recorded_replies_without_a_network(self) -> None:
+        pilot = ROOT / "forge" / "conformance" / "pilots" / "leave-request" / "pilot.json"
+        env = {**os.environ, "PYTHONPATH": str(ROOT / "src")}
+        env.pop("OLLAMA_API_KEY", None)
+        with tempfile.TemporaryDirectory() as first, tempfile.TemporaryDirectory() as second:
+            base = [sys.executable, str(TOOL), "run", "--pilot", str(pilot), "--model", "gpt-oss:120b", "--family", "BASELINE", "--created-on", CREATED_ON]
+            canned = subprocess.run(base + ["--dry-run", "--output-dir", first], capture_output=True, text=True, env=env)
+            self.assertIn(canned.returncode, (0, 1), canned.stderr)
+            replayed = subprocess.run(base + ["--replay-dir", first, "--output-dir", second], capture_output=True, text=True, env=env)
+            self.assertIn(replayed.returncode, (0, 1), replayed.stderr)
+            originals = {o.request_digest: o for o in load_observation_directory(Path(first))}
+            copies = load_observation_directory(Path(second))
+            self.assertEqual(len(copies), len(originals))
+            for copy in copies:
+                self.assertEqual(copy.scoring.parsed_output, originals[copy.request_digest].scoring.parsed_output)
+                self.assertNotEqual(copy.observation_id, originals[copy.request_digest].observation_id, "a re-score is a new record")
+            self.assertEqual(load_run(next(Path(second).glob("run.*.json"))).executor_kind, "replay")
+            both = subprocess.run(base + ["--dry-run", "--replay-dir", first, "--output-dir", second], capture_output=True, text=True, env=env)
+            self.assertNotEqual(both.returncode, 0)
+
+    def test_replay_pairs_each_repeat_with_the_reply_that_repeat_received(self) -> None:
+        """H23: with repeats, one request digest has several recorded replies; the replay must not refuse or conflate them."""
+        from creib.forge.conformance.executor import ReplayExecutor
+        from creib.forge.conformance.prompt import build_chat_request
+        round3 = ROOT / "forge" / "conformance" / "runs" / "travel-claim-round3"
+        config = load_pilot_config(ROOT / "forge" / "conformance" / "pilots" / "travel-claim" / "pilot.json")
+        corpus = load_corpus(config.corpus_path, config.spec)
+        travel_plan = plan(config.spec, corpus)
+        recorded = [o for o in load_observation_directory(round3) if o.model == "nemotron-3-nano:30b" and o.response is not None]
+        by_key = {(o.request_digest, o.variant.repeat_index or 0): o for o in recorded}
+        self.assertTrue(any(o.variant.repeat_index for o in recorded), "the round-three records carry repeats")
+        differing = [o for o in recorded if o.variant.family is Family.REPEAT and o.scoring.changed_vs_baseline is True]
+        self.assertTrue(differing, "nemotron's repeats differed, which is what makes the pairing observable")
+        executor = ReplayExecutor(round3)
+        for observation in differing[:3]:
+            variant = next(v for v in travel_plan.variants if v.base_case_id == observation.variant.base_case_id and v.family is Family.REPEAT and v.repeat_index == observation.variant.repeat_index)
+            materialised = variant if variant.input_document is not None else None
+            self.assertIsNotNone(materialised)
+            request = build_chat_request(materialised, model="nemotron-3-nano:30b", endpoint=config.spec.endpoint)
+            self.assertEqual(request.request_digest, observation.request_digest)
+            self.assertEqual(executor.complete(request), observation.response)
+            baseline = by_key[(observation.request_digest, 0)]
+            self.assertNotEqual(executor.complete(request), baseline.response)
+        import dataclasses
+        ninth = dataclasses.replace(build_chat_request(materialised, model="nemotron-3-nano:30b", endpoint=config.spec.endpoint), repeat_index=9)
+        self.assertEqual(ninth.request_digest, observation.request_digest, "the repeat index is outside the digest")
+        with self.assertRaisesRegex(RecordError, "repeat 9"):
+            executor.complete(ninth)
+
+    def test_duplicate_keys_are_recovered_last_wins_and_named(self) -> None:
+        from creib.forge.conformance.oracle import parse_content
+        content = '{"a": 1, "b": "x", "a": 2}'
+        parsed, verdict, detail, recovered = parse_content(content, ())
+        self.assertEqual((parsed, verdict, recovered), ({"a": 2, "b": "x"}, "JSON_OBJECT", True))
+        self.assertIn("duplicate keys ['a']", detail)
+        # inside prose too, and a float still refuses
+        parsed, verdict, _, recovered = parse_content('Here you go:\n```json\n{"a": 1, "a": 3}\n```', ())
+        self.assertEqual((parsed, verdict, recovered), ({"a": 3}, "JSON_OBJECT", True))
+        _, verdict, _, _ = parse_content('{"a": 1.5, "a": 2}', ())
+        self.assertEqual(verdict, "INVALID_JSON")
+        # scored as a provisional recovery, like prose recovery
+        variant = _variant(Family.BASELINE, "ORD-001")
+        good = _correct_output("ORD-001")
+        first_key = next(iter(good))
+        duplicated = "{" + json.dumps(first_key) + ": \"wrong\", " + json.dumps(good)[1:]
+        scoring = score(variant, response_from_content(duplicated))
+        self.assertEqual(scoring.response_verdict, "JSON_OBJECT")
+        self.assertTrue(scoring.recovered_from_prose)
+        self.assertEqual(scoring.recovery_status, "project_import_provisional")
+        self.assertTrue(scoring.all_match)
+
+    def test_change_against_baseline_compares_form_fields_only(self) -> None:
+        from creib.forge.conformance.oracle import _changed
+        fields = ("a", "b")
+        self.assertIs(_changed({"a": 1, "b": 2, "junk": 1}, {"a": 1, "b": 2}, fields), False)
+        self.assertIs(_changed({"a": 1, "b": 2, "a_span": "one"}, {"a": 1, "b": 2, "a_span": "1"}, fields), False)
+        self.assertIs(_changed({"a": 1, "b": 3}, {"a": 1, "b": 2}, fields), True)
+        self.assertIs(_changed({"a": 1}, {"a": 1, "b": 2}, fields), True, "a dropped field is a change")
+        self.assertIsNone(_changed(None, {"a": 1}, fields))
+
+    def test_abstention_sentence_names_each_companion_or_its_absence(self) -> None:
+        config = load_pilot_config(ROOT / "forge" / "conformance" / "pilots" / "travel-claim" / "pilot.json")
+        corpus = load_corpus(config.corpus_path, config.spec)
+        variant = next(v for v in plan(config.spec, corpus).variants if v.family is Family.BASELINE)
+        text = variant.prompt_instructions()
+        self.assertIn("Output no companion key for any other field.", text)
+        self.assertIn("for `trip_end` also output null for `trip_end_span`; `nights_away` has no companion key", text)
+        self.assertNotIn("if it has one", text)
+
+
+class ConfigurableProbeTests(unittest.TestCase):
+    """Repeats, span relaxations, grounding in the report, and grounding-aware routing; all off by default."""
+
+    TRAVEL = ROOT / "forge" / "conformance" / "pilots" / "travel-claim" / "pilot.json"
+
+    def setUp(self) -> None:
+        self.config = load_pilot_config(self.TRAVEL)
+        self.corpus = load_corpus(self.config.corpus_path, self.config.spec)
+        self.plan = plan(self.config.spec, self.corpus)
+
+    def test_repeats_zero_adds_nothing_and_keeps_variant_ids(self) -> None:
+        self.assertEqual(_CONFIG.spec.repeats, 0)
+        self.assertEqual(dict(_PLAN.counts)["REPEAT"], 0)
+        body = _variant(Family.BASELINE, "ORD-001").body()
+        self.assertNotIn("repeat_index", body, "an absent key keeps every earlier variant id replaying")
+        self.assertNotIn("span_relaxations", _CONFIG.spec.grounding.to_dict())
+        with tempfile.TemporaryDirectory() as directory:
+            copy = Path(directory) / "travel-claim"
+            shutil.copytree(self.TRAVEL.parent, copy)
+            raw = json.loads((copy / "pilot.json").read_text()); raw["repeats"] = 11
+            (copy / "pilot.json").write_text(json.dumps(raw))
+            with self.assertRaisesRegex(RecordError, r"repeats.*(at most|maximum)"):
+                load_pilot_config(copy / "pilot.json")
+
+    def test_repeat_variants_reuse_the_baseline_request_and_record_the_noise_floor(self) -> None:
+        self.assertEqual(self.config.spec.repeats, 2)
+        repeats = [v for v in self.plan.variants if v.family is Family.REPEAT]
+        baselines = {v.base_case_id: v for v in self.plan.variants if v.family is Family.BASELINE}
+        self.assertEqual(len(repeats), 2 * len(baselines))
+        for variant in repeats:
+            base = baselines[variant.base_case_id]
+            self.assertIn(variant.repeat_index, (1, 2))
+            self.assertNotEqual(variant.variant_id, base.variant_id)
+            self.assertEqual(
+                build_chat_request(variant, model="gemma4:31b", endpoint=self.config.spec.endpoint).request_digest,
+                build_chat_request(base, model="gemma4:31b", endpoint=self.config.spec.endpoint).request_digest,
+                "a repeat is the same request; only the variant differs",
+            )
+            rebuilt = variant_from_dict(loads_strict(canonical_bytes(variant.to_dict()).decode("utf-8")))
+            self.assertEqual(rebuilt.repeat_index, variant.repeat_index)
+        # A deterministic executor: repeats identical, no trigger. A drifting one: REPEAT_DIFFERS, AUXILIARY and CANDIDATE live.
+        good = {
+            "claimant_name": "Hannah Kowalski", "claimant_name_span": "Hannah Kowalski", "approver_name": "Marcus Oyelaran", "approver_name_span": "Marcus Oyelaran",
+            "employee_id": "E-41207", "employee_id_span": "41207", "trip_start": "2025-10-07", "trip_start_span": "Tuesday 7 October 2025",
+            "trip_end": "2025-10-10", "trip_end_span": "Friday 10 October 2025", "nights_away": 3, "destination_city": "Melbourne", "destination_city_span": "Melbourne",
+            "purpose": "conference", "total_claimed_cents": 196640, "advance_received": False, "receipts_attached": True,
+            "contact_phone": "+61431555018", "contact_phone_span": "0431 555 018", "cost_centre": "CC-3120",
+        }
+        calls = {"n": 0}
+        def drifting(request):
+            calls["n"] += 1
+            return response_from_content(json.dumps({**good, "total_claimed_cents": 196640 + (10000 if calls["n"] % 2 == 0 else 0)}))
+        with tempfile.TemporaryDirectory() as directory:
+            steady = run_pilot(spec=self.config.spec, corpus=self.corpus, plan=self.plan, model="gemma4:31b",
+                               executor=FakeExecutor(lambda req: response_from_content(json.dumps(good))), executor_kind="fake",
+                               output_dir=Path(directory) / "steady", created_on=CREATED_ON, families=(Family.REPEAT,), limit=2)
+            steady_repeats = [o for o in steady.observations if o.variant.family is Family.REPEAT]
+            self.assertEqual(len(steady_repeats), 2)
+            self.assertTrue(all(o.scoring.changed_vs_baseline is False for o in steady_repeats))
+            self.assertTrue(all("REPEAT_DIFFERS" not in o.routing.triggers for o in steady_repeats))
+            self.assertTrue(all(o.baseline_observation_id is not None for o in steady_repeats))
+            drift = run_pilot(spec=self.config.spec, corpus=self.corpus, plan=self.plan, model="gemma4:31b",
+                              executor=FakeExecutor(drifting), executor_kind="fake",
+                              output_dir=Path(directory) / "drift", created_on=CREATED_ON, families=(Family.REPEAT,), limit=2)
+            drift_repeats = [o for o in drift.observations if o.variant.family is Family.REPEAT]
+            differing = [o for o in drift_repeats if "REPEAT_DIFFERS" in o.routing.triggers]
+            self.assertTrue(differing, "the drifting executor must produce at least one differing repeat")
+            for o in differing:
+                self.assertEqual(set(o.routing.loci) >= {"AUXILIARY", "CANDIDATE"}, True)
+            report = build_report([drift.run_record], drift.observations)
+            summary = report["runs"][0]["repeatability"]
+            self.assertEqual(summary["repeat_observations"], 2)
+            self.assertEqual(summary["differing_from_baseline"], len(differing))
+            self.assertIn("grounding_verdicts", report["runs"][0])
+            markdown = render_markdown(report)
+            self.assertIn("### Repeatability", markdown)
+            self.assertIn("### Grounding verdicts", markdown)
+            self.assertIn("REPEAT_DIFFERS", markdown)
+            for record in load_observation_directory(Path(directory) / "drift"):
+                self.assertIsNotNone(record.variant.repeat_index if record.variant.family is Family.REPEAT else 1)
+
+    def test_span_relaxations_are_configured_and_recorded(self) -> None:
+        from creib.forge.conformance.corpus import Oracle
+        from creib.forge.conformance.oracle import _span_occurs
+        document = "She travelled 24 to 26 June 2025. Dates | Mon 3 Nov to Thu 6 Nov 2025. Subject: Sick leave."
+        self.assertIsNone(_span_occurs("24 June 2025", document, ()))
+        self.assertEqual(_span_occurs("24 June 2025", document, ("date_range_completion",)), "date_range_completion")
+        self.assertEqual(_span_occurs("Mon 3 Nov 2025", document, ("date_range_completion",)), "date_range_completion")
+        self.assertEqual(_span_occurs("Thu 6 Nov 2025", document, ("date_range_completion",)), "verbatim", "the range end with its month is literally present")
+        self.assertIsNone(_span_occurs("25 June 2025", document, ("date_range_completion",)), "only the endpoints of a range are completions")
+        self.assertIsNone(_span_occurs("sick", document, ()))
+        self.assertEqual(_span_occurs("sick", document, ("case_insensitive",)), "case_insensitive")
+        self.assertEqual(_span_occurs("Sick leave", document, ("case_insensitive",)), "verbatim")
+        # configuration: unknown relaxation refused; mode none refuses any; empty is omitted from the body
+        from creib.forge.conformance.spec import grounding_from_dict
+        base = {"mode": "spans", "span_suffix": "_span", "span_fields": ["a"], "value_in_span_fields": [], "abstain_fields": []}
+        with self.assertRaisesRegex(RecordError, "unknown relaxation"):
+            grounding_from_dict({**base, "span_relaxations": ["fuzzy"]}, ("a", "b"))
+        with self.assertRaisesRegex(RecordError, "span_relaxations to be empty"):
+            grounding_from_dict({"mode": "none", "span_suffix": "_span", "span_fields": [], "value_in_span_fields": [], "abstain_fields": [], "span_relaxations": ["case_insensitive"]}, ("a",))
+        self.assertNotIn("span_relaxations", grounding_from_dict({**base, "span_relaxations": []}, ("a", "b")).to_dict())
+        self.assertEqual(grounding_from_dict(base, ("a", "b")).span_relaxations, ())
+        # the travel-claim battery accepts completed range dates and records that it did so
+        variant = next(v for v in self.plan.variants if v.family is Family.BOUNDARY_SHIFT and v.base_case_id == "BND-105")
+        self.assertEqual(variant.grounding.span_relaxations, ("date_range_completion",))
+        good = {
+            "claimant_name": "Mei-Ling Chow", "claimant_name_span": "Mei-Ling Chow", "approver_name": "Daniel Okonkwo", "approver_name_span": "Daniel Okonkwo",
+            "employee_id": "E-29901", "employee_id_span": "E-29901", "trip_start": "2025-09-03", "trip_start_span": "3 September 2025",
+            "trip_end": "2025-09-07", "trip_end_span": "7 September 2025", "nights_away": 4, "destination_city": "Auckland", "destination_city_span": "Auckland",
+            "purpose": "conference", "total_claimed_cents": 337342, "advance_received": True, "receipts_attached": True,
+            "contact_phone": "+61466120553", "contact_phone_span": "0466 120 553",
+        }
+        scoring = score(variant, response_from_content(json.dumps(good)))
+        by_field = {g.field: g for g in scoring.grounding_verdicts}
+        self.assertEqual(by_field["trip_start"].verdict, "GROUNDED")
+        self.assertIn("date_range_completion", by_field["trip_start"].detail or "")
+        self.assertIsNone(by_field["trip_end"].detail, "a verbatim match carries no relaxation note")
+        self.assertEqual(route(variant, scoring).triggers, ())
+
+    def test_length_violation_keeps_auxiliary_live_only_under_grounding(self) -> None:
+        # incident form: grounding off; travel claim: grounding on. Same over-long value, different suspects.
+        incident = _variant(Family.BASELINE, "ORD-001")
+        long_site = {**_correct_output("ORD-001"), "site": "x" * 61}
+        plain = route(incident, score(incident, response_from_content(json.dumps(long_site))))
+        self.assertIn("LENGTH_VIOLATION", plain.triggers)
+        self.assertEqual(set(plain.loci), {"CANDIDATE", "TEST"})
+        grounded = next(v for v in self.plan.variants if v.family is Family.BASELINE and v.base_case_id == "TRV-001")
+        long_city = {
+            "claimant_name": "Hannah Kowalski", "claimant_name_span": "Hannah Kowalski", "approver_name": "Marcus Oyelaran", "approver_name_span": "Marcus Oyelaran",
+            "employee_id": "E-41207", "employee_id_span": "41207", "trip_start": "2025-10-07", "trip_start_span": "Tuesday 7 October 2025",
+            "trip_end": "2025-10-10", "trip_end_span": "Friday 10 October 2025", "nights_away": 3,
+            "destination_city": "Melbourne, with a stopover in Canberra on the return leg", "destination_city_span": "Melbourne",
+            "purpose": "conference", "total_claimed_cents": 196640, "advance_received": False, "receipts_attached": True,
+            "contact_phone": "+61431555018", "contact_phone_span": "0431 555 018", "cost_centre": "CC-3120",
+        }
+        routed = route(grounded, score(grounded, response_from_content(json.dumps(long_city))))
+        self.assertIn("LENGTH_VIOLATION", routed.triggers)
+        self.assertEqual(set(routed.loci), {"CANDIDATE", "TEST", "AUXILIARY"})
+        self.assertTrue(any("quote verbatim" in locus.reason for locus in routed.live_loci if locus.locus == "AUXILIARY"))
+
+
+class ClaimsTests(unittest.TestCase):
+    """Conjectures are refuted by one record or left unrefuted for the declared scope; never confirmed."""
+
+    LEAVE = ROOT / "forge" / "conformance" / "runs" / "leave-request"
+    CLAIMS = ROOT / "forge" / "conformance" / "pilots" / "travel-claim" / "claims.json"
+
+    def _claim(self, cid, kind, condition, **scope):
+        from creib.forge.conformance.claims import Claim, Scope
+        return Claim(claim_id=cid, statement=cid, kind=kind, scope=Scope(families=scope.get("families"), cases=scope.get("cases"), models=scope.get("models"), model_call=scope.get("model_call")), condition=condition, note=None)
+
+    def test_refuted_unrefuted_and_not_tested(self) -> None:
+        from creib.forge.conformance.claims import evaluate_claims
+        observations = load_observation_directory(self.LEAVE)
+        results = evaluate_claims((
+            self._claim("spans-real", "never", {"grounding_verdict": {"verdict": "SPAN_NOT_IN_DOCUMENT"}}),
+            self._claim("parses", "always", {"response_verdict": "JSON_OBJECT"}, model_call=True),
+            self._claim("no-such-case", "never", {"trigger": "MISMATCH"}, cases=["LR-999"]),
+            self._claim("abstains", "always", {"all_of": [{"value_null": {"field": "end_date"}}, {"value_null": {"field": "total_days"}}]}, cases=["LR-002"], families=["BASELINE"]),
+            self._claim("repeat-only", "never", {"trigger": "REPEAT_DIFFERS"}, families=["REPEAT"]),
+        ), observations)
+        by_id = {r.claim.claim_id: r for r in results}
+        self.assertEqual(by_id["spans-real"].status, "REFUTED")
+        self.assertEqual(by_id["spans-real"].refuting_models, ("nemotron-3-nano:30b",))
+        self.assertEqual(by_id["spans-real"].refuting, 2)
+        self.assertTrue(all(len(e) == 4 for e in by_id["spans-real"].examples))
+        self.assertEqual(by_id["parses"].status, "UNREFUTED_FOR_DECLARED_SCOPE")
+        self.assertEqual(by_id["parses"].tested, 24)
+        self.assertEqual(by_id["no-such-case"].status, "NOT_TESTED")
+        self.assertEqual(by_id["abstains"].status, "UNREFUTED_FOR_DECLARED_SCOPE")
+        self.assertEqual(by_id["abstains"].tested, 6)
+        self.assertEqual(by_id["repeat-only"].status, "NOT_TESTED", "no REPEAT variants exist in that run")
+        for result in results:
+            self.assertIn("epistemic_limit", result.to_dict())
+            self.assertNotIn("confirmed", json.dumps(result.to_dict()).lower())
+
+    def test_survival_says_whether_the_check_was_shown_able_to_fail(self) -> None:
+        from creib.forge.conformance.claims import evaluate_claims, render_claims_markdown
+        observations = load_observation_directory(self.LEAVE)
+        results = evaluate_claims((
+            self._claim("no-refusal", "never", {"trigger": "REFUSAL_SUSPECTED"}),
+            self._claim("length-elsewhere", "never", {"trigger": "LENGTH_VIOLATION"}, models=["gpt-oss:120b"]),
+            self._claim("spans-real", "never", {"grounding_verdict": {"verdict": "SPAN_NOT_IN_DOCUMENT"}}),
+        ), observations)
+        by_id = {r.claim.claim_id: r for r in results}
+        self.assertEqual(by_id["no-refusal"].status, "UNREFUTED_FOR_DECLARED_SCOPE")
+        self.assertEqual(by_id["no-refusal"].witnesses_outside_scope, 0)
+        self.assertFalse(by_id["no-refusal"].shown_able_to_fail)
+        self.assertEqual(by_id["length-elsewhere"].status, "UNREFUTED_FOR_DECLARED_SCOPE")
+        self.assertEqual(by_id["length-elsewhere"].witnesses_outside_scope, 6, "deepseek and nemotron each raised LENGTH_VIOLATION three times")
+        self.assertTrue(by_id["length-elsewhere"].shown_able_to_fail)
+        self.assertTrue(by_id["spans-real"].shown_able_to_fail)
+        self.assertEqual(by_id["spans-real"].witnesses_outside_scope, 0)
+        self.assertEqual(by_id["no-refusal"].to_dict()["shown_able_to_fail"], False)
+        text = render_claims_markdown(results)
+        self.assertIn("has not been shown able to fail", text)
+        self.assertIn("held on 6 supplied observations outside the declared scope", text)
+
+    def test_conditions_fail_closed(self) -> None:
+        from creib.forge.conformance.claims import compile_condition
+        for bad in ({"trigger": "NOPE"}, {"response_verdict": "NOPE"}, {"field_verdict": {"verdict": "NOPE"}}, {"locus": "MODEL"}, {"recovered": "sometimes"}, {"trigger": "MISMATCH", "locus": "TEST"}, {"unknown": 1}, {"all_of": []}, {"baseline": {"nope": 1}}, {"output_tokens": {}}, {"output_tokens": {"min": -1}}):
+            with self.assertRaises(RecordError, msg=repr(bad)):
+                compile_condition(bad)
+
+    def test_baseline_relative_conditions(self) -> None:
+        from creib.forge.conformance.claims import evaluate_claims
+        observations = load_observation_directory(self.LEAVE)
+        results = evaluate_claims((
+            self._claim("rt-vs-base", "never", {"all_of": [{"trigger": "LENGTH_VIOLATION"}, {"baseline": {"not": {"trigger": "LENGTH_VIOLATION"}}}]}, families=["ROUND_TRIP"]),
+            self._claim("rt-inherits", "always", {"any_of": [{"not": {"trigger": "LENGTH_VIOLATION"}}, {"baseline": {"trigger": "LENGTH_VIOLATION"}}]}, families=["ROUND_TRIP"]),
+            self._claim("no-baseline", "never", {"baseline": {"trigger": "MISMATCH"}}, families=["BASELINE"]),
+        ), observations)
+        by_id = {r.claim.claim_id: r for r in results}
+        self.assertEqual(by_id["rt-vs-base"].status, "UNREFUTED_FOR_DECLARED_SCOPE", "the round-trip length violations were inherited from their baselines")
+        self.assertEqual(by_id["rt-inherits"].status, "UNREFUTED_FOR_DECLARED_SCOPE")
+        self.assertEqual(by_id["no-baseline"].tested, 12)
+        from creib.forge.conformance.claims import compile_condition, Context
+        long_reply = compile_condition({"output_tokens": {"min": 1}})
+        counted = [o for o in observations if o.response is not None and o.response.eval_count is not None]
+        self.assertTrue(counted)
+        self.assertTrue(all(long_reply(o, Context(observations)) for o in counted))
+        self.assertFalse(compile_condition({"output_tokens": {"max": 0}})(counted[0], Context(observations)))
+
+    def test_pilot_claims_file_loads_and_cli_runs(self) -> None:
+        from creib.forge.conformance.claims import load_claims
+        claims = load_claims(self.CLAIMS)
+        self.assertGreater(len(claims), 30)
+        self.assertEqual(len({c.claim_id for c in claims}), len(claims))
+        with tempfile.TemporaryDirectory() as directory:
+            markdown = Path(directory) / "claims.md"
+            completed = subprocess.run(
+                [sys.executable, str(TOOL), "claims", "--claims", str(self.CLAIMS), "--observations-dir", str(self.LEAVE), "--markdown", str(markdown)],
+                capture_output=True, text=True, env={**os.environ, "PYTHONPATH": str(ROOT / "src")},
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            lines = [json.loads(line) for line in completed.stdout.splitlines() if line.strip()]
+            self.assertEqual(lines[-1]["claims"], len(claims))
+            self.assertEqual(set(lines[-1]["status_counts"]), {"REFUTED", "REFUTED_ON_CONTESTED_READING", "UNREFUTED_FOR_DECLARED_SCOPE", "NOT_TESTED"})
+            self.assertIsInstance(lines[-1]["unrefuted_not_shown_able_to_fail"], list)
+            text = markdown.read_text()
+            self.assertIn("`UNREFUTED_FOR_DECLARED_SCOPE` means no supplied record refuted the claim, or every refutation rests on a reading of the key that the appraisal labels out; it is not a proof.", text)
+            self.assertTrue(text.rstrip().endswith(NON_INDUCTIVE_LIMIT))
+
+
+class AppraisalTests(unittest.TestCase):
+    """Readings a refutation rests on are labelled in, out, or undecided; refutations become usable, contested, or defeated."""
+
+    APPRAISAL = ROOT / "forge" / "conformance" / "pilots" / "travel-claim" / "appraisal.json"
+    CLAIMS = ROOT / "forge" / "conformance" / "pilots" / "travel-claim" / "claims.json"
+
+    def _arg(self, aid, readiness="PASS", essential=(), attacks=(), supports=None):
+        from creib.forge.conformance.appraisal import Argument
+        return Argument(argument_id=aid, statement=aid, kind="other", supports=supports, essential=tuple(essential), attacks=tuple(attacks), readiness=readiness, readiness_reason="test", register=None)
+
+    def test_labelling_policy(self) -> None:
+        from creib.forge.conformance.appraisal import appraise
+        labels = appraise((self._arg("a"), self._arg("b", attacks=["a"]), self._arg("c", readiness="FAIL"), self._arg("d", essential=["c"]), self._arg("e", readiness="UNKNOWN"), self._arg("f", essential=["e"])))
+        self.assertEqual(labels.of("b"), "in"); self.assertEqual(labels.of("a"), "out", "attacked by an in argument")
+        self.assertEqual(labels.of("c"), "out"); self.assertEqual(labels.of("d"), "out", "an essential argument is out")
+        self.assertEqual(labels.of("e"), "undecided", "an unknown check never becomes in by being unattacked")
+        self.assertEqual(labels.of("f"), "undecided", "an undecided essential argument blocks its dependent")
+        # mutual attack stays undecided; an external defeater resolves it; a support cycle does not bootstrap
+        mutual = appraise((self._arg("x", attacks=["y"]), self._arg("y", attacks=["x"])))
+        self.assertEqual((mutual.of("x"), mutual.of("y")), ("undecided", "undecided"))
+        resolved = appraise((self._arg("x", attacks=["y"]), self._arg("y", attacks=["x"]), self._arg("z", attacks=["x"])))
+        self.assertEqual((resolved.of("z"), resolved.of("x"), resolved.of("y")), ("in", "out", "in"))
+        cycle = appraise((self._arg("p", essential=["q"]), self._arg("q", essential=["p"])))
+        self.assertEqual((cycle.of("p"), cycle.of("q")), ("undecided", "undecided"))
+        # reinstatement: a criticism of the criticism restores the reading
+        chain = appraise((self._arg("reading"), self._arg("crit", attacks=["reading"]), self._arg("counter", attacks=["crit"])))
+        self.assertEqual((chain.of("reading"), chain.of("crit"), chain.of("counter")), ("in", "out", "in"))
+        with self.assertRaisesRegex(RecordError, "unknown argument"):
+            appraise((self._arg("lone", attacks=["ghost"]),))
+        with self.assertRaisesRegex(RecordError, "itself"):
+            appraise((self._arg("self", essential=["self"]),))
+
+    def test_labels_are_the_least_fixed_point_on_every_two_node_graph_and_on_sampled_larger_ones(self) -> None:
+        """Every two-node graph (4 essential edge sets, 16 attack edge sets, 9 readiness assignments: 576 cases)
+        and 150 seeded random graphs of three or four nodes: the iterative labels are closed under the two
+        rules and contained in every other closed labelling. Self-support is refused by the loader, which is
+        why the two-node count is 576 and not 2,304."""
+        from itertools import product
+        import random
+        from creib.forge.conformance.appraisal import appraise
+
+        def closed(args, inside, outside):
+            attackers = {a.argument_id: {b.argument_id for b in args if a.argument_id in b.attacks} for a in args}
+            for a in args:
+                should_in = a.readiness == "PASS" and set(a.essential) <= inside and attackers[a.argument_id] <= outside
+                should_out = a.readiness == "FAIL" or bool(set(a.essential) & outside) or bool(attackers[a.argument_id] & inside)
+                if (should_in and a.argument_id not in inside) or (should_out and a.argument_id not in outside):
+                    return False
+            return True
+
+        def check(args):
+            labels = appraise(args)
+            ids = [a.argument_id for a in args]
+            self.assertTrue(closed(args, set(labels.inside), set(labels.outside)))
+            for assignment in product(("in", "out", "undecided"), repeat=len(ids)):
+                inside = {i for i, l in zip(ids, assignment) if l == "in"}
+                outside = {i for i, l in zip(ids, assignment) if l == "out"}
+                if closed(args, inside, outside):
+                    self.assertTrue(labels.inside <= inside and labels.outside <= outside, (ids, assignment))
+
+        pairs = [("a", "b"), ("b", "a")]
+        loops = [("a", "a"), ("b", "b")]
+        count = 0
+        for ess_bits, att_bits, ready in product(range(4), range(16), product(("PASS", "FAIL", "UNKNOWN"), repeat=2)):
+            essential = {x: [] for x in "ab"}; attacks = {x: [] for x in "ab"}
+            for bit, (src, dst) in enumerate(pairs):
+                if ess_bits >> bit & 1:
+                    essential[src].append(dst)
+            for bit, (src, dst) in enumerate(pairs + loops):
+                if att_bits >> bit & 1:
+                    attacks[src].append(dst)
+            args = tuple(self._arg(x, readiness=r, essential=essential[x], attacks=attacks[x]) for x, r in zip("ab", ready))
+            check(args); count += 1
+        self.assertEqual(count, 576)
+        rng = random.Random(7)
+        for _ in range(150):
+            ids = [f"n{i}" for i in range(rng.randint(3, 4))]
+            args = tuple(
+                self._arg(
+                    x,
+                    readiness=rng.choice(("PASS", "PASS", "FAIL", "UNKNOWN")),
+                    essential=[y for y in ids if y != x and rng.random() < 0.25],
+                    attacks=[y for y in ids if rng.random() < 0.25],
+                )
+                for x in ids
+            )
+            check(args)
+
+    def test_pilot_appraisal_loads_and_classes_refutations(self) -> None:
+        from creib.forge.conformance.appraisal import Appraisal, load_appraisal
+        from creib.forge.conformance.claims import evaluate_claims, load_claims
+        appraisal = Appraisal.build(load_appraisal(self.APPRAISAL))
+        self.assertEqual(appraisal.labels.of("C-H13-AMBIGUOUS"), "in")
+        self.assertEqual(appraisal.labels.of("R-BND104-NIGHTLY-R1"), "out")
+        self.assertEqual(appraisal.labels.of("R-TRV005-CLIENT-VISIT"), "undecided")
+        # round-one records: the BND-104 total refutations rest on a defeated reading
+        observations = load_observation_directory(ROOT / "forge" / "conformance" / "runs" / "travel-claim")
+        bnd104 = [o for o in observations if o.variant.base_case_id == "BND-104" and any(v.field == "total_claimed_cents" and v.verdict == "MISMATCH" for v in o.scoring.field_verdicts)]
+        self.assertTrue(bnd104)
+        self.assertTrue(all(appraisal.standing_of(o) == "defeated" for o in bnd104))
+        self.assertTrue(all("R-BND104-NIGHTLY-R1" in appraisal.readings_of(o) for o in bnd104))
+        # a conjecture about a different field, or about a trigger, does not rest on that reading
+        self.assertTrue(all(appraisal.standing_of(o, frozenset({"destination_city"}), frozenset()) == "usable" for o in bnd104))
+        self.assertTrue(all(appraisal.standing_of(o, frozenset(), frozenset({"EXTRA_FIELD"})) == "usable" for o in bnd104))
+        from creib.forge.conformance.claims import condition_footprint
+        self.assertEqual(condition_footprint({"trigger": "EXTRA_FIELD"}), (frozenset(), frozenset({"EXTRA_FIELD"})))
+        self.assertEqual(condition_footprint({"field_verdict": {"verdict": "MISMATCH"}}), (None, frozenset()))
+        self.assertEqual(condition_footprint({"all_of": [{"output_tokens": {"min": 1}}, {"field_verdict": {"verdict": "MISMATCH", "field": "total_claimed_cents"}}]}), (frozenset({"total_claimed_cents"}), frozenset()))
+        self.assertEqual(condition_footprint({"grounding_verdict": {"verdict": "SPAN_NOT_IN_DOCUMENT"}}), (frozenset(), frozenset({"SPAN_NOT_IN_DOCUMENT"})))
+        claims = tuple(c for c in load_claims(self.CLAIMS) if c.claim_id in ("ARITH-02", "READ-07", "STRUCT-01"))
+        plain = {r.claim.claim_id: r for r in evaluate_claims(claims, observations)}
+        judged = {r.claim.claim_id: r for r in evaluate_claims(claims, observations, appraisal)}
+        self.assertEqual(plain["STRUCT-01"].status, judged["STRUCT-01"].status, "a claim resting on no argued reading is unchanged")
+        self.assertEqual(plain["STRUCT-01"].refuting_usable, plain["STRUCT-01"].refuting)
+        for cid, r in judged.items():
+            self.assertEqual(r.refuting, r.refuting_usable + r.refuting_contested + r.refuting_defeated)
+            self.assertIn(r.status, ("REFUTED", "REFUTED_ON_CONTESTED_READING", "UNREFUTED_FOR_DECLARED_SCOPE", "NOT_TESTED"))
+        with tempfile.TemporaryDirectory() as directory:
+            markdown = Path(directory) / "c.md"
+            completed = subprocess.run(
+                [sys.executable, str(TOOL), "claims", "--claims", str(self.CLAIMS), "--observations-dir", str(ROOT / "forge" / "conformance" / "runs" / "travel-claim"), "--appraisal", str(self.APPRAISAL), "--markdown", str(markdown)],
+                capture_output=True, text=True, env={**os.environ, "PYTHONPATH": str(ROOT / "src")},
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            summary = json.loads(completed.stdout.strip().splitlines()[-1])
+            self.assertIn("appraisal_labels", summary)
+            self.assertIn("REFUTED_ON_CONTESTED_READING", summary["status_counts"])
+            self.assertIn("standing under the appraisal", markdown.read_text())
+
+
+class HardPilotTests(unittest.TestCase):
+    """The travel-claim battery: every family present, controls behave, grounding does not break model-free controls."""
+
+    PILOT = ROOT / "forge" / "conformance" / "pilots" / "travel-claim" / "pilot.json"
+
+    def setUp(self) -> None:
+        self.config = load_pilot_config(self.PILOT)
+        self.corpus = load_corpus(self.config.corpus_path, self.config.spec)
+        self.plan = plan(self.config.spec, self.corpus)
+
+    def test_plan_exercises_every_family(self) -> None:
+        counts = dict(self.plan.counts)
+        self.assertEqual(set(counts), {f.value for f in Family})
+        self.assertEqual(counts["BASELINE"], 9)
+        self.assertEqual(counts["NON_VACUITY"], 12)
+        self.assertEqual(counts["RIVAL_SUBSTITUTION"], 6)
+        self.assertEqual(counts["REPEAT"], 18)
+        self.assertEqual(sum(1 for v in self.plan.variants if v.model_call), 135)
+
+    def test_model_free_controls_are_scored_against_the_bound_form_not_the_prompt_schema(self) -> None:
+        # Regression: with grounding on, the prompt schema requires companion span keys; reference
+        # outputs never carry them, so the uncorrupted control was rejected and CONTROL_REJECTED fired.
+        controls = [v for v in self.plan.variants if v.family is Family.NON_VACUITY]
+        self.assertTrue(controls)
+        for variant in controls:
+            scoring = score(variant, None)
+            routing = route(variant, scoring, format_sent=False)
+            if variant.control_id == "C-CORRECT":
+                self.assertTrue(scoring.schema_valid, variant.base_case_id)
+                self.assertTrue(scoring.all_match, variant.base_case_id)
+                self.assertEqual(routing.triggers, ())
+            else:
+                self.assertFalse(scoring.all_match, variant.control_id)
+                self.assertEqual(routing.triggers, ())
+
+    def test_prompt_carries_generated_grounding_sentences_and_nullable_abstain_fields(self) -> None:
+        variant = next(v for v in self.plan.variants if v.family is Family.BOUNDARY_SHIFT and v.base_case_id == "BND-107")
+        request = build_chat_request(variant, model="gemma4:31b", endpoint=self.config.spec.endpoint)
+        self.assertIn("16. For each of `claimant_name`", request.user)
+        self.assertIn("17. For `trip_end`, `nights_away`", request.user)
+        self.assertNotIn("project_code", request.format_schema["required"])
+        self.assertEqual(request.format_schema["properties"]["nights_away"]["type"], ["integer", "null"])
+        self.assertIn("claimant_name_span", request.format_schema["required"])
+        self.assertNotIn("cost_centre", request.format_schema["required"])
+
+    def test_expected_abstention_case_is_judged_not_merely_tolerated(self) -> None:
+        variant = next(v for v in self.plan.variants if v.family is Family.BOUNDARY_SHIFT and v.base_case_id == "BND-101")
+        good = {
+            "claimant_name": "Noor Haddad", "claimant_name_span": "Noor Haddad", "approver_name": "Ben Castellano", "approver_name_span": "Ben Castellano",
+            "employee_id": "E-61234", "employee_id_span": "employee number 61234", "trip_start": "2025-05-20", "trip_start_span": "20 May 2025",
+            "trip_end": None, "trip_end_span": None, "nights_away": None, "destination_city": "Perth", "destination_city_span": "Perth",
+            "purpose": "client_visit", "total_claimed_cents": 84560, "advance_received": False, "receipts_attached": True,
+            "contact_phone": "+61409771245", "contact_phone_span": "0409 771 245",
+        }
+        scoring = score(variant, response_from_content(json.dumps(good)))
+        verdicts = {v.field: v.verdict for v in scoring.field_verdicts}
+        self.assertEqual((verdicts["trip_end"], verdicts["nights_away"]), ("MATCH", "MATCH"))
+        self.assertEqual(route(variant, scoring).live_loci, ())
+        invented = {**good, "trip_end": "2025-05-23", "trip_end_span": "20 May 2025", "nights_away": 3}
+        scoring = score(variant, response_from_content(json.dumps(invented)))
+        verdicts = {v.field: v.verdict for v in scoring.field_verdicts}
+        self.assertEqual((verdicts["trip_end"], verdicts["nights_away"]), ("MISMATCH", "MISMATCH"))
+        self.assertIn("CANDIDATE", route(variant, scoring).loci)
+
+
 class GroundingTests(unittest.TestCase):
     """Provenance spans and abstention are configuration; the default leaves behaviour unchanged."""
 
@@ -922,6 +1574,29 @@ class GroundingTests(unittest.TestCase):
         not_allowed = {**LR_GOOD, **LR_SPANS, "employee_name": None, "employee_name_span": None}
         verdicts = {v.field: v.verdict for v in self._score(self.lr1, not_allowed).field_verdicts}
         self.assertEqual(verdicts["employee_name"], "TYPE_VIOLATION")
+
+    def test_expected_abstention_is_an_answer_key_entry(self) -> None:
+        # An any_of oracle whose values include null says "the document does not state this":
+        # abstaining matches it, and a value where abstention was expected is a mismatch.
+        from creib.forge.conformance.corpus import Oracle
+        expected = tuple(
+            Oracle(field=o.field, kind="any_of", value=None, values=(None,), pattern=None, oracle_status="source_scoped", rationale="not stated")
+            if o.field in ("end_date", "total_days") else o
+            for o in self.lr2.expected
+        )
+        variant = make_variant(**{**{k: getattr(self.lr2, k) for k in self.lr2.__dataclass_fields__ if k != "variant_id"}, "expected": expected})
+        abstained = {**LR_GOOD, **LR_SPANS, "employee_name": "Tom Nguyen", "employee_name_span": "Tom Nguyen", "end_date": None, "end_date_span": None, "total_days": None, "total_days_span": None}
+        verdicts = {v.field: v.verdict for v in self._score(variant, abstained).field_verdicts}
+        self.assertEqual((verdicts["end_date"], verdicts["total_days"]), ("MATCH", "MATCH"))
+        invented = {**abstained, "end_date": "2025-11-07", "end_date_span": "Monday 3 November 2025", "total_days": 5, "total_days_span": "within the week"}
+        scoring = self._score(variant, invented)
+        verdicts = {v.field: v.verdict for v in scoring.field_verdicts}
+        self.assertEqual((verdicts["end_date"], verdicts["total_days"]), ("MISMATCH", "MISMATCH"))
+        self.assertIn("CANDIDATE", route(variant, scoring).loci)
+        # A null against an oracle that does not admit it is still a mismatch.
+        strict = make_variant(**{**{k: getattr(self.lr2, k) for k in self.lr2.__dataclass_fields__ if k != "variant_id"}, "expected": tuple(
+            Oracle(field=o.field, kind="exact", value="2025-11-07", values=None, pattern=None, oracle_status="source_scoped", rationale="x") if o.field == "end_date" else o for o in self.lr2.expected)})
+        self.assertEqual({v.field: v.verdict for v in self._score(strict, abstained).field_verdicts}["end_date"], "MISMATCH")
 
     def test_round_trip_of_an_abstained_baseline_materialises_reloads_and_scores(self) -> None:
         # Regression: the first live grounding run wrote records whose ROUND_TRIP variants carried an

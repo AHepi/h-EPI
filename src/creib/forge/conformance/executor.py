@@ -97,6 +97,10 @@ class ChatRequest:
     format_schema: dict[str, Any] | None
     options: dict[str, int]
     think: bool | None
+    # Which repeat of a byte-identical request this is: None for the first send, 1.. for the
+    # REPEAT family. Not part of the body, the digest, or the record; a replay executor uses it
+    # to pair a repeat with the reply that repeat received, since one digest has several.
+    repeat_index: int | None = None
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -271,32 +275,36 @@ def parse_chat_body(body: bytes, *, http_status: int, attempt: int, secret: str 
 class OllamaChatExecutor:
     """POST to ``{base_url}/api/chat`` with the key from the environment only."""
 
-    def __init__(self, base_url: str = "https://ollama.com", timeout_seconds: int = 180, retries: int = 0) -> None:
+    def __init__(self, base_url: str = "https://ollama.com", timeout_seconds: int = 180, retries: int = 0, auth: str = "bearer") -> None:
         if type(timeout_seconds) is not int or timeout_seconds < 1:
             raise RecordError("timeout_seconds must be a positive integer")
         if type(retries) is not int or retries < 0:
             raise RecordError("retries must be a non-negative integer")
+        if auth not in ("bearer", "none"):
+            raise RecordError("auth must be 'bearer' or 'none'")
         self.base_url = text(base_url, "base_url").rstrip("/")
         self.timeout_seconds = timeout_seconds
         self.retries = retries
+        self.auth = auth
 
     def __repr__(self) -> str:
-        return f"OllamaChatExecutor(base_url={self.base_url!r}, timeout_seconds={self.timeout_seconds}, retries={self.retries})"
+        return f"OllamaChatExecutor(base_url={self.base_url!r}, timeout_seconds={self.timeout_seconds}, retries={self.retries}, auth={self.auth!r})"
 
     def _attempt(self, request: ChatRequest, attempt: int) -> ChatResponse:
+        # auth none is for a local Ollama: no key is read and no Authorization header is sent.
+        # Redaction still runs against whatever the environment holds, so a key set by accident never leaks.
         secret = os.environ.get(API_KEY_ENV)
-        if not secret:
+        if self.auth == "bearer" and not secret:
             raise RecordError("OLLAMA_API_KEY is not set")
         payload = json.dumps(request.body(), ensure_ascii=False, allow_nan=False).encode("utf-8")
+        headers = {"Content-Type": "application/json", "Accept": "application/json"}
+        if self.auth == "bearer":
+            headers["Authorization"] = "Bearer " + str(secret)
         http_request = urllib.request.Request(
             self.base_url + "/api/chat",
             data=payload,
             method="POST",
-            headers={
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                "Authorization": "Bearer " + secret,
-            },
+            headers=headers,
         )
         try:
             with urllib.request.urlopen(http_request, timeout=self.timeout_seconds) as response:
@@ -419,26 +427,33 @@ class CannedExecutor:
 
 
 class ReplayExecutor:
-    """Replay recorded responses by request digest; never contacts a network."""
+    """Replay recorded responses by request digest and repeat index; never contacts a network.
+
+    A run with ``repeats`` sends one request several times, so one digest has several recorded
+    replies; the replay pairs each send with the reply the same send received (H23). Two
+    recorded replies for the same digest and repeat are a conflict and are refused.
+    """
 
     def __init__(self, observation_records_dir: Path) -> None:
         from .records import load_observation_directory
 
         if not isinstance(observation_records_dir, Path):
             raise TypeError("observation_records_dir must be pathlib.Path")
-        self._responses: dict[str, ChatResponse] = {}
+        self._responses: dict[tuple[str, int], ChatResponse] = {}
         for record in load_observation_directory(observation_records_dir):
             if record.request_digest is None or record.response is None:
                 continue
-            existing = self._responses.get(record.request_digest)
+            key = (record.request_digest, record.variant.repeat_index or 0)
+            existing = self._responses.get(key)
             if existing is not None and existing != record.response:
                 raise RecordError(
-                    f"replay directory holds conflicting responses for request {record.request_digest}"
+                    f"replay directory holds conflicting responses for request {record.request_digest} repeat {key[1]}"
                 )
-            self._responses[record.request_digest] = record.response
+            self._responses[key] = record.response
 
     def complete(self, request: ChatRequest) -> ChatResponse:
+        key = (request.request_digest, request.repeat_index or 0)
         try:
-            return self._responses[request.request_digest]
+            return self._responses[key]
         except KeyError as exc:
-            raise RecordError(f"no recorded response for request {request.request_digest}") from exc
+            raise RecordError(f"no recorded response for request {request.request_digest} repeat {key[1]}") from exc

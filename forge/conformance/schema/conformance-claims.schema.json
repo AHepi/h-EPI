@@ -1,0 +1,253 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ahepi.example/smf/0.5/conformance-claims.schema.json",
+  "title": "Conjectures about form filling, to be tested against observation records",
+  "description": "Each claim is a universal statement over the observations in its scope. A never claim is refuted by one observation where the condition holds; an always claim by one where it does not. Survival is UNREFUTED_FOR_DECLARED_SCOPE, never confirmation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "claims"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "creib.conformance-pilot.claims.v1"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "claims": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/claim"
+      }
+    }
+  },
+  "$defs": {
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claim_id",
+        "statement",
+        "kind",
+        "condition"
+      ],
+      "properties": {
+        "claim_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,63}$"
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "never",
+            "always"
+          ]
+        },
+        "scope": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "families": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string"
+              }
+            },
+            "cases": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string"
+              }
+            },
+            "models": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "string"
+              }
+            },
+            "model_call": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          }
+        },
+        "condition": {
+          "$ref": "#/$defs/condition"
+        },
+        "note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "condition": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "all_of": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/condition"
+          }
+        },
+        "any_of": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/condition"
+          }
+        },
+        "not": {
+          "$ref": "#/$defs/condition"
+        },
+        "trigger": {
+          "type": "string"
+        },
+        "locus": {
+          "type": "string"
+        },
+        "response_verdict": {
+          "type": "string"
+        },
+        "field_verdict": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "verdict"
+          ],
+          "properties": {
+            "verdict": {
+              "type": "string"
+            },
+            "field": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "value_null": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          }
+        },
+        "grounding_verdict": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "verdict"
+          ],
+          "properties": {
+            "verdict": {
+              "type": "string"
+            },
+            "field": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "relaxed": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          }
+        },
+        "changed_vs_baseline": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "value_null": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "field"
+          ],
+          "properties": {
+            "field": {
+              "type": "string"
+            }
+          }
+        },
+        "key_present": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "key"
+          ],
+          "properties": {
+            "key": {
+              "type": "string"
+            }
+          }
+        },
+        "thinking_present": {
+          "type": "boolean"
+        },
+        "recovered": {
+          "enum": [
+            "any",
+            "prose",
+            "duplicate_keys"
+          ]
+        },
+        "baseline": {
+          "$ref": "#/$defs/condition"
+        },
+        "output_tokens": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "min": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "max": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            }
+          },
+          "description": "The reply's generated token count (eval_count) within [min, max]; false when the record has no count."
+        }
+      }
+    }
+  }
+}
