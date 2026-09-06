@@ -109,6 +109,7 @@ class SchemaAndVocabularyTests(unittest.TestCase):
         self.assertEqual(
             catalog.schema_names,
             (
+                "conformance-claims.schema.json",
                 "conformance-corpus.schema.json",
                 "conformance-observation.schema.json",
                 "conformance-pilot-config.schema.json",
@@ -1092,6 +1093,67 @@ class ConfigurableProbeTests(unittest.TestCase):
         self.assertIn("LENGTH_VIOLATION", routed.triggers)
         self.assertEqual(set(routed.loci), {"CANDIDATE", "TEST", "AUXILIARY"})
         self.assertTrue(any("quote verbatim" in locus.reason for locus in routed.live_loci if locus.locus == "AUXILIARY"))
+
+
+class ClaimsTests(unittest.TestCase):
+    """Conjectures are refuted by one record or left unrefuted for the declared scope; never confirmed."""
+
+    LEAVE = ROOT / "forge" / "conformance" / "runs" / "leave-request"
+    CLAIMS = ROOT / "forge" / "conformance" / "pilots" / "travel-claim" / "claims.json"
+
+    def _claim(self, cid, kind, condition, **scope):
+        from creib.forge.conformance.claims import Claim, Scope
+        return Claim(claim_id=cid, statement=cid, kind=kind, scope=Scope(families=scope.get("families"), cases=scope.get("cases"), models=scope.get("models"), model_call=scope.get("model_call")), condition=condition, note=None)
+
+    def test_refuted_unrefuted_and_not_tested(self) -> None:
+        from creib.forge.conformance.claims import evaluate_claims
+        observations = load_observation_directory(self.LEAVE)
+        results = evaluate_claims((
+            self._claim("spans-real", "never", {"grounding_verdict": {"verdict": "SPAN_NOT_IN_DOCUMENT"}}),
+            self._claim("parses", "always", {"response_verdict": "JSON_OBJECT"}, model_call=True),
+            self._claim("no-such-case", "never", {"trigger": "MISMATCH"}, cases=["LR-999"]),
+            self._claim("abstains", "always", {"all_of": [{"value_null": {"field": "end_date"}}, {"value_null": {"field": "total_days"}}]}, cases=["LR-002"], families=["BASELINE"]),
+            self._claim("repeat-only", "never", {"trigger": "REPEAT_DIFFERS"}, families=["REPEAT"]),
+        ), observations)
+        by_id = {r.claim.claim_id: r for r in results}
+        self.assertEqual(by_id["spans-real"].status, "REFUTED")
+        self.assertEqual(by_id["spans-real"].refuting_models, ("nemotron-3-nano:30b",))
+        self.assertEqual(by_id["spans-real"].refuting, 2)
+        self.assertTrue(all(len(e) == 4 for e in by_id["spans-real"].examples))
+        self.assertEqual(by_id["parses"].status, "UNREFUTED_FOR_DECLARED_SCOPE")
+        self.assertEqual(by_id["parses"].tested, 24)
+        self.assertEqual(by_id["no-such-case"].status, "NOT_TESTED")
+        self.assertEqual(by_id["abstains"].status, "UNREFUTED_FOR_DECLARED_SCOPE")
+        self.assertEqual(by_id["abstains"].tested, 6)
+        self.assertEqual(by_id["repeat-only"].status, "NOT_TESTED", "no REPEAT variants exist in that run")
+        for result in results:
+            self.assertIn("epistemic_limit", result.to_dict())
+            self.assertNotIn("confirmed", json.dumps(result.to_dict()).lower())
+
+    def test_conditions_fail_closed(self) -> None:
+        from creib.forge.conformance.claims import compile_condition
+        for bad in ({"trigger": "NOPE"}, {"response_verdict": "NOPE"}, {"field_verdict": {"verdict": "NOPE"}}, {"locus": "MODEL"}, {"recovered": "sometimes"}, {"trigger": "MISMATCH", "locus": "TEST"}, {"unknown": 1}, {"all_of": []}):
+            with self.assertRaises(RecordError, msg=repr(bad)):
+                compile_condition(bad)
+
+    def test_pilot_claims_file_loads_and_cli_runs(self) -> None:
+        from creib.forge.conformance.claims import load_claims
+        claims = load_claims(self.CLAIMS)
+        self.assertGreater(len(claims), 30)
+        self.assertEqual(len({c.claim_id for c in claims}), len(claims))
+        with tempfile.TemporaryDirectory() as directory:
+            markdown = Path(directory) / "claims.md"
+            completed = subprocess.run(
+                [sys.executable, str(TOOL), "claims", "--claims", str(self.CLAIMS), "--observations-dir", str(self.LEAVE), "--markdown", str(markdown)],
+                capture_output=True, text=True, env={**os.environ, "PYTHONPATH": str(ROOT / "src")},
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            lines = [json.loads(line) for line in completed.stdout.splitlines() if line.strip()]
+            self.assertEqual(lines[-1]["claims"], len(claims))
+            self.assertEqual(set(lines[-1]["status_counts"]), {"REFUTED", "UNREFUTED_FOR_DECLARED_SCOPE", "NOT_TESTED"})
+            text = markdown.read_text()
+            self.assertIn("`UNREFUTED_FOR_DECLARED_SCOPE` means no supplied record refuted the claim; it is not a proof.", text)
+            self.assertTrue(text.rstrip().endswith(NON_INDUCTIVE_LIMIT))
 
 
 class HardPilotTests(unittest.TestCase):

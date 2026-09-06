@@ -69,6 +69,10 @@ def _parser() -> argparse.ArgumentParser:
     fills.add_argument("--observations-dir", type=Path, required=True)
     fills.add_argument("--run", type=Path, help="restrict to one run record")
     fills.add_argument("--family", default="BASELINE", choices=[family.value for family in Family] + ["ALL"])
+    claims = subparsers.add_parser("claims", help="test the conjectures in a claims file against observation records; REFUTED with counterexamples, or UNREFUTED_FOR_DECLARED_SCOPE")
+    claims.add_argument("--claims", type=Path, required=True)
+    claims.add_argument("--observations-dir", type=Path, required=True, action="append", help="may be given more than once")
+    claims.add_argument("--markdown", type=Path, help="also write a Markdown rendering here")
     evidence = subparsers.add_parser("evidence", help="list observation ids per model and criticism trigger, for the failure-mode register")
     evidence.add_argument("--observations-dir", type=Path, required=True)
     evidence.add_argument("--trigger", help="restrict to one trigger or grounding verdict")
@@ -238,6 +242,20 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "live_loci": list(observation.routing.loci),
                     "observation_id": observation.observation_id,
                 })
+            return 0
+        if args.command == "claims":
+            from creib.forge.conformance.claims import evaluate_claims, load_claims, render_claims_markdown
+            loaded = load_claims(args.claims)
+            observations = []
+            for directory in args.observations_dir:
+                observations.extend(load_observation_directory(directory))
+            results = evaluate_claims(loaded, observations)
+            for result in results:
+                _emit(result.to_dict())
+            counts = {status: sum(1 for r in results if r.status == status) for status in ("REFUTED", "UNREFUTED_FOR_DECLARED_SCOPE", "NOT_TESTED")}
+            _emit({"claims": len(results), "observations": len(observations), "models": sorted({o.model for o in observations}), "status_counts": counts, "semantic_verdict": None})
+            if args.markdown is not None:
+                args.markdown.write_text(render_claims_markdown(results), encoding="utf-8")
             return 0
         if args.command == "evidence":
             observations = load_observation_directory(args.observations_dir)

@@ -47,11 +47,17 @@ from .records import (
     publish_record,
 )
 from .report import build_report, render_markdown
+from .claims import Claim, ClaimResult, evaluate_claims, load_claims, render_claims_markdown
 from .routing import ROUTING_TABLE, LiveLocus, Routing, route
 from .runner import RunResult, run_pilot, select_variants
 from .spec import Obligation, PilotConfig, TaskSpec, load_pilot_config
 
 __all__ = [
+    "Claim",
+    "ClaimResult",
+    "evaluate_claims",
+    "load_claims",
+    "render_claims_markdown",
     "CONFORMANCE_SCHEMA_DIR",
     "LOCUS_VALUES",
     "conformance_catalog",

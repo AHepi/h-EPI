@@ -1,0 +1,975 @@
+{
+  "schema_version": "creib.conformance-pilot.claims.v1",
+  "title": "Conjectures about language models filling the travel claim form",
+  "claims": [
+    {
+      "claim_id": "STRUCT-01",
+      "statement": "A language model filling this form never emits a key the schema does not define.",
+      "kind": "never",
+      "scope": {
+        "families": null,
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "trigger": "EXTRA_FIELD"
+      },
+      "note": null
+    },
+    {
+      "claim_id": "STRUCT-02",
+      "statement": "A language model filling this form never omits a required key.",
+      "kind": "never",
+      "scope": {
+        "families": null,
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "trigger": "MISSING_REQUIRED"
+      },
+      "note": null
+    },
+    {
+      "claim_id": "STRUCT-03",
+      "statement": "A language model asked for a single JSON object and no other text returns exactly that.",
+      "kind": "never",
+      "scope": {
+        "families": null,
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "recovered": "any"
+      },
+      "note": "Refuted by any reply that had to be recovered from a code fence, prose, or a repeated key."
+    },
+    {
+      "claim_id": "STRUCT-04",
+      "statement": "A language model never returns a JSON object with a repeated key.",
+      "kind": "never",
+      "scope": {
+        "families": null,
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "recovered": "duplicate_keys"
+      },
+      "note": null
+    },
+    {
+      "claim_id": "STRUCT-05",
+      "statement": "A language model never returns an empty reply to a completed request.",
+      "kind": "never",
+      "scope": {
+        "families": null,
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "response_verdict": "EMPTY_RESPONSE"
+      },
+      "note": null
+    },
+    {
+      "claim_id": "STRUCT-06",
+      "statement": "With thinking switched off in the request, no thinking channel appears in the reply.",
+      "kind": "never",
+      "scope": {
+        "families": null,
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "thinking_present": true
+      },
+      "note": null
+    },
+    {
+      "claim_id": "STRUCT-07",
+      "statement": "A language model never writes a value for an optional field the document does not state.",
+      "kind": "never",
+      "scope": {
+        "families": null,
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "any_of": [
+          {
+            "field_verdict": {
+              "verdict": "UNEXPECTED_PRESENT",
+              "field": "cost_centre"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "UNEXPECTED_PRESENT",
+              "field": "project_code"
+            }
+          }
+        ]
+      },
+      "note": "Instructions 14 and 15 say to omit the key; a value here is invented."
+    },
+    {
+      "claim_id": "STRUCT-08",
+      "statement": "A language model never leaves an identifier in the document's own format when the instruction gives a normal form.",
+      "kind": "never",
+      "scope": {
+        "families": null,
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "field_verdict": {
+          "verdict": "PATTERN_VIOLATION",
+          "field": "employee_id"
+        }
+      },
+      "note": null
+    },
+    {
+      "claim_id": "STRUCT-09",
+      "statement": "A language model never exceeds a declared length bound.",
+      "kind": "never",
+      "scope": {
+        "families": null,
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "trigger": "LENGTH_VIOLATION"
+      },
+      "note": null
+    },
+    {
+      "claim_id": "STRUCT-10",
+      "statement": "The endpoint's format constraint prevents keys outside the schema and missing required keys.",
+      "kind": "never",
+      "scope": {
+        "families": null,
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "trigger": "FORMAT_NOT_ENFORCED"
+      },
+      "note": "A claim about the endpoint, not the model: FORMAT_NOT_ENFORCED fires when the schema was sent and the reply still had an extra, missing, or unexpected key."
+    },
+    {
+      "claim_id": "ABST-01",
+      "statement": "A language model never invents a return date or a night count where the document states neither.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT"
+        ],
+        "cases": [
+          "BND-101"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "any_of": [
+          {
+            "field_verdict": {
+              "verdict": "MISMATCH",
+              "field": "trip_end"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MISMATCH",
+              "field": "nights_away"
+            }
+          }
+        ]
+      },
+      "note": "BND-101's key admits only null for both fields."
+    },
+    {
+      "claim_id": "ABST-02",
+      "statement": "A language model always answers null for both unstated fields on the silent case.",
+      "kind": "always",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT"
+        ],
+        "cases": [
+          "BND-101"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "value_null": {
+              "field": "trip_end"
+            }
+          },
+          {
+            "value_null": {
+              "field": "nights_away"
+            }
+          }
+        ]
+      },
+      "note": null
+    },
+    {
+      "claim_id": "DERIV-01",
+      "statement": "A language model never answers null for a date the document fixes by a weekday or an interval.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "DELETION",
+          "NEGATION",
+          "SEMANTIC_ROLE_TWIN",
+          "SUBSTRATE_SWAP",
+          "RIVAL_SUBSTITUTION"
+        ],
+        "cases": [
+          "TRV-003",
+          "TRV-005",
+          "BND-111"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "value_null": {
+          "field": "trip_end"
+        }
+      },
+      "note": "Sentence 6 says such a date counts as stated."
+    },
+    {
+      "claim_id": "DERIV-02",
+      "statement": "A language model always derives the right date from 'came home on the Wednesday' after a stated Sunday.",
+      "kind": "always",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT"
+        ],
+        "cases": [
+          "TRV-003"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "field_verdict": {
+          "verdict": "MATCH",
+          "field": "trip_end"
+        }
+      },
+      "note": null
+    },
+    {
+      "claim_id": "DERIV-03",
+      "statement": "A language model always derives the right dates from 'the last Friday of February' and 'the Monday'.",
+      "kind": "always",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT"
+        ],
+        "cases": [
+          "BND-111"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "field_verdict": {
+              "verdict": "MATCH",
+              "field": "trip_start"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MATCH",
+              "field": "trip_end"
+            }
+          }
+        ]
+      },
+      "note": null
+    },
+    {
+      "claim_id": "DERIV-04",
+      "statement": "A language model always counts the nights between two dates it has stated correctly.",
+      "kind": "always",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "DELETION",
+          "NEGATION",
+          "SEMANTIC_ROLE_TWIN",
+          "SUBSTRATE_SWAP",
+          "RIVAL_SUBSTITUTION"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "any_of": [
+          {
+            "not": {
+              "all_of": [
+                {
+                  "field_verdict": {
+                    "verdict": "MATCH",
+                    "field": "trip_start"
+                  }
+                },
+                {
+                  "field_verdict": {
+                    "verdict": "MATCH",
+                    "field": "trip_end"
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MATCH",
+              "field": "nights_away"
+            }
+          }
+        ]
+      },
+      "note": "Vacuous where either date is wrong; refuted only where both dates match and the count does not."
+    },
+    {
+      "claim_id": "ARITH-01",
+      "statement": "A language model never gets a total wrong when every amount is a flat figure in Australian dollars.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT"
+        ],
+        "cases": [
+          "TRV-002",
+          "TRV-002-P",
+          "TRV-003",
+          "TRV-003-P",
+          "TRV-006",
+          "BND-101",
+          "BND-107"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "field_verdict": {
+          "verdict": "MISMATCH",
+          "field": "total_claimed_cents"
+        }
+      },
+      "note": null
+    },
+    {
+      "claim_id": "ARITH-02",
+      "statement": "A language model never gets a total wrong when a nightly rate stated with 'a night' or 'per night' must be multiplied.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT"
+        ],
+        "cases": [
+          "TRV-001",
+          "TRV-001-P",
+          "TRV-005",
+          "BND-111"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "field_verdict": {
+          "verdict": "MISMATCH",
+          "field": "total_claimed_cents"
+        }
+      },
+      "note": null
+    },
+    {
+      "claim_id": "ARITH-03",
+      "statement": "A language model never sums a foreign-currency face value as if it were dollars.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT"
+        ],
+        "cases": [
+          "BND-105",
+          "BND-110"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "field_verdict": {
+          "verdict": "MISMATCH",
+          "field": "total_claimed_cents"
+        }
+      },
+      "note": "A proxy: any wrong total on these cases refutes it, whatever the arithmetic."
+    },
+    {
+      "claim_id": "ARITH-04",
+      "statement": "A language model always uses the corrected amount when a figure is corrected in the same sentence.",
+      "kind": "always",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT"
+        ],
+        "cases": [
+          "TRV-006"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "field_verdict": {
+          "verdict": "MATCH",
+          "field": "total_claimed_cents"
+        }
+      },
+      "note": null
+    },
+    {
+      "claim_id": "ARITH-05",
+      "statement": "A language model never writes an amount in dollars where whole cents were asked for.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT"
+        ],
+        "cases": [
+          "BND-102"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "field_verdict": {
+          "verdict": "MISMATCH",
+          "field": "total_claimed_cents"
+        }
+      },
+      "note": "A proxy on the one case where round one showed 1255 for 125500; any wrong total here refutes it."
+    },
+    {
+      "claim_id": "RULE-01",
+      "statement": "A language model always follows an appended rule that fixes how a numeric date is read.",
+      "kind": "always",
+      "scope": {
+        "families": [
+          "RIVAL_SUBSTITUTION"
+        ],
+        "cases": [
+          "BND-102"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "field_verdict": {
+          "verdict": "MATCH",
+          "field": "trip_start"
+        }
+      },
+      "note": null
+    },
+    {
+      "claim_id": "RULE-02",
+      "statement": "A language model always follows an appended rule that says which of two conflicting totals to claim.",
+      "kind": "always",
+      "scope": {
+        "families": [
+          "RIVAL_SUBSTITUTION"
+        ],
+        "cases": [
+          "BND-103"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "field_verdict": {
+          "verdict": "MATCH",
+          "field": "total_claimed_cents"
+        }
+      },
+      "note": null
+    },
+    {
+      "claim_id": "RULE-03",
+      "statement": "A language model always follows an appended rule that says whether dates or a stated count give the nights.",
+      "kind": "always",
+      "scope": {
+        "families": [
+          "RIVAL_SUBSTITUTION"
+        ],
+        "cases": [
+          "BND-108"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "field_verdict": {
+          "verdict": "MATCH",
+          "field": "nights_away"
+        }
+      },
+      "note": null
+    },
+    {
+      "claim_id": "RULE-04",
+      "statement": "A language model's output always changes when a formatting instruction and its pattern are inverted.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "NEGATION"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "trigger": "IDENTICAL_TO_BASELINE"
+      },
+      "note": null
+    },
+    {
+      "claim_id": "READ-01",
+      "statement": "A language model always uses the corrected date when the document corrects its own earlier date.",
+      "kind": "always",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT"
+        ],
+        "cases": [
+          "TRV-002",
+          "TRV-002-P"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "field_verdict": {
+          "verdict": "MATCH",
+          "field": "trip_end"
+        }
+      },
+      "note": null
+    },
+    {
+      "claim_id": "READ-02",
+      "statement": "A language model never takes a copied-in colleague, or a person who merely owns the cost centre, as the approver.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "DELETION",
+          "NEGATION",
+          "SEMANTIC_ROLE_TWIN",
+          "SUBSTRATE_SWAP",
+          "RIVAL_SUBSTITUTION"
+        ],
+        "cases": [
+          "TRV-002",
+          "TRV-002-P",
+          "BND-107"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "field_verdict": {
+          "verdict": "MISMATCH",
+          "field": "approver_name"
+        }
+      },
+      "note": null
+    },
+    {
+      "claim_id": "READ-03",
+      "statement": "A language model never takes a transit city or the city flown into as the destination.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "DELETION",
+          "NEGATION",
+          "SEMANTIC_ROLE_TWIN",
+          "SUBSTRATE_SWAP",
+          "RIVAL_SUBSTITUTION"
+        ],
+        "cases": [
+          "TRV-001",
+          "TRV-001-P",
+          "TRV-003",
+          "TRV-003-P",
+          "BND-105",
+          "BND-108",
+          "BND-110"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "field_verdict": {
+          "verdict": "MISMATCH",
+          "field": "destination_city"
+        }
+      },
+      "note": null
+    },
+    {
+      "claim_id": "READ-04",
+      "statement": "A language model never takes another person's or an organisation's phone number as the claimant's.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "DELETION",
+          "NEGATION",
+          "SEMANTIC_ROLE_TWIN",
+          "SUBSTRATE_SWAP",
+          "RIVAL_SUBSTITUTION"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "field_verdict": {
+          "verdict": "MISMATCH",
+          "field": "contact_phone"
+        }
+      },
+      "note": null
+    },
+    {
+      "claim_id": "READ-05",
+      "statement": "A language model never misreads a boolean stated by double negation.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT"
+        ],
+        "cases": [
+          "BND-106"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "any_of": [
+          {
+            "field_verdict": {
+              "verdict": "MISMATCH",
+              "field": "advance_received"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MISMATCH",
+              "field": "receipts_attached"
+            }
+          }
+        ]
+      },
+      "note": null
+    },
+    {
+      "claim_id": "READ-06",
+      "statement": "A language model never reads 'attached except one' as every receipt attached.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT"
+        ],
+        "cases": [
+          "TRV-001-P",
+          "TRV-002",
+          "TRV-002-P",
+          "TRV-004",
+          "BND-110"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "field_verdict": {
+          "verdict": "MISMATCH",
+          "field": "receipts_attached"
+        }
+      },
+      "note": null
+    },
+    {
+      "claim_id": "READ-07",
+      "statement": "A language model never mis-maps a stated reason for travel onto the enum.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "field_verdict": {
+          "verdict": "MISMATCH",
+          "field": "purpose"
+        }
+      },
+      "note": "The key's reading of 'requirements workshops with our client' (TRV-005) is provisional; a mismatch there criticises the key as much as the model."
+    },
+    {
+      "claim_id": "PROV-01",
+      "statement": "A language model asked to quote its source verbatim always quotes words that occur in the document.",
+      "kind": "never",
+      "scope": {
+        "families": null,
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "grounding_verdict": {
+          "verdict": "SPAN_NOT_IN_DOCUMENT"
+        }
+      },
+      "note": "With date_range_completion on, a full date completed from a range counts as occurring."
+    },
+    {
+      "claim_id": "PROV-02",
+      "statement": "A language model asked to quote verbatim never completes a date range into a date that is not written.",
+      "kind": "never",
+      "scope": {
+        "families": null,
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "grounding_verdict": {
+          "verdict": "GROUNDED",
+          "relaxed": true
+        }
+      },
+      "note": "Refuted by any span accepted only through the range relaxation."
+    },
+    {
+      "claim_id": "PROV-03",
+      "statement": "A language model never gives a value without citing the words it came from.",
+      "kind": "never",
+      "scope": {
+        "families": null,
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "grounding_verdict": {
+          "verdict": "SPAN_MISSING"
+        }
+      },
+      "note": null
+    },
+    {
+      "claim_id": "PROV-04",
+      "statement": "A name copied 'exactly as written' always lies inside the words quoted for it.",
+      "kind": "never",
+      "scope": {
+        "families": null,
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "grounding_verdict": {
+          "verdict": "VALUE_NOT_IN_SPAN"
+        }
+      },
+      "note": null
+    },
+    {
+      "claim_id": "STAB-01",
+      "statement": "A byte-identical request under a fixed seed always returns the same form values.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "REPEAT"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "trigger": "REPEAT_DIFFERS"
+      },
+      "note": null
+    },
+    {
+      "claim_id": "STAB-02",
+      "statement": "A language model's form values never change when its own filled form is rendered back to prose and filled again.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "ROUND_TRIP"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "changed_vs_baseline": true
+      },
+      "note": null
+    },
+    {
+      "claim_id": "STAB-03",
+      "statement": "The same facts rendered as prose, a table, or an email are filled the same way.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "SUBSTRATE_SWAP"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "trigger": "MISMATCH"
+      },
+      "note": "A proxy: a mismatch on a swapped rendering where the baseline matched shows rendering sensitivity; the claim is refuted by any mismatch on a swapped rendering."
+    },
+    {
+      "claim_id": "STAB-04",
+      "statement": "Exchanging the positions of two role-bearing labels never makes a value follow position rather than label.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "field_verdict": {
+          "verdict": "MISMATCH",
+          "field": null
+        }
+      },
+      "note": null
+    },
+    {
+      "claim_id": "XPRT-01",
+      "statement": "A language model never refuses this task.",
+      "kind": "never",
+      "scope": {
+        "families": null,
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "response_verdict": "REFUSAL_SUSPECTED"
+      },
+      "note": null
+    },
+    {
+      "claim_id": "XPRT-02",
+      "statement": "A reply is never truncated by the output budget.",
+      "kind": "never",
+      "scope": {
+        "families": null,
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "response_verdict": "TRUNCATED"
+      },
+      "note": null
+    },
+    {
+      "claim_id": "XPRT-03",
+      "statement": "The endpoint always completes the call.",
+      "kind": "never",
+      "scope": {
+        "families": null,
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "response_verdict": "TRANSPORT_ERROR"
+      },
+      "note": null
+    }
+  ]
+}
