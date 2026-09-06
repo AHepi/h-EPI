@@ -1132,9 +1132,22 @@ class ClaimsTests(unittest.TestCase):
 
     def test_conditions_fail_closed(self) -> None:
         from creib.forge.conformance.claims import compile_condition
-        for bad in ({"trigger": "NOPE"}, {"response_verdict": "NOPE"}, {"field_verdict": {"verdict": "NOPE"}}, {"locus": "MODEL"}, {"recovered": "sometimes"}, {"trigger": "MISMATCH", "locus": "TEST"}, {"unknown": 1}, {"all_of": []}):
+        for bad in ({"trigger": "NOPE"}, {"response_verdict": "NOPE"}, {"field_verdict": {"verdict": "NOPE"}}, {"locus": "MODEL"}, {"recovered": "sometimes"}, {"trigger": "MISMATCH", "locus": "TEST"}, {"unknown": 1}, {"all_of": []}, {"baseline": {"nope": 1}}):
             with self.assertRaises(RecordError, msg=repr(bad)):
                 compile_condition(bad)
+
+    def test_baseline_relative_conditions(self) -> None:
+        from creib.forge.conformance.claims import evaluate_claims
+        observations = load_observation_directory(self.LEAVE)
+        results = evaluate_claims((
+            self._claim("rt-vs-base", "never", {"all_of": [{"trigger": "LENGTH_VIOLATION"}, {"baseline": {"not": {"trigger": "LENGTH_VIOLATION"}}}]}, families=["ROUND_TRIP"]),
+            self._claim("rt-inherits", "always", {"any_of": [{"not": {"trigger": "LENGTH_VIOLATION"}}, {"baseline": {"trigger": "LENGTH_VIOLATION"}}]}, families=["ROUND_TRIP"]),
+            self._claim("no-baseline", "never", {"baseline": {"trigger": "MISMATCH"}}, families=["BASELINE"]),
+        ), observations)
+        by_id = {r.claim.claim_id: r for r in results}
+        self.assertEqual(by_id["rt-vs-base"].status, "UNREFUTED_FOR_DECLARED_SCOPE", "the round-trip length violations were inherited from their baselines")
+        self.assertEqual(by_id["rt-inherits"].status, "UNREFUTED_FOR_DECLARED_SCOPE")
+        self.assertEqual(by_id["no-baseline"].tested, 12)
 
     def test_pilot_claims_file_loads_and_cli_runs(self) -> None:
         from creib.forge.conformance.claims import load_claims

@@ -101,7 +101,20 @@ def _plain(value: Any) -> Any:
 # conditions
 # --------------------------------------------------------------------------
 
-Predicate = Callable[[ObservationRecord], bool]
+class Context:
+    """The other observations a predicate may refer to: here, the baseline of the same run and case."""
+
+    def __init__(self, observations: list[ObservationRecord]) -> None:
+        self._baselines: dict[tuple[str, str], ObservationRecord] = {}
+        for observation in observations:
+            if observation.variant.family is Family.BASELINE:
+                self._baselines[(observation.run_id, observation.variant.base_case_id)] = observation
+
+    def baseline_of(self, observation: ObservationRecord) -> ObservationRecord | None:
+        return self._baselines.get((observation.run_id, observation.variant.base_case_id))
+
+
+Predicate = Callable[[ObservationRecord, Context], bool]
 
 
 def _output(observation: ObservationRecord) -> Mapping[str, Any]:
@@ -119,30 +132,41 @@ def compile_condition(raw: Any, where: str = "condition") -> Predicate:
         parts = [compile_condition(item, f"{where}.all_of[{i}]") for i, item in enumerate(array_value(value, f"{where}.all_of"))]
         if not parts:
             raise RecordError(f"{where}.all_of must not be empty")
-        return lambda o: all(p(o) for p in parts)
+        return lambda o, c: all(p(o, c) for p in parts)
     if key == "any_of":
         parts = [compile_condition(item, f"{where}.any_of[{i}]") for i, item in enumerate(array_value(value, f"{where}.any_of"))]
         if not parts:
             raise RecordError(f"{where}.any_of must not be empty")
-        return lambda o: any(p(o) for p in parts)
+        return lambda o, c: any(p(o, c) for p in parts)
     if key == "not":
         inner = compile_condition(value, f"{where}.not")
-        return lambda o: not inner(o)
+        return lambda o, c: not inner(o, c)
+    if key == "baseline":
+        # The nested condition is evaluated on the baseline observation of the same run and case;
+        # false when no baseline was supplied, so a claim about "where the baseline matched" is
+        # not refuted by an observation whose baseline is missing.
+        inner = compile_condition(value, f"{where}.baseline")
+
+        def on_baseline(o: ObservationRecord, c: Context) -> bool:
+            base = c.baseline_of(o)
+            return base is not None and inner(base, c)
+
+        return on_baseline
     if key == "trigger":
         trigger = text(value, f"{where}.trigger")
         if trigger not in TRIGGERS:
             raise RecordError(f"{where}.trigger {trigger!r} is not a known trigger")
-        return lambda o: trigger in o.routing.triggers
+        return lambda o, c: trigger in o.routing.triggers
     if key == "locus":
         locus = text(value, f"{where}.locus")
         if locus not in LOCUS_VALUES:
             raise RecordError(f"{where}.locus {locus!r} is not a known locus")
-        return lambda o: locus in o.routing.loci
+        return lambda o, c: locus in o.routing.loci
     if key == "response_verdict":
         verdict = text(value, f"{where}.response_verdict")
         if verdict not in RESPONSE_VERDICTS:
             raise RecordError(f"{where}.response_verdict {verdict!r} is not a known response verdict")
-        return lambda o: o.scoring.response_verdict == verdict
+        return lambda o, c: o.scoring.response_verdict == verdict
     if key == "field_verdict":
         spec = object_value(value, f"{where}.field_verdict")
         verdict = text(spec["verdict"], f"{where}.field_verdict.verdict")
@@ -151,7 +175,7 @@ def compile_condition(raw: Any, where: str = "condition") -> Predicate:
         field = optional_text(spec.get("field"), f"{where}.field_verdict.field")
         value_null = optional_boolean(spec.get("value_null"), f"{where}.field_verdict.value_null")
 
-        def field_verdict(o: ObservationRecord) -> bool:
+        def field_verdict(o: ObservationRecord, c: Context) -> bool:
             output = _output(o)
             for item in o.scoring.field_verdicts:
                 if item.verdict != verdict or (field is not None and item.field != field):
@@ -170,7 +194,7 @@ def compile_condition(raw: Any, where: str = "condition") -> Predicate:
         field = optional_text(spec.get("field"), f"{where}.grounding_verdict.field")
         relaxed = optional_boolean(spec.get("relaxed"), f"{where}.grounding_verdict.relaxed")
 
-        def grounding(o: ObservationRecord) -> bool:
+        def grounding(o: ObservationRecord, c: Context) -> bool:
             for item in o.scoring.grounding_verdicts:
                 if item.verdict != verdict or (field is not None and item.field != field):
                     continue
@@ -182,22 +206,22 @@ def compile_condition(raw: Any, where: str = "condition") -> Predicate:
         return grounding
     if key == "changed_vs_baseline":
         expected = optional_boolean(value, f"{where}.changed_vs_baseline")
-        return lambda o: o.scoring.changed_vs_baseline is expected
+        return lambda o, c: o.scoring.changed_vs_baseline is expected
     if key == "value_null":
         field = text(object_value(value, f"{where}.value_null")["field"], f"{where}.value_null.field")
-        return lambda o: field in _output(o) and _output(o)[field] is None
+        return lambda o, c: field in _output(o) and _output(o)[field] is None
     if key == "key_present":
         name = text(object_value(value, f"{where}.key_present")["key"], f"{where}.key_present.key")
-        return lambda o: name in _output(o)
+        return lambda o, c: name in _output(o)
     if key == "thinking_present":
         expected_thinking = boolean(value, f"{where}.thinking_present")
-        return lambda o: o.response is not None and o.response.thinking_present is expected_thinking
+        return lambda o, c: o.response is not None and o.response.thinking_present is expected_thinking
     if key == "recovered":
         how = text(value, f"{where}.recovered")
         if how not in ("any", "prose", "duplicate_keys"):
             raise RecordError(f"{where}.recovered must be any, prose, or duplicate_keys")
 
-        def recovered(o: ObservationRecord) -> bool:
+        def recovered(o: ObservationRecord, c: Context) -> bool:
             if not o.scoring.recovered_from_prose:
                 return False
             duplicates = bool(o.scoring.response_detail and "duplicate keys" in o.scoring.response_detail)
@@ -304,8 +328,10 @@ class ClaimResult:
         }
 
 
-def evaluate_claim(claim: Claim, observations: list[ObservationRecord]) -> ClaimResult:
+def evaluate_claim(claim: Claim, observations: list[ObservationRecord], context: Context | None = None) -> ClaimResult:
     predicate = compile_condition(claim.condition)
+    if context is None:
+        context = Context(observations)
     tested: dict[str, int] = {}
     refuting: dict[str, int] = {}
     examples: list[tuple[str, str, str, str]] = []
@@ -313,7 +339,7 @@ def evaluate_claim(claim: Claim, observations: list[ObservationRecord]) -> Claim
         if not claim.scope.admits(observation):
             continue
         tested[observation.model] = tested.get(observation.model, 0) + 1
-        holds = predicate(observation)
+        holds = predicate(observation, context)
         refutes = holds if claim.kind == "never" else not holds
         if refutes:
             refuting[observation.model] = refuting.get(observation.model, 0) + 1
@@ -339,7 +365,8 @@ def evaluate_claim(claim: Claim, observations: list[ObservationRecord]) -> Claim
 
 
 def evaluate_claims(claims: tuple[Claim, ...], observations: list[ObservationRecord]) -> tuple[ClaimResult, ...]:
-    return tuple(evaluate_claim(claim, observations) for claim in claims)
+    context = Context(observations)
+    return tuple(evaluate_claim(claim, observations, context) for claim in claims)
 
 
 def _plural(count: int, noun: str) -> str:
@@ -375,6 +402,7 @@ __all__ = [
     "CLAIM_STATUSES",
     "Claim",
     "ClaimResult",
+    "Context",
     "Scope",
     "claims_from_dict",
     "compile_condition",
