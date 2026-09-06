@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ahepi.example/smf/0.5/conformance-appraisal.schema.json",
+  "title": "Arguments about the readings that refutations rest on, with essential dependencies, attacks, and readiness",
+  "description": "Labelled in, out, or undecided by a least fixed point: in when ready with every essential argument in and every attacker out; out when not ready, an essential argument is out, or an attacker is in. A refutation resting on an out reading is not usable; on an undecided one, contested. The labelling decides nothing semantic.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "arguments"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "creib.conformance-pilot.appraisal.v1"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "arguments": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/argument"
+      }
+    }
+  },
+  "$defs": {
+    "argument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "argument_id",
+        "statement",
+        "kind",
+        "readiness",
+        "readiness_reason"
+      ],
+      "properties": {
+        "argument_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,63}$"
+        },
+        "statement": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "reading",
+            "criticism",
+            "other"
+          ]
+        },
+        "supports": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "case_id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "field": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "corpus_sha256": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "pattern": "^[0-9a-f]{8,64}$"
+            },
+            "trigger": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "pilot_sha256": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "pattern": "^[0-9a-f]{8,64}$"
+            }
+          }
+        },
+        "essential": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "attacks": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "readiness": {
+          "enum": [
+            "PASS",
+            "FAIL",
+            "UNKNOWN"
+          ]
+        },
+        "readiness_reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "register": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  }
+}

@@ -31,13 +31,14 @@ from .common import (
 )
 from .families import Family
 from .oracle import FIELD_VERDICTS, GROUNDING_VERDICTS, RESPONSE_VERDICTS
+from .appraisal import Appraisal
 from .records import ObservationRecord
 from .routing import TRIGGERS
 
 CLAIMS_SCHEMA_NAME = "conformance-claims.schema.json"
 CLAIMS_SCHEMA_VERSION = "creib.conformance-pilot.claims.v1"
 CLAIM_KINDS: tuple[str, ...] = ("never", "always")
-CLAIM_STATUSES: tuple[str, ...] = ("REFUTED", "UNREFUTED_FOR_DECLARED_SCOPE", "NOT_TESTED")
+CLAIM_STATUSES: tuple[str, ...] = ("REFUTED", "REFUTED_ON_CONTESTED_READING", "UNREFUTED_FOR_DECLARED_SCOPE", "NOT_TESTED")
 _MAX_EXAMPLES = 5
 
 
@@ -326,6 +327,13 @@ class ClaimResult:
     refuting_models: tuple[str, ...]
     per_model: tuple[tuple[str, int, int], ...]
     examples: tuple[tuple[str, str, str, str], ...]
+    # Standing of the refuting observations under the appraisal: usable (every reading they
+    # rest on stands, or none is argued about), contested (a reading is undecided), defeated
+    # (a reading is out). Without an appraisal every refutation is usable.
+    refuting_usable: int = 0
+    refuting_contested: int = 0
+    refuting_defeated: int = 0
+    readings: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -337,6 +345,10 @@ class ClaimResult:
             "models_tested": list(self.models_tested),
             "refuting": self.refuting,
             "refuting_models": list(self.refuting_models),
+            "refuting_usable": self.refuting_usable,
+            "refuting_contested": self.refuting_contested,
+            "refuting_defeated": self.refuting_defeated,
+            "readings": list(self.readings),
             "per_model": [{"model": m, "tested": t, "refuting": r} for m, t, r in self.per_model],
             "examples": [{"observation_id": i, "model": m, "case_id": c, "family": f} for i, m, c, f in self.examples],
             "note": self.claim.note,
@@ -344,12 +356,14 @@ class ClaimResult:
         }
 
 
-def evaluate_claim(claim: Claim, observations: list[ObservationRecord], context: Context | None = None) -> ClaimResult:
+def evaluate_claim(claim: Claim, observations: list[ObservationRecord], context: Context | None = None, appraisal: Appraisal | None = None) -> ClaimResult:
     predicate = compile_condition(claim.condition)
     if context is None:
         context = Context(observations)
     tested: dict[str, int] = {}
     refuting: dict[str, int] = {}
+    standing = {"usable": 0, "contested": 0, "defeated": 0}
+    readings: set[str] = set()
     examples: list[tuple[str, str, str, str]] = []
     for observation in observations:
         if not claim.scope.admits(observation):
@@ -359,14 +373,22 @@ def evaluate_claim(claim: Claim, observations: list[ObservationRecord], context:
         refutes = holds if claim.kind == "never" else not holds
         if refutes:
             refuting[observation.model] = refuting.get(observation.model, 0) + 1
+            if appraisal is None:
+                standing["usable"] += 1
+            else:
+                standing[appraisal.standing_of(observation)] += 1
+                readings.update(appraisal.readings_of(observation))
             if len(examples) < _MAX_EXAMPLES:
                 examples.append((observation.observation_id, observation.model, observation.variant.base_case_id, observation.variant.family.value))
     total = sum(tested.values())
     if total == 0:
         status = "NOT_TESTED"
-    elif refuting:
+    elif standing["usable"]:
         status = "REFUTED"
+    elif standing["contested"]:
+        status = "REFUTED_ON_CONTESTED_READING"
     else:
+        # No refutation, or every refutation rests on a defeated reading; the raw count stays visible.
         status = "UNREFUTED_FOR_DECLARED_SCOPE"
     return ClaimResult(
         claim=claim,
@@ -377,12 +399,16 @@ def evaluate_claim(claim: Claim, observations: list[ObservationRecord], context:
         refuting_models=tuple(sorted(refuting)),
         per_model=tuple((model, tested[model], refuting.get(model, 0)) for model in sorted(tested)),
         examples=tuple(examples),
+        refuting_usable=standing["usable"],
+        refuting_contested=standing["contested"],
+        refuting_defeated=standing["defeated"],
+        readings=tuple(sorted(readings)),
     )
 
 
-def evaluate_claims(claims: tuple[Claim, ...], observations: list[ObservationRecord]) -> tuple[ClaimResult, ...]:
+def evaluate_claims(claims: tuple[Claim, ...], observations: list[ObservationRecord], appraisal: Appraisal | None = None) -> tuple[ClaimResult, ...]:
     context = Context(observations)
-    return tuple(evaluate_claim(claim, observations, context) for claim in claims)
+    return tuple(evaluate_claim(claim, observations, context, appraisal) for claim in claims)
 
 
 def _plural(count: int, noun: str) -> str:
@@ -391,7 +417,7 @@ def _plural(count: int, noun: str) -> str:
 
 def render_claims_markdown(results: tuple[ClaimResult, ...]) -> str:
     parts = ["# Conjectures tested against the records", ""]
-    parts.append("A `never` claim is refuted by one observation where its condition holds; an `always` claim by one where it does not. `UNREFUTED_FOR_DECLARED_SCOPE` means no supplied record refuted the claim; it is not a proof. Counts are of observations, not of quality, and imply no ranking.")
+    parts.append("A `never` claim is refuted by one observation where its condition holds; an `always` claim by one where it does not. `UNREFUTED_FOR_DECLARED_SCOPE` means no supplied record refuted the claim, or every refutation rests on a reading of the key that the appraisal labels out; it is not a proof. `REFUTED_ON_CONTESTED_READING` means every refutation rests on a reading that is under criticism and undecided. Counts are of observations, not of quality, and imply no ranking.")
     parts.append("")
     for result in results:
         parts.append(f"## {result.claim.claim_id}: {result.status}")
@@ -399,9 +425,11 @@ def render_claims_markdown(results: tuple[ClaimResult, ...]) -> str:
         parts.append(f"*{result.claim.statement}* (`{result.claim.kind}`)")
         parts.append("")
         parts.append(f"- tested on {result.tested} observations from {_plural(len(result.models_tested), 'model')}")
-        if result.status == "REFUTED":
-            parts.append(f"- refuted by {_plural(result.refuting, 'observation')} from {_plural(len(result.refuting_models), 'model')}: {', '.join(result.refuting_models)}")
+        if result.refuting:
+            parts.append(f"- refuting observations: {result.refuting} from {_plural(len(result.refuting_models), 'model')}: {', '.join(result.refuting_models)}")
             parts.append("- not refuted by: " + (", ".join(m for m in result.models_tested if m not in result.refuting_models) or "-"))
+            if result.readings:
+                parts.append(f"- standing under the appraisal: {result.refuting_usable} usable, {result.refuting_contested} on a contested reading, {result.refuting_defeated} on a defeated reading; readings involved: {', '.join(result.readings)}")
             parts.append("- examples: " + "; ".join(f"`{i[:16]}` ({m}, {c}, {f})" for i, m, c, f in result.examples))
         if result.claim.note:
             parts.append(f"- note: {result.claim.note}")

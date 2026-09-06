@@ -109,6 +109,7 @@ class SchemaAndVocabularyTests(unittest.TestCase):
         self.assertEqual(
             catalog.schema_names,
             (
+                "conformance-appraisal.schema.json",
                 "conformance-claims.schema.json",
                 "conformance-corpus.schema.json",
                 "conformance-observation.schema.json",
@@ -1169,10 +1170,76 @@ class ClaimsTests(unittest.TestCase):
             self.assertEqual(completed.returncode, 0, completed.stderr)
             lines = [json.loads(line) for line in completed.stdout.splitlines() if line.strip()]
             self.assertEqual(lines[-1]["claims"], len(claims))
-            self.assertEqual(set(lines[-1]["status_counts"]), {"REFUTED", "UNREFUTED_FOR_DECLARED_SCOPE", "NOT_TESTED"})
+            self.assertEqual(set(lines[-1]["status_counts"]), {"REFUTED", "REFUTED_ON_CONTESTED_READING", "UNREFUTED_FOR_DECLARED_SCOPE", "NOT_TESTED"})
             text = markdown.read_text()
-            self.assertIn("`UNREFUTED_FOR_DECLARED_SCOPE` means no supplied record refuted the claim; it is not a proof.", text)
+            self.assertIn("`UNREFUTED_FOR_DECLARED_SCOPE` means no supplied record refuted the claim, or every refutation rests on a reading of the key that the appraisal labels out; it is not a proof.", text)
             self.assertTrue(text.rstrip().endswith(NON_INDUCTIVE_LIMIT))
+
+
+class AppraisalTests(unittest.TestCase):
+    """Readings a refutation rests on are labelled in, out, or undecided; refutations become usable, contested, or defeated."""
+
+    APPRAISAL = ROOT / "forge" / "conformance" / "pilots" / "travel-claim" / "appraisal.json"
+    CLAIMS = ROOT / "forge" / "conformance" / "pilots" / "travel-claim" / "claims.json"
+
+    def _arg(self, aid, readiness="PASS", essential=(), attacks=(), supports=None):
+        from creib.forge.conformance.appraisal import Argument
+        return Argument(argument_id=aid, statement=aid, kind="other", supports=supports, essential=tuple(essential), attacks=tuple(attacks), readiness=readiness, readiness_reason="test", register=None)
+
+    def test_labelling_policy(self) -> None:
+        from creib.forge.conformance.appraisal import appraise
+        labels = appraise((self._arg("a"), self._arg("b", attacks=["a"]), self._arg("c", readiness="FAIL"), self._arg("d", essential=["c"]), self._arg("e", readiness="UNKNOWN"), self._arg("f", essential=["e"])))
+        self.assertEqual(labels.of("b"), "in"); self.assertEqual(labels.of("a"), "out", "attacked by an in argument")
+        self.assertEqual(labels.of("c"), "out"); self.assertEqual(labels.of("d"), "out", "an essential argument is out")
+        self.assertEqual(labels.of("e"), "undecided", "an unknown check never becomes in by being unattacked")
+        self.assertEqual(labels.of("f"), "undecided", "an undecided essential argument blocks its dependent")
+        # mutual attack stays undecided; an external defeater resolves it; a support cycle does not bootstrap
+        mutual = appraise((self._arg("x", attacks=["y"]), self._arg("y", attacks=["x"])))
+        self.assertEqual((mutual.of("x"), mutual.of("y")), ("undecided", "undecided"))
+        resolved = appraise((self._arg("x", attacks=["y"]), self._arg("y", attacks=["x"]), self._arg("z", attacks=["x"])))
+        self.assertEqual((resolved.of("z"), resolved.of("x"), resolved.of("y")), ("in", "out", "in"))
+        cycle = appraise((self._arg("p", essential=["q"]), self._arg("q", essential=["p"])))
+        self.assertEqual((cycle.of("p"), cycle.of("q")), ("undecided", "undecided"))
+        # reinstatement: a criticism of the criticism restores the reading
+        chain = appraise((self._arg("reading"), self._arg("crit", attacks=["reading"]), self._arg("counter", attacks=["crit"])))
+        self.assertEqual((chain.of("reading"), chain.of("crit"), chain.of("counter")), ("in", "out", "in"))
+        with self.assertRaisesRegex(RecordError, "unknown argument"):
+            appraise((self._arg("lone", attacks=["ghost"]),))
+        with self.assertRaisesRegex(RecordError, "itself"):
+            appraise((self._arg("self", essential=["self"]),))
+
+    def test_pilot_appraisal_loads_and_classes_refutations(self) -> None:
+        from creib.forge.conformance.appraisal import Appraisal, load_appraisal
+        from creib.forge.conformance.claims import evaluate_claims, load_claims
+        appraisal = Appraisal.build(load_appraisal(self.APPRAISAL))
+        self.assertEqual(appraisal.labels.of("C-H13-AMBIGUOUS"), "in")
+        self.assertEqual(appraisal.labels.of("R-BND104-NIGHTLY-R1"), "out")
+        self.assertEqual(appraisal.labels.of("R-TRV005-CLIENT-VISIT"), "undecided")
+        # round-one records: the BND-104 total refutations rest on a defeated reading
+        observations = load_observation_directory(ROOT / "forge" / "conformance" / "runs" / "travel-claim")
+        bnd104 = [o for o in observations if o.variant.base_case_id == "BND-104" and any(v.field == "total_claimed_cents" and v.verdict == "MISMATCH" for v in o.scoring.field_verdicts)]
+        self.assertTrue(bnd104)
+        self.assertTrue(all(appraisal.standing_of(o) == "defeated" for o in bnd104))
+        self.assertTrue(all("R-BND104-NIGHTLY-R1" in appraisal.readings_of(o) for o in bnd104))
+        claims = tuple(c for c in load_claims(self.CLAIMS) if c.claim_id in ("ARITH-02", "READ-07", "STRUCT-01"))
+        plain = {r.claim.claim_id: r for r in evaluate_claims(claims, observations)}
+        judged = {r.claim.claim_id: r for r in evaluate_claims(claims, observations, appraisal)}
+        self.assertEqual(plain["STRUCT-01"].status, judged["STRUCT-01"].status, "a claim resting on no argued reading is unchanged")
+        self.assertEqual(plain["STRUCT-01"].refuting_usable, plain["STRUCT-01"].refuting)
+        for cid, r in judged.items():
+            self.assertEqual(r.refuting, r.refuting_usable + r.refuting_contested + r.refuting_defeated)
+            self.assertIn(r.status, ("REFUTED", "REFUTED_ON_CONTESTED_READING", "UNREFUTED_FOR_DECLARED_SCOPE", "NOT_TESTED"))
+        with tempfile.TemporaryDirectory() as directory:
+            markdown = Path(directory) / "c.md"
+            completed = subprocess.run(
+                [sys.executable, str(TOOL), "claims", "--claims", str(self.CLAIMS), "--observations-dir", str(ROOT / "forge" / "conformance" / "runs" / "travel-claim"), "--appraisal", str(self.APPRAISAL), "--markdown", str(markdown)],
+                capture_output=True, text=True, env={**os.environ, "PYTHONPATH": str(ROOT / "src")},
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            summary = json.loads(completed.stdout.strip().splitlines()[-1])
+            self.assertIn("appraisal_labels", summary)
+            self.assertIn("REFUTED_ON_CONTESTED_READING", summary["status_counts"])
+            self.assertIn("standing under the appraisal", markdown.read_text())
 
 
 class HardPilotTests(unittest.TestCase):

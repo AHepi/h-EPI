@@ -1,0 +1,159 @@
+{
+  "schema_version": "creib.conformance-pilot.appraisal.v1",
+  "title": "Readings that refutations on the travel-claim battery rest on, and the criticisms of them",
+  "arguments": [
+    {
+      "argument_id": "R-BND104-NIGHTLY-R1",
+      "statement": "In the round-one key, 'hotel two nights at $205.00' is a nightly rate and BND-104's total is 302000.",
+      "kind": "reading",
+      "supports": {
+        "case_id": "BND-104",
+        "field": "total_claimed_cents",
+        "corpus_sha256": "400ee484caf64150"
+      },
+      "essential": [],
+      "attacks": [],
+      "readiness": "PASS",
+      "readiness_reason": "The oracle as written for that corpus; readiness is the reading's own consistency, not its truth.",
+      "register": "H13"
+    },
+    {
+      "argument_id": "R-TRV004-NIGHTLY-R1",
+      "statement": "In the round-one key, 'motel three nights at $142.00' is a nightly rate and TRV-004's total is 94705.",
+      "kind": "reading",
+      "supports": {
+        "case_id": "TRV-004",
+        "field": "total_claimed_cents",
+        "corpus_sha256": "400ee484caf64150"
+      },
+      "essential": [],
+      "attacks": [],
+      "readiness": "PASS",
+      "readiness_reason": "The oracle as written for that corpus.",
+      "register": "H13"
+    },
+    {
+      "argument_id": "C-H13-AMBIGUOUS",
+      "statement": "'N nights at $X' without 'a night' is ambiguous between a nightly rate and a total; all four round-one models read BND-104 as a total and the round-two key admits both readings.",
+      "kind": "criticism",
+      "supports": null,
+      "essential": [],
+      "attacks": [
+        "R-BND104-NIGHTLY-R1",
+        "R-TRV004-NIGHTLY-R1"
+      ],
+      "readiness": "PASS",
+      "readiness_reason": "Identical failure across four models of three families, and the phrasing was corrected in the corpus; recorded as H13.",
+      "register": "H13"
+    },
+    {
+      "argument_id": "R-TRV005-CLIENT-VISIT",
+      "statement": "The key reads 'two days of requirements workshops with our client' as client_visit.",
+      "kind": "reading",
+      "supports": {
+        "case_id": "TRV-005",
+        "field": "purpose"
+      },
+      "essential": [],
+      "attacks": [],
+      "readiness": "PASS",
+      "readiness_reason": "The oracle as written; marked interpretation_provisional in the corpus.",
+      "register": "T13"
+    },
+    {
+      "argument_id": "C-T13-WORKSHOPS",
+      "statement": "'Requirements workshops' can be read as training or as other; two models read it as client_visit, one as training, one as other in some variants.",
+      "kind": "criticism",
+      "supports": null,
+      "essential": [],
+      "attacks": [
+        "R-TRV005-CLIENT-VISIT"
+      ],
+      "readiness": "UNKNOWN",
+      "readiness_reason": "Not settled by a person; the models split and the instruction does not decide it.",
+      "register": "T13"
+    },
+    {
+      "argument_id": "R-BND102-NIGHTS-TWO-READINGS",
+      "statement": "Under the month-first rival on BND-102 the key admits 3 or 92 nights and nothing else.",
+      "kind": "reading",
+      "supports": {
+        "case_id": "BND-102",
+        "field": "nights_away"
+      },
+      "essential": [],
+      "attacks": [],
+      "readiness": "PASS",
+      "readiness_reason": "The oracle as written.",
+      "register": "T13"
+    },
+    {
+      "argument_id": "C-T13-MIXED-READING",
+      "statement": "A model may apply the month-first rule to the departure and not the return (33 nights); whether that is a rule-following error or a reading the key should admit is open.",
+      "kind": "criticism",
+      "supports": null,
+      "essential": [],
+      "attacks": [
+        "R-BND102-NIGHTS-TWO-READINGS"
+      ],
+      "readiness": "UNKNOWN",
+      "readiness_reason": "One model did it in two rounds; not settled by a person.",
+      "register": "T13"
+    },
+    {
+      "argument_id": "R-SPAN-VERBATIM-R1R2",
+      "statement": "In rounds one and two a quoted span had to occur verbatim; a full date completed from a range was SPAN_NOT_IN_DOCUMENT.",
+      "kind": "reading",
+      "supports": {
+        "trigger": "SPAN_NOT_IN_DOCUMENT",
+        "pilot_sha256": "8a7cf57dfd573d9a"
+      },
+      "essential": [],
+      "attacks": [],
+      "readiness": "PASS",
+      "readiness_reason": "The matcher in force under that pilot configuration.",
+      "register": "T6"
+    },
+    {
+      "argument_id": "R-SPAN-VERBATIM-R2",
+      "statement": "The same verbatim reading under the round-two pilot configuration.",
+      "kind": "reading",
+      "supports": {
+        "trigger": "SPAN_NOT_IN_DOCUMENT",
+        "pilot_sha256": "27c744d9906b9f0b"
+      },
+      "essential": [],
+      "attacks": [],
+      "readiness": "PASS",
+      "readiness_reason": "The matcher in force under that pilot configuration.",
+      "register": "T6"
+    },
+    {
+      "argument_id": "C-T6-RANGE-COMPLETION",
+      "statement": "A full date completed from a range the document states is a fair quotation of that range; the battery later adopted this as the date_range_completion relaxation.",
+      "kind": "criticism",
+      "supports": null,
+      "essential": [],
+      "attacks": [
+        "R-SPAN-VERBATIM-R1R2",
+        "R-SPAN-VERBATIM-R2"
+      ],
+      "readiness": "PASS",
+      "readiness_reason": "Adopted into the configuration for round three and the sweep; a person decided it.",
+      "register": "H4"
+    },
+    {
+      "argument_id": "C-T6-NOT-ALL-SPANS",
+      "statement": "Not every SPAN_NOT_IN_DOCUMENT in rounds one and two was a completed range: misspelt names, values written as spans, and invented places were also refused.",
+      "kind": "criticism",
+      "supports": null,
+      "essential": [],
+      "attacks": [
+        "C-T6-RANGE-COMPLETION"
+      ],
+      "readiness": "UNKNOWN",
+      "readiness_reason": "True of some records and not others; the appraisal cannot tell them apart by trigger alone, which is why this criticism is left undecided rather than asserted.",
+      "register": "T6"
+    }
+  ]
+}

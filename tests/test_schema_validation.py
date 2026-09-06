@@ -27,6 +27,7 @@ class SchemaCatalogTests(unittest.TestCase):
         self.assertEqual(
             catalog.schema_names,
             (
+                "conformance-appraisal.schema.json",
                 "conformance-claims.schema.json",
                 "conformance-corpus.schema.json",
                 "conformance-observation.schema.json",

@@ -73,6 +73,7 @@ def _parser() -> argparse.ArgumentParser:
     claims.add_argument("--claims", type=Path, required=True)
     claims.add_argument("--observations-dir", type=Path, required=True, action="append", help="may be given more than once")
     claims.add_argument("--markdown", type=Path, help="also write a Markdown rendering here")
+    claims.add_argument("--appraisal", type=Path, help="arguments about the readings refutations rest on; labelled in, out, or undecided, and refutations classed usable, contested, or defeated")
     evidence = subparsers.add_parser("evidence", help="list observation ids per model and criticism trigger, for the failure-mode register")
     evidence.add_argument("--observations-dir", type=Path, required=True)
     evidence.add_argument("--trigger", help="restrict to one trigger or grounding verdict")
@@ -244,16 +245,21 @@ def main(argv: Sequence[str] | None = None) -> int:
                 })
             return 0
         if args.command == "claims":
-            from creib.forge.conformance.claims import evaluate_claims, load_claims, render_claims_markdown
+            from creib.forge.conformance.appraisal import Appraisal, load_appraisal
+            from creib.forge.conformance.claims import CLAIM_STATUSES, evaluate_claims, load_claims, render_claims_markdown
             loaded = load_claims(args.claims)
             observations = []
             for directory in args.observations_dir:
                 observations.extend(load_observation_directory(directory))
-            results = evaluate_claims(loaded, observations)
+            appraisal = None if args.appraisal is None else Appraisal.build(load_appraisal(args.appraisal))
+            results = evaluate_claims(loaded, observations, appraisal)
             for result in results:
                 _emit(result.to_dict())
-            counts = {status: sum(1 for r in results if r.status == status) for status in ("REFUTED", "UNREFUTED_FOR_DECLARED_SCOPE", "NOT_TESTED")}
-            _emit({"claims": len(results), "observations": len(observations), "models": sorted({o.model for o in observations}), "status_counts": counts, "semantic_verdict": None})
+            counts = {status: sum(1 for r in results if r.status == status) for status in CLAIM_STATUSES}
+            summary = {"claims": len(results), "observations": len(observations), "models": sorted({o.model for o in observations}), "status_counts": counts, "semantic_verdict": None}
+            if appraisal is not None:
+                summary["appraisal_labels"] = appraisal.labels.to_dict()
+            _emit(summary)
             if args.markdown is not None:
                 args.markdown.write_text(render_claims_markdown(results), encoding="utf-8")
             return 0
