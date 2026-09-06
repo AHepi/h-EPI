@@ -33,6 +33,7 @@ from creib.errors import RecordError
 from .common import OracleStatus
 
 from .common import (
+    integer,
     array_value,
     boolean,
     content_id,
@@ -64,6 +65,7 @@ class Family(str, Enum):
     IMPORT_DEPENDENCY = "IMPORT_DEPENDENCY"
     NON_VACUITY = "NON_VACUITY"
     ROUND_TRIP = "ROUND_TRIP"
+    REPEAT = "REPEAT"
 
 
 TEST_FAMILIES: tuple[Family, ...] = tuple(family for family in Family if family is not Family.BASELINE)
@@ -98,6 +100,8 @@ class Variant:
     rival_label: str | None
     removed_sentence_id: str | None
     grounding: Grounding | None = None
+    # REPEAT only: 1..N. Written to the body only when set, so every earlier variant keeps its id.
+    repeat_index: int | None = None
 
     @property
     def required_fields(self) -> tuple[str, ...]:
@@ -214,7 +218,7 @@ class Variant:
         return None
 
     def body(self) -> dict[str, object]:
-        return {
+        body: dict[str, object] = {
             "family": self.family.value,
             "base_case_id": self.base_case_id,
             "form_schema": frozen_mapping_to_dict(self.form_schema),
@@ -238,6 +242,9 @@ class Variant:
             "removed_sentence_id": self.removed_sentence_id,
             "grounding": None if self.grounding is None else self.grounding.to_dict(),
         }
+        if self.repeat_index is not None:
+            body["repeat_index"] = self.repeat_index
+        return body
 
     def to_dict(self) -> dict[str, object]:
         record = self.body()
@@ -298,6 +305,7 @@ def variant_from_dict(raw: Any) -> Variant:
         rival_label=optional_text(record["rival_label"], "variant.rival_label"),
         removed_sentence_id=optional_text(record["removed_sentence_id"], "variant.removed_sentence_id"),
         grounding=None if record["grounding"] is None else grounding_from_dict(record["grounding"], field_order, "variant.grounding"),
+        repeat_index=None if record.get("repeat_index") is None else integer(record["repeat_index"], "variant.repeat_index", minimum=1),
     )
     if rebuilt.variant_id != hex_digest(record["variant_id"], "variant.variant_id"):
         raise RecordError("variant_id does not replay from the variant content")
@@ -691,6 +699,29 @@ def round_trip(spec: TaskSpec, case: Case) -> list[Variant]:
     return [make_variant(**fields)]
 
 
+def repeat(spec: TaskSpec, case: Case) -> list[Variant]:
+    """Send the baseline request again, ``spec.repeats`` times; the difference is the repeat index only.
+
+    Off by default (``repeats`` 0). A repeat is scored against the same oracle as the baseline and
+    compared with the baseline output, so the run records its own noise floor: every family that
+    compares one call with another (NEGATION, IMPORT_DEPENDENCY, ROUND_TRIP) inherits it.
+    """
+
+    if case.boundary or spec.repeats == 0:
+        return []
+    variants: list[Variant] = []
+    for index in range(1, spec.repeats + 1):
+        fields = _base_fields(spec, case)
+        fields.update(
+            family=Family.REPEAT,
+            repeat_index=index,
+            held_fixed="form schema, instructions, document, and every request option; the request is byte-identical to the baseline's",
+            controlled_difference=f"repeat {index} of {spec.repeats} of the baseline request; records whether the endpoint reproduces its own output under the fixed seed",
+        )
+        variants.append(make_variant(**fields))
+    return variants
+
+
 FAMILY_GENERATORS: Mapping[Family, Callable[[TaskSpec, Case], list[Variant]]] = {
     Family.BASELINE: baseline,
     Family.DELETION: deletion,
@@ -702,6 +733,7 @@ FAMILY_GENERATORS: Mapping[Family, Callable[[TaskSpec, Case], list[Variant]]] = 
     Family.IMPORT_DEPENDENCY: import_dependency,
     Family.NON_VACUITY: non_vacuity,
     Family.ROUND_TRIP: round_trip,
+    Family.REPEAT: repeat,
 }
 
 

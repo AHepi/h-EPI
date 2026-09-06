@@ -358,17 +358,59 @@ def _normalise_whitespace(value: str) -> str:
     return " ".join(value.split())
 
 
+# Date ranges a span may be completed from, under the ``date_range_completion`` relaxation.
+#   "24 to 26 June 2025"            -> "24 June 2025", "26 June 2025"
+#   "Mon 3 Nov to Thu 6 Nov 2025"   -> "Mon 3 Nov 2025", "3 Nov 2025", "Thu 6 Nov 2025", "6 Nov 2025"
+_RANGE_SEP = r"(?:to|-|\u2013|\u2014|until|through)"
+_RANGE_SHARED_MONTH = re.compile(r"\b(\d{1,2})\s*" + _RANGE_SEP + r"\s*(\d{1,2})\s+([A-Z][a-z]{2,8})\s+(\d{4})\b")
+_RANGE_TWO_MONTHS = re.compile(
+    r"\b(?:([A-Z][a-z]{2})\s+)?(\d{1,2})\s+([A-Z][a-z]{2,8})\s*" + _RANGE_SEP + r"\s*(?:([A-Z][a-z]{2})\s+)?(\d{1,2})\s+([A-Z][a-z]{2,8})\s+(\d{4})\b"
+)
+
+
+def _date_range_completions(document: str) -> set[str]:
+    completions: set[str] = set()
+    for d1, d2, month, year in _RANGE_SHARED_MONTH.findall(document):
+        completions.add(f"{d1} {month} {year}")
+        completions.add(f"{d2} {month} {year}")
+    for wd1, d1, m1, wd2, d2, m2, year in _RANGE_TWO_MONTHS.findall(document):
+        completions.add(f"{d1} {m1} {year}")
+        completions.add(f"{d2} {m2} {year}")
+        if wd1:
+            completions.add(f"{wd1} {d1} {m1} {year}")
+        if wd2:
+            completions.add(f"{wd2} {d2} {m2} {year}")
+    return completions
+
+
+def _span_occurs(span: str, document: str, relaxations: tuple[str, ...]) -> str | None:
+    """Return None when the span is not in the document, else how it was matched ("verbatim" or a relaxation)."""
+
+    normal_span, normal_document = _normalise_whitespace(span), _normalise_whitespace(document)
+    if normal_span in normal_document:
+        return "verbatim"
+    if "case_insensitive" in relaxations and normal_span.casefold() in normal_document.casefold():
+        return "case_insensitive"
+    if "date_range_completion" in relaxations:
+        completions = _date_range_completions(normal_document)
+        if normal_span in completions or ("case_insensitive" in relaxations and normal_span.casefold() in {c.casefold() for c in completions}):
+            return "date_range_completion"
+    return None
+
+
 def _grounding_verdict(variant: Variant, field: str, value: Any, output: Mapping[str, Any]) -> GroundingVerdict:
     key = variant.span_key(field)
     span = output.get(key)
     if type(span) is not str or not span.strip():
         return GroundingVerdict(field, "SPAN_MISSING", None, f"companion key {key!r} is absent, null, or empty")
     document = variant.input_document or ""
-    if _normalise_whitespace(span) not in _normalise_whitespace(document):
-        return GroundingVerdict(field, "SPAN_NOT_IN_DOCUMENT", span, "the cited text does not occur verbatim in the document (whitespace-normalised)")
+    relaxations = variant.grounding.span_relaxations if variant.grounding is not None else ()
+    matched = _span_occurs(span, document, relaxations)
+    if matched is None:
+        return GroundingVerdict(field, "SPAN_NOT_IN_DOCUMENT", span, "the cited text does not occur verbatim in the document (whitespace-normalised)" + (f"; relaxations tried: {list(relaxations)}" if relaxations else ""))
     if field in variant.active_value_in_span_fields and str(value).casefold() not in span.casefold():
         return GroundingVerdict(field, "VALUE_NOT_IN_SPAN", span, "the value does not occur inside the cited span (case-insensitive)")
-    return GroundingVerdict(field, "GROUNDED", span, None)
+    return GroundingVerdict(field, "GROUNDED", span, None if matched == "verbatim" else f"accepted by the configured relaxation {matched!r}, not verbatim")
 
 
 def score_output(variant: Variant, output: Mapping[str, Any]) -> tuple[bool, tuple[FieldVerdict, ...], tuple[GroundingVerdict, ...]]:

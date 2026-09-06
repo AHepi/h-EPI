@@ -219,6 +219,7 @@ class FamilyTests(unittest.TestCase):
                 "IMPORT_DEPENDENCY": 36,
                 "NON_VACUITY": 8,
                 "ROUND_TRIP": 9,
+                "REPEAT": 0,
             },
         )
         again = plan(load_pilot_config(PILOT).spec, load_corpus(_CONFIG.corpus_path, _CONFIG.spec))
@@ -952,6 +953,147 @@ class RoundOneImprovementTests(unittest.TestCase):
         self.assertNotIn("if it has one", text)
 
 
+class ConfigurableProbeTests(unittest.TestCase):
+    """Repeats, span relaxations, grounding in the report, and grounding-aware routing; all off by default."""
+
+    TRAVEL = ROOT / "forge" / "conformance" / "pilots" / "travel-claim" / "pilot.json"
+
+    def setUp(self) -> None:
+        self.config = load_pilot_config(self.TRAVEL)
+        self.corpus = load_corpus(self.config.corpus_path, self.config.spec)
+        self.plan = plan(self.config.spec, self.corpus)
+
+    def test_repeats_zero_adds_nothing_and_keeps_variant_ids(self) -> None:
+        self.assertEqual(_CONFIG.spec.repeats, 0)
+        self.assertEqual(dict(_PLAN.counts)["REPEAT"], 0)
+        body = _variant(Family.BASELINE, "ORD-001").body()
+        self.assertNotIn("repeat_index", body, "an absent key keeps every earlier variant id replaying")
+        self.assertNotIn("span_relaxations", _CONFIG.spec.grounding.to_dict())
+        with tempfile.TemporaryDirectory() as directory:
+            copy = Path(directory) / "travel-claim"
+            shutil.copytree(self.TRAVEL.parent, copy)
+            raw = json.loads((copy / "pilot.json").read_text()); raw["repeats"] = 11
+            (copy / "pilot.json").write_text(json.dumps(raw))
+            with self.assertRaisesRegex(RecordError, r"repeats.*(at most|maximum)"):
+                load_pilot_config(copy / "pilot.json")
+
+    def test_repeat_variants_reuse_the_baseline_request_and_record_the_noise_floor(self) -> None:
+        self.assertEqual(self.config.spec.repeats, 2)
+        repeats = [v for v in self.plan.variants if v.family is Family.REPEAT]
+        baselines = {v.base_case_id: v for v in self.plan.variants if v.family is Family.BASELINE}
+        self.assertEqual(len(repeats), 2 * len(baselines))
+        for variant in repeats:
+            base = baselines[variant.base_case_id]
+            self.assertIn(variant.repeat_index, (1, 2))
+            self.assertNotEqual(variant.variant_id, base.variant_id)
+            self.assertEqual(
+                build_chat_request(variant, model="gemma4:31b", endpoint=self.config.spec.endpoint).request_digest,
+                build_chat_request(base, model="gemma4:31b", endpoint=self.config.spec.endpoint).request_digest,
+                "a repeat is the same request; only the variant differs",
+            )
+            rebuilt = variant_from_dict(loads_strict(canonical_bytes(variant.to_dict()).decode("utf-8")))
+            self.assertEqual(rebuilt.repeat_index, variant.repeat_index)
+        # A deterministic executor: repeats identical, no trigger. A drifting one: REPEAT_DIFFERS, AUXILIARY and CANDIDATE live.
+        good = {
+            "claimant_name": "Hannah Kowalski", "claimant_name_span": "Hannah Kowalski", "approver_name": "Marcus Oyelaran", "approver_name_span": "Marcus Oyelaran",
+            "employee_id": "E-41207", "employee_id_span": "41207", "trip_start": "2025-10-07", "trip_start_span": "Tuesday 7 October 2025",
+            "trip_end": "2025-10-10", "trip_end_span": "Friday 10 October 2025", "nights_away": 3, "destination_city": "Melbourne", "destination_city_span": "Melbourne",
+            "purpose": "conference", "total_claimed_cents": 196640, "advance_received": False, "receipts_attached": True,
+            "contact_phone": "+61431555018", "contact_phone_span": "0431 555 018", "cost_centre": "CC-3120",
+        }
+        calls = {"n": 0}
+        def drifting(request):
+            calls["n"] += 1
+            return response_from_content(json.dumps({**good, "total_claimed_cents": 196640 + (10000 if calls["n"] % 2 == 0 else 0)}))
+        with tempfile.TemporaryDirectory() as directory:
+            steady = run_pilot(spec=self.config.spec, corpus=self.corpus, plan=self.plan, model="gemma4:31b",
+                               executor=FakeExecutor(lambda req: response_from_content(json.dumps(good))), executor_kind="fake",
+                               output_dir=Path(directory) / "steady", created_on=CREATED_ON, families=(Family.REPEAT,), limit=2)
+            steady_repeats = [o for o in steady.observations if o.variant.family is Family.REPEAT]
+            self.assertEqual(len(steady_repeats), 2)
+            self.assertTrue(all(o.scoring.changed_vs_baseline is False for o in steady_repeats))
+            self.assertTrue(all("REPEAT_DIFFERS" not in o.routing.triggers for o in steady_repeats))
+            self.assertTrue(all(o.baseline_observation_id is not None for o in steady_repeats))
+            drift = run_pilot(spec=self.config.spec, corpus=self.corpus, plan=self.plan, model="gemma4:31b",
+                              executor=FakeExecutor(drifting), executor_kind="fake",
+                              output_dir=Path(directory) / "drift", created_on=CREATED_ON, families=(Family.REPEAT,), limit=2)
+            drift_repeats = [o for o in drift.observations if o.variant.family is Family.REPEAT]
+            differing = [o for o in drift_repeats if "REPEAT_DIFFERS" in o.routing.triggers]
+            self.assertTrue(differing, "the drifting executor must produce at least one differing repeat")
+            for o in differing:
+                self.assertEqual(set(o.routing.loci) >= {"AUXILIARY", "CANDIDATE"}, True)
+            report = build_report([drift.run_record], drift.observations)
+            summary = report["runs"][0]["repeatability"]
+            self.assertEqual(summary["repeat_observations"], 2)
+            self.assertEqual(summary["differing_from_baseline"], len(differing))
+            self.assertIn("grounding_verdicts", report["runs"][0])
+            markdown = render_markdown(report)
+            self.assertIn("### Repeatability", markdown)
+            self.assertIn("### Grounding verdicts", markdown)
+            self.assertIn("REPEAT_DIFFERS", markdown)
+            for record in load_observation_directory(Path(directory) / "drift"):
+                self.assertIsNotNone(record.variant.repeat_index if record.variant.family is Family.REPEAT else 1)
+
+    def test_span_relaxations_are_configured_and_recorded(self) -> None:
+        from creib.forge.conformance.corpus import Oracle
+        from creib.forge.conformance.oracle import _span_occurs
+        document = "She travelled 24 to 26 June 2025. Dates | Mon 3 Nov to Thu 6 Nov 2025. Subject: Sick leave."
+        self.assertIsNone(_span_occurs("24 June 2025", document, ()))
+        self.assertEqual(_span_occurs("24 June 2025", document, ("date_range_completion",)), "date_range_completion")
+        self.assertEqual(_span_occurs("Mon 3 Nov 2025", document, ("date_range_completion",)), "date_range_completion")
+        self.assertEqual(_span_occurs("Thu 6 Nov 2025", document, ("date_range_completion",)), "verbatim", "the range end with its month is literally present")
+        self.assertIsNone(_span_occurs("25 June 2025", document, ("date_range_completion",)), "only the endpoints of a range are completions")
+        self.assertIsNone(_span_occurs("sick", document, ()))
+        self.assertEqual(_span_occurs("sick", document, ("case_insensitive",)), "case_insensitive")
+        self.assertEqual(_span_occurs("Sick leave", document, ("case_insensitive",)), "verbatim")
+        # configuration: unknown relaxation refused; mode none refuses any; empty is omitted from the body
+        from creib.forge.conformance.spec import grounding_from_dict
+        base = {"mode": "spans", "span_suffix": "_span", "span_fields": ["a"], "value_in_span_fields": [], "abstain_fields": []}
+        with self.assertRaisesRegex(RecordError, "unknown relaxation"):
+            grounding_from_dict({**base, "span_relaxations": ["fuzzy"]}, ("a", "b"))
+        with self.assertRaisesRegex(RecordError, "span_relaxations to be empty"):
+            grounding_from_dict({"mode": "none", "span_suffix": "_span", "span_fields": [], "value_in_span_fields": [], "abstain_fields": [], "span_relaxations": ["case_insensitive"]}, ("a",))
+        self.assertNotIn("span_relaxations", grounding_from_dict({**base, "span_relaxations": []}, ("a", "b")).to_dict())
+        self.assertEqual(grounding_from_dict(base, ("a", "b")).span_relaxations, ())
+        # the travel-claim battery accepts completed range dates and records that it did so
+        variant = next(v for v in self.plan.variants if v.family is Family.BOUNDARY_SHIFT and v.base_case_id == "BND-105")
+        self.assertEqual(variant.grounding.span_relaxations, ("date_range_completion",))
+        good = {
+            "claimant_name": "Mei-Ling Chow", "claimant_name_span": "Mei-Ling Chow", "approver_name": "Daniel Okonkwo", "approver_name_span": "Daniel Okonkwo",
+            "employee_id": "E-29901", "employee_id_span": "E-29901", "trip_start": "2025-09-03", "trip_start_span": "3 September 2025",
+            "trip_end": "2025-09-07", "trip_end_span": "7 September 2025", "nights_away": 4, "destination_city": "Auckland", "destination_city_span": "Auckland",
+            "purpose": "conference", "total_claimed_cents": 337342, "advance_received": True, "receipts_attached": True,
+            "contact_phone": "+61466120553", "contact_phone_span": "0466 120 553",
+        }
+        scoring = score(variant, response_from_content(json.dumps(good)))
+        by_field = {g.field: g for g in scoring.grounding_verdicts}
+        self.assertEqual(by_field["trip_start"].verdict, "GROUNDED")
+        self.assertIn("date_range_completion", by_field["trip_start"].detail or "")
+        self.assertIsNone(by_field["trip_end"].detail, "a verbatim match carries no relaxation note")
+        self.assertEqual(route(variant, scoring).triggers, ())
+
+    def test_length_violation_keeps_auxiliary_live_only_under_grounding(self) -> None:
+        # incident form: grounding off; travel claim: grounding on. Same over-long value, different suspects.
+        incident = _variant(Family.BASELINE, "ORD-001")
+        long_site = {**_correct_output("ORD-001"), "site": "x" * 61}
+        plain = route(incident, score(incident, response_from_content(json.dumps(long_site))))
+        self.assertIn("LENGTH_VIOLATION", plain.triggers)
+        self.assertEqual(set(plain.loci), {"CANDIDATE", "TEST"})
+        grounded = next(v for v in self.plan.variants if v.family is Family.BASELINE and v.base_case_id == "TRV-001")
+        long_city = {
+            "claimant_name": "Hannah Kowalski", "claimant_name_span": "Hannah Kowalski", "approver_name": "Marcus Oyelaran", "approver_name_span": "Marcus Oyelaran",
+            "employee_id": "E-41207", "employee_id_span": "41207", "trip_start": "2025-10-07", "trip_start_span": "Tuesday 7 October 2025",
+            "trip_end": "2025-10-10", "trip_end_span": "Friday 10 October 2025", "nights_away": 3,
+            "destination_city": "Melbourne, with a stopover in Canberra on the return leg", "destination_city_span": "Melbourne",
+            "purpose": "conference", "total_claimed_cents": 196640, "advance_received": False, "receipts_attached": True,
+            "contact_phone": "+61431555018", "contact_phone_span": "0431 555 018", "cost_centre": "CC-3120",
+        }
+        routed = route(grounded, score(grounded, response_from_content(json.dumps(long_city))))
+        self.assertIn("LENGTH_VIOLATION", routed.triggers)
+        self.assertEqual(set(routed.loci), {"CANDIDATE", "TEST", "AUXILIARY"})
+        self.assertTrue(any("quote verbatim" in locus.reason for locus in routed.live_loci if locus.locus == "AUXILIARY"))
+
+
 class HardPilotTests(unittest.TestCase):
     """The travel-claim battery: every family present, controls behave, grounding does not break model-free controls."""
 
@@ -968,7 +1110,8 @@ class HardPilotTests(unittest.TestCase):
         self.assertEqual(counts["BASELINE"], 9)
         self.assertEqual(counts["NON_VACUITY"], 12)
         self.assertEqual(counts["RIVAL_SUBSTITUTION"], 6)
-        self.assertEqual(sum(1 for v in self.plan.variants if v.model_call), 117)
+        self.assertEqual(counts["REPEAT"], 18)
+        self.assertEqual(sum(1 for v in self.plan.variants if v.model_call), 135)
 
     def test_model_free_controls_are_scored_against_the_bound_form_not_the_prompt_schema(self) -> None:
         # Regression: with grounding on, the prompt schema requires companion span keys; reference

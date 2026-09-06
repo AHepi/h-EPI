@@ -156,7 +156,8 @@
         "BOUNDARY_SHIFT",
         "IMPORT_DEPENDENCY",
         "NON_VACUITY",
-        "ROUND_TRIP"
+        "ROUND_TRIP",
+        "REPEAT"
       ]
     },
     "oracle_status": {
@@ -462,6 +463,11 @@
               "$ref": "#/$defs/grounding_config"
             }
           ]
+        },
+        "repeat_index": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "REPEAT only: which repetition of the baseline request this is. Absent for every other family."
         }
       }
     },
@@ -802,7 +808,8 @@
         "FORMAT_NOT_ENFORCED",
         "SPAN_MISSING",
         "SPAN_NOT_IN_DOCUMENT",
-        "VALUE_NOT_IN_SPAN"
+        "VALUE_NOT_IN_SPAN",
+        "REPEAT_DIFFERS"
       ]
     },
     "routing": {
@@ -904,6 +911,18 @@
           "items": {
             "$ref": "#/$defs/field_name"
           }
+        },
+        "span_relaxations": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "case_insensitive",
+              "date_range_completion"
+            ]
+          },
+          "description": "Relaxations of the verbatim span match; absent means verbatim. Written only when non-empty."
         }
       }
     },

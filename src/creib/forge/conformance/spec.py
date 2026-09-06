@@ -191,6 +191,11 @@ class Negation:
 
 _SPAN_SUFFIX = re.compile(r"^_[a-z][a-z0-9_]{0,31}$")
 GROUNDING_MODES: tuple[str, ...] = ("none", "spans")
+# Relaxations of the verbatim span match, each a deliberate choice recorded in the variant:
+#   case_insensitive       - accept `sick` for "Sick leave"
+#   date_range_completion  - accept "24 June 2025" when the document says "24 to 26 June 2025"
+SPAN_RELAXATIONS: tuple[str, ...] = ("case_insensitive", "date_range_completion")
+MAX_REPEATS = 10
 
 
 @dataclass(frozen=True)
@@ -210,19 +215,25 @@ class Grounding:
     span_fields: tuple[str, ...]
     value_in_span_fields: tuple[str, ...]
     abstain_fields: tuple[str, ...]
+    span_relaxations: tuple[str, ...] = ()
 
     @property
     def active(self) -> bool:
         return self.mode == "spans"
 
     def to_dict(self) -> dict[str, object]:
-        return {
+        # ``span_relaxations`` is written only when non-empty: records written before it existed
+        # carry no such key and mean verbatim, and their variant ids must keep replaying.
+        body: dict[str, object] = {
             "mode": self.mode,
             "span_suffix": self.span_suffix,
             "span_fields": list(self.span_fields),
             "value_in_span_fields": list(self.value_in_span_fields),
             "abstain_fields": list(self.abstain_fields),
         }
+        if self.span_relaxations:
+            body["span_relaxations"] = list(self.span_relaxations)
+        return body
 
 
 def grounding_from_dict(raw: Any, field_order: tuple[str, ...], where: str = "grounding") -> Grounding:
@@ -249,9 +260,17 @@ def grounding_from_dict(raw: Any, field_order: tuple[str, ...], where: str = "gr
     span_fields = fields("span_fields")
     value_in_span = fields("value_in_span_fields")
     abstain = fields("abstain_fields")
+    relaxations: tuple[str, ...] = ()
+    if "span_relaxations" in record:
+        relaxations = tuple(text(item, f"{where}.span_relaxations[{index}]") for index, item in enumerate(array_value(record["span_relaxations"], f"{where}.span_relaxations")))
+        for item in relaxations:
+            if item not in SPAN_RELAXATIONS:
+                raise RecordError(f"{where}.span_relaxations has unknown relaxation {item!r}; known: {list(SPAN_RELAXATIONS)}")
+        if len(relaxations) != len(set(relaxations)):
+            raise RecordError(f"{where}.span_relaxations must not repeat")
     if mode == "none":
-        if span_fields or value_in_span or abstain:
-            raise RecordError(f"{where}.mode none requires every field list to be empty")
+        if span_fields or value_in_span or abstain or relaxations:
+            raise RecordError(f"{where}.mode none requires every field list and span_relaxations to be empty")
     else:
         if not span_fields and not abstain:
             raise RecordError(f"{where}.mode spans requires span_fields or abstain_fields")
@@ -260,7 +279,7 @@ def grounding_from_dict(raw: Any, field_order: tuple[str, ...], where: str = "gr
         for item in span_fields:
             if item + suffix in field_order:
                 raise RecordError(f"{where}: companion key {item + suffix!r} collides with a form field")
-    return Grounding(mode=mode, span_suffix=suffix, span_fields=span_fields, value_in_span_fields=value_in_span, abstain_fields=abstain)
+    return Grounding(mode=mode, span_suffix=suffix, span_fields=span_fields, value_in_span_fields=value_in_span, abstain_fields=abstain, span_relaxations=relaxations)
 
 
 @dataclass(frozen=True)
@@ -308,6 +327,7 @@ class TaskSpec:
     controls: tuple[Control, ...]
     refusal_phrases: tuple[str, ...]
     grounding: Grounding
+    repeats: int
 
     @property
     def required_fields(self) -> tuple[str, ...]:
@@ -644,6 +664,9 @@ def build_task_spec(
 
     controls = _controls(array_value(raw_config["controls"], "controls"), field_order, required)
     grounding = grounding_from_dict(raw_config["grounding"], field_order)
+    repeats = integer(raw_config["repeats"], "repeats", minimum=0)
+    if repeats > MAX_REPEATS:
+        raise RecordError(f"repeats must be at most {MAX_REPEATS}")
     refusal_phrases = unique_texts(raw_config["refusal_phrases"], "refusal_phrases")
     models = tuple(model_id(item, f"models[{index}]") for index, item in enumerate(raw_config["models"]))
     if len(models) != len(set(models)):
@@ -669,6 +692,7 @@ def build_task_spec(
         controls=controls,
         refusal_phrases=refusal_phrases,
         grounding=grounding,
+        repeats=repeats,
     )
 
 

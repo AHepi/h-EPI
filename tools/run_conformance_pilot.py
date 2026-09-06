@@ -198,6 +198,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "response_verdict_counts": dict(record.response_verdict_counts),
                     "field_verdict_counts": dict(record.field_verdict_counts),
                     "live_locus_counts": dict(record.live_locus_counts),
+                    "grounding_verdict_counts": dict(record.grounding_verdict_counts),
                     "scope_label": record.scope_label,
                     "overall_status": record.overall_status,
                     "route": record.route,

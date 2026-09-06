@@ -21,7 +21,8 @@
     "ambiguity",
     "controls",
     "refusal_phrases",
-    "grounding"
+    "grounding",
+    "repeats"
   ],
   "properties": {
     "schema_version": {
@@ -322,8 +323,26 @@
           "items": {
             "$ref": "#/$defs/field_name"
           }
+        },
+        "span_relaxations": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "case_insensitive",
+              "date_range_completion"
+            ]
+          },
+          "description": "Relaxations of the verbatim span match; absent means verbatim. Written only when non-empty."
         }
       }
+    },
+    "repeats": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10,
+      "description": "How many times each baseline request is sent again as a REPEAT variant, to measure the endpoint's own noise floor. 0 switches the family off; larger models that reproduce their output need none."
     }
   },
   "$defs": {
