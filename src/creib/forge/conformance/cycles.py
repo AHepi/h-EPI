@@ -151,7 +151,9 @@ def summarise_cycles(runs: list[RunRecord], observations: Iterable[ObservationRe
         "rows": rows,
         "reading": (
             "Each row counts the cycles (or repeats) of one run whose form was identical to, or differed from, the step before, "
-            "and how the oracle's per-field verdict moved between the two records. The repeat row is the floor: what the same "
+            "and how the oracle's per-field verdict moved between the two records. Not comparable counts cycles whose own reply, or the "
+            "step before's, was not a JSON object (a timeout, a refusal, prose); unavailable counts cycles never sent because the step "
+            "before had no usable object. The repeat row is the floor: what the same "
             "request produced with nothing asked to change. A move in either direction is a description of two records, not a "
             "score; the criticised-field columns say how many fields a cycle was told about, how many of those it changed, and "
             "how many still fail the same check afterwards."
