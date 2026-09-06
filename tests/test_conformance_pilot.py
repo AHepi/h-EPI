@@ -1304,6 +1304,62 @@ class ClaimsTests(unittest.TestCase):
             self.assertTrue(text.rstrip().endswith(NON_INDUCTIVE_LIMIT))
 
 
+class GeneratedCorpusTests(unittest.TestCase):
+    """The generated corpora are reproducible from their generators, so their answer keys come from code, not memory."""
+
+    def test_generators_reproduce_the_committed_corpora(self) -> None:
+        for script in ("gen_appraisal_labelling_corpus.py", "gen_explanatory_distinctions_corpus.py"):
+            completed = subprocess.run(
+                [sys.executable, str(ROOT / "tools" / script)],
+                capture_output=True, text=True, cwd=str(ROOT), env={**os.environ, "PYTHONPATH": str(ROOT / "src")},
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            self.assertIn("unchanged", completed.stdout, script)
+
+    def test_labelling_keys_are_the_harness_labels(self) -> None:
+        from creib.forge.conformance.appraisal import Argument, appraise
+        config = load_pilot_config(ROOT / "forge" / "conformance" / "pilots" / "appraisal-labelling" / "pilot.json")
+        corpus = load_corpus(config.corpus_path, config.spec)
+        checked = 0
+        for case in corpus.cases:
+            expected = {oracle.field: oracle for oracle in case.expected}
+            arguments = []
+            for line in case.renderings["table"].splitlines():
+                cells = [cell.strip() for cell in line.split("|")]
+                if len(cells) == 4 and cells[0][:2] in {"A1", "A2", "A3", "A4", "A5", "A6"}:
+                    aid = cells[0][:2]
+                    essential = tuple(x for x in cells[2].split(", ") if x != "-")
+                    attacks = tuple(x for x in cells[3].split(", ") if x != "-")
+                    arguments.append(Argument(argument_id=aid, statement=aid, kind="other", supports=None, essential=essential, attacks=attacks, readiness=cells[1], readiness_reason="t", register=None))
+            self.assertEqual(len(arguments), 6, case.case_id)
+            labels = appraise(tuple(arguments))
+            for aid in ("A1", "A2", "A3", "A4", "A5", "A6"):
+                self.assertEqual(expected[f"label_{aid.lower()}"].value, labels.of(aid), f"{case.case_id} {aid}")
+            self.assertEqual(expected["usable_count"].value, len(labels.inside), case.case_id)
+            checked += 1
+        self.assertEqual(checked, 18)
+
+    def test_a_rival_reading_fixes_the_other_fields_its_rule_moves(self) -> None:
+        config = load_pilot_config(ROOT / "forge" / "conformance" / "pilots" / "appraisal-labelling" / "pilot.json")
+        corpus = load_corpus(config.corpus_path, config.spec)
+        planned = plan(config.spec, corpus)
+        rivals = {(v.base_case_id, v.rival_label): v for v in planned.variants if v.family is Family.RIVAL_SUBSTITUTION}
+        as_ready = {o.field: o.value for o in rivals[("LAB-03", "unknown_as_ready")].expected}
+        never_ready = {o.field: o.value for o in rivals[("LAB-03", "unknown_never_ready")].expected}
+        self.assertEqual((as_ready["label_a4"], as_ready["label_a3"], as_ready["usable_count"]), ("in", "out", 1), "the unknown attacker becomes ready and its target goes out")
+        self.assertEqual((never_ready["label_a4"], never_ready["label_a3"], never_ready["usable_count"]), ("undecided", "undecided", 0), "the baseline key stands")
+        raw = json.loads(config.corpus_path.read_text(encoding="utf-8"))
+        case = next(c for c in raw["cases"] if c["case_id"] == "LAB-03")
+        bad = json.loads(json.dumps(raw))
+        bad_case = next(c for c in bad["cases"] if c["case_id"] == "LAB-03")
+        bad_case["rival_expected"][0]["also"].append(dict(case["rival_expected"][0]["oracle"]))
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "corpus.json"
+            path.write_text(json.dumps(bad), encoding="utf-8")
+            with self.assertRaisesRegex(RecordError, "ambiguity's own field"):
+                load_corpus(path, config.spec)
+
+
 class CompareTests(unittest.TestCase):
     """Two runs of one model are paired request by request; identity never consults the oracle and nothing is ranked."""
 

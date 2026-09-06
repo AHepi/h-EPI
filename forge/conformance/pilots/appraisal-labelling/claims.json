@@ -1,0 +1,848 @@
+{
+  "schema_version": "creib.conformance-pilot.claims.v1",
+  "title": "Conjectures about language models labelling an appraisal dossier under the stated policy, written before the run",
+  "claims": [
+    {
+      "claim_id": "LAB-STRUCT-01",
+      "statement": "A language model filling this form never emits a key the schema does not define.",
+      "kind": "never",
+      "scope": {
+        "families": null,
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "trigger": "EXTRA_FIELD"
+      },
+      "note": null
+    },
+    {
+      "claim_id": "LAB-STRUCT-02",
+      "statement": "A language model filling this form never returns a label outside in, out, and undecided.",
+      "kind": "never",
+      "scope": {
+        "families": null,
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "trigger": "ENUM_VIOLATION"
+      },
+      "note": null
+    },
+    {
+      "claim_id": "LAB-STRUCT-03",
+      "statement": "A language model asked for a single JSON object and no other text returns exactly that.",
+      "kind": "never",
+      "scope": {
+        "families": null,
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "any_of": [
+          {
+            "recovered": "any"
+          },
+          {
+            "response_verdict": "INVALID_JSON"
+          },
+          {
+            "response_verdict": "NOT_AN_OBJECT"
+          }
+        ]
+      },
+      "note": null
+    },
+    {
+      "claim_id": "LAB-01",
+      "statement": "A language model never labels an argument whose readiness is FAIL anything but out.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": [
+          "LAB-02",
+          "LAB-03"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "any_of": [
+          {
+            "field_verdict": {
+              "verdict": "MISMATCH",
+              "field": "label_a6"
+            }
+          }
+        ]
+      },
+      "note": "A6 fails in both cases; its key is out."
+    },
+    {
+      "claim_id": "LAB-02",
+      "statement": "A language model never labels a failed root argument, or an argument that depends on one, anything but out.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": [
+          "LAB-11",
+          "LAB-12"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "any_of": [
+          {
+            "field_verdict": {
+              "verdict": "MISMATCH",
+              "field": "label_a1"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MISMATCH",
+              "field": "label_a2"
+            }
+          }
+        ]
+      },
+      "note": "A1 fails and A2 depends on it in both cases."
+    },
+    {
+      "claim_id": "LAB-03",
+      "statement": "On a dossier with no edges and every readiness PASS, a language model always labels every argument in.",
+      "kind": "always",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": [
+          "LAB-05"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "field_verdict": {
+              "verdict": "MATCH",
+              "field": "label_a1"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MATCH",
+              "field": "label_a2"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MATCH",
+              "field": "label_a3"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MATCH",
+              "field": "label_a4"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MATCH",
+              "field": "label_a5"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MATCH",
+              "field": "label_a6"
+            }
+          }
+        ]
+      },
+      "note": null
+    },
+    {
+      "claim_id": "LAB-04",
+      "statement": "On a dossier with no edges and every readiness UNKNOWN, a language model never labels any argument in or out.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": [
+          "LAB-06"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "any_of": [
+          {
+            "field_verdict": {
+              "verdict": "MISMATCH",
+              "field": "label_a1"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MISMATCH",
+              "field": "label_a2"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MISMATCH",
+              "field": "label_a3"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MISMATCH",
+              "field": "label_a4"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MISMATCH",
+              "field": "label_a5"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MISMATCH",
+              "field": "label_a6"
+            }
+          }
+        ]
+      },
+      "note": "Every key is undecided; the sceptical reading of UNKNOWN is what sentence 3 requires and what a model that reads unattacked as in will miss."
+    },
+    {
+      "claim_id": "LAB-05",
+      "statement": "In a mutual attack resolved by an outside attacker, a language model always puts the attacked argument out and the other in.",
+      "kind": "always",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": [
+          "LAB-02"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "field_verdict": {
+              "verdict": "MATCH",
+              "field": "label_a1"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MATCH",
+              "field": "label_a2"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MATCH",
+              "field": "label_a3"
+            }
+          }
+        ]
+      },
+      "note": null
+    },
+    {
+      "claim_id": "LAB-06",
+      "statement": "A language model always reinstates an argument whose attacker is itself attacked by an in argument.",
+      "kind": "always",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": [
+          "LAB-04"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "field_verdict": {
+              "verdict": "MATCH",
+              "field": "label_a1"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MATCH",
+              "field": "label_a2"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MATCH",
+              "field": "label_a3"
+            }
+          }
+        ]
+      },
+      "note": null
+    },
+    {
+      "claim_id": "LAB-07",
+      "statement": "A language model never labels an argument in a support cycle with no independent entry in.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": [
+          "LAB-03"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "any_of": [
+          {
+            "field_verdict": {
+              "verdict": "MISMATCH",
+              "field": "label_a1"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MISMATCH",
+              "field": "label_a2"
+            }
+          }
+        ]
+      },
+      "note": "A1 and A2 depend only on each other; both keys are undecided."
+    },
+    {
+      "claim_id": "LAB-08",
+      "statement": "A language model never labels an argument whose only attacker is UNKNOWN anything but undecided.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": [
+          "LAB-03",
+          "LAB-09"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "any_of": [
+          {
+            "field_verdict": {
+              "verdict": "MISMATCH",
+              "field": "label_a3"
+            }
+          }
+        ]
+      },
+      "note": "In LAB-03 A3 is attacked by the unknown A4 and is undecided; in LAB-09 A3 is attacked by the in A4 and is out, so the claim is stated for LAB-03 and tested on both to keep the contrast visible."
+    },
+    {
+      "claim_id": "LAB-09",
+      "statement": "A language model never labels a self-attacking argument in or out.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": [
+          "LAB-07"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "any_of": [
+          {
+            "field_verdict": {
+              "verdict": "MISMATCH",
+              "field": "label_a1"
+            }
+          }
+        ]
+      },
+      "note": null
+    },
+    {
+      "claim_id": "LAB-10",
+      "statement": "A language model always breaks an odd attack cycle the way an outside attacker forces.",
+      "kind": "always",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": [
+          "LAB-08"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "field_verdict": {
+              "verdict": "MATCH",
+              "field": "label_a1"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MATCH",
+              "field": "label_a2"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MATCH",
+              "field": "label_a3"
+            }
+          }
+        ]
+      },
+      "note": null
+    },
+    {
+      "claim_id": "LAB-11",
+      "statement": "A language model's usable count always equals the number of arguments it labelled in.",
+      "kind": "always",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "field_verdict": {
+          "verdict": "MATCH",
+          "field": "usable_count"
+        }
+      },
+      "note": "A proxy: the key's count equals the key's in labels, so a matching count with a wrong label set is possible and is caught by the label claims; a mismatching count with matching labels is the inconsistency the claim is named for."
+    },
+    {
+      "claim_id": "LAB-12",
+      "statement": "A language model always distinguishes the raw case summary from the usable one.",
+      "kind": "always",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": [
+          "LAB-02",
+          "LAB-04",
+          "LAB-06",
+          "LAB-09",
+          "LAB-10",
+          "LAB-11"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "field_verdict": {
+              "verdict": "MATCH",
+              "field": "raw_summary"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MATCH",
+              "field": "usable_summary"
+            }
+          }
+        ]
+      },
+      "note": "Cases where the two summaries differ."
+    },
+    {
+      "claim_id": "LAB-13",
+      "statement": "A language model always follows an appended rule that treats UNKNOWN readiness as ready, or one that says it is never ready.",
+      "kind": "always",
+      "scope": {
+        "families": [
+          "RIVAL_SUBSTITUTION"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "field_verdict": {
+          "verdict": "MATCH",
+          "field": "usable_count"
+        }
+      },
+      "note": null
+    },
+    {
+      "claim_id": "LAB-14",
+      "statement": "The same dossier rendered as prose or as a table is labelled the same way.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "SUBSTRATE_SWAP"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "trigger": "MISMATCH"
+          },
+          {
+            "baseline": {
+              "not": {
+                "trigger": "MISMATCH"
+              }
+            }
+          }
+        ]
+      },
+      "note": "Refuted where the table rendering mismatched a field and the same run's baseline on the same case mismatched nothing."
+    },
+    {
+      "claim_id": "LAB-15",
+      "statement": "Exchanging the positions of two label fields never makes a label follow position rather than argument.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "trigger": "MISMATCH"
+          },
+          {
+            "baseline": {
+              "not": {
+                "trigger": "MISMATCH"
+              }
+            }
+          }
+        ]
+      },
+      "note": null
+    },
+    {
+      "claim_id": "LAB-16",
+      "statement": "A byte-identical request under a fixed seed always returns the same labels.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "REPEAT"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "trigger": "REPEAT_DIFFERS"
+      },
+      "note": null
+    },
+    {
+      "claim_id": "LAB-17",
+      "statement": "Removing the out rule or the fixed-point sentence always changes a model's labels somewhere on the dossier.",
+      "kind": "always",
+      "scope": {
+        "families": [
+          "IMPORT_DEPENDENCY"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "trigger": "DEPENDENCE_CHANGED"
+      },
+      "note": "Refuted by any removal that changed nothing; the refuting record names the sentence."
+    },
+    {
+      "claim_id": "LAB-18",
+      "statement": "A reply that carries at least 800 generated tokens never mislabels an argument.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "output_tokens": {
+              "min": 800
+            }
+          },
+          {
+            "any_of": [
+              {
+                "field_verdict": {
+                  "verdict": "MISMATCH",
+                  "field": "label_a1"
+                }
+              },
+              {
+                "field_verdict": {
+                  "verdict": "MISMATCH",
+                  "field": "label_a2"
+                }
+              },
+              {
+                "field_verdict": {
+                  "verdict": "MISMATCH",
+                  "field": "label_a3"
+                }
+              },
+              {
+                "field_verdict": {
+                  "verdict": "MISMATCH",
+                  "field": "label_a4"
+                }
+              },
+              {
+                "field_verdict": {
+                  "verdict": "MISMATCH",
+                  "field": "label_a5"
+                }
+              },
+              {
+                "field_verdict": {
+                  "verdict": "MISMATCH",
+                  "field": "label_a6"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "note": "Token count is a proxy for reasoning before answering, as in the travel-claim battery."
+    },
+    {
+      "claim_id": "LAB-19",
+      "statement": "A reply of fewer than 400 generated tokens never labels a seeded random dossier entirely correctly.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": [
+          "LAB-R01",
+          "LAB-R02",
+          "LAB-R03",
+          "LAB-R04",
+          "LAB-R05",
+          "LAB-R06"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "output_tokens": {
+              "max": 399
+            }
+          },
+          {
+            "not": {
+              "any_of": [
+                {
+                  "field_verdict": {
+                    "verdict": "MISMATCH",
+                    "field": "label_a1"
+                  }
+                },
+                {
+                  "field_verdict": {
+                    "verdict": "MISMATCH",
+                    "field": "label_a2"
+                  }
+                },
+                {
+                  "field_verdict": {
+                    "verdict": "MISMATCH",
+                    "field": "label_a3"
+                  }
+                },
+                {
+                  "field_verdict": {
+                    "verdict": "MISMATCH",
+                    "field": "label_a4"
+                  }
+                },
+                {
+                  "field_verdict": {
+                    "verdict": "MISMATCH",
+                    "field": "label_a5"
+                  }
+                },
+                {
+                  "field_verdict": {
+                    "verdict": "MISMATCH",
+                    "field": "label_a6"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "note": "The converse of LAB-18 on the random slices; refuted by one short reply with every label right."
+    },
+    {
+      "claim_id": "LAB-20",
+      "statement": "A language model never mislabels every argument of a dossier.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "field_verdict": {
+              "verdict": "MISMATCH",
+              "field": "label_a1"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MISMATCH",
+              "field": "label_a2"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MISMATCH",
+              "field": "label_a3"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MISMATCH",
+              "field": "label_a4"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MISMATCH",
+              "field": "label_a5"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MISMATCH",
+              "field": "label_a6"
+            }
+          }
+        ]
+      },
+      "note": null
+    }
+  ]
+}

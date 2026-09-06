@@ -1,0 +1,116 @@
+{
+  "schema_version": "creib.conformance-pilot.config.v1",
+  "pilot_id": "SMF-CONFORMANCE-EXPLANATORY-DISTINCTIONS-001",
+  "title": "Classifying episodes of inquiry under the distinctions the semantics keeps apart",
+  "form_schema": "form.schema.json",
+  "instructions": "instructions.md",
+  "corpus": "corpus.json",
+  "models": [
+    "gpt-oss:20b",
+    "gemma4:31b",
+    "gpt-oss:120b",
+    "qwen3.5:397b",
+    "mistral-large-3:675b"
+  ],
+  "endpoint": {
+    "kind": "ollama-chat",
+    "base_url": "https://ollama.com",
+    "timeout_seconds": 300,
+    "options": {
+      "temperature": 0,
+      "seed": 7
+    },
+    "think": false
+  },
+  "charter": {
+    "purpose": "Expose where a model, given a described episode of inquiry and the definitions of ten distinctions, makes the identifications the semantics forbids: authorship from transmission, falsehood from defeat, truth from a rejected criticism, capacity from a finite record, and route each failure to the loci that could be at fault.",
+    "output": "Per-model observation and run records with plural verdicts and live loci, plus an unranked report for human triage.",
+    "scope_in": [
+      "Twelve short English accounts of episodes with a named subject, rendered as prose or as a table.",
+      "The ten declared fields of the distinctions form.",
+      "Answer keys that state the semantics' own reading, marked provisional wherever the semantics leaves the reading open."
+    ],
+    "scope_out": [
+      "Any claim that a model understands explanation, authorship, or capacity.",
+      "Any claim that the semantics' readings are correct; a mismatch keeps the key and the framing live as suspects.",
+      "Ranking models, scoring them, or declaring any model fit for use."
+    ]
+  },
+  "load_bearing": [
+    "S5",
+    "S10",
+    "S11"
+  ],
+  "negations": [],
+  "twins": [
+    [
+      "system_new",
+      "historically_new"
+    ]
+  ],
+  "ambiguity": [
+    {
+      "field": "originative_contribution",
+      "question": "Does reconstructing an explanation that was supplied count as an originative contribution?",
+      "rivals": [
+        {
+          "label": "reconstruction_counts",
+          "instruction": "A subject that reconstructs a supplied explanation through its own explanatory work has made an originative contribution."
+        },
+        {
+          "label": "only_unsupplied_counts",
+          "instruction": "Only an explanation the subject created without its being supplied is an originative contribution; reconstructing a supplied explanation is not."
+        }
+      ]
+    }
+  ],
+  "controls": [
+    {
+      "control_id": "C-SWAP-NEWNESS",
+      "corruption": {
+        "kind": "swap_fields",
+        "fields": [
+          "system_new",
+          "historically_new"
+        ]
+      }
+    },
+    {
+      "control_id": "C-DROP-RESULT",
+      "corruption": {
+        "kind": "drop_required",
+        "field": "result_kind"
+      }
+    },
+    {
+      "control_id": "C-EXTRA-CONFIDENCE",
+      "corruption": {
+        "kind": "extra_key",
+        "key": "confidence",
+        "value": "high"
+      }
+    },
+    {
+      "control_id": "C-CORRECT",
+      "corruption": {
+        "kind": "none"
+      }
+    }
+  ],
+  "refusal_phrases": [
+    "I cannot",
+    "I can't",
+    "I'm sorry",
+    "I am unable",
+    "as an AI",
+    "cannot assist"
+  ],
+  "repeats": 2,
+  "grounding": {
+    "mode": "none",
+    "span_suffix": "_span",
+    "span_fields": [],
+    "value_in_span_fields": [],
+    "abstain_fields": []
+  }
+}

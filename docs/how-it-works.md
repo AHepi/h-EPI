@@ -50,6 +50,8 @@ PYTHONPATH=src python tools/run_conformance_pilot.py evidence --observations-dir
 PYTHONPATH=src python tools/run_conformance_pilot.py run --pilot … --model gpt-oss:20b --replay-dir forge/conformance/runs/incident-form --output-dir /tmp/rescore --created-on 2026-09-06T12:00:00Z
 ```
 
+A declared ambiguity names one field, and each rival reading in the corpus gives that field's key under the rival rule. A rule that settles one reading can settle others with it: the day-first rule of the travel claim fixes the departure date and, through it, the return date and the night count; a rule on whether an UNKNOWN readiness counts as ready moves every label that depended on it. A rival reading therefore carries an optional `also` list of keys for the other fields the same rule fixes, and under that rule those keys are scored in place of the baseline's, so that a correct answer under the appended rule is not a mismatch of the key's own making. The travel claim absorbed this by admitting both readings in the baseline key; the appraisal-labelling pilot uses `also`.
+
 `evidence` lists, per model and per criticism trigger (or grounding verdict, written `GROUNDING:<verdict>`), the observation ids that carry it. It exists so that `docs/failure-modes.md` can point at records instead of paraphrasing them.
 
 `run` exits 1 when any observation carries live loci. That means unresolved criticisms are present, not that the run failed.

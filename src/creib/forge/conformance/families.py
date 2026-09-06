@@ -527,9 +527,10 @@ def rival_substitution(spec: TaskSpec, case: Case) -> list[Variant]:
         ambiguity = ambiguity_by_field[rival.field]
         rule = next(item for item in ambiguity.rivals if item.label == rival.label)
         sentences = _sentence_texts(spec) + [rule.instruction]
-        expected = tuple(rival.oracle if oracle.field == rival.field else oracle for oracle in case.expected)
-        if rival.field not in {oracle.field for oracle in case.expected}:
-            expected = expected + (rival.oracle,)
+        replacements = {rival.field: rival.oracle, **{extra.field: extra for extra in rival.also}}
+        expected = tuple(replacements.get(oracle.field, oracle) for oracle in case.expected)
+        present = {oracle.field for oracle in case.expected}
+        expected = expected + tuple(replacements[f] for f in replacements if f not in present)
         fields = _base_fields(spec, case)
         fields.update(
             family=Family.RIVAL_SUBSTITUTION,
