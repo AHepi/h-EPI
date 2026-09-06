@@ -1,0 +1,155 @@
+# How to use the harness
+
+*An operating guide for an agent or a person. `CLAUDE.md` holds the rules and is what `AGENTS.md` points at; this file holds the procedures. `docs/how-it-works.md` explains the method and the ten test families; this file assumes you have read it once and now want to do something. Every command below runs from the repository root with `PYTHONPATH=src`; none calls a model unless it says so.*
+
+## Setup
+
+```sh
+python3.12 tools/check.py bootstrap     # once: .venv with the hash-locked dependencies
+source .venv/bin/activate
+export PYTHONPATH=src
+python tools/check.py all               # lint, offline suite, every pilot validated and planned; no model is called
+```
+
+For a hosted Ollama, export `OLLAMA_API_KEY` in the shell that runs `run`; it is read at call time and never written to a file, a record, a log, or an error message. For a local Ollama, set `"auth": "none"` and `"base_url": "http://localhost:11434"` in the pilot's endpoint and export nothing. In a Claude Code web session the SessionStart hook does the bootstrap and the exports.
+
+Before any live run, know that it costs money and produces records that get committed. Use `--limit N` and a scratch `--output-dir` while developing, `--family BASELINE` for plain fills, and `--dry-run` to exercise the whole path with a canned executor and no network.
+
+## The four files of a pilot
+
+Everything problem-specific lives in one directory under `forge/conformance/pilots/<name>/`; nothing about your form goes in `src/`. Copy the template and edit:
+
+```sh
+cp -r forge/conformance/pilots/leave-request forge/conformance/pilots/my-form
+```
+
+| File | What to put in it |
+|---|---|
+| `form.schema.json` | JSON Schema 2020-12 with `additionalProperties: false` and a `required` list. Each field may use `type` plus `pattern`, `enum`, `maxLength`, `minLength`, `format`; any other keyword is rejected by name. Optional fields are those not in `required`. |
+| `instructions.md` | A heading, one preamble line, a blank line, then numbered sentences `1.` … one per line. Sentence 1 should demand JSON only. Name each field by its backticked name in exactly one sentence, so that sentence can be cited, removed, or negated. |
+| `corpus.json` | One case per document. `renderings` holds the same facts as `prose`, `table`, or `email`; `rendering` names the default. Every required field gets an oracle entry: `exact` (one value), `any_of` (several admitted readings; include `null` to expect abstention), `regex`, `enum`, `absent` (the field must not be emitted), or `unknown` (no answer key; the value is recorded and judged only against the schema). Mark a reading you are not sure of `interpretation_provisional`. |
+| `pilot.json` | The models you may name, the endpoint, and the test surfaces: `negations`, `twins`, `ambiguity`, `load_bearing`, `controls`, `refusal_phrases`, `repeats`, `grounding`. The leave-request template has the minimum; the travel-claim pilot has everything switched on. |
+
+Check the configuration before spending a call:
+
+```sh
+python tools/run_conformance_pilot.py validate     --pilot forge/conformance/pilots/my-form/pilot.json   # bindings and obligations
+python tools/run_conformance_pilot.py plan         --pilot forge/conformance/pilots/my-form/pilot.json   # variants per family and the plan id
+python tools/run_conformance_pilot.py oracle-check --pilot forge/conformance/pilots/my-form/pilot.json   # the model-free controls only
+```
+
+`validate` refuses anything it cannot bind: a negation, twin, control, or grounding list that names a field the form does not have, a load-bearing sentence id that does not exist, a `drop_required` control on an optional field, an oracle on an unknown field, a grounding mode whose lists are inconsistent. `plan` additionally refuses a control whose corruption leaves the reference output unchanged, so run both. `plan` prints the plan id; any edit to `pilot.json` moves it, so cite plan ids from run records, not from memory. `oracle-check` scores the corrupted reference outputs and must show every corruption rejected and the uncorrupted reference accepted; `CONTROL_ACCEPTED` there means your oracle cannot see that corruption and the battery would be vacuous on it.
+
+## Use 1: fill your own form
+
+A plain fill is one call per document, the form's own rules enforced, nothing pretended about correctness.
+
+```sh
+python tools/run_conformance_pilot.py run --pilot forge/conformance/pilots/my-form/pilot.json \
+    --model gpt-oss:120b --family BASELINE \
+    --output-dir forge/conformance/runs/my-form --created-on "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+python tools/run_conformance_pilot.py fills --observations-dir forge/conformance/runs/my-form
+```
+
+`fills` prints one JSON line per document with `filled_form`, `structural_issues`, the judged and unjudged fields, grounding verdicts and spans if configured, the fields left `null`, and `live_loci`. With no answer key the run is labelled `INCONCLUSIVE_NO_SCORED_OUTPUT`: the form was filled and its rules held, and nothing was confirmed. That is the honest label for a plain fill.
+
+## Use 2: check an extraction step before it ships
+
+Give the corpus an answer key and switch the surfaces on, then run the full battery.
+
+1. **Answer key.** `exact` for values with one right answer; `any_of` where the document genuinely admits two readings, so that the key does not take a side it cannot defend (H13 in the register is what happens when it does); `unknown` where you have no key.
+2. **Negations.** For a field with a formatting rule, give a replacement sentence, a replacement pattern, and a value transform (`iso_date_to_dmy`, `e164_au_to_national_spaced`). The model's output must change; `IDENTICAL_TO_BASELINE` means the instruction was ignored or the schema pattern dominated it.
+3. **Twins.** Pairs of fields that carry the same kind of value in different roles (claimant and approver). The battery swaps their positions in the document and checks the values follow the labels.
+4. **Ambiguities.** A field, a question, and rival instructions with labels. Each rival is appended to the instructions and the corpus says which value each rival should produce.
+5. **Load-bearing sentences.** Sentence ids whose removal should change the output; `DEPENDENCE_UNCHANGED` records that it did not.
+6. **Controls.** `swap_fields`, `drop_required`, `extra_key`, and `none` on cases with a reference output. They are mutation tests of your oracle and cost no calls.
+7. **Repeats.** `"repeats": 2` sends every baseline request twice more and records `REPEAT_DIFFERS` when the form values differ. Any comparison family inherits this floor; measure it in the same run.
+8. **Grounding.** `"mode": "spans"` with `span_fields`, `value_in_span_fields`, `abstain_fields`, and `span_relaxations` (`case_insensitive`, `date_range_completion`). A relaxation that accepted a span is named in the verdict.
+9. **Boundary and distractor cases.** Put the hard material in the documents: a correction mid-sentence, a transit city, a colleague copied in, a rate to multiply, a date fixed by a weekday, a document that is silent on a field the form has. T27 in `docs/small-models.md` says which probes discriminated across eighteen models and which sat at the floor.
+
+Then, per model:
+
+```sh
+python tools/run_conformance_pilot.py run --pilot forge/conformance/pilots/my-form/pilot.json \
+    --model gpt-oss:120b --retries 2 \
+    --output-dir forge/conformance/runs/my-form --created-on "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+python tools/run_conformance_pilot.py report --run forge/conformance/runs/my-form/run.<id>.json \
+    --observations-dir forge/conformance/runs/my-form --markdown my-form-report.md
+python tools/run_conformance_pilot.py evidence --observations-dir forge/conformance/runs/my-form
+```
+
+`--retries` retries transport failures only; a completed empty reply stands as `EMPTY_RESPONSE`. `report` takes `--run` more than once and lists, per run, verdict counts by family, grounding verdicts, repeatability, and each failure mode with one example and its live loci; across runs it shows presence and absence only. `evidence` lists observation ids per model and trigger (or `GROUNDING:<verdict>`), which is what you cite.
+
+## Use 3: compare models without ranking them
+
+Run each model into the same output directory with its own `--created-on`, then pass every run record to `report`. The cross-model table says which failure modes each model exhibited and which it did not; it does not order them and no number in it can be summed into a score. Choose on which failures your task can tolerate. A model absent from a failure mode may not have been asked the question in a way that would expose it, and a model present in one may be there because of the key (check the live loci: TEST and SCOPE live on every model for the same case points at the key, not the models).
+
+## Use 4: catch drift and regressions
+
+The request digest is a function of the prompt, the schema, the options, and the model name, so the same pilot re-run later sends byte-identical requests. Run again with a new `--created-on` and compare fills per request digest; `fills --run <run record>` restricts to one run. Differences on identical requests are either the endpoint's noise floor (see the repeat counts of both runs) or a change in the model or endpoint. Do not compare across an edit to `pilot.json` without checking the plan id: an edited configuration is a new plan even when no variant changed.
+
+## Use 5: measure the noise floor
+
+Set `repeats` to 2 or more. The run summary and the report state how many repeats were identical to the baseline and how many differed, per case. A model whose repeats never differ can be run with `0`; one whose repeats differ half the time cannot support any single-observation claim, and every comparison family's findings for it must be read against that count.
+
+## Use 6: audit citations
+
+Switch on grounding for the fields whose provenance matters. `GROUNDED` means the quoted words occur in the document (after whitespace normalisation, and after any relaxation you configured, which the verdict names); `SPAN_NOT_IN_DOCUMENT` means they do not; `VALUE_NOT_IN_SPAN` means the value is not inside the quoted words; `ABSTAINED` means the model returned `null` where you allowed it. None of these says the value is right, and a quotation of the wrong sentence that does occur in the document is `GROUNDED`; the table of what each check cannot see in `docs/how-it-works.md` lists the rest.
+
+```sh
+python tools/run_conformance_pilot.py evidence --observations-dir forge/conformance/runs/my-form --trigger GROUNDING:SPAN_NOT_IN_DOCUMENT
+```
+
+## Use 7: test a general claim about models
+
+Write the claim as a conjecture in the pilot's `claims.json` **before** the run whose records will test it, and commit it with the pilot change; a conjecture written after the records is a description of them, and the document that reports it must say so. Each claim has a kind (`never` or `always`), a scope (families, cases, models, whether a model was called), and a condition over one observation: a trigger, a locus, a response verdict, a field verdict, a grounding verdict, the change-against-baseline flag, a null value, a present key, the thinking channel, a recovery, a token count, or `all_of`, `any_of`, `not`, and `baseline` (the same condition on the baseline observation of the same run and case). Anything outside that vocabulary fails closed.
+
+```sh
+python tools/run_conformance_pilot.py claims --claims forge/conformance/pilots/my-form/claims.json \
+    --observations-dir forge/conformance/runs/my-form --markdown my-form-claims.md
+```
+
+Each claim comes out `REFUTED` (with the refuting models, the survivors, and example ids), `UNREFUTED_FOR_DECLARED_SCOPE`, or `NOT_TESTED`. For an unrefuted claim, read the liveness line: if the refuting condition held on no supplied record inside or outside the scope, the check has not been shown able to fail and the survival is a fact about what the models did, not a test the harness passed. Cite claim ids and observation ids in anything you write.
+
+## Use 8: record what a refutation rests on
+
+A refutation rests on a reading of the key or the matcher. When a reading is argued about, put it in the pilot's `appraisal.json`: a `reading` argument that supports a case and field (or a trigger) on a corpus or pilot digest, a `criticism` that attacks it, and a readiness a person decided (`PASS`, `FAIL`, or `UNKNOWN`) with its reason. Never infer readiness from records.
+
+```sh
+python tools/run_conformance_pilot.py claims --claims … --appraisal forge/conformance/pilots/my-form/appraisal.json --observations-dir …
+```
+
+Every argument is labelled `in`, `out`, or `undecided` by a fixed least-fixed-point rule, and each refutation is classed `usable`, `contested`, or `defeated` by the readings its conjecture's condition actually looks at. A claim with only defeated refutations becomes unrefuted; one with only contested ones becomes `REFUTED_ON_CONTESTED_READING`. An appraisal can only weaken a refutation, never create one, and a reading nobody has argued about is usable, which is absence of argument, not endorsement.
+
+## Use 9: correct an answer key, or the machine, without touching a record
+
+Records are never edited. Change the oracle in `corpus.json` (or fix the code), then re-score the recorded replies offline:
+
+```sh
+python tools/run_conformance_pilot.py run --pilot forge/conformance/pilots/my-form/pilot.json --model gpt-oss:120b \
+    --replay-dir forge/conformance/runs/my-form --output-dir /tmp/my-form-rescore --created-on "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+```
+
+The replay executor pairs each request with the reply that same request received in the recorded run, repeat by repeat, and makes no network call. The result is a new run with new observation ids; the original records stand. Decide deliberately where re-scored records go: a re-scored run committed beside its original counts that model twice in every table.
+
+## Reading the output
+
+- **Run labels.** `UNREFUTED_FOR_DECLARED_SCOPE` is the strongest: every judged field matched and nothing more. `REFUTED_CASES_PRESENT` means the model is a live suspect on at least one observation; it does not mean the model failed the battery. `INCONCLUSIVE_NO_SCORED_OUTPUT` means some field went unjudged or a call did not complete, which is the normal label for a plain fill with no key.
+- **Live loci.** Every failure after a model call names a set from CANDIDATE (the model), AUXILIARY (prompt, executor, format plumbing), TEST (the oracle), SCOPE (the task as framed). A set is never a single locus; the routing is in `routing.py` and each report translates every trigger in prose.
+- **Triggers.** Response-level: `TRANSPORT_ERROR`, `EMPTY_RESPONSE`, `TRUNCATED`, `INVALID_JSON`, `NOT_AN_OBJECT`, `REFUSAL_SUSPECTED`, `PREREQUISITE_UNAVAILABLE`. Field-level: `MISMATCH`, `MISSING_REQUIRED`, `EXTRA_FIELD`, `TYPE_VIOLATION`, `PATTERN_VIOLATION`, `ENUM_VIOLATION`, `LENGTH_VIOLATION`, `UNEXPECTED_PRESENT`, `SCHEMA_INVALID`. Family-level: `IDENTICAL_TO_BASELINE`, `REPEAT_DIFFERS`, `DEPENDENCE_CHANGED`, `DEPENDENCE_UNCHANGED`, `CONTROL_ACCEPTED`, `CONTROL_REJECTED`, `FORMAT_NOT_ENFORCED`. Grounding: `SPAN_MISSING`, `SPAN_NOT_IN_DOCUMENT`, `VALUE_NOT_IN_SPAN`.
+- **Exit codes.** `run` exits 1 when any observation carries live loci. That means look, not failed.
+- **Interrupted runs.** A killed run leaves its observations and no run record. They are valid on their own but `report` will not see them; delete them or keep them as orphans, and rerun with a new `--created-on`.
+
+## Writing it up
+
+- A new failure mode gets an entry in `docs/failure-modes.md` with observation ids from `evidence`, never from memory. Absence of a mode on the cases run is recorded too.
+- Lead with what happened, translate every label the first time it appears, and keep every live suspect visible. Do not rank, do not total across models, and do not write pass, accuracy, best, or worst.
+- A general claim in a document cites the claim id and the records, and says whether the conjecture was written before or after them.
+
+## Publishing
+
+Work on a branch (`claude/*`, `codex/*`, or a human-chosen name); never commit on or push to `main`. Before every commit run `python tools/check.py all`, stage explicit paths (never `.venv`, key material, or documents you are not licensed to share), run `git diff --cached --check`, and confirm no key is in the diff (`git grep -l Bearer -- forge/conformance/runs` must print nothing). Push with `git push -u origin HEAD`; never force, never `HEAD:main`, never rebase, reset, or amend published history. Publication is a pull request and merging is a human action. The `h-epi-safe-publish` skill walks through the same steps.
+
+## What not to expect
+
+The harness will not tell you a model is good, that it understood a document, or that it can fill forms in general. It will tell you, with records, what a model did on your documents and where the blame can lie when it was wrong. That is the whole product, and `docs/reports/` explains why it stops there.

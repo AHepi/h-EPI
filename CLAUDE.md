@@ -1,6 +1,6 @@
 # Conformance harness — agent entry point
 
-Read this file first, then `README.md`, then `docs/how-it-works.md`; `docs/failure-modes.md` is the register of what has been observed to go wrong, with record ids. `AGENTS.md` is a symlink to this file so Codex reads the same rules. The `h-epi-safe-publish` skill (under `.codex/skills/`, symlinked into `.claude/skills/`) governs publishing.
+Read this file first, then `README.md`, then `agent.md` (how to use the harness, use by use, command by command), then `docs/how-it-works.md`; `docs/failure-modes.md` is the register of what has been observed to go wrong, with record ids. `AGENTS.md` is a symlink to this file so Codex reads the same rules; `agent.md` is the operating guide, not a rules file. The `h-epi-safe-publish` skill (under `.codex/skills/`, symlinked into `.claude/skills/`) governs publishing.
 
 ## What this repository is
 
