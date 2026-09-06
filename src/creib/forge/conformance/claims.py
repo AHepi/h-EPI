@@ -216,6 +216,22 @@ def compile_condition(raw: Any, where: str = "condition") -> Predicate:
     if key == "thinking_present":
         expected_thinking = boolean(value, f"{where}.thinking_present")
         return lambda o, c: o.response is not None and o.response.thinking_present is expected_thinking
+    if key == "output_tokens":
+        spec = object_value(value, f"{where}.output_tokens")
+        low = spec.get("min"); high = spec.get("max")
+        if low is None and high is None:
+            raise RecordError(f"{where}.output_tokens needs min or max")
+        for bound, name in ((low, "min"), (high, "max")):
+            if bound is not None and (type(bound) is not int or bound < 0):
+                raise RecordError(f"{where}.output_tokens.{name} must be a non-negative integer")
+
+        def output_tokens(o: ObservationRecord, c: Context) -> bool:
+            if o.response is None or o.response.eval_count is None:
+                return False
+            n = o.response.eval_count
+            return (low is None or n >= low) and (high is None or n <= high)
+
+        return output_tokens
     if key == "recovered":
         how = text(value, f"{where}.recovered")
         if how not in ("any", "prose", "duplicate_keys"):

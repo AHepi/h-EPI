@@ -989,6 +989,122 @@
         "response_verdict": "TRANSPORT_ERROR"
       },
       "note": null
+    },
+    {
+      "claim_id": "LEN-01",
+      "statement": "A reply that carries at least 800 generated tokens, which on this battery means the model reasoned before answering, never gets an unambiguous multiplied total wrong.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT"
+        ],
+        "cases": [
+          "TRV-001",
+          "TRV-001-P",
+          "TRV-005",
+          "BND-111"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "output_tokens": {
+              "min": 800
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MISMATCH",
+              "field": "total_claimed_cents"
+            }
+          }
+        ]
+      },
+      "note": "Four models exceed 800 tokens per reply: two reason in the message before the JSON (glm-5.3, glm-5.3-flash), two in a thinking channel (gpt-oss:120b, minimax-m2.7). Token count is a proxy for reasoning, not a measure of it."
+    },
+    {
+      "claim_id": "LEN-02",
+      "statement": "A reply of fewer than 400 generated tokens never gets an unambiguous multiplied total right.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT"
+        ],
+        "cases": [
+          "TRV-001",
+          "TRV-001-P",
+          "TRV-005",
+          "BND-111"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "output_tokens": {
+              "max": 399
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MATCH",
+              "field": "total_claimed_cents"
+            }
+          }
+        ]
+      },
+      "note": "Deliberately strong; its refuters are the short-reply models that did the multiplication correctly at least once, and their count says how often a bare answer suffices."
+    },
+    {
+      "claim_id": "LEN-03",
+      "statement": "A model that reasons before answering, visibly or in a thinking channel, never returns null for a date the document fixes by a weekday or an interval.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "DELETION",
+          "NEGATION",
+          "SEMANTIC_ROLE_TWIN",
+          "SUBSTRATE_SWAP",
+          "RIVAL_SUBSTITUTION"
+        ],
+        "cases": [
+          "TRV-003",
+          "TRV-005",
+          "BND-111"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "any_of": [
+              {
+                "thinking_present": true
+              },
+              {
+                "recovered": "prose"
+              }
+            ]
+          },
+          {
+            "value_null": {
+              "field": "trip_end"
+            }
+          }
+        ]
+      },
+      "note": "Recovered-from-prose stands in for visible reasoning here because the models that reason in the message also fence or precede the JSON; a plainly fenced reply with no reasoning also satisfies it."
     }
   ]
 }

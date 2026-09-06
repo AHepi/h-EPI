@@ -1132,7 +1132,7 @@ class ClaimsTests(unittest.TestCase):
 
     def test_conditions_fail_closed(self) -> None:
         from creib.forge.conformance.claims import compile_condition
-        for bad in ({"trigger": "NOPE"}, {"response_verdict": "NOPE"}, {"field_verdict": {"verdict": "NOPE"}}, {"locus": "MODEL"}, {"recovered": "sometimes"}, {"trigger": "MISMATCH", "locus": "TEST"}, {"unknown": 1}, {"all_of": []}, {"baseline": {"nope": 1}}):
+        for bad in ({"trigger": "NOPE"}, {"response_verdict": "NOPE"}, {"field_verdict": {"verdict": "NOPE"}}, {"locus": "MODEL"}, {"recovered": "sometimes"}, {"trigger": "MISMATCH", "locus": "TEST"}, {"unknown": 1}, {"all_of": []}, {"baseline": {"nope": 1}}, {"output_tokens": {}}, {"output_tokens": {"min": -1}}):
             with self.assertRaises(RecordError, msg=repr(bad)):
                 compile_condition(bad)
 
@@ -1148,6 +1148,12 @@ class ClaimsTests(unittest.TestCase):
         self.assertEqual(by_id["rt-vs-base"].status, "UNREFUTED_FOR_DECLARED_SCOPE", "the round-trip length violations were inherited from their baselines")
         self.assertEqual(by_id["rt-inherits"].status, "UNREFUTED_FOR_DECLARED_SCOPE")
         self.assertEqual(by_id["no-baseline"].tested, 12)
+        from creib.forge.conformance.claims import compile_condition, Context
+        long_reply = compile_condition({"output_tokens": {"min": 1}})
+        counted = [o for o in observations if o.response is not None and o.response.eval_count is not None]
+        self.assertTrue(counted)
+        self.assertTrue(all(long_reply(o, Context(observations)) for o in counted))
+        self.assertFalse(compile_condition({"output_tokens": {"max": 0}})(counted[0], Context(observations)))
 
     def test_pilot_claims_file_loads_and_cli_runs(self) -> None:
         from creib.forge.conformance.claims import load_claims
