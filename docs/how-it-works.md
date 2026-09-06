@@ -54,6 +54,8 @@ PYTHONPATH=src python tools/run_conformance_pilot.py run --pilot … --model gpt
 
 `run` exits 1 when any observation carries live loci. That means unresolved criticisms are present, not that the run failed.
 
+A run that is interrupted (a killed process, a lost container) leaves the observations it had already published and no run record. Those observations are complete and valid on their own, but `report` works from run records and will not see them, and a rerun with the same `--created-on` would try to publish identical records over them and stop at the first collision. Either keep them as orphans or delete them, and rerun with a new `--created-on`; the rerun is a new run with new observation ids, and if `pilot.json` has changed in the meantime it is also a new plan id, even when no variant changed.
+
 ## Using it for your own form
 
 The incident form above is a test battery with an answer key. Most real use is simpler: you have a form and a document and you want the filled form back, with the form's own rules enforced and nothing pretended about correctness. That is a plain fill. The template under `forge/conformance/pilots/leave-request/` is the smallest working example. It was run live against three models with grounding spans and abstention switched on (see the next section); its 30 records (24 observations, 6 runs) are committed under `forge/conformance/runs/leave-request/`.
