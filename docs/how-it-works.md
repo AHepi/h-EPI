@@ -93,6 +93,18 @@ Where each thing goes:
 
 `run` exits 1 when any observation carries live loci and 0 otherwise is reserved; treat exit 1 as "look at the loci", not as failure. The full battery (drop `--family BASELINE`) needs pairs, renderings, negations, and controls to produce variants; with a single plain case it adds only an instruction-removal probe and a round trip.
 
+## The hard battery
+
+`forge/conformance/pilots/travel-claim/` is the third pilot, built to be difficult for a small model rather than representative. It keeps the machine unchanged and pushes every configuration surface at once:
+
+- Thirteen fields, of which only two can be copied verbatim. The rest must be normalised (`E-41207` from "staff number 27 044"; `+61417220391` from "0417 220 391"), derived (a return date from "came home on the Wednesday" after a stated Sunday; "Mon 3 Nov to Thu 6 Nov 2025" with the year stated once), counted (nights between two dates), summed (itemised amounts including "three nights at $189.00" into whole cents), or mapped onto an enum from paraphrase ("giving evidence at a Senate committee hearing" is `other`).
+- Distractors in every document: a transit city that is not the destination, a hotel's or a colleague's phone number one digit away from the claimant's, a manager who is copied in but did not approve, a pre-trip estimate that is not an amount claimed, a foreign-currency face value beside its converted charge.
+- Statements that must be read, not matched: a correction that supersedes an earlier date in the same document, "receipts attached except the taxi receipt", and two booleans stated by double negation.
+- Every family has material: two negations (date format, phone format), a role twin (claimant and approver), two declared ambiguities with rivals (day-first or month-first numeric dates; a stated total that disagrees with the itemised sum by $27.00), seven boundary cases, three load-bearing sentences, four controls on two reference cases, three renderings on four cases, one optional field for deletion, and a round trip per baseline.
+- Grounding on for seven fields with abstention allowed on the return date and night count, and one case (BND-101) where the document is genuinely silent and null is the only answer the key admits.
+
+Ninety variants per model, of which eighty-two call the model. The plan id is `dde8e4f8…` on corpus digest `400ee484…`. What the models did with it is in `docs/small-models.md`.
+
 ## Grounding and abstention
 
 A plain fill records what the model returned and enforces the form's rules. It cannot see two of the most common ways a fill goes wrong: a value that is well-formed but came from nowhere in the document, and a value the model invented because the form demanded one and the document did not supply it. The `grounding` block in `pilot.json` adds both checks as configuration. No code changes; the default mode `none` leaves every existing pilot byte-for-byte unchanged, and the incident form runs that way.
@@ -121,6 +133,8 @@ Limits of the check, so that no one reads more into a verdict than it carries:
 - The span match is verbatim after whitespace normalisation and is case-sensitive, so `sick` is not found in a document that says `Sick leave`. That is a deliberate reading of "verbatim"; it is also why TEST stays live on `SPAN_NOT_IN_DOCUMENT`.
 - `value_in_span` is a substring test. It is meaningful for fields copied as written (a name) and meaningless for fields that are normalised (`2025-10-13` will never occur inside `Monday 13 October 2025`), which is why it is a separate list and the template applies it to one field only.
 - Abstention is only checked where the configuration allows it. Whether a model abstains where it should is a question the corpus has to pose (LR-002 poses it); the harness cannot know which values a document leaves unstated.
+- To make abstention the expected answer rather than a tolerated one, give the field an `any_of` oracle whose `values` include `null`. A null then scores `MATCH`, a value scores `MISMATCH` with CANDIDATE live (the model invented what the document does not say), and a null against any other oracle stays `MISMATCH`. The travel-claim battery's BND-101 uses this for the return date and the night count.
+- Model-free controls (NON_VACUITY) are reference outputs in the bound form's own shape and are validated against the bound form schema, not the prompt schema with its companion span keys. The first plan of a grounded pilot with controls rejected its own uncorrupted reference until this was made explicit; `test_model_free_controls_are_scored_against_the_bound_form_not_the_prompt_schema` guards it.
 
 The live runs of the template (three models, 2026-09-06: the full six-variant plan, then the two baselines repeated 30 minutes later to test repeatability; 24 model calls; records under `forge/conformance/runs/leave-request/`) are written up in `docs/failure-modes.md`, entries G1 to G5.
 

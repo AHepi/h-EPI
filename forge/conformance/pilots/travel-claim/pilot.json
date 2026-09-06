@@ -1,0 +1,157 @@
+{
+  "schema_version": "creib.conformance-pilot.config.v1",
+  "pilot_id": "TRAVEL-CLAIM-HARD-001",
+  "title": "Hard battery: travel expense claim from cluttered documents, with derivation, arithmetic, distractors, corrections, grounding spans, and abstention",
+  "form_schema": "form.schema.json",
+  "instructions": "instructions.md",
+  "corpus": "corpus.json",
+  "models": [
+    "gemma4:31b",
+    "gpt-oss:20b",
+    "nemotron-3-nano:30b",
+    "gpt-oss:120b"
+  ],
+  "endpoint": {
+    "kind": "ollama-chat",
+    "base_url": "https://ollama.com",
+    "timeout_seconds": 180,
+    "options": {
+      "temperature": 0,
+      "seed": 7
+    },
+    "think": false
+  },
+  "charter": {
+    "purpose": "Expose the ways a model fails when a form needs more than copying: normalising identifiers and phone numbers, deriving dates from weekdays and a stated departure, counting nights, summing itemised amounts into cents, mapping paraphrase onto an enum, ignoring transit cities and copied-in colleagues, honouring corrections and negations, quoting provenance, and answering null where the document is silent.",
+    "output": "Per-model observation and run records with plural verdicts, grounding verdicts, and live loci, plus an unranked report for human triage.",
+    "scope_in": [
+      "Short English claim documents rendered as prose, a two-column table, or an email.",
+      "Australian phone numbers, Australian dollar amounts, and dates written in words, with weekdays, or as day-first numerals.",
+      "The thirteen declared fields of the travel claim form."
+    ],
+    "scope_out": [
+      "Any claim that a model understands travel, expenses, or forms in general.",
+      "Ranking models, scoring them, or declaring any model fit for use.",
+      "Documents in other languages, scanned images, or claims covering several trips."
+    ]
+  },
+  "load_bearing": [
+    "S8",
+    "S10",
+    "S12"
+  ],
+  "negations": [
+    {
+      "field": "trip_start",
+      "sentence_id": "S5",
+      "replacement_sentence": "`trip_start` is the departure date written as DD/MM/YYYY.",
+      "replacement_pattern": "^[0-9]{2}/[0-9]{2}/[0-9]{4}$",
+      "value_transform": "iso_date_to_dmy"
+    },
+    {
+      "field": "contact_phone",
+      "sentence_id": "S13",
+      "replacement_sentence": "`contact_phone` is the claimant's own contact number in Australian national format with a leading 0 and spaces: 04XX XXX XXX for mobiles or 0X XXXX XXXX for landlines; numbers for hotels, airlines, training providers, or other people are not it.",
+      "replacement_pattern": "^(04[0-9]{2} [0-9]{3} [0-9]{3}|0[2378] [0-9]{4} [0-9]{4})$",
+      "value_transform": "e164_au_to_national_spaced"
+    }
+  ],
+  "twins": [
+    [
+      "claimant_name",
+      "approver_name"
+    ]
+  ],
+  "ambiguity": [
+    {
+      "field": "trip_start",
+      "question": "When the document writes a date as two numeric fields NN/NN/YYYY, which field is the day?",
+      "rivals": [
+        {
+          "label": "day_first",
+          "instruction": "Read numeric dates of the form NN/NN/YYYY as DD/MM/YYYY (Australian convention)."
+        },
+        {
+          "label": "month_first",
+          "instruction": "Read numeric dates of the form NN/NN/YYYY as MM/DD/YYYY (United States convention)."
+        }
+      ]
+    },
+    {
+      "field": "total_claimed_cents",
+      "question": "When the document states a grand total that disagrees with the sum of its itemised amounts, which is the amount claimed?",
+      "rivals": [
+        {
+          "label": "itemised_sum",
+          "instruction": "When a stated total disagrees with the sum of the itemised amounts, the amount claimed is the sum of the itemised amounts."
+        },
+        {
+          "label": "stated_total",
+          "instruction": "When a stated total disagrees with the sum of the itemised amounts, the amount claimed is the stated total."
+        }
+      ]
+    }
+  ],
+  "controls": [
+    {
+      "control_id": "C-SWAP-NAMES",
+      "corruption": {
+        "kind": "swap_fields",
+        "fields": [
+          "claimant_name",
+          "approver_name"
+        ]
+      }
+    },
+    {
+      "control_id": "C-DROP-TOTAL",
+      "corruption": {
+        "kind": "drop_required",
+        "field": "total_claimed_cents"
+      }
+    },
+    {
+      "control_id": "C-EXTRA-CURRENCY",
+      "corruption": {
+        "kind": "extra_key",
+        "key": "currency",
+        "value": "AUD"
+      }
+    },
+    {
+      "control_id": "C-CORRECT",
+      "corruption": {
+        "kind": "none"
+      }
+    }
+  ],
+  "refusal_phrases": [
+    "I cannot",
+    "I can't",
+    "I'm sorry",
+    "I am unable",
+    "as an AI",
+    "cannot assist"
+  ],
+  "grounding": {
+    "mode": "spans",
+    "span_suffix": "_span",
+    "span_fields": [
+      "claimant_name",
+      "approver_name",
+      "employee_id",
+      "trip_start",
+      "trip_end",
+      "destination_city",
+      "contact_phone"
+    ],
+    "value_in_span_fields": [
+      "claimant_name",
+      "approver_name"
+    ],
+    "abstain_fields": [
+      "trip_end",
+      "nights_away"
+    ]
+  }
+}

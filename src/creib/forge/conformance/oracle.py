@@ -331,7 +331,11 @@ def _grounding_verdict(variant: Variant, field: str, value: Any, output: Mapping
 def score_output(variant: Variant, output: Mapping[str, Any]) -> tuple[bool, tuple[FieldVerdict, ...], tuple[GroundingVerdict, ...]]:
     """Schema validity, one verdict per schema field and per extra key, and grounding verdicts."""
 
-    validator = Draft202012Validator(variant.prompt_form_schema(), format_checker=Draft202012Validator.FORMAT_CHECKER)
+    # A model reply is validated against the schema the model was sent (companion span keys and
+    # nullable abstain fields included); a model-free control output is a reference output in the
+    # bound form's own shape and is validated against the bound form schema.
+    schema = variant.prompt_form_schema() if variant.model_call else variant.form_schema
+    validator = Draft202012Validator(schema, format_checker=Draft202012Validator.FORMAT_CHECKER)
     schema_valid = not any(True for _ in validator.iter_errors(dict(output)))
     verdicts: list[FieldVerdict] = []
     record_only = variant.expectation_kind is ExpectationKind.RECORD_DEPENDENCE
@@ -365,6 +369,9 @@ def score_output(variant: Variant, output: Mapping[str, Any]) -> tuple[bool, tup
             grounding.append(GroundingVerdict(field, "ABSTAINED", None, "null returned for a field the configuration allows to be unstated"))
             if oracle is None or oracle.kind == "unknown":
                 verdicts.append(_field_verdict(field, "NOT_SCORED", output, oracle, "abstained; no expectation declared"))
+            elif oracle.kind in ("enum", "any_of") and None in (oracle.values or ()):
+                # The answer key says the document does not state this value: abstaining is the expected answer.
+                verdicts.append(_field_verdict(field, "MATCH", output, oracle, None))
             else:
                 verdicts.append(_field_verdict(field, "MISMATCH", output, oracle, "abstained where the oracle expected a value"))
             continue

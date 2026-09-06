@@ -847,6 +847,68 @@ class PlainFillTests(unittest.TestCase):
             self.assertEqual(load_observation_directory(Path(directory))[0].variant.grounding.mode, "spans")
 
 
+class HardPilotTests(unittest.TestCase):
+    """The travel-claim battery: every family present, controls behave, grounding does not break model-free controls."""
+
+    PILOT = ROOT / "forge" / "conformance" / "pilots" / "travel-claim" / "pilot.json"
+
+    def setUp(self) -> None:
+        self.config = load_pilot_config(self.PILOT)
+        self.corpus = load_corpus(self.config.corpus_path, self.config.spec)
+        self.plan = plan(self.config.spec, self.corpus)
+
+    def test_plan_exercises_every_family(self) -> None:
+        counts = dict(self.plan.counts)
+        self.assertEqual(set(counts), {f.value for f in Family})
+        self.assertEqual(counts["BASELINE"], 7)
+        self.assertEqual(counts["NON_VACUITY"], 8)
+        self.assertEqual(sum(1 for v in self.plan.variants if v.model_call), 82)
+
+    def test_model_free_controls_are_scored_against_the_bound_form_not_the_prompt_schema(self) -> None:
+        # Regression: with grounding on, the prompt schema requires companion span keys; reference
+        # outputs never carry them, so the uncorrupted control was rejected and CONTROL_REJECTED fired.
+        controls = [v for v in self.plan.variants if v.family is Family.NON_VACUITY]
+        self.assertTrue(controls)
+        for variant in controls:
+            scoring = score(variant, None)
+            routing = route(variant, scoring, format_sent=False)
+            if variant.control_id == "C-CORRECT":
+                self.assertTrue(scoring.schema_valid, variant.base_case_id)
+                self.assertTrue(scoring.all_match, variant.base_case_id)
+                self.assertEqual(routing.triggers, ())
+            else:
+                self.assertFalse(scoring.all_match, variant.control_id)
+                self.assertEqual(routing.triggers, ())
+
+    def test_prompt_carries_generated_grounding_sentences_and_nullable_abstain_fields(self) -> None:
+        variant = next(v for v in self.plan.variants if v.family is Family.BOUNDARY_SHIFT and v.base_case_id == "BND-107")
+        request = build_chat_request(variant, model="gemma4:31b", endpoint=self.config.spec.endpoint)
+        self.assertIn("15. For each of `claimant_name`", request.user)
+        self.assertIn("16. For `trip_end`, `nights_away`", request.user)
+        self.assertEqual(request.format_schema["properties"]["nights_away"]["type"], ["integer", "null"])
+        self.assertIn("claimant_name_span", request.format_schema["required"])
+        self.assertNotIn("cost_centre", request.format_schema["required"])
+
+    def test_expected_abstention_case_is_judged_not_merely_tolerated(self) -> None:
+        variant = next(v for v in self.plan.variants if v.family is Family.BOUNDARY_SHIFT and v.base_case_id == "BND-101")
+        good = {
+            "claimant_name": "Noor Haddad", "claimant_name_span": "Noor Haddad", "approver_name": "Ben Castellano", "approver_name_span": "Ben Castellano",
+            "employee_id": "E-61234", "employee_id_span": "employee number 61234", "trip_start": "2025-05-20", "trip_start_span": "20 May 2025",
+            "trip_end": None, "trip_end_span": None, "nights_away": None, "destination_city": "Perth", "destination_city_span": "Perth",
+            "purpose": "client_visit", "total_claimed_cents": 84560, "advance_received": False, "receipts_attached": True,
+            "contact_phone": "+61409771245", "contact_phone_span": "0409 771 245",
+        }
+        scoring = score(variant, response_from_content(json.dumps(good)))
+        verdicts = {v.field: v.verdict for v in scoring.field_verdicts}
+        self.assertEqual((verdicts["trip_end"], verdicts["nights_away"]), ("MATCH", "MATCH"))
+        self.assertEqual(route(variant, scoring).live_loci, ())
+        invented = {**good, "trip_end": "2025-05-23", "trip_end_span": "20 May 2025", "nights_away": 3}
+        scoring = score(variant, response_from_content(json.dumps(invented)))
+        verdicts = {v.field: v.verdict for v in scoring.field_verdicts}
+        self.assertEqual((verdicts["trip_end"], verdicts["nights_away"]), ("MISMATCH", "MISMATCH"))
+        self.assertIn("CANDIDATE", route(variant, scoring).loci)
+
+
 class GroundingTests(unittest.TestCase):
     """Provenance spans and abstention are configuration; the default leaves behaviour unchanged."""
 
@@ -922,6 +984,29 @@ class GroundingTests(unittest.TestCase):
         not_allowed = {**LR_GOOD, **LR_SPANS, "employee_name": None, "employee_name_span": None}
         verdicts = {v.field: v.verdict for v in self._score(self.lr1, not_allowed).field_verdicts}
         self.assertEqual(verdicts["employee_name"], "TYPE_VIOLATION")
+
+    def test_expected_abstention_is_an_answer_key_entry(self) -> None:
+        # An any_of oracle whose values include null says "the document does not state this":
+        # abstaining matches it, and a value where abstention was expected is a mismatch.
+        from creib.forge.conformance.corpus import Oracle
+        expected = tuple(
+            Oracle(field=o.field, kind="any_of", value=None, values=(None,), pattern=None, oracle_status="source_scoped", rationale="not stated")
+            if o.field in ("end_date", "total_days") else o
+            for o in self.lr2.expected
+        )
+        variant = make_variant(**{**{k: getattr(self.lr2, k) for k in self.lr2.__dataclass_fields__ if k != "variant_id"}, "expected": expected})
+        abstained = {**LR_GOOD, **LR_SPANS, "employee_name": "Tom Nguyen", "employee_name_span": "Tom Nguyen", "end_date": None, "end_date_span": None, "total_days": None, "total_days_span": None}
+        verdicts = {v.field: v.verdict for v in self._score(variant, abstained).field_verdicts}
+        self.assertEqual((verdicts["end_date"], verdicts["total_days"]), ("MATCH", "MATCH"))
+        invented = {**abstained, "end_date": "2025-11-07", "end_date_span": "Monday 3 November 2025", "total_days": 5, "total_days_span": "within the week"}
+        scoring = self._score(variant, invented)
+        verdicts = {v.field: v.verdict for v in scoring.field_verdicts}
+        self.assertEqual((verdicts["end_date"], verdicts["total_days"]), ("MISMATCH", "MISMATCH"))
+        self.assertIn("CANDIDATE", route(variant, scoring).loci)
+        # A null against an oracle that does not admit it is still a mismatch.
+        strict = make_variant(**{**{k: getattr(self.lr2, k) for k in self.lr2.__dataclass_fields__ if k != "variant_id"}, "expected": tuple(
+            Oracle(field=o.field, kind="exact", value="2025-11-07", values=None, pattern=None, oracle_status="source_scoped", rationale="x") if o.field == "end_date" else o for o in self.lr2.expected)})
+        self.assertEqual({v.field: v.verdict for v in self._score(strict, abstained).field_verdicts}["end_date"], "MISMATCH")
 
     def test_round_trip_of_an_abstained_baseline_materialises_reloads_and_scores(self) -> None:
         # Regression: the first live grounding run wrote records whose ROUND_TRIP variants carried an

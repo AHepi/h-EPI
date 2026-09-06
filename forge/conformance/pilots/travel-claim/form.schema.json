@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Travel expense claim",
+  "description": "Fields Finance needs to process one employee's claim for one trip.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "claimant_name",
+    "approver_name",
+    "employee_id",
+    "trip_start",
+    "trip_end",
+    "nights_away",
+    "destination_city",
+    "purpose",
+    "total_claimed_cents",
+    "advance_received",
+    "receipts_attached",
+    "contact_phone"
+  ],
+  "properties": {
+    "claimant_name": {
+      "type": "string",
+      "description": "Full name of the employee making the claim."
+    },
+    "approver_name": {
+      "type": "string",
+      "description": "Full name of the manager who approved the travel."
+    },
+    "employee_id": {
+      "type": "string",
+      "description": "Employee number in the form E-NNNNN.",
+      "pattern": "^E-[0-9]{5}$"
+    },
+    "trip_start": {
+      "type": "string",
+      "description": "Departure date, ISO 8601 (YYYY-MM-DD).",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "trip_end": {
+      "type": "string",
+      "description": "Return date, ISO 8601 (YYYY-MM-DD).",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "nights_away": {
+      "type": "integer",
+      "description": "Nights between departure and return."
+    },
+    "destination_city": {
+      "type": "string",
+      "description": "City where the work took place.",
+      "maxLength": 40
+    },
+    "purpose": {
+      "type": "string",
+      "description": "Reason for travel.",
+      "enum": [
+        "conference",
+        "client_visit",
+        "training",
+        "fieldwork",
+        "other"
+      ]
+    },
+    "total_claimed_cents": {
+      "type": "integer",
+      "description": "Total claimed in Australian dollars, in whole cents."
+    },
+    "advance_received": {
+      "type": "boolean",
+      "description": "Whether a cash advance or up-front payment was received."
+    },
+    "receipts_attached": {
+      "type": "boolean",
+      "description": "Whether every receipt is attached."
+    },
+    "contact_phone": {
+      "type": "string",
+      "description": "Claimant's contact number in E.164 for Australia.",
+      "pattern": "^\\+61[0-9]{9}$"
+    },
+    "cost_centre": {
+      "type": "string",
+      "description": "Cost centre code CC-NNNN; omitted when not stated.",
+      "pattern": "^CC-[0-9]{4}$"
+    }
+  }
+}
