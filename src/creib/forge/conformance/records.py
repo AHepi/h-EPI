@@ -263,8 +263,6 @@ def build_run_record(**fields: Any) -> RunRecord:
 
     draft = RunRecord(run_id="0" * 64, content_digest="0" * 64, **fields)
     run_id = compute_run_id(draft.header())
-    if fields.get("run_id_expected") is not None:
-        raise RecordError("run_id is derived, not supplied")
     with_id = RunRecord(run_id=run_id, content_digest="0" * 64, **fields)
     return RunRecord(run_id=run_id, content_digest=content_id(RUN_CONTENT_DOMAIN, with_id.body()), **fields)
 

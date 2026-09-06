@@ -15,13 +15,14 @@ from pathlib import Path
 from typing import Any, Callable, Mapping
 
 from creib.errors import RecordError
-from creib.strict_json import load_strict
+from creib.strict_json import loads_strict
 
 from .common import (
     LOCUS_VALUES,
     NON_INDUCTIVE_LIMIT,
     array_value,
     boolean,
+    decode_utf8,
     identifier,
     object_value,
     optional_boolean,
@@ -341,10 +342,13 @@ def claims_from_dict(raw: Any) -> tuple[Claim, ...]:
 def load_claims(path: Path) -> tuple[Claim, ...]:
     if not isinstance(path, Path):
         raise TypeError("path must be pathlib.Path")
+    # Read the bytes here rather than through load_strict, which turns an OSError into a
+    # RecordError of its own; a handler for OSError around it never ran (H27).
     try:
-        raw = load_strict(path)
+        raw_bytes = path.read_bytes()
     except OSError as exc:
         raise RecordError(f"cannot read claims {path}: {exc}") from exc
+    raw = loads_strict(decode_utf8(raw_bytes, str(path)))
     return claims_from_dict(raw)
 
 

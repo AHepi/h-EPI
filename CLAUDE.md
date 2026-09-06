@@ -30,9 +30,9 @@ A criticism-first harness that checks how a language model fills a form from a d
 | Target | What | Time |
 |---|---|---|
 | `python tools/check.py lint` | compileall, shipped-code assert guard, whitespace | seconds |
-| `python tools/check.py test` | complete offline suite | ~10 s |
+| `python tools/check.py test` | complete offline suite | under a minute |
 | `python tools/check.py pilots` | validate and plan every pilot configuration | seconds |
-| `python tools/check.py all` | all three | seconds |
+| `python tools/check.py all` | all three | under a minute |
 | `python tools/refusal_sweep.py --jobs 4 --report sweep.json` | deletes each `raise` under `src/creib` in turn and runs the suite against the mutant; names the refusal sites the suite never reaches | about an hour; run when a guard changes, not before every commit |
 
 Run `all` before every commit. No model is called by any check. Do not add `assert` to `src/` or `tools/`; use explicit `raise`. A new `raise` is a new refusal site: give it a test that reaches it, or the sweep will list it as one the suite never exercises.

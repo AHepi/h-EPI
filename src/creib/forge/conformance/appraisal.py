@@ -23,9 +23,9 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from creib.errors import RecordError
-from creib.strict_json import load_strict
+from creib.strict_json import loads_strict
 
-from .common import array_value, identifier, object_value, optional_text, text, validate_instance
+from .common import array_value, decode_utf8, identifier, object_value, optional_text, text, validate_instance
 from .records import ObservationRecord
 from .families import Family
 from .routing import TRIGGERS
@@ -207,10 +207,13 @@ def appraisal_from_dict(raw: Any) -> tuple[Argument, ...]:
 def load_appraisal(path: Path) -> tuple[Argument, ...]:
     if not isinstance(path, Path):
         raise TypeError("path must be pathlib.Path")
+    # Read the bytes here rather than through load_strict, which turns an OSError into a
+    # RecordError of its own; a handler for OSError around it never ran (H27).
     try:
-        raw = load_strict(path)
+        raw_bytes = path.read_bytes()
     except OSError as exc:
         raise RecordError(f"cannot read appraisal {path}: {exc}") from exc
+    raw = loads_strict(decode_utf8(raw_bytes, str(path)))
     return appraisal_from_dict(raw)
 
 
