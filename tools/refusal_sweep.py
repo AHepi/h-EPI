@@ -143,7 +143,7 @@ def main() -> int:
         "per_file": per_file,
         "results": results,
         "tests_in_suite": baseline_ran,
-        "reading": "A survived site is a refusal the suite never exercises; it says nothing about whether the check is right, only that deleting it was not noticed. A broken site could not be imported after deletion and was not tested; a timeout site turned into a hang, which the clock caught. Counts imply no score.",
+        "reading": "A survived site is a refusal whose deletion the suite did not detect: the site may be unreached, or reached with its effect masked by a later guard, or reached with an effect no assertion looks at. It says nothing about whether the check is right. A broken site could not be imported after deletion and was not tested; a timeout site turned into a hang, which the clock caught. Counts imply no score.",
     }
     args.report.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(f"sites {report['sites']}: caught {report['caught']}, survived {report['survived']}, broken {report['broken']}, timeout {report['timeout']}; report at {args.report}")

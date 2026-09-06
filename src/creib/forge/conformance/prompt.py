@@ -129,4 +129,5 @@ def build_chat_request(variant: Variant, *, model: str, endpoint: Endpoint) -> C
         options={"temperature": endpoint.temperature, "seed": endpoint.seed},
         think=endpoint.think,
         repeat_index=variant.repeat_index,
+        variant_id=variant.variant_id,
     )

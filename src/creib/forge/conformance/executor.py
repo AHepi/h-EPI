@@ -101,6 +101,11 @@ class ChatRequest:
     # REPEAT family. Not part of the body, the digest, or the record; a replay executor uses it
     # to pair a repeat with the reply that repeat received, since one digest has several.
     repeat_index: int | None = None
+    # The variant this request was built for, likewise outside the body and the digest. Two
+    # variants of different cases can send one request (a round trip of two identical baseline
+    # outputs renders one document, H31); a replay executor uses the id to return each variant
+    # the reply it received.
+    variant_id: str | None = None
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -430,8 +435,10 @@ class ReplayExecutor:
     """Replay recorded responses by request digest and repeat index; never contacts a network.
 
     A run with ``repeats`` sends one request several times, so one digest has several recorded
-    replies; the replay pairs each send with the reply the same send received (H23). Two
-    recorded replies for the same digest and repeat are a conflict and are refused.
+    replies; the replay pairs each send with the reply the same send received (H23). Variants of
+    different cases can also send one request, when their documents coincide (H31); the replay
+    then returns the reply recorded for the same variant, or any of them when every recorded
+    reply carries the same text, and refuses to choose between different texts otherwise.
     """
 
     def __init__(self, observation_records_dir: Path) -> None:
@@ -439,21 +446,30 @@ class ReplayExecutor:
 
         if not isinstance(observation_records_dir, Path):
             raise TypeError("observation_records_dir must be pathlib.Path")
-        self._responses: dict[tuple[str, int], ChatResponse] = {}
+        self._responses: dict[tuple[str, int], list[tuple[str, ChatResponse]]] = {}
         for record in load_observation_directory(observation_records_dir):
             if record.request_digest is None or record.response is None:
                 continue
             key = (record.request_digest, record.variant.repeat_index or 0)
-            existing = self._responses.get(key)
-            if existing is not None and existing != record.response:
-                raise RecordError(
-                    f"replay directory holds conflicting responses for request {record.request_digest} repeat {key[1]}"
-                )
-            self._responses[key] = record.response
+            self._responses.setdefault(key, []).append((record.variant.variant_id, record.response))
+
+    @staticmethod
+    def _same_text(a: ChatResponse, b: ChatResponse) -> bool:
+        return (a.content, a.thinking_present, a.done_reason, a.usable) == (b.content, b.thinking_present, b.done_reason, b.usable)
 
     def complete(self, request: ChatRequest) -> ChatResponse:
         key = (request.request_digest, request.repeat_index or 0)
-        try:
-            return self._responses[key]
-        except KeyError as exc:
-            raise RecordError(f"no recorded response for request {request.request_digest} repeat {key[1]}") from exc
+        recorded = self._responses.get(key)
+        if not recorded:
+            raise RecordError(f"no recorded response for request {request.request_digest} repeat {key[1]}")
+        if request.variant_id is not None:
+            for variant_id, response in recorded:
+                if variant_id == request.variant_id:
+                    return response
+        first = recorded[0][1]
+        if all(self._same_text(first, response) for _, response in recorded):
+            return first
+        raise RecordError(
+            f"replay directory holds {len(recorded)} different replies for request {request.request_digest} repeat {key[1]} "
+            f"and none of them was recorded for variant {request.variant_id!r}"
+        )

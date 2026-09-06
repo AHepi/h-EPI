@@ -470,7 +470,7 @@
     },
     {
       "claim_id": "LAB-11",
-      "statement": "A language model's usable count always equals the number of arguments it labelled in.",
+      "statement": "A language model's usable count always agrees with the key's count of arguments labelled in.",
       "kind": "always",
       "scope": {
         "families": [
@@ -490,7 +490,7 @@
           "field": "usable_count"
         }
       },
-      "note": "A proxy: the key's count equals the key's in labels, so a matching count with a wrong label set is possible and is caught by the label claims; a mismatching count with matching labels is the inconsistency the claim is named for."
+      "note": "As first written this claim's statement spoke of the model's own in labels while its condition tested agreement with the key's count; the statement was corrected on 7 September 2026 to say what the condition tests, after the review kept under docs/reviews/repository-review-2026-09-07.md (H29). A count that agrees with the key while the labels do not, or disagrees with the key while matching the model's own labels, is possible either way; the internal relation is LAB-21."
     },
     {
       "claim_id": "LAB-12",
@@ -843,6 +843,79 @@
         ]
       },
       "note": null
+    },
+    {
+      "claim_id": "LAB-21",
+      "statement": "A language model's usable count always equals the number of arguments it labelled in, in its own reply.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "key_present": {
+              "key": "usable_count"
+            }
+          },
+          {
+            "key_present": {
+              "key": "label_a1"
+            }
+          },
+          {
+            "key_present": {
+              "key": "label_a2"
+            }
+          },
+          {
+            "key_present": {
+              "key": "label_a3"
+            }
+          },
+          {
+            "key_present": {
+              "key": "label_a4"
+            }
+          },
+          {
+            "key_present": {
+              "key": "label_a5"
+            }
+          },
+          {
+            "key_present": {
+              "key": "label_a6"
+            }
+          },
+          {
+            "not": {
+              "internal_count": {
+                "field": "usable_count",
+                "of": [
+                  "label_a1",
+                  "label_a2",
+                  "label_a3",
+                  "label_a4",
+                  "label_a5",
+                  "label_a6"
+                ],
+                "value": "in"
+              }
+            }
+          }
+        ]
+      },
+      "note": "Written on 7 September 2026, after the labelling records existed, when the review found that LAB-11 tested key agreement; it describes those records rather than predicting them. Stated in the never form over well-formed replies: a reply that carries every label and the count, and whose count is not the number of its own in labels, refutes it; a reply missing a field is outside the condition and is caught by the structural claims."
     }
   ]
 }

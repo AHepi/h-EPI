@@ -687,6 +687,50 @@ class CLITests(unittest.TestCase):
             self.assertGreater(report["observations_with_live_loci"], 0)
 
 
+class RelationalPredicateTests(unittest.TestCase):
+    """``internal_count`` relates a reply to itself, never to the key (H29 in docs/failure-modes.md)."""
+
+    CONDITION = {"internal_count": {"field": "usable_count", "of": ["label_a1", "label_a2", "label_a3"], "value": "in"}}
+
+    def _observation(self, output):
+        import dataclasses
+        from creib.forge.conformance import claims as claims_module
+        base = load_observation(sorted((ROOT / "forge" / "conformance" / "runs" / "leave-request").glob("observation.*.json"))[0])
+        scoring = dataclasses.replace(base.scoring, parsed_output=output)
+        return dataclasses.replace(base, scoring=scoring), claims_module
+
+    def _holds(self, output) -> bool:
+        observation, claims_module = self._observation(output)
+        return claims_module.compile_condition(self.CONDITION, "c")(observation, claims_module.Context([observation]))
+
+    def test_four_synthetic_outputs(self) -> None:
+        right_labels = {"label_a1": "in", "label_a2": "in", "label_a3": "out"}
+        wrong_labels = {"label_a1": "in", "label_a2": "out", "label_a3": "out"}
+        # the key is irrelevant to the predicate: only the reply's own consistency is read
+        self.assertTrue(self._holds({**right_labels, "usable_count": 2}), "correct labels, consistent count")
+        self.assertTrue(self._holds({**wrong_labels, "usable_count": 1}), "wrong labels, consistent count")
+        self.assertFalse(self._holds({**right_labels, "usable_count": 1}), "correct labels, inconsistent count")
+        self.assertFalse(self._holds({**wrong_labels, "usable_count": 2}), "wrong labels, inconsistent count")
+
+    def test_malformed_replies_do_not_satisfy_and_are_not_counterexamples_by_default(self) -> None:
+        from creib.errors import RecordError
+        self.assertFalse(self._holds({"label_a1": "in", "label_a2": "in", "usable_count": 2}), "a label is missing")
+        self.assertFalse(self._holds({"label_a1": "in", "label_a2": "in", "label_a3": "out"}), "the count is missing")
+        self.assertFalse(self._holds({"label_a1": "in", "label_a2": "in", "label_a3": "out", "usable_count": "2"}), "the count is not an integer")
+        self.assertFalse(self._holds({"label_a1": "in", "label_a2": "in", "label_a3": "out", "usable_count": True}), "a boolean is not a count")
+        observation, claims_module = self._observation({})
+        for bad in (
+            {"internal_count": {"field": "n", "of": [], "value": "in"}},
+            {"internal_count": {"field": "n", "of": ["n"], "value": "in"}},
+            {"internal_count": {"field": "n", "of": ["a", "a"], "value": "in"}},
+            {"internal_count": {"field": "n", "of": ["a"], "value": None}},
+        ):
+            with self.assertRaises(RecordError):
+                claims_module.compile_condition(bad, "c")
+        fields, _ = claims_module.condition_footprint(self.CONDITION)
+        self.assertEqual(fields, frozenset({"usable_count", "label_a1", "label_a2", "label_a3"}))
+
+
 if __name__ == "__main__":
     unittest.main()
 
@@ -1344,6 +1388,34 @@ class GeneratedCorpusTests(unittest.TestCase):
             )
             self.assertEqual(completed.returncode, 0, completed.stderr)
             self.assertIn("unchanged", completed.stdout, script)
+
+    def test_derivation_keys_rest_only_on_visible_premises(self) -> None:
+        """H28: a key derived from a premise the document does not state keyed the model on what it could not see."""
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("gen_signed", ROOT / "tools" / "gen_signed_derivations_corpus.py")
+        gen = importlib.util.module_from_spec(spec); spec.loader.exec_module(gen)
+        negated = ("not", ("some", "P"))
+        cases = {f"P({m})": ("negative",) for m in gen.M3}
+        # the first renderer omitted the premise for a quantifier under a negation; the repaired one states it
+        self.assertNotIn("complete", gen.prose("X", negated, cases, gen.M3, True, [], "root"))
+        self.assertIn("asserts that this list is complete", gen.prose("X", negated, cases, gen.M3, True, [], "recursive"))
+        self.assertIn("Range R asserted complete | yes", gen.table("X", negated, cases, gen.M3, True, [], "recursive"))
+        # under either renderer the key follows the premise as rendered, so a premise the model cannot see never keys it
+        for mode in gen.RENDER_MODES:
+            for case_id, formula, leaf_cases, members, complete, searches, held_fixed, opts in gen.dossiers():
+                with self.subTest(mode=mode, case=case_id):
+                    asserted = gen.build(case_id, formula, leaf_cases, members, True, searches, held_fixed, render_mode=mode, **opts)
+                    denied = gen.build(case_id, formula, leaf_cases, members, False, searches, held_fixed, render_mode=mode, **opts)
+                    if asserted["expected"] != denied["expected"]:
+                        self.assertNotEqual(asserted["renderings"], denied["renderings"], "a key difference with no visible difference")
+        root = gen.build("DER-11", negated, cases, gen.M3, True, [], "t", render_mode="root")
+        self.assertEqual({o["field"]: o["value"] for o in root["expected"]}["positive_blocked_by"], "range_not_complete")
+        fixed = gen.build("DER-11", negated, cases, gen.M3, True, [], "t", render_mode="recursive")
+        self.assertEqual({o["field"]: o["value"] for o in fixed["expected"]}["positive_derivable"], "yes")
+        # the visible-key pilot carries the first corpus's documents exactly, so the recorded replies replay against it
+        first = load_corpus(ROOT / "forge" / "conformance" / "pilots" / "signed-derivations-visible-key" / "corpus.json", load_pilot_config(ROOT / "forge" / "conformance" / "pilots" / "signed-derivations-visible-key" / "pilot.json").spec)
+        regenerated = gen.corpus("root", "SIGNED-DERIVATIONS-VISIBLE-KEY-001")
+        self.assertEqual([c.renderings for c in first.cases], [c["renderings"] for c in regenerated["cases"]])
 
     def test_labelling_keys_are_the_harness_labels(self) -> None:
         from creib.forge.conformance.appraisal import Argument, appraise

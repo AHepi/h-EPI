@@ -1,0 +1,726 @@
+{
+  "schema_version": "creib.conformance-pilot.claims.v1",
+  "title": "Conjectures about language models deriving signed cases under the finite rules, written before the run",
+  "claims": [
+    {
+      "claim_id": "DER-STRUCT-01",
+      "statement": "A language model filling this form never emits a key the schema does not define.",
+      "kind": "never",
+      "scope": {
+        "families": null,
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "trigger": "EXTRA_FIELD"
+      },
+      "note": null
+    },
+    {
+      "claim_id": "DER-STRUCT-02",
+      "statement": "A language model filling this form never returns a value outside a field's enumeration.",
+      "kind": "never",
+      "scope": {
+        "families": null,
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "trigger": "ENUM_VIOLATION"
+      },
+      "note": null
+    },
+    {
+      "claim_id": "DER-STRUCT-03",
+      "statement": "A language model asked for a single JSON object and no other text returns exactly that.",
+      "kind": "never",
+      "scope": {
+        "families": null,
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "any_of": [
+          {
+            "recovered": "any"
+          },
+          {
+            "response_verdict": "INVALID_JSON"
+          },
+          {
+            "response_verdict": "NOT_AN_OBJECT"
+          }
+        ]
+      },
+      "note": null
+    },
+    {
+      "claim_id": "DER-01",
+      "statement": "A language model never derives a universal positive case from finitely many positive instances when the record does not assert the range complete.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": [
+          "DER-01"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "field_verdict": {
+          "verdict": "MISMATCH",
+          "field": "positive_derivable"
+        }
+      },
+      "note": "The inductive trap. The key is no, blocked by range_not_complete."
+    },
+    {
+      "claim_id": "DER-02",
+      "statement": "A language model always names the missing completeness premise as what blocks a universal positive case.",
+      "kind": "always",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": [
+          "DER-01",
+          "DER-R04"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "field_verdict": {
+          "verdict": "MATCH",
+          "field": "positive_blocked_by"
+        }
+      },
+      "note": null
+    },
+    {
+      "claim_id": "DER-03",
+      "statement": "A language model always derives a universal positive case when every instance is positive and the record asserts the range complete.",
+      "kind": "always",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": [
+          "DER-02"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "field_verdict": {
+          "verdict": "MATCH",
+          "field": "positive_derivable"
+        }
+      },
+      "note": null
+    },
+    {
+      "claim_id": "DER-04",
+      "statement": "A language model always derives a negative universal case from one negative instance, whether or not the range is asserted complete.",
+      "kind": "always",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": [
+          "DER-03",
+          "DER-R04"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "field_verdict": {
+          "verdict": "MATCH",
+          "field": "negative_derivable"
+        }
+      },
+      "note": "The asymmetry: one counterexample refutes."
+    },
+    {
+      "claim_id": "DER-05",
+      "statement": "A language model never derives an existential negative case without the completeness premise.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": [
+          "DER-04"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "field_verdict": {
+          "verdict": "MISMATCH",
+          "field": "negative_derivable"
+        }
+      },
+      "note": null
+    },
+    {
+      "claim_id": "DER-06",
+      "statement": "A language model never treats a search that returned nothing as a negative case.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": [
+          "DER-06",
+          "DER-08"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "any_of": [
+          {
+            "field_verdict": {
+              "verdict": "MISMATCH",
+              "field": "negative_derivable"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MISMATCH",
+              "field": "case_summary"
+            }
+          }
+        ]
+      },
+      "note": "The absence trap. Both keys have no negative case; a model that counts the search would derive one."
+    },
+    {
+      "claim_id": "DER-07",
+      "statement": "A language model always switches the sign through a negation.",
+      "kind": "always",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": [
+          "DER-07",
+          "DER-11"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "field_verdict": {
+              "verdict": "MATCH",
+              "field": "positive_derivable"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MATCH",
+              "field": "negative_derivable"
+            }
+          }
+        ]
+      },
+      "note": null
+    },
+    {
+      "claim_id": "DER-08",
+      "statement": "A language model always derives a positive existential case from a single positive member without the completeness premise.",
+      "kind": "always",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": [
+          "DER-05"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "field_verdict": {
+          "verdict": "MATCH",
+          "field": "positive_derivable"
+        }
+      },
+      "note": null
+    },
+    {
+      "claim_id": "DER-09",
+      "statement": "A language model always reports a derived case as conditional when every derivation of it uses a leaf with both cases on file.",
+      "kind": "always",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": [
+          "DER-09",
+          "DER-12",
+          "DER-14"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "field_verdict": {
+              "verdict": "MATCH",
+              "field": "positive_conditional"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MATCH",
+              "field": "negative_conditional"
+            }
+          }
+        ]
+      },
+      "note": null
+    },
+    {
+      "claim_id": "DER-10",
+      "statement": "A language model never reports a derived case as conditional when a derivation free of contested leaves exists.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": [
+          "DER-02",
+          "DER-03",
+          "DER-05",
+          "DER-07",
+          "DER-10",
+          "DER-11"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "any_of": [
+          {
+            "field_verdict": {
+              "verdict": "MISMATCH",
+              "field": "positive_conditional"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MISMATCH",
+              "field": "negative_conditional"
+            }
+          }
+        ]
+      },
+      "note": null
+    },
+    {
+      "claim_id": "DER-11",
+      "statement": "A language model always derives both cases where the leaves on file license both.",
+      "kind": "always",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": [
+          "DER-09",
+          "DER-14"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "field_verdict": {
+          "verdict": "MATCH",
+          "field": "case_summary"
+        }
+      },
+      "note": null
+    },
+    {
+      "claim_id": "DER-12",
+      "statement": "On a dossier with no leaf case at all, a language model always reports no case and names the missing leaves, not the range, as what blocks each side.",
+      "kind": "always",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": [
+          "DER-13"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "field_verdict": {
+              "verdict": "MATCH",
+              "field": "case_summary"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MATCH",
+              "field": "positive_blocked_by"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MATCH",
+              "field": "negative_blocked_by"
+            }
+          }
+        ]
+      },
+      "note": null
+    },
+    {
+      "claim_id": "DER-13",
+      "statement": "A language model always derives a universal positive over a disjunctive body when every member has one positive disjunct and the range is complete.",
+      "kind": "always",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": [
+          "DER-10"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "field_verdict": {
+          "verdict": "MATCH",
+          "field": "positive_derivable"
+        }
+      },
+      "note": null
+    },
+    {
+      "claim_id": "DER-14",
+      "statement": "A language model's case summary always agrees with its two derivability answers.",
+      "kind": "always",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "field_verdict": {
+          "verdict": "MATCH",
+          "field": "case_summary"
+        }
+      },
+      "note": "A proxy: the key's summary agrees with the key's answers, so a matching summary with wrong answers is caught by the other claims."
+    },
+    {
+      "claim_id": "DER-15",
+      "statement": "A language model always follows an appended rule that says whether a failed search counts as a negative case.",
+      "kind": "always",
+      "scope": {
+        "families": [
+          "RIVAL_SUBSTITUTION"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "field_verdict": {
+          "verdict": "MATCH",
+          "field": "negative_derivable"
+        }
+      },
+      "note": null
+    },
+    {
+      "claim_id": "DER-16",
+      "statement": "The same dossier rendered as prose or as a table is answered the same way.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "SUBSTRATE_SWAP"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "trigger": "MISMATCH"
+          },
+          {
+            "baseline": {
+              "not": {
+                "trigger": "MISMATCH"
+              }
+            }
+          }
+        ]
+      },
+      "note": null
+    },
+    {
+      "claim_id": "DER-17",
+      "statement": "Exchanging the positions of the two derivability fields never makes an answer follow position rather than sign.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "trigger": "MISMATCH"
+          },
+          {
+            "baseline": {
+              "not": {
+                "trigger": "MISMATCH"
+              }
+            }
+          }
+        ]
+      },
+      "note": null
+    },
+    {
+      "claim_id": "DER-18",
+      "statement": "A byte-identical request under a fixed seed always returns the same answers.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "REPEAT"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "trigger": "REPEAT_DIFFERS"
+      },
+      "note": null
+    },
+    {
+      "claim_id": "DER-19",
+      "statement": "Removing the universal rule or the failed-search rule always changes a model's answers somewhere on the dossier.",
+      "kind": "always",
+      "scope": {
+        "families": [
+          "IMPORT_DEPENDENCY"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "trigger": "DEPENDENCE_CHANGED"
+      },
+      "note": null
+    },
+    {
+      "claim_id": "DER-20",
+      "statement": "A reply that carries at least 800 generated tokens never derives a case the rules do not license or misses one they do.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "output_tokens": {
+              "min": 800
+            }
+          },
+          {
+            "any_of": [
+              {
+                "field_verdict": {
+                  "verdict": "MISMATCH",
+                  "field": "positive_derivable"
+                }
+              },
+              {
+                "field_verdict": {
+                  "verdict": "MISMATCH",
+                  "field": "negative_derivable"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "note": null
+    },
+    {
+      "claim_id": "DER-21",
+      "statement": "A reply of fewer than 400 generated tokens never answers a seeded random dossier entirely right.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "BOUNDARY_SHIFT",
+          "SUBSTRATE_SWAP",
+          "SEMANTIC_ROLE_TWIN"
+        ],
+        "cases": [
+          "DER-R01",
+          "DER-R02",
+          "DER-R03",
+          "DER-R04",
+          "DER-R05",
+          "DER-R06"
+        ],
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "output_tokens": {
+              "max": 399
+            }
+          },
+          {
+            "not": {
+              "any_of": [
+                {
+                  "field_verdict": {
+                    "verdict": "MISMATCH",
+                    "field": "positive_derivable"
+                  }
+                },
+                {
+                  "field_verdict": {
+                    "verdict": "MISMATCH",
+                    "field": "positive_blocked_by"
+                  }
+                },
+                {
+                  "field_verdict": {
+                    "verdict": "MISMATCH",
+                    "field": "positive_conditional"
+                  }
+                },
+                {
+                  "field_verdict": {
+                    "verdict": "MISMATCH",
+                    "field": "negative_derivable"
+                  }
+                },
+                {
+                  "field_verdict": {
+                    "verdict": "MISMATCH",
+                    "field": "negative_blocked_by"
+                  }
+                },
+                {
+                  "field_verdict": {
+                    "verdict": "MISMATCH",
+                    "field": "negative_conditional"
+                  }
+                },
+                {
+                  "field_verdict": {
+                    "verdict": "MISMATCH",
+                    "field": "case_summary"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "note": null
+    }
+  ]
+}

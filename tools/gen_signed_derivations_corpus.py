@@ -132,9 +132,42 @@ def case_text(name, have):
     return f"no case for {name}"
 
 
-def prose(case_id, formula, cases, members, complete, searches):
+# How the range premise is rendered. "recursive" states the members and completeness of R
+# whenever a quantifier occurs anywhere in the formula. "root" is the renderer of the first
+# corpus, which stated them only for a quantifier at the root and so left NOT SOME x IN R: P(x)
+# without the premise its key assumed (H28 in docs/failure-modes.md); it is kept so that the
+# replies recorded under it can be re-scored against the key the visible dossier supports.
+RENDER_MODES = ("recursive", "root")
+
+
+def has_quantifier(formula):
+    kind = formula[0]
+    if kind in ("all", "some"):
+        return True
+    if kind == "atom":
+        return False
+    if kind == "not":
+        return has_quantifier(formula[1])
+    return has_quantifier(formula[1]) or has_quantifier(formula[2])
+
+
+def states_range(formula, render_mode):
+    """Whether the rendering under ``render_mode`` states the range's members and completeness."""
+
+    if render_mode not in RENDER_MODES:
+        raise ValueError(render_mode)
+    return has_quantifier(formula) if render_mode == "recursive" else formula[0] in ("all", "some")
+
+
+def visible_complete(formula, complete, render_mode):
+    """The completeness premise as the model can see it: asserted only where the rendering states it."""
+
+    return bool(complete) and states_range(formula, render_mode)
+
+
+def prose(case_id, formula, cases, members, complete, searches, render_mode="recursive"):
     lines = [f"Derivation dossier {case_id}. The target claim is {words(formula)}."]
-    if any(f[0] in ("all", "some") for f in [formula]):
+    if states_range(formula, render_mode):
         lines.append(f"The range R has the recorded members {', '.join(members)}; the record " + ("asserts that this list is complete." if complete else "does not assert that this list is complete."))
     names = leaves_of(formula, members)
     lines.append("Cases on file: " + "; ".join(case_text(n, cases.get(n, ())) for n in names) + ".")
@@ -143,9 +176,9 @@ def prose(case_id, formula, cases, members, complete, searches):
     return " ".join(lines)
 
 
-def table(case_id, formula, cases, members, complete, searches):
+def table(case_id, formula, cases, members, complete, searches, render_mode="recursive"):
     rows = [f"Dossier | {case_id}", f"Target claim | {words(formula)}"]
-    if formula[0] in ("all", "some"):
+    if states_range(formula, render_mode):
         rows.append(f"Range R members | {', '.join(members)}")
         rows.append(f"Range R asserted complete | {'yes' if complete else 'no'}")
     rows.append("Leaf | Positive case | Negative case")
@@ -156,8 +189,10 @@ def table(case_id, formula, cases, members, complete, searches):
     return "\n".join(rows)
 
 
-def build(case_id, formula, cases, members, complete, searches, held_fixed, *, boundary=False, reference=False, rival=False, notes=None):
+def build(case_id, formula, cases, members, complete, searches, held_fixed, *, boundary=False, reference=False, rival=False, notes=None, render_mode="recursive"):
     kw = {"searches": tuple(searches)}
+    # The key is derived from the premise as rendered, never from a flag the model cannot see.
+    complete = visible_complete(formula, complete, render_mode)
     p, n = derive(formula, cases, members, complete, **kw)
     pc, nc = derive(formula, cases, members, complete, clean=True, **kw)
     expected = [
@@ -190,7 +225,7 @@ def build(case_id, formula, cases, members, complete, searches, held_fixed, *, b
         ]
     record = {
         "case_id": case_id, "boundary": boundary, "rendering": "prose",
-        "renderings": {"prose": prose(case_id, formula, cases, members, complete, searches), "table": table(case_id, formula, cases, members, complete, searches)},
+        "renderings": {"prose": prose(case_id, formula, cases, members, complete, searches, render_mode), "table": table(case_id, formula, cases, members, complete, searches, render_mode)},
         "expected": expected, "held_fixed": held_fixed, "varied": None, "pair_of": None,
         "reference_output": [{"field": o["field"], "value": o["value"]} for o in expected] if reference else None,
         "rival_expected": rival_expected, "notes": notes,
@@ -266,15 +301,30 @@ def random_dossiers(seed, count):
     return out
 
 
-def main() -> None:
-    cases = [build(case_id, formula, leaf_cases, members, complete, searches, held_fixed, **opts) for case_id, formula, leaf_cases, members, complete, searches, held_fixed, opts in designed + random_dossiers(2027, 6)]
-    corpus = {"schema_version": "creib.conformance-pilot.corpus.v1", "corpus_id": "SIGNED-DERIVATIONS-CORPUS-001", "cases": cases}
-    payload = json.dumps(corpus, ensure_ascii=False, indent=2) + "\n"
-    if OUT.exists() and OUT.read_text(encoding="utf-8") == payload:
-        print(f"{OUT}: unchanged ({len(cases)} cases)")
+def dossiers():
+    return designed + random_dossiers(2027, 6)
+
+
+def corpus(render_mode="recursive", corpus_id="SIGNED-DERIVATIONS-CORPUS-001"):
+    cases = [build(case_id, formula, leaf_cases, members, complete, searches, held_fixed, render_mode=render_mode, **opts) for case_id, formula, leaf_cases, members, complete, searches, held_fixed, opts in dossiers()]
+    return {"schema_version": "creib.conformance-pilot.corpus.v1", "corpus_id": corpus_id, "cases": cases}
+
+
+def main(argv=None) -> None:
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Generate the signed-derivations corpus from its finite rules.")
+    parser.add_argument("--render-mode", choices=RENDER_MODES, default="recursive", help="root reproduces the first corpus's documents, with the key the visible dossier supports")
+    parser.add_argument("--corpus-id", default="SIGNED-DERIVATIONS-CORPUS-001")
+    parser.add_argument("--out", type=Path, default=OUT)
+    args = parser.parse_args(argv)
+    built = corpus(args.render_mode, args.corpus_id)
+    payload = json.dumps(built, ensure_ascii=False, indent=2) + "\n"
+    if args.out.exists() and args.out.read_text(encoding="utf-8") == payload:
+        print(f"{args.out}: unchanged ({len(built['cases'])} cases)")
         return
-    OUT.write_text(payload, encoding="utf-8")
-    print(f"{OUT}: written ({len(cases)} cases)")
+    args.out.write_text(payload, encoding="utf-8")
+    print(f"{args.out}: written ({len(built['cases'])} cases)")
 
 
 if __name__ == "__main__":

@@ -306,6 +306,32 @@ def compile_condition(raw: Any, where: str = "condition") -> Predicate:
             return False
 
         return criticised_field
+    if key == "internal_count":
+        # A relation inside one reply, never a comparison with the key: the integer in ``field``
+        # equals the number of ``of`` fields whose value is ``value``. False, not a counterexample
+        # by default, when any named field is absent or the count is not an integer; a claim that
+        # wants those cases counted says so with key_present and field_verdict guards of its own.
+        spec = object_value(value, f"{where}.internal_count")
+        field = text(spec["field"], f"{where}.internal_count.field")
+        of = tuple(text(item, f"{where}.internal_count.of[{i}]") for i, item in enumerate(array_value(spec["of"], f"{where}.internal_count.of")))
+        if not of:
+            raise RecordError(f"{where}.internal_count.of must name at least one field")
+        if field in of or len(set(of)) != len(of):
+            raise RecordError(f"{where}.internal_count.of must not repeat a field or name the count field")
+        counted = spec["value"]
+        if type(counted) not in (str, int, bool) or counted is None:
+            raise RecordError(f"{where}.internal_count.value must be a string, integer, or boolean")
+
+        def internal_count(o: ObservationRecord, c: Context) -> bool:
+            output = _output(o)
+            if field not in output or any(name not in output for name in of):
+                return False
+            count = output[field]
+            if type(count) is not int:
+                return False
+            return count == sum(1 for name in of if type(output[name]) is type(counted) and output[name] == counted)
+
+        return internal_count
     if key == "trigger":
         trigger = text(value, f"{where}.trigger")
         if trigger not in TRIGGERS:
@@ -427,6 +453,10 @@ def condition_footprint(raw: Any) -> tuple[frozenset[str] | None, frozenset[str]
                 fields.add(str(field))
         elif key == "criticised_field":
             any_field = True
+        elif key == "internal_count":
+            spec = object_value(value, "internal_count")
+            fields.add(str(spec["field"]))
+            fields.update(str(item) for item in spec["of"])
         elif key == "trigger":
             triggers.add(str(value))
         elif key == "field_verdict":

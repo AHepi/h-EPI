@@ -13,7 +13,7 @@ python tools/check.py all               # lint, offline suite, every pilot valid
 
 For a hosted Ollama, export `OLLAMA_API_KEY` in the shell that runs `run`; it is read at call time and never written to a file, a record, a log, or an error message. For a local Ollama, set `"auth": "none"` and `"base_url": "http://localhost:11434"` in the pilot's endpoint and export nothing. In a Claude Code web session the SessionStart hook does the bootstrap and the exports.
 
-The suite checks that every guard fails closed on the inputs the tests send; `python tools/refusal_sweep.py --jobs 4 --report sweep.json` checks, over about an hour, which `raise` statements the suite would not miss if they were deleted, and lists the rest. Run it when you add or change a guard. A listed site is one nothing in the suite reaches; whether the check is dead code or merely untested is found by writing the test (H27 in `docs/failure-modes.md`).
+The suite checks that every guard fails closed on the inputs the tests send; `python tools/refusal_sweep.py --jobs 4 --report sweep.json` checks, over about an hour, which `raise` statements the suite would not miss if they were deleted, and lists the rest. Run it when you add or change a guard. A listed site is one whose deletion the suite did not detect: unreached, or reached with the effect masked by a later guard or looked at by no assertion; which of these, and whether the check is dead code, is found by writing the test (H26 and H27 in `docs/failure-modes.md`).
 
 Before any live run, know that it costs money and produces records that get committed. Use `--limit N` and a scratch `--output-dir` while developing, `--family BASELINE` for plain fills, and `--dry-run` to exercise the whole path with a canned executor and no network.
 

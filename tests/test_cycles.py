@@ -443,5 +443,59 @@ class CyclesTableTests(unittest.TestCase):
                 summarise_cycles(runs, list(load_observation_directory(out))[:-1])
 
 
+class ReplayDisambiguationTests(unittest.TestCase):
+    """H31: variants of different cases can send one request; the replay returns each its own reply."""
+
+    def _observation(self, base, variant_id: str, content: str, digest: str):
+        import dataclasses
+        from creib.forge.conformance.records import build_observation
+        variant = dataclasses.replace(base.variant, held_fixed=variant_id)  # a different content, hence a different id
+        variant = families_module.make_variant(**{f: getattr(variant, f) for f in variant.__dataclass_fields__ if f != "variant_id"})
+        fields = {f.name: getattr(base, f.name) for f in dataclasses.fields(base) if f.name != "observation_id"}
+        fields.update(variant=variant, request_digest=digest, response=response_from_content(content))
+        return build_observation(**fields)
+
+    def test_same_text_is_accepted_and_different_texts_need_the_variant(self) -> None:
+        from creib.forge.conformance.records import publish_record
+        base = load_observation(sorted((ROOT / "forge" / "conformance" / "runs" / "leave-request").glob("observation.*.json"))[0])
+        digest = "sha256:" + "a" * 64
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory)
+            one = self._observation(base, "one", '{"x": 1}', digest)
+            two = self._observation(base, "two", '{"x": 1}', digest)
+            for o in (one, two):
+                publish_record(o, out)
+            request = ChatRequest(model="m", system="s", user="u", format_schema=None, options={"temperature": 0, "seed": 7}, think=False)
+            self.assertEqual(ReplayExecutor(out).complete(dataclasses_replace(request, variant_id=None, digest=digest)).content, '{"x": 1}')
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory)
+            one = self._observation(base, "one", '{"x": 1}', digest)
+            two = self._observation(base, "two", '{"x": 2}', digest)
+            for o in (one, two):
+                publish_record(o, out)
+            replay = ReplayExecutor(out)
+            self.assertEqual(replay.complete(dataclasses_replace(request, variant_id=one.variant.variant_id, digest=digest)).content, '{"x": 1}')
+            self.assertEqual(replay.complete(dataclasses_replace(request, variant_id=two.variant.variant_id, digest=digest)).content, '{"x": 2}')
+            with self.assertRaisesRegex(RecordError, "2 different replies"):
+                replay.complete(dataclasses_replace(request, variant_id=None, digest=digest))
+            with self.assertRaisesRegex(RecordError, "no recorded response"):
+                replay.complete(dataclasses_replace(request, variant_id=None, digest="sha256:" + "b" * 64))
+
+
+def dataclasses_replace(request: ChatRequest, *, variant_id, digest: str) -> ChatRequest:
+    """A request whose digest is forced to ``digest`` so that the replay's keying can be tested directly."""
+
+    import dataclasses
+
+    class Forced(ChatRequest):
+        @property
+        def request_digest(self) -> str:  # type: ignore[override]
+            return digest
+
+    fields = {f.name: getattr(request, f.name) for f in dataclasses.fields(request)}
+    fields["variant_id"] = variant_id
+    return Forced(**fields)
+
+
 if __name__ == "__main__":
     unittest.main()
