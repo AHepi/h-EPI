@@ -234,16 +234,52 @@ def recover_json_object(content: str) -> Any:
             continue
         candidates.append(content[index:end])
     best: dict[str, Any] | None = None
+    best_duplicates: tuple[str, ...] = ()
     for candidate in candidates:
+        duplicates: tuple[str, ...] = ()
         try:
             value = loads_strict(candidate.strip())
         except (RecordError, ValueError, RecursionError):
-            continue
+            # Strict JSON refuses duplicate keys. A reply that is otherwise one well-formed object with a
+            # repeated key is still scoreable: take the last value for each key, and say which keys repeated.
+            parsed = _loads_last_wins(candidate.strip())
+            if parsed is None:
+                continue
+            value, duplicates = parsed
         if type(value) is dict and (best is None or len(value) >= len(best)):
-            best = value
+            best, best_duplicates = value, duplicates
     if best is not None:
-        return best
+        return best, best_duplicates
     raise RecordError("no JSON object could be recovered from the response")
+
+
+def _loads_last_wins(candidate: str) -> tuple[Any, tuple[str, ...]] | None:
+    """Parse JSON that strict parsing refused only because of repeated keys; last value wins."""
+
+    seen_duplicates: list[str] = []
+
+    def pairs_hook(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        counts: dict[str, int] = {}
+        for key, _ in pairs:
+            counts[key] = counts.get(key, 0) + 1
+        seen_duplicates.extend(key for key, n in counts.items() if n > 1)
+        return dict(pairs)
+
+    try:
+        value = json.loads(candidate, object_pairs_hook=pairs_hook, parse_float=_refuse_float, parse_constant=_refuse_constant)
+    except (ValueError, RecursionError):
+        return None
+    if not seen_duplicates:
+        return None
+    return value, tuple(sorted(set(seen_duplicates)))
+
+
+def _refuse_float(_text: str) -> Any:
+    raise ValueError("floats are not admitted")
+
+
+def _refuse_constant(_text: str) -> Any:
+    raise ValueError("NaN and Infinity are not admitted")
 
 
 def parse_content(content: str, refusal_phrases: tuple[str, ...]) -> tuple[Any, str, str | None, bool]:
@@ -253,14 +289,21 @@ def parse_content(content: str, refusal_phrases: tuple[str, ...]) -> tuple[Any, 
         return loads_strict(content), "JSON_OBJECT", None, False
     except (RecordError, ValueError, RecursionError) as strict_error:
         try:
-            recovered = recover_json_object(content)
+            recovered, duplicates = recover_json_object(content)
         except RecordError:
             lowered = content.lower()
             for phrase in refusal_phrases:
                 if phrase.lower() in lowered:
                     return None, "REFUSAL_SUSPECTED", f"matched refusal phrase {phrase!r}; heuristic", False
             return None, "INVALID_JSON", str(strict_error), False
-        return recovered, "JSON_OBJECT", f"strict parse failed ({strict_error}); object recovered from prose", True
+        if duplicates:
+            detail = (
+                f"strict parse failed ({strict_error}); object recovered with duplicate keys "
+                f"{list(duplicates)!r} resolved last-wins"
+            )
+        else:
+            detail = f"strict parse failed ({strict_error}); object recovered from prose"
+        return recovered, "JSON_OBJECT", detail, True
 
 
 def _constraint_verdict(value: Any, property_schema: Mapping[str, Any]) -> tuple[str | None, str | None]:
@@ -398,14 +441,18 @@ def score_output(variant: Variant, output: Mapping[str, Any]) -> tuple[bool, tup
     return schema_valid, tuple(verdicts), tuple(grounding)
 
 
-def _changed(parsed: Mapping[str, Any] | None, baseline_output: Mapping[str, Any] | None, ignore_keys: tuple[str, ...] = ()) -> bool | None:
-    """Whether the form values changed against the baseline; companion span keys are provenance, not answers."""
+def _changed(parsed: Mapping[str, Any] | None, baseline_output: Mapping[str, Any] | None, fields: tuple[str, ...]) -> bool | None:
+    """Whether the form's own field values changed against the baseline.
+
+    Only the declared form fields are compared. Companion span keys are provenance, not answers,
+    and keys outside the form are reported per observation as EXTRA_FIELD; neither makes a fill
+    "unstable" or "dependent" on its own.
+    """
 
     if parsed is None or baseline_output is None:
         return None
-    ignored = set(ignore_keys)
-    left = {k: v for k, v in parsed.items() if k not in ignored}
-    right = {k: v for k, v in baseline_output.items() if k not in ignored}
+    left = {k: parsed[k] for k in fields if k in parsed}
+    right = {k: baseline_output[k] for k in fields if k in baseline_output}
     return canonical_bytes(left) != canonical_bytes(right)
 
 
@@ -445,7 +492,7 @@ def score(
         parsed_output=parsed,
         schema_valid=schema_valid,
         field_verdicts=verdicts,
-        changed_vs_baseline=_changed(parsed, baseline_output, variant.span_keys),
+        changed_vs_baseline=_changed(parsed, baseline_output, variant.field_order),
         grounding_verdicts=grounding,
     )
 

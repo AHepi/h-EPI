@@ -10,7 +10,7 @@ A criticism-first harness that checks how a language model fills a form from a d
 
 - Passing tests, schema validity, agreement between models, or green CI never confirm a model. The strongest run label is `UNREFUTED_FOR_DECLARED_SCOPE`; a run with any unscored field or any transport error is `INCONCLUSIVE_NO_SCORED_OUTPUT`; a run with the model as a live suspect anywhere is `REFUTED_CASES_PRESENT`.
 - A failed expectation criticises the tested conjunction. Live loci are a subset of CANDIDATE (the model), AUXILIARY (prompt, executor, format plumbing), TEST (the oracle), SCOPE (the task as framed); never a single locus after a model call; empty only when every field matched.
-- Never hand-edit a published record. Records are content-addressed and published no-clobber; a changed oracle means a re-score through `ReplayExecutor`, not an edited file.
+- Never hand-edit a published record. Records are content-addressed and published no-clobber; a changed oracle means a re-score through `run --replay-dir <observations>` (the `ReplayExecutor`, matched by request digest), which writes new records, not an edited file.
 - The report never ranks models, computes scores, or uses words like best, worst, pass, or accuracy.
 
 ## Environment
@@ -18,7 +18,7 @@ A criticism-first harness that checks how a language model fills a form from a d
 - Python 3.12. In a Claude Code web session the SessionStart hook creates `.venv` and exports `PATH` and `PYTHONPATH`. Elsewhere run `python3.12 tools/check.py bootstrap`.
 - `PYTHONPATH=src` for every invocation; the package is not installed.
 - Dependencies are the hash-locked set in `requirements-container.txt` (jsonschema and its stack). Nothing else.
-- The model API key is read only from `OLLAMA_API_KEY` at call time. It must never appear in a file, a record, a log, or an exception message. A model reply that echoes the key is redacted.
+- The model API key is read only from `OLLAMA_API_KEY` at call time. It must never appear in a file, a record, a log, or an exception message. A model reply that echoes the key is redacted. A local Ollama needs no key: set `"auth": "none"` in the pilot's endpoint and no Authorization header is sent.
 
 ## Verification
 

@@ -271,32 +271,36 @@ def parse_chat_body(body: bytes, *, http_status: int, attempt: int, secret: str 
 class OllamaChatExecutor:
     """POST to ``{base_url}/api/chat`` with the key from the environment only."""
 
-    def __init__(self, base_url: str = "https://ollama.com", timeout_seconds: int = 180, retries: int = 0) -> None:
+    def __init__(self, base_url: str = "https://ollama.com", timeout_seconds: int = 180, retries: int = 0, auth: str = "bearer") -> None:
         if type(timeout_seconds) is not int or timeout_seconds < 1:
             raise RecordError("timeout_seconds must be a positive integer")
         if type(retries) is not int or retries < 0:
             raise RecordError("retries must be a non-negative integer")
+        if auth not in ("bearer", "none"):
+            raise RecordError("auth must be 'bearer' or 'none'")
         self.base_url = text(base_url, "base_url").rstrip("/")
         self.timeout_seconds = timeout_seconds
         self.retries = retries
+        self.auth = auth
 
     def __repr__(self) -> str:
-        return f"OllamaChatExecutor(base_url={self.base_url!r}, timeout_seconds={self.timeout_seconds}, retries={self.retries})"
+        return f"OllamaChatExecutor(base_url={self.base_url!r}, timeout_seconds={self.timeout_seconds}, retries={self.retries}, auth={self.auth!r})"
 
     def _attempt(self, request: ChatRequest, attempt: int) -> ChatResponse:
+        # auth none is for a local Ollama: no key is read and no Authorization header is sent.
+        # Redaction still runs against whatever the environment holds, so a key set by accident never leaks.
         secret = os.environ.get(API_KEY_ENV)
-        if not secret:
+        if self.auth == "bearer" and not secret:
             raise RecordError("OLLAMA_API_KEY is not set")
         payload = json.dumps(request.body(), ensure_ascii=False, allow_nan=False).encode("utf-8")
+        headers = {"Content-Type": "application/json", "Accept": "application/json"}
+        if self.auth == "bearer":
+            headers["Authorization"] = "Bearer " + str(secret)
         http_request = urllib.request.Request(
             self.base_url + "/api/chat",
             data=payload,
             method="POST",
-            headers={
-                "Content-Type": "application/json",
-                "Accept": "application/json",
-                "Authorization": "Bearer " + secret,
-            },
+            headers=headers,
         )
         try:
             with urllib.request.urlopen(http_request, timeout=self.timeout_seconds) as response:

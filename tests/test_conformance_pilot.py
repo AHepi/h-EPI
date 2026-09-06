@@ -847,6 +847,111 @@ class PlainFillTests(unittest.TestCase):
             self.assertEqual(load_observation_directory(Path(directory))[0].variant.grounding.mode, "spans")
 
 
+class RoundOneImprovementTests(unittest.TestCase):
+    """Changes made from the first travel-claim run: local endpoints, duplicate keys, change detection, prompt wording."""
+
+    def test_endpoint_auth_none_needs_no_key_and_sends_no_authorization_header(self) -> None:
+        from creib.forge.conformance.executor import OllamaChatExecutor
+        from creib.forge.conformance.spec import endpoint_from_dict
+        raw = {"kind": "ollama-chat", "base_url": "http://localhost:11434", "timeout_seconds": 60, "options": {"temperature": 0, "seed": 7}, "think": False}
+        self.assertEqual(endpoint_from_dict(raw).auth, "bearer", "absent means bearer, so older records keep their meaning")
+        self.assertEqual(endpoint_from_dict({**raw, "auth": "none"}).auth, "none")
+        with self.assertRaisesRegex(RecordError, "endpoint.auth"):
+            endpoint_from_dict({**raw, "auth": "basic"})
+        variant = _variant(Family.BASELINE, "ORD-001")
+        request = build_chat_request(variant, model="gpt-oss:20b", endpoint=_CONFIG.spec.endpoint)
+        captured = []
+        def fake_urlopen(http_request, timeout):
+            captured.append(http_request)
+            raise urllib.error.URLError("connection refused")
+        with patch.dict(os.environ, {}, clear=True), patch("creib.forge.conformance.executor.urllib.request.urlopen", fake_urlopen):
+            with self.assertRaisesRegex(RecordError, "OLLAMA_API_KEY is not set"):
+                OllamaChatExecutor(base_url="http://localhost:11434", auth="bearer")._attempt(request, 1)
+            response = OllamaChatExecutor(base_url="http://localhost:11434", auth="none")._attempt(request, 1)
+        self.assertIsNotNone(response.transport_error, "a refused connection is a recorded transport error, not an exception")
+        self.assertEqual(len(captured), 1)
+        self.assertFalse(captured[0].has_header("Authorization"))
+        self.assertEqual(captured[0].full_url, "http://localhost:11434/api/chat")
+
+    def test_committed_records_still_load_and_replay_their_ids(self) -> None:
+        # Every published run record under forge/conformance/runs/ must keep loading; a serialisation
+        # change that alters header bytes (as adding an always-written endpoint key did) shows up here.
+        runs_root = ROOT / "forge" / "conformance" / "runs"
+        run_paths = sorted(runs_root.glob("*/run.*.json"))
+        self.assertTrue(run_paths, "no committed run records found")
+        for path in run_paths:
+            record = load_run(path)
+            self.assertEqual(path.name, f"run.{record.run_id[:16]}.json")
+            self.assertNotIn("auth", json.loads(path.read_text())["endpoint"], "bearer is the absent default")
+        for directory in sorted({p.parent for p in run_paths}):
+            for path in sorted(directory.glob("observation.*.json"))[:3]:
+                self.assertEqual(path.name, f"observation.{load_observation(path).observation_id[:16]}.json")
+        from creib.forge.conformance.spec import endpoint_from_dict
+        raw = {"kind": "ollama-chat", "base_url": "http://localhost:11434", "timeout_seconds": 60, "options": {"temperature": 0, "seed": 7}, "think": False}
+        self.assertNotIn("auth", endpoint_from_dict(raw).to_dict())
+        self.assertEqual(endpoint_from_dict({**raw, "auth": "none"}).to_dict()["auth"], "none")
+
+    def test_replay_dir_rescores_recorded_replies_without_a_network(self) -> None:
+        pilot = ROOT / "forge" / "conformance" / "pilots" / "leave-request" / "pilot.json"
+        env = {**os.environ, "PYTHONPATH": str(ROOT / "src")}
+        env.pop("OLLAMA_API_KEY", None)
+        with tempfile.TemporaryDirectory() as first, tempfile.TemporaryDirectory() as second:
+            base = [sys.executable, str(TOOL), "run", "--pilot", str(pilot), "--model", "gpt-oss:120b", "--family", "BASELINE", "--created-on", CREATED_ON]
+            canned = subprocess.run(base + ["--dry-run", "--output-dir", first], capture_output=True, text=True, env=env)
+            self.assertIn(canned.returncode, (0, 1), canned.stderr)
+            replayed = subprocess.run(base + ["--replay-dir", first, "--output-dir", second], capture_output=True, text=True, env=env)
+            self.assertIn(replayed.returncode, (0, 1), replayed.stderr)
+            originals = {o.request_digest: o for o in load_observation_directory(Path(first))}
+            copies = load_observation_directory(Path(second))
+            self.assertEqual(len(copies), len(originals))
+            for copy in copies:
+                self.assertEqual(copy.scoring.parsed_output, originals[copy.request_digest].scoring.parsed_output)
+                self.assertNotEqual(copy.observation_id, originals[copy.request_digest].observation_id, "a re-score is a new record")
+            self.assertEqual(load_run(next(Path(second).glob("run.*.json"))).executor_kind, "replay")
+            both = subprocess.run(base + ["--dry-run", "--replay-dir", first, "--output-dir", second], capture_output=True, text=True, env=env)
+            self.assertNotEqual(both.returncode, 0)
+
+    def test_duplicate_keys_are_recovered_last_wins_and_named(self) -> None:
+        from creib.forge.conformance.oracle import parse_content
+        content = '{"a": 1, "b": "x", "a": 2}'
+        parsed, verdict, detail, recovered = parse_content(content, ())
+        self.assertEqual((parsed, verdict, recovered), ({"a": 2, "b": "x"}, "JSON_OBJECT", True))
+        self.assertIn("duplicate keys ['a']", detail)
+        # inside prose too, and a float still refuses
+        parsed, verdict, _, recovered = parse_content('Here you go:\n```json\n{"a": 1, "a": 3}\n```', ())
+        self.assertEqual((parsed, verdict, recovered), ({"a": 3}, "JSON_OBJECT", True))
+        _, verdict, _, _ = parse_content('{"a": 1.5, "a": 2}', ())
+        self.assertEqual(verdict, "INVALID_JSON")
+        # scored as a provisional recovery, like prose recovery
+        variant = _variant(Family.BASELINE, "ORD-001")
+        good = _correct_output("ORD-001")
+        first_key = next(iter(good))
+        duplicated = "{" + json.dumps(first_key) + ": \"wrong\", " + json.dumps(good)[1:]
+        scoring = score(variant, response_from_content(duplicated))
+        self.assertEqual(scoring.response_verdict, "JSON_OBJECT")
+        self.assertTrue(scoring.recovered_from_prose)
+        self.assertEqual(scoring.recovery_status, "project_import_provisional")
+        self.assertTrue(scoring.all_match)
+
+    def test_change_against_baseline_compares_form_fields_only(self) -> None:
+        from creib.forge.conformance.oracle import _changed
+        fields = ("a", "b")
+        self.assertIs(_changed({"a": 1, "b": 2, "junk": 1}, {"a": 1, "b": 2}, fields), False)
+        self.assertIs(_changed({"a": 1, "b": 2, "a_span": "one"}, {"a": 1, "b": 2, "a_span": "1"}, fields), False)
+        self.assertIs(_changed({"a": 1, "b": 3}, {"a": 1, "b": 2}, fields), True)
+        self.assertIs(_changed({"a": 1}, {"a": 1, "b": 2}, fields), True, "a dropped field is a change")
+        self.assertIsNone(_changed(None, {"a": 1}, fields))
+
+    def test_abstention_sentence_names_each_companion_or_its_absence(self) -> None:
+        config = load_pilot_config(ROOT / "forge" / "conformance" / "pilots" / "travel-claim" / "pilot.json")
+        corpus = load_corpus(config.corpus_path, config.spec)
+        variant = next(v for v in plan(config.spec, corpus).variants if v.family is Family.BASELINE)
+        text = variant.prompt_instructions()
+        self.assertIn("Output no companion key for any other field.", text)
+        self.assertIn("for `trip_end` also output null for `trip_end_span`; `nights_away` has no companion key", text)
+        self.assertNotIn("if it has one", text)
+
+
 class HardPilotTests(unittest.TestCase):
     """The travel-claim battery: every family present, controls behave, grounding does not break model-free controls."""
 

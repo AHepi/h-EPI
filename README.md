@@ -34,7 +34,7 @@ python tools/run_conformance_pilot.py fills    --observations-dir forge/conforma
 | `forge/conformance/schema/` | The four record schemas: pilot config, corpus, observation, run. |
 | `src/creib/forge/conformance/` | The machine: spec, corpus, the nine test families, prompt, executor, oracle, routing, records, runner, report. |
 | `src/creib/{canonical,strict_json,errors}.py`, `src/creib/forge/schema_validation.py` | Shared foundations: canonical bytes and digests, strict JSON, typed errors, offline schema validation. |
-| `tools/run_conformance_pilot.py` | The command line: `validate`, `plan`, `oracle-check`, `run`, `fills`, `evidence`, `report`. |
+| `tools/run_conformance_pilot.py` | The command line: `validate`, `plan`, `oracle-check`, `run` (live, `--dry-run`, or `--replay-dir` to re-score recorded replies), `fills`, `evidence`, `report`. |
 | `tools/check.py` | Every repository check: `lint`, `test`, `pilots`, `all`, `bootstrap`. |
 | `docs/how-it-works.md` | The method, the nine test families, the grounding and abstention configuration, what nine models did on the incident form, and the limits. |
 | `docs/failure-modes.md` | The register of failure modes, model limitations, and harness defects, each pointing at the observation records that show it. |

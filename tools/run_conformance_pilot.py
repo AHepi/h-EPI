@@ -16,7 +16,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from creib.errors import CREIBError, RecordError  # noqa: E402
 from creib.forge.conformance.common import publish_no_clobber  # noqa: E402
 from creib.forge.conformance.corpus import load_corpus  # noqa: E402
-from creib.forge.conformance.executor import CannedExecutor, OllamaChatExecutor  # noqa: E402
+from creib.forge.conformance.executor import CannedExecutor, OllamaChatExecutor, ReplayExecutor  # noqa: E402
 from creib.forge.conformance.families import Family, plan as build_plan  # noqa: E402
 from creib.forge.conformance.oracle import score  # noqa: E402
 from creib.forge.conformance.records import load_observation_directory, load_run  # noqa: E402
@@ -57,6 +57,12 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--output-dir", type=Path, required=True)
     run.add_argument("--created-on", required=True, help="RFC 3339 timestamp recorded verbatim")
     run.add_argument("--dry-run", action="store_true", help="use the canned executor; no network")
+    run.add_argument(
+        "--replay-dir",
+        type=Path,
+        help="re-score from the responses recorded in this observations directory, matched by request digest; no network. "
+        "Use it after correcting an oracle: the recorded replies are scored again and new records are written to --output-dir",
+    )
     run.add_argument("--retries", type=int, default=0)
 
     fills = subparsers.add_parser("fills", help="print the filled forms from recorded observations (what the model actually returned)")
@@ -152,14 +158,20 @@ def main(argv: Sequence[str] | None = None) -> int:
             spec = config.spec
             built = build_plan(spec, corpus)
             families = None if args.family is None else tuple(Family(name) for name in args.family)
+            if args.dry_run and args.replay_dir is not None:
+                raise RecordError("--dry-run and --replay-dir are exclusive")
             if args.dry_run:
                 executor = CannedExecutor()
                 executor_kind = "canned"
+            elif args.replay_dir is not None:
+                executor = ReplayExecutor(args.replay_dir)
+                executor_kind = "replay"
             else:
                 executor = OllamaChatExecutor(
                     base_url=spec.endpoint.base_url,
                     timeout_seconds=spec.endpoint.timeout_seconds,
                     retries=args.retries,
+                    auth=spec.endpoint.auth,
                 )
                 executor_kind = "ollama-chat"
             result = run_pilot(

@@ -187,14 +187,23 @@ class Variant:
             companions = ", ".join(f"`{self.span_key(field)}`" for field in spans)
             extra.append(
                 f"{next_number}. For each of {listed}, also output the companion key ({companions}): "
-                "the exact words from the document, copied verbatim without any change, that the value was taken from."
+                "the exact words from the document, copied verbatim without any change, that the value was taken from. "
+                "Output no companion key for any other field."
             )
             next_number += 1
         if abstain:
+            # Name each field's companion, or its absence, so that a model does not infer a companion
+            # key that the schema does not define (a 30B model did exactly that in the first live run).
             listed = ", ".join(f"`{field}`" for field in abstain)
+            clauses = []
+            for field in abstain:
+                if field in spans:
+                    clauses.append(f"for `{field}` also output null for `{self.span_key(field)}`")
+                else:
+                    clauses.append(f"`{field}` has no companion key")
             extra.append(
                 f"{next_number}. For {listed}: when the document does not state the value, output null for the field "
-                "(and null for its companion key, if it has one); never invent a value."
+                f"({'; '.join(clauses)}); never invent a value."
             )
         return self.instructions.rstrip("\n") + "\n" + "\n".join(extra) + "\n"
 

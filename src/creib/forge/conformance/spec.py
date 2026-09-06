@@ -50,6 +50,8 @@ from .common import (
 
 
 ENDPOINT_KIND = "ollama-chat"
+# bearer: Authorization from OLLAMA_API_KEY (the hosted endpoint); none: no key and no header (a local Ollama).
+ENDPOINT_AUTH_MODES: tuple[str, ...] = ("bearer", "none")
 VALUE_TRANSFORMS: tuple[str, ...] = ("iso_date_to_dmy", "e164_au_to_national_spaced")
 CORRUPTION_KINDS: tuple[str, ...] = ("none", "swap_fields", "drop_required", "extra_key")
 _CONSTRAINT_KEYS: tuple[str, ...] = ("pattern", "enum", "maxLength", "minLength", "format")
@@ -75,15 +77,22 @@ class Endpoint:
     temperature: int
     seed: int
     think: bool | None
+    auth: str = "bearer"
 
     def to_dict(self) -> dict[str, object]:
-        return {
+        # ``auth`` is written only when it is not the default. Records written before the key existed
+        # carry no ``auth`` and mean bearer; writing it unconditionally would change their header bytes
+        # and break every recorded run_id.
+        body: dict[str, object] = {
             "kind": self.kind,
             "base_url": self.base_url,
             "timeout_seconds": self.timeout_seconds,
             "options": {"temperature": self.temperature, "seed": self.seed},
             "think": self.think,
         }
+        if self.auth != "bearer":
+            body["auth"] = self.auth
+        return body
 
 
 @dataclass(frozen=True)
@@ -430,6 +439,10 @@ def endpoint_from_dict(raw: dict[str, Any]) -> Endpoint:
     options = object_value(raw["options"], "endpoint.options")
     if raw["kind"] != ENDPOINT_KIND:
         raise RecordError("endpoint.kind must be ollama-chat")
+    # ``auth`` is optional so that records written before it existed still load; absent means bearer.
+    auth = "bearer" if "auth" not in raw else text(raw["auth"], "endpoint.auth")
+    if auth not in ENDPOINT_AUTH_MODES:
+        raise RecordError(f"endpoint.auth must be one of {list(ENDPOINT_AUTH_MODES)}")
     return Endpoint(
         kind=ENDPOINT_KIND,
         base_url=text(raw["base_url"], "endpoint.base_url").rstrip("/"),
@@ -437,6 +450,7 @@ def endpoint_from_dict(raw: dict[str, Any]) -> Endpoint:
         temperature=integer(options["temperature"], "endpoint.options.temperature"),
         seed=integer(options["seed"], "endpoint.options.seed"),
         think=optional_boolean(raw["think"], "endpoint.think"),
+        auth=auth,
     )
 
 
