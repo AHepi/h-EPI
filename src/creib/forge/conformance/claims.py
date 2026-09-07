@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Mapping
+from typing import Any, Callable, Iterable, Mapping
 
 from creib.errors import RecordError
 from creib.strict_json import loads_strict
@@ -31,10 +31,10 @@ from .common import (
     validate_instance,
 )
 from .families import Family
-from .spec import CYCLE_CRITICISMS
+from .spec import CYCLE_CRITICISMS, THINK_LEVELS
 from .oracle import FIELD_VERDICTS, GROUNDING_VERDICTS, RESPONSE_VERDICTS
 from .appraisal import Appraisal
-from .records import ObservationRecord
+from .records import ObservationRecord, RunRecord
 from .routing import TRIGGERS
 
 CLAIMS_SCHEMA_NAME = "conformance-claims.schema.json"
@@ -118,15 +118,21 @@ def _plain(value: Any) -> Any:
 # --------------------------------------------------------------------------
 
 class Context:
-    """The other observations a predicate may refer to: the baseline of the same run and case, and the step an observation follows."""
+    """The other records a predicate may refer to: the baseline of the same run and case, the step an observation follows, and the run it belongs to."""
 
-    def __init__(self, observations: list[ObservationRecord]) -> None:
+    def __init__(self, observations: list[ObservationRecord], runs: Iterable[RunRecord] = ()) -> None:
         self._baselines: dict[tuple[str, str], ObservationRecord] = {}
         self._by_id: dict[str, ObservationRecord] = {}
+        self._runs: dict[str, RunRecord] = {run.run_id: run for run in runs}
         for observation in observations:
             self._by_id[observation.observation_id] = observation
             if observation.variant.family is Family.BASELINE:
                 self._baselines[(observation.run_id, observation.variant.base_case_id)] = observation
+
+    def run_of(self, observation: ObservationRecord) -> RunRecord | None:
+        """The run record an observation belongs to, when the run records were supplied."""
+
+        return self._runs.get(observation.run_id)
 
     def baseline_of(self, observation: ObservationRecord) -> ObservationRecord | None:
         return self._baselines.get((observation.run_id, observation.variant.base_case_id))
@@ -306,6 +312,31 @@ def compile_condition(raw: Any, where: str = "condition") -> Predicate:
             return False
 
         return criticised_field
+    if key == "endpoint":
+        # A setting of the run the observation belongs to, read from its run record: the reasoning
+        # setting actually sent (a run-time override is recorded there, not in the pilot) or the
+        # call timeout. False when the run record was not supplied.
+        spec = object_value(value, f"{where}.endpoint")
+        if not spec:
+            raise RecordError(f"{where}.endpoint needs think or timeout_seconds")
+        want_think = spec.get("think", "unset")
+        if want_think != "unset" and want_think is not None and type(want_think) is not bool and want_think not in THINK_LEVELS:
+            raise RecordError(f"{where}.endpoint.think must be null, a boolean, or one of {list(THINK_LEVELS)}")
+        want_timeout = spec.get("timeout_seconds")
+        if want_timeout is not None and (type(want_timeout) is not int or want_timeout < 1):
+            raise RecordError(f"{where}.endpoint.timeout_seconds must be a positive integer")
+
+        def endpoint(o: ObservationRecord, c: Context) -> bool:
+            run = c.run_of(o)
+            if run is None:
+                return False
+            if want_think != "unset" and run.endpoint.think != want_think:
+                return False
+            if want_timeout is not None and run.endpoint.timeout_seconds != want_timeout:
+                return False
+            return True
+
+        return endpoint
     if key == "internal_count":
         # A relation inside one reply, never a comparison with the key: the integer in ``field``
         # equals the number of ``of`` fields whose value is ``value``. False, not a counterexample
@@ -596,10 +627,10 @@ class ClaimResult:
         }
 
 
-def evaluate_claim(claim: Claim, observations: list[ObservationRecord], context: Context | None = None, appraisal: Appraisal | None = None) -> ClaimResult:
+def evaluate_claim(claim: Claim, observations: list[ObservationRecord], context: Context | None = None, appraisal: Appraisal | None = None, runs: Iterable[RunRecord] = ()) -> ClaimResult:
     predicate = compile_condition(claim.condition)
     if context is None:
-        context = Context(observations)
+        context = Context(observations, runs)
     fields, triggers = condition_footprint(claim.condition)
     tested: dict[str, int] = {}
     refuting: dict[str, int] = {}
@@ -651,8 +682,8 @@ def evaluate_claim(claim: Claim, observations: list[ObservationRecord], context:
     )
 
 
-def evaluate_claims(claims: tuple[Claim, ...], observations: list[ObservationRecord], appraisal: Appraisal | None = None) -> tuple[ClaimResult, ...]:
-    context = Context(observations)
+def evaluate_claims(claims: tuple[Claim, ...], observations: list[ObservationRecord], appraisal: Appraisal | None = None, runs: Iterable[RunRecord] = ()) -> tuple[ClaimResult, ...]:
+    context = Context(observations, runs)
     return tuple(evaluate_claim(claim, observations, context, appraisal) for claim in claims)
 
 

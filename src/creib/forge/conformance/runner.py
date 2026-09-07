@@ -44,9 +44,21 @@ class RunResult:
         return any(observation.routing.live_loci for observation in self.observations)
 
 
-def select_variants(plan: Plan, *, families: Iterable[Family] | None = None, limit: int | None = None) -> tuple[Variant, ...]:
-    """Choose variants; baselines needed by comparison families are always added."""
+ORDERS: tuple[str, ...] = ("family", "interleaved")
 
+
+def select_variants(plan: Plan, *, families: Iterable[Family] | None = None, limit: int | None = None, order: str = "family") -> tuple[Variant, ...]:
+    """Choose variants; baselines needed by comparison families are always added.
+
+    ``order`` is the sending order. ``family`` sends every baseline first and then the other
+    families in plan order, so a drift in the endpoint during the run lands on whole families.
+    ``interleaved`` sends each case's baseline followed at once by that case's other variants,
+    so the requests a comparison pairs are close in time; the records are the same either way,
+    and the run record lists its observations in the order they were made.
+    """
+
+    if order not in ORDERS:
+        raise RecordError(f"order must be one of {list(ORDERS)}")
     chosen_families = None if families is None else frozenset(families)
     selected = [variant for variant in plan.variants if chosen_families is None or variant.family in chosen_families]
     if limit is not None:
@@ -69,6 +81,13 @@ def select_variants(plan: Plan, *, families: Iterable[Family] | None = None, lim
     for variant in plan.variants:
         if variant.family is not Family.BASELINE and variant.variant_id in selected_ids:
             ordered.append(variant)
+    if order == "interleaved":
+        cases: list[str] = []
+        for variant in ordered:
+            if variant.base_case_id not in cases:
+                cases.append(variant.base_case_id)
+        by_case = {case_id: [variant for variant in ordered if variant.base_case_id == case_id] for case_id in cases}
+        ordered = [variant for case_id in cases for variant in by_case[case_id]]
     return tuple(ordered)
 
 
@@ -97,6 +116,7 @@ def run_pilot(
     created_on: str,
     families: Iterable[Family] | None = None,
     limit: int | None = None,
+    order: str = "family",
 ) -> RunResult:
     if model not in spec.models:
         raise RecordError(f"model {model!r} is not declared in the pilot configuration")
@@ -110,7 +130,7 @@ def run_pilot(
     selected_families = tuple(sorted({variant.family.value for variant in plan.variants} if families is None else {family.value for family in families}))
     if not selected_families:
         raise RecordError("no families selected")
-    variants = select_variants(plan, families=families, limit=limit)
+    variants = select_variants(plan, families=families, limit=limit, order=order)
     header = {
         "schema_version": RUN_SCHEMA_VERSION,
         "pilot_id": spec.pilot_id,

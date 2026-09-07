@@ -96,7 +96,7 @@ class ChatRequest:
     user: str
     format_schema: dict[str, Any] | None
     options: dict[str, int]
-    think: bool | None
+    think: bool | str | None
     # Which repeat of a byte-identical request this is: None for the first send, 1.. for the
     # REPEAT family. Not part of the body, the digest, or the record; a replay executor uses it
     # to pair a repeat with the reply that repeat received, since one digest has several.

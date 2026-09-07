@@ -1514,6 +1514,268 @@
         ]
       },
       "note": "The arithmetic that a re-check could plausibly repair (T1, T23): a sub-case of CYC-02 on the one field where most of the key's criticisms fall."
+    },
+    {
+      "claim_id": "THK-01",
+      "statement": "At the reasoning setting high, a gpt-oss model never gets an unambiguous multiplied total wrong.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT"
+        ],
+        "cases": [
+          "TRV-001",
+          "TRV-001-P",
+          "TRV-005",
+          "BND-111"
+        ],
+        "models": [
+          "gpt-oss:20b",
+          "gpt-oss:120b"
+        ],
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "endpoint": {
+              "think": "high"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MISMATCH",
+              "field": "total_claimed_cents"
+            }
+          }
+        ]
+      },
+      "note": "The reasoning setting as an experimental factor (L10): the same requests at low, medium and high, on the same two models, in one sitting. LEN-01 made the same claim by token count; this one makes it by the setting sent, read from the run record."
+    },
+    {
+      "claim_id": "THK-02",
+      "statement": "At the reasoning setting low, a gpt-oss model never gets an unambiguous multiplied total wrong.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT"
+        ],
+        "cases": [
+          "TRV-001",
+          "TRV-001-P",
+          "TRV-005",
+          "BND-111"
+        ],
+        "models": [
+          "gpt-oss:20b",
+          "gpt-oss:120b"
+        ],
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "endpoint": {
+              "think": "low"
+            }
+          },
+          {
+            "field_verdict": {
+              "verdict": "MISMATCH",
+              "field": "total_claimed_cents"
+            }
+          }
+        ]
+      },
+      "note": "The converse of THK-01. Both surviving means the level did nothing the key could see on arithmetic; this one refuted and THK-01 not is the pattern the token-count claims suggested."
+    },
+    {
+      "claim_id": "THK-03",
+      "statement": "At the reasoning setting low, a gpt-oss model never generates 800 or more tokens in a reply.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT"
+        ],
+        "cases": null,
+        "models": [
+          "gpt-oss:20b",
+          "gpt-oss:120b"
+        ],
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "endpoint": {
+              "think": "low"
+            }
+          },
+          {
+            "output_tokens": {
+              "min": 800
+            }
+          }
+        ]
+      },
+      "note": "Whether the setting bounds the budget. Refuted means low is not a small budget for this model on this endpoint."
+    },
+    {
+      "claim_id": "THK-04",
+      "statement": "At any reasoning setting, a gpt-oss model's call never times out within a 600-second budget.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT"
+        ],
+        "cases": null,
+        "models": [
+          "gpt-oss:20b",
+          "gpt-oss:120b"
+        ],
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "endpoint": {
+              "timeout_seconds": 600
+            }
+          },
+          {
+            "response_verdict": "TRANSPORT_ERROR"
+          }
+        ]
+      },
+      "note": "H30 found the cycle prompt exceeding 180 seconds for the 20b model; this asks whether 600 seconds holds for plain fills at every level."
+    },
+    {
+      "claim_id": "THK-05",
+      "statement": "At the reasoning setting low, a gpt-oss model never returns null for a return date the document fixes by a weekday or an interval.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT"
+        ],
+        "cases": [
+          "TRV-003",
+          "TRV-005",
+          "BND-111"
+        ],
+        "models": [
+          "gpt-oss:20b",
+          "gpt-oss:120b"
+        ],
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "endpoint": {
+              "think": "low"
+            }
+          },
+          {
+            "value_null": {
+              "field": "trip_end"
+            }
+          }
+        ]
+      },
+      "note": "LEN-03 found the abstention winning over derivation for models that reasoned; this asks whether less reasoning changes that."
+    },
+    {
+      "claim_id": "THK-06",
+      "statement": "At the reasoning setting high, a repeat of the same request never returns a different form.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "REPEAT"
+        ],
+        "cases": null,
+        "models": [
+          "gpt-oss:20b",
+          "gpt-oss:120b"
+        ],
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "endpoint": {
+              "think": "high"
+            }
+          },
+          {
+            "trigger": "REPEAT_DIFFERS"
+          }
+        ]
+      },
+      "note": "The repeat floor at high; STAB-01 measured it at the pilot's boolean setting."
+    },
+    {
+      "claim_id": "THK-07",
+      "statement": "At the reasoning setting low, a repeat of the same request never returns a different form.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "REPEAT"
+        ],
+        "cases": null,
+        "models": [
+          "gpt-oss:20b",
+          "gpt-oss:120b"
+        ],
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "endpoint": {
+              "think": "low"
+            }
+          },
+          {
+            "trigger": "REPEAT_DIFFERS"
+          }
+        ]
+      },
+      "note": "The repeat floor at low, beside THK-06."
+    },
+    {
+      "claim_id": "THK-08",
+      "statement": "At any reasoning setting, a gpt-oss reply never comes back without a thinking channel.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT"
+        ],
+        "cases": null,
+        "models": [
+          "gpt-oss:20b",
+          "gpt-oss:120b"
+        ],
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "endpoint": {
+              "timeout_seconds": 600
+            }
+          },
+          {
+            "thinking_present": false
+          }
+        ]
+      },
+      "note": "The endpoint's documentation says the trace cannot be disabled for these models (L10); a reply without the channel at any level refutes that as this harness observes it."
     }
   ]
 }

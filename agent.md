@@ -152,6 +152,21 @@ python tools/run_conformance_pilot.py cycles --observations-dir forge/conformanc
 
 One row per model, criticism source, and cycle index says how many cycles returned the same form as the step before, how many differed, and how the key's verdict per field moved between the two records; the `repeat` row of the same model is the floor, the same moves with nothing asked to change. A cycle count that does not clear that floor has shown nothing, and one that does has shown a difference on these cases, not an improvement in general: the harness never says a later answer is better, only which fields moved which way. Write what a move would refute as conjectures before the run (`cycle`, `previous`, `verdict_move`, `criticised_field` are the predicates; the travel-claim pilot's CYC-01 to CYC-14 are an example) and let `claims` say what survived. The criticism a cycle is shown is drawn from the form schema and the document only; if you want the model to see the key's verdicts you are measuring how well it copies a correction, and the harness will not build that plan.
 
+## Use 11: treat the reasoning setting as a factor
+
+For a model that takes a level, run the same plan at each level and compare:
+
+```sh
+for level in low medium high; do
+  python tools/run_conformance_pilot.py run --pilot forge/conformance/pilots/my-form/pilot.json --model gpt-oss:120b \
+      --family BASELINE --family REPEAT --think "$level" --timeout-seconds 600 --order interleaved \
+      --output-dir forge/conformance/runs/my-form-reasoning --created-on "$(date -u +%Y-%m-%dT%H:%M:00Z)"
+done
+python tools/run_conformance_pilot.py compare --run <low run> --run <high run> --observations-dir forge/conformance/runs/my-form-reasoning
+```
+
+The plan is the same at every level; each run record's `endpoint` says what was sent, and `compare` pairs the requests by case and repeat (their digests differ, since the setting is inside the request, so use `--run` pairs from the same plan and read the pairing by case). A claim scopes on the setting with the `endpoint` predicate, read from the run record, so write the conjectures about levels before the runs as with any other. The travel-claim pilot's THK-01 to THK-08 are an example. Do not read a boolean `think` as an off switch: the models that take a level ignore it (L10), and the records show the channel whatever was sent.
+
 ## Reading the output
 
 - **Run labels.** `UNREFUTED_FOR_DECLARED_SCOPE` is the strongest: every judged field matched and nothing more. `REFUTED_CASES_PRESENT` means the model is a live suspect on at least one observation; it does not mean the model failed the battery. `INCONCLUSIVE_NO_SCORED_OUTPUT` means some field went unjudged or a call did not complete, which is the normal label for a plain fill with no key.

@@ -76,7 +76,10 @@ class Endpoint:
     timeout_seconds: int
     temperature: int
     seed: int
-    think: bool | None
+    # A boolean, a level (low, medium, high) for the models that take one, or None to send nothing.
+    # What was sent is recorded in the run header and inside every request digest; what the model did
+    # with it is a separate fact the reply's thinking channel shows (L10 in docs/failure-modes.md).
+    think: bool | str | None
     auth: str = "bearer"
 
     def to_dict(self) -> dict[str, object]:
@@ -197,6 +200,17 @@ GROUNDING_MODES: tuple[str, ...] = ("none", "spans")
 SPAN_RELAXATIONS: tuple[str, ...] = ("case_insensitive", "date_range_completion")
 MAX_REPEATS = 10
 MAX_CYCLES = 5
+THINK_LEVELS: tuple[str, ...] = ("low", "medium", "high")
+
+
+def think_setting(value: Any, where: str) -> bool | str | None:
+    """A reasoning setting: None, a boolean, or one of the documented levels."""
+
+    if value is None or type(value) is bool:
+        return value
+    if type(value) is str and value in THINK_LEVELS:
+        return value
+    raise RecordError(f"{where} must be null, a boolean, or one of {list(THINK_LEVELS)}")
 CYCLE_CRITICISMS: tuple[str, ...] = ("none", "external")
 
 
@@ -516,7 +530,7 @@ def endpoint_from_dict(raw: dict[str, Any]) -> Endpoint:
         timeout_seconds=integer(raw["timeout_seconds"], "endpoint.timeout_seconds", minimum=1),
         temperature=integer(options["temperature"], "endpoint.options.temperature"),
         seed=integer(options["seed"], "endpoint.options.seed"),
-        think=optional_boolean(raw["think"], "endpoint.think"),
+        think=think_setting(raw["think"], "endpoint.think"),
         auth=auth,
     )
 

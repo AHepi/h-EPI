@@ -64,6 +64,9 @@ def _parser() -> argparse.ArgumentParser:
         "Use it after correcting an oracle: the recorded replies are scored again and new records are written to --output-dir",
     )
     run.add_argument("--retries", type=int, default=0)
+    run.add_argument("--think", default=None, help="override the pilot endpoint's reasoning setting for this run: true, false, none, low, medium, or high; recorded in the run record's endpoint")
+    run.add_argument("--timeout-seconds", type=int, default=None, help="override the pilot endpoint's call timeout for this run; recorded in the run record's endpoint")
+    run.add_argument("--order", choices=["family", "interleaved"], default="family", help="sending order: every baseline first (family), or each case's baseline followed by its other variants (interleaved)")
 
     fills = subparsers.add_parser("fills", help="print the filled forms from recorded observations (what the model actually returned)")
     fills.add_argument("--observations-dir", type=Path, required=True)
@@ -169,6 +172,20 @@ def main(argv: Sequence[str] | None = None) -> int:
             config, corpus = _load(args.pilot)
             spec = config.spec
             built = build_plan(spec, corpus)
+            # Run-time endpoint overrides: the plan is unchanged (the endpoint is not part of any
+            # variant), and the run record's endpoint carries the values actually used.
+            if args.think is not None or args.timeout_seconds is not None:
+                import dataclasses
+                from creib.forge.conformance.spec import think_setting
+                endpoint = spec.endpoint
+                if args.think is not None:
+                    raw_think = {"true": True, "false": False, "none": None, "null": None}.get(args.think.lower(), args.think)
+                    endpoint = dataclasses.replace(endpoint, think=think_setting(raw_think, "--think"))
+                if args.timeout_seconds is not None:
+                    if args.timeout_seconds < 1 or args.timeout_seconds > 3600:
+                        raise RecordError("--timeout-seconds must be between 1 and 3600")
+                    endpoint = dataclasses.replace(endpoint, timeout_seconds=args.timeout_seconds)
+                spec = dataclasses.replace(spec, endpoint=endpoint)
             families = None if args.family is None else tuple(Family(name) for name in args.family)
             if args.dry_run and args.replay_dir is not None:
                 raise RecordError("--dry-run and --replay-dir are exclusive")
@@ -197,6 +214,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 created_on=args.created_on,
                 families=families,
                 limit=args.limit,
+                order=args.order,
             )
             record = result.run_record
             _emit(
@@ -254,12 +272,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.command == "claims":
             from creib.forge.conformance.appraisal import Appraisal, load_appraisal
             from creib.forge.conformance.claims import CLAIM_STATUSES, evaluate_claims, load_claims, render_claims_markdown
+            from creib.forge.conformance.records import enumerate_record_directory
             loaded = load_claims(args.claims)
             observations = []
+            runs = []
             for directory in args.observations_dir:
                 observations.extend(load_observation_directory(directory))
+                runs.extend(load_run(path) for path in enumerate_record_directory(directory).run_paths)
             appraisal = None if args.appraisal is None else Appraisal.build(load_appraisal(args.appraisal))
-            results = evaluate_claims(loaded, observations, appraisal)
+            results = evaluate_claims(loaded, observations, appraisal, runs=runs)
             for result in results:
                 _emit(result.to_dict())
             counts = {status: sum(1 for r in results if r.status == status) for status in CLAIM_STATUSES}
