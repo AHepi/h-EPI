@@ -161,7 +161,7 @@ class ReportAndCompareGuardTests(unittest.TestCase):
         twin = records_module.build_observation(**fields)
         self.assertNotEqual(twin.observation_id, original.observation_id)
         listing_both = dataclasses.replace(left, observation_ids=left.observation_ids + (twin.observation_id,))
-        with self.assertRaisesRegex(RecordError, "holds two observations for request"):
+        with self.assertRaisesRegex(RecordError, "holds two observations for"):
             compare_runs(listing_both, right, observations + [twin])
 
 

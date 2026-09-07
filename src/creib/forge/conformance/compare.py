@@ -43,14 +43,32 @@ def _run_observations(run: RunRecord, by_id: Mapping[str, ObservationRecord]) ->
     return found
 
 
-def _keyed(observations: Iterable[ObservationRecord]) -> dict[tuple[str, int], ObservationRecord]:
-    keyed: dict[tuple[str, int], ObservationRecord] = {}
+PAIRINGS: tuple[str, ...] = ("digest", "variant")
+
+
+def _keyed(observations: Iterable[ObservationRecord], pairing: str = "digest") -> dict[tuple[str, int], ObservationRecord]:
+    """Index a run's model-call observations by request digest, or by planned variant, and repeat index.
+
+    Pairing by digest says the two runs sent byte-identical requests. Pairing by planned variant
+    is for two runs of one plan whose requests differ only by a run-time endpoint setting (the
+    reasoning level is inside the request, so a run at ``low`` and a run at ``high`` share no
+    digest); it says the two runs asked the same question of the same case under different
+    settings, and the comparison is then a comparison of settings, not of drift.
+    """
+
+    if pairing not in PAIRINGS:
+        raise RecordError(f"pairing must be one of {list(PAIRINGS)}")
+    keyed: dict[tuple[str, int, str], ObservationRecord] = {}
     for observation in observations:
         if not observation.variant.model_call or observation.request_digest is None:
             continue
-        key = (observation.request_digest, observation.variant.repeat_index or 0)
+        handle = observation.request_digest if pairing == "digest" else observation.planned_variant_id
+        # The planned variant is part of the key even when pairing by digest: two variants of different
+        # cases can send one request (a round trip of two identical baseline outputs, H31), and each is
+        # paired with the same variant's reply in the other run, not with the other case's.
+        key = (handle, observation.variant.repeat_index or 0, observation.planned_variant_id)
         if key in keyed:
-            raise RecordError(f"run {observation.run_id} holds two observations for request {key[0]} repeat {key[1]}")
+            raise RecordError(f"run {observation.run_id} holds two observations for {pairing} {key[0]} repeat {key[1]} variant {key[2]}")
         keyed[key] = observation
     return keyed
 
@@ -78,11 +96,13 @@ def _run_summary(run: RunRecord, observations: list[ObservationRecord]) -> dict[
     }
 
 
-def compare_runs(left: RunRecord, right: RunRecord, observations: Iterable[ObservationRecord]) -> dict[str, Any]:
+def compare_runs(left: RunRecord, right: RunRecord, observations: Iterable[ObservationRecord], pairing: str = "digest") -> dict[str, Any]:
     """Pair the requests two runs share and report identity, differing fields, and verdict moves."""
 
     if left.run_id == right.run_id:
         raise RecordError("compare needs two different runs")
+    if pairing == "variant" and left.plan_id != right.plan_id:
+        raise RecordError("pairing by variant needs two runs of one plan; these runs carry different plan ids")
     if left.model != right.model:
         raise RecordError(
             f"runs are for different models ({left.model!r} and {right.model!r}); the model name is part of every request digest, so no request can be shared"
@@ -90,9 +110,9 @@ def compare_runs(left: RunRecord, right: RunRecord, observations: Iterable[Obser
     by_id = {observation.observation_id: observation for observation in observations}
     left_observations = _run_observations(left, by_id)
     right_observations = _run_observations(right, by_id)
-    left_keyed = _keyed(left_observations)
-    right_keyed = _keyed(right_observations)
-    shared = sorted(set(left_keyed) & set(right_keyed), key=lambda key: (left_keyed[key].variant.base_case_id, left_keyed[key].variant.family.value, key[1]))
+    left_keyed = _keyed(left_observations, pairing)
+    right_keyed = _keyed(right_observations, pairing)
+    shared = sorted(set(left_keyed) & set(right_keyed), key=lambda key: (left_keyed[key].variant.base_case_id, left_keyed[key].variant.family.value, key[1], key[2]))
 
     identical = 0
     differing = 0
@@ -148,6 +168,7 @@ def compare_runs(left: RunRecord, right: RunRecord, observations: Iterable[Obser
 
     return {
         "schema_version": "creib.conformance-pilot.compare.v1",
+        "pairing": pairing,
         "left": _run_summary(left, left_observations),
         "right": _run_summary(right, right_observations),
         "shared_requests": len(shared),
@@ -168,6 +189,10 @@ def compare_runs(left: RunRecord, right: RunRecord, observations: Iterable[Obser
             "Identity compares the declared form fields of the two replies to the same request and never consults the oracle; "
             "a difference is drift, not a wrong answer, and a verdict move says how the oracle read each side. "
             "Read the counts against each run's own repeat floor before attributing anything to time or to a version."
+            if pairing == "digest" else
+            "Pairs are the same planned variant and repeat in two runs of one plan whose requests differ by a run-time endpoint "
+            "setting; identity compares the declared form fields and never consults the oracle, a verdict move says how the oracle "
+            "read each side, and a difference is a difference between the settings on this request, read against each run's own repeat floor."
         ),
         "epistemic_limit": NON_INDUCTIVE_LIMIT,
     }
@@ -183,7 +208,7 @@ def _md_table(headers: list[str], rows: list[list[str]]) -> str:
 def render_compare_markdown(comparison: Mapping[str, Any]) -> str:
     left = comparison["left"]
     right = comparison["right"]
-    parts: list[str] = [f"# Two runs of {left['model']}, request by request", ""]
+    parts: list[str] = [f"# Two runs of {left['model']}, request by request" + (" (paired by planned variant)" if comparison.get("pairing") == "variant" else ""), ""]
     for label, run in (("Left", left), ("Right", right)):
         floor = run["repeat_floor"]
         parts.append(

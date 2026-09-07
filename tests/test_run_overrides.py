@@ -162,5 +162,28 @@ class EndpointPredicateTests(unittest.TestCase):
             self.assertEqual((results[0].status, results[0].refuting), ("REFUTED", 1))
 
 
+class PairByVariantTests(unittest.TestCase):
+    def test_two_settings_of_one_plan_pair_by_variant_and_not_by_digest(self) -> None:
+        from creib.forge.conformance.compare import compare_runs
+        spec = _CONFIG.spec
+        with tempfile.TemporaryDirectory() as directory:
+            runs = []
+            for level in ("low", "high"):
+                runs.append(run_pilot(spec=dataclasses.replace(spec, endpoint=dataclasses.replace(spec.endpoint, think=level)), corpus=_CORPUS, plan=_PLAN, model="gpt-oss:20b",
+                                      executor=FakeExecutor(lambda r: response_from_content(json.dumps({"site": "Dock 3"}))), executor_kind="fake",
+                                      output_dir=Path(directory) / level, created_on=CREATED_ON, families=(Family.BASELINE,), limit=3))
+            observations = list(runs[0].observations) + list(runs[1].observations)
+            by_digest = compare_runs(runs[0].run_record, runs[1].run_record, observations)
+            self.assertEqual(by_digest["shared_requests"], 0, "the setting is inside the request, so no digest is shared")
+            by_variant = compare_runs(runs[0].run_record, runs[1].run_record, observations, pairing="variant")
+            self.assertEqual((by_variant["pairing"], by_variant["shared_requests"], by_variant["identical"]), ("variant", 3, 3))
+            self.assertIn("paired by planned variant", __import__("creib.forge.conformance.compare", fromlist=["render_compare_markdown"]).render_compare_markdown(by_variant))
+            with self.assertRaisesRegex(RecordError, "pairing must be one of"):
+                compare_runs(runs[0].run_record, runs[1].run_record, observations, pairing="case")
+            other_plan = dataclasses.replace(runs[1].run_record, plan_id="0" * 64)
+            with self.assertRaisesRegex(RecordError, "two runs of one plan"):
+                compare_runs(runs[0].run_record, other_plan, observations, pairing="variant")
+
+
 if __name__ == "__main__":
     unittest.main()

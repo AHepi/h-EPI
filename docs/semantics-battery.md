@@ -255,6 +255,28 @@ Three conjectures change status on the re-scored records and no other does. A la
 
 **LAB-11 tested agreement with the key, not the reply's own consistency (H29).** Its statement spoke of the count of arguments the model itself labelled in; its condition was a `MATCH` on `usable_count`. gpt-oss:20b's `dcc7033bffce6cd0` labels one argument in and answers 1, consistent with itself and counted among the 109 refutations because the key had two. The statement now says what the condition tests, and LAB-21 states the internal relation with the new `internal_count` predicate, which reads the reply alone. LAB-21 was written after the labelling records and describes them: it is refuted by two observations, both qwen3.5:397b on LAB-08 (`9c18b4dc8aa3388b`, `df5ea85ebb64d7a6`), and by no other model. Of LAB-11's 109 counterexamples, then, at most two are a model miscounting its own labels; the rest are a wrong label set counted correctly, which the label claims LAB-01 to LAB-10 already carry. The paragraph on the labelling policy above, where it reads LAB-11 as an inconsistency, should be read with this correction.
 
+## The repaired dossier, run live (7 September 2026)
+
+The corpus under `signed-derivations` now states the range's members and completeness wherever a quantifier occurs, so DER-11 and DER-R02 reached the models with the premise the key assumes. The full plan (`faf4401f…`, 172 variants, 156 calls per model) was run again on the same five models, five processes at once, records under `forge/conformance/runs/signed-derivations-v2/`. Eighteen of the twenty dossiers are byte-identical to the first corpus's, so their requests pair with the first run's by digest and the run doubles as a drift measurement a day apart; the two repaired dossiers are new requests.
+
+**The negated existential, with the premise stated.** On DER-11, NOT SOME x IN R: P(x) with every member negative and the range asserted complete, four of five models gave the key's reply on the baseline and on both repeats: `positive_derivable` yes, `positive_blocked_by` nothing, `case_summary` POSITIVE_CASE_ONLY (gemma4:31b `07a157d43dac8b60`, gpt-oss:120b `b20223f8a6b6d700`, gpt-oss:20b `87f7297eac2dfe31`, mistral-large-3:675b `b61045c7fdb7c9fc`, with their repeats; gpt-oss:20b's first repeat named the wrong blocker for the negative case, `ee2cf7dbf370f47d`). qwen3.5:397b derived a negative case that exists under no key on the baseline (`ed2c4bc44a2ccad7`) and gave the key's reply on both repeats (`35006b56be187652`, `e659017393252d9c`). So what S18 called a break of four models in five was, with the premise visible, a sign switch through the quantifier that four models made every time and the fifth made two times in three. DER-07 is refuted on this run by 2 of 5 models on 4 observations (mistral and qwen, on twins of DER-11 and DER-07 and qwen's baseline) where the first run had 5 of 5 on 22.
+
+**The negated universal over an incomplete range.** DER-R02, NOT ALL x IN R: P(x) with one member carrying both cases, one positive and one with no case, and the range not asserted complete, licenses a positive case (through the member with a negative case), conditional because that member also has a positive one, and no negative case. Both gpt-oss models gave the key's reply throughout (`6d253e9db7faca23`, `1a13ac4e09e6f280` and repeats). gemma4:31b found no positive case and named a missing leaf (`3ebf022b080d927e` and repeats, five fields off). mistral-large-3:675b named the incomplete range as what blocks the negative case where the key names the missing leaf (`70d05739258b1bb8` and repeats): both block it, and the key's choice of which to name is a reading of sentence 13 that a person should appraise. qwen3.5:397b derived the positive case and called it unconditional (`4eb6924c288b925e` and repeats), the conditionality omission of S19 again.
+
+**Drift on the eighteen unchanged dossiers**, from `compare` between each model's first run and this one, paired by request:
+
+| Model | Shared requests | Identical | Differing | Repeat floor, first run | Repeat floor, this run |
+|---|---|---|---|---|---|
+| gemma4:31b | 137 | 131 | 6 | 1 of 36 | 0 of 36 |
+| gpt-oss:120b | 138 | 134 | 4 | 2 of 36 | 2 of 36 |
+| gpt-oss:20b | 138 | 132 | 5 | 2 of 36 | 3 of 36 |
+| mistral-large-3:675b | 135 | 123 | 11 | 4 of 36 | 5 of 36 |
+| qwen3.5:397b | 136 | 118 | 18 | 4 of 36 | 5 of 36 |
+
+Every model's cross-run differences sit near its own repeat floor, as on the travel claim (T24); mistral's and qwen's are the largest and their floors are the highest. The verdict moves ran both ways for every model that moved.
+
+**Conjectures on this run.** Eighteen refuted, six unrefuted, none untested. Beside the first run, read under its own key: DER-07 as above; DER-14 (the summary agrees with the two derivability answers) 42 refuting observations from four models; DER-20, that a reply of 800 or more tokens never derives an unlicensed case or misses a licensed one, refuted once, by gpt-oss:20b on a repeat of DER-10 (`b0484820491a8aea`), where under the visible-key re-score it had survived; DER-06 and DER-13 refuted by three and two models as before. The full table is reproduced by `claims` over the new directory; the tables above are the first run's and are left as they were.
+
 ## What this does not show
 
 - It does not show that any model understands argumentation, appraisal, authorship, explanation, or evidence. All three forms are filled from a document, and the records hold what was returned.

@@ -88,6 +88,7 @@ def _parser() -> argparse.ArgumentParser:
     compare.add_argument("--run", type=Path, action="append", required=True, help="exactly two run records")
     compare.add_argument("--observations-dir", type=Path, required=True, action="append", help="the directories holding both runs' observations; may be given more than once")
     compare.add_argument("--markdown", type=Path, default=None)
+    compare.add_argument("--pair-by", choices=["digest", "variant"], default="digest", help="digest pairs byte-identical requests; variant pairs the same planned variant and repeat across two runs of one plan whose requests differ by a run-time endpoint setting")
     cycles = subparsers.add_parser("cycles", help="per run, criticism source, and cycle index: forms identical to or differing from the step before and the verdict moves between them, beside the run's own REPEAT floor; never a score")
     cycles.add_argument("--observations-dir", type=Path, required=True, action="append", help="directories holding the runs and their observations; may be given more than once")
     cycles.add_argument("--markdown", type=Path, default=None)
@@ -328,7 +329,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             observations = []
             for directory in args.observations_dir:
                 observations.extend(load_observation_directory(directory))
-            comparison = compare_runs(load_run(args.run[0]), load_run(args.run[1]), observations)
+            comparison = compare_runs(load_run(args.run[0]), load_run(args.run[1]), observations, pairing=args.pair_by)
             if args.markdown is not None:
                 publish_no_clobber(args.markdown, render_compare_markdown(comparison).encode("utf-8"))
             _emit(comparison)
