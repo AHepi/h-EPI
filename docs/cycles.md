@@ -146,6 +146,34 @@ Three things the table cannot say for itself. CYC-02, CYC-03 and CYC-14 carry th
 - Anything about the model as its own critic beyond these records. The reviews under `docs/reviews/` argue on other grounds that a critic correlated with the generator adds little; these records are consistent with that and do not test it.
 - That the criticism a cycle was shown was the right criticism. Two fields were criticised in the whole run. A pilot whose baselines fail more schema and span checks would test the external design; this one tested the self-revision design and found the floor.
 
-The repaired dossier for gpt-oss:20b's timeouts is a setting, not a finding: a rerun with a longer `timeout_seconds` is a new plan and has not been run.
+## The rerun with a 600-second budget
+
+gpt-oss:20b was run again on the same plan with the call timeout raised from 180 to 600 seconds as a run-time override (`--timeout-seconds 600`; the run record's endpoint carries it, the plan is unchanged, and the requests are byte-identical to the first run's), run `ca2c52483a6a1dbb`, records under `forge/conformance/runs/travel-claim-cycles-600s/`. Its runs shared the model with two other lanes for part of the morning, which a per-call timing would let a reader discount and these records cannot.
+
+The budget was not the constraint. Eighteen of its cycle calls timed out at 600 seconds, the same count that had timed out at 180, and 29 cycles behind them were never sent; 34 of the 81 calls returned an object. The cycle prompt makes this model think past ten minutes about as often as past three.
+
+| model | row | n | unavailable | not comparable | identical | differing | match to miss | miss to match | other moves | told of | criticised fields | changed | still failing |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| gpt-oss:20b | cycle 1, criticism external | 9 | 0 | 7 | 1 | 1 | 0 | 1 | 0 | 0 | 0 | 0 | 0 |
+| gpt-oss:20b | cycle 2, criticism external | 9 | 7 | 1 | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 0 | 0 |
+| gpt-oss:20b | cycle 3, criticism external | 9 | 8 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| gpt-oss:20b | cycle 1, criticism none | 9 | 0 | 6 | 2 | 1 | 0 | 1 | 0 | 0 | 0 | 0 | 0 |
+| gpt-oss:20b | cycle 2, criticism none | 9 | 6 | 2 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| gpt-oss:20b | cycle 3, criticism none | 9 | 8 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| gpt-oss:20b | repeat | 18 | 0 | 0 | 12 | 6 | 4 | 4 | 0 | 0 | 0 | 0 | 0 |
+
+| model | row | move | count |
+| --- | --- | --- | --- |
+| gpt-oss:20b | cycle 1, criticism external | total_claimed_cents: MISMATCH -> MATCH | 1 |
+| gpt-oss:20b | cycle 2, criticism external | total_claimed_cents: MATCH -> MISMATCH | 1 |
+| gpt-oss:20b | cycle 1, criticism none | total_claimed_cents: MISMATCH -> MATCH | 1 |
+| gpt-oss:20b | repeat | nights_away: MATCH -> MISMATCH | 2 |
+| gpt-oss:20b | repeat | purpose: MATCH -> MISMATCH | 2 |
+| gpt-oss:20b | repeat | total_claimed_cents: MISMATCH -> MATCH | 2 |
+| gpt-oss:20b | repeat | trip_end: MISMATCH -> MATCH | 2 |
+
+Two things the eight completed cycles say. On TRV-006 the first cycle under both sources moved a contested total onto the key (`b04b52defd9e8a16`, `52860772b0780e29`, from `13ac4d00c92faa06`), and the second external cycle moved it off again (`d61d08686771c15e`); both repeats of that baseline made the same repair on their own (`08b35a61781c8ad1`, `4997be16e776d4c2`). CYC-14, that self-revision never moves a total onto the key, is refuted once by this run, and the floor made the same move twice. And the floor itself was high that morning: six of eighteen repeats differed, with verdicts moving both ways (`nights_away` and `purpose` off the key, `trip_end` and the total onto it), against one of eighteen in the first run of the same requests eight hours earlier (`compare` pairs the two runs: baselines 6 identical and 3 differing, repeats 15 and 3, and the cycles not comparable on either side). A model whose repeat floor moves between mornings by that much cannot be read on nine cases through cycles that mostly never arrived.
+
+The repaired dossier for gpt-oss:20b's timeouts was a setting; raising it changed nothing about the timeouts and is recorded as such (H30).
 
 *Every count above is a count of observations under one key and one reading; the epistemic limit printed on every record applies.*
