@@ -386,6 +386,18 @@ class RunTests(unittest.TestCase):
         fields, _ = claims_module.condition_footprint({"all_of": [{"field_value": {"field": "follows", "values": ["x"]}}, {"value_changed": {"field": "essential"}}, {"unit": {"relation": ["self"]}}]})
         self.assertEqual(fields, frozenset({"follows", "essential"}))
 
+    def test_an_array_compares_as_a_set_and_a_reorder_is_counted_apart(self) -> None:
+        from types import SimpleNamespace
+        from creib.forge.conformance.dependence import _moved_fields, _reordered_fields
+        def fake(output):
+            return SimpleNamespace(scoring=SimpleNamespace(parsed_output=output))
+        base = fake({"follows": "follows", "essential": ["UED", "K-RECURSION"]})
+        self.assertEqual(_moved_fields(fake({"follows": "follows", "essential": ["K-RECURSION", "UED"]}), base, ("follows", "essential")), ())
+        self.assertEqual(_reordered_fields(fake({"follows": "follows", "essential": ["K-RECURSION", "UED"]}), base, ("follows", "essential")), ("essential",))
+        self.assertEqual(_moved_fields(fake({"follows": "follows", "essential": ["UED"]}), base, ("follows", "essential")), ("essential",))
+        self.assertEqual(_reordered_fields(fake({"follows": "follows", "essential": ["UED"]}), base, ("follows", "essential")), ())
+        self.assertEqual(_moved_fields(fake({"follows": "not_determined"}), base, ("follows", "essential")), ("follows", "essential"))
+
     def test_the_dependence_subcommand_writes_the_table(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             markdown = Path(directory) / "dependence.md"

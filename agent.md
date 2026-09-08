@@ -167,11 +167,25 @@ python tools/run_conformance_pilot.py compare --run <low run> --run <high run> -
 
 The plan is the same at every level; each run record's `endpoint` says what was sent, and `compare` pairs the requests by case and repeat (their digests differ, since the setting is inside the request, so use `--run` pairs from the same plan and read the pairing by case). A claim scopes on the setting with the `endpoint` predicate, read from the run record, so write the conjectures about levels before the runs as with any other. The travel-claim pilot's THK-01 to THK-08 are an example. Do not read a boolean `think` as an off switch: the models that take a level ignore it (L10), and the records show the channel whatever was sent.
 
+## Use 12: find what a model's reading of a document depends on, with no key
+
+For a document with headings, let the harness find the units and the terms itself. Write `pilot.json` with a `unit_dependence` block (heading levels, term patterns) and a two-field form with an array of terms, generate the probes, and run baselines, repeats, and removals together:
+
+```sh
+python tools/gen_unit_dependence_corpus.py --document my-document.md --pilot-dir forge/conformance/pilots/my-document --corpus-id MY-DOCUMENT-CORPUS-001
+python tools/run_conformance_pilot.py run --pilot forge/conformance/pilots/my-document/pilot.json --model gpt-oss:120b \
+    --family BASELINE --family REPEAT --family UNIT_DEPENDENCE --order interleaved \
+    --output-dir forge/conformance/runs/my-document --created-on "$(date -u +%Y-%m-%dT%H:%M:00Z)"
+python tools/run_conformance_pilot.py dependence --observations-dir forge/conformance/runs/my-document --markdown dependence.md
+```
+
+Every section carrying the document's own argument markup becomes a probe whose claim is its heading; every headed unit is removed once per probe with everything else present; the reply is compared with the same model's baseline reply and with nothing else. The table says, per relation (the document's own argument for the claim, a definition that argument uses, anything else), how many removals moved the form and which fields, beside the repeat floor, and sets the model's own named dependencies beside what removal moved. The unit table the generator prints is model-free and is the first thing to read. A run of this family is always labelled as having no scored output, which is what it is; the conjectures in `claims.json` (`unit`, `value_changed`, `field_value`) are where a move becomes a refutation, and they are written before the run as with any other. The pilot `semantics-unit-dependence` is an example, and `docs/document-dependence.md` reads its run.
+
 ## Reading the output
 
 - **Run labels.** `UNREFUTED_FOR_DECLARED_SCOPE` is the strongest: every judged field matched and nothing more. `REFUTED_CASES_PRESENT` means the model is a live suspect on at least one observation; it does not mean the model failed the battery. `INCONCLUSIVE_NO_SCORED_OUTPUT` means some field went unjudged or a call did not complete, which is the normal label for a plain fill with no key.
 - **Live loci.** Every failure after a model call names a set from CANDIDATE (the model), AUXILIARY (prompt, executor, format plumbing), TEST (the oracle), SCOPE (the task as framed). A set is never a single locus; the routing is in `routing.py` and each report translates every trigger in prose.
-- **Triggers.** Response-level: `TRANSPORT_ERROR`, `EMPTY_RESPONSE`, `TRUNCATED`, `INVALID_JSON`, `NOT_AN_OBJECT`, `REFUSAL_SUSPECTED`, `PREREQUISITE_UNAVAILABLE`. Field-level: `MISMATCH`, `MISSING_REQUIRED`, `EXTRA_FIELD`, `TYPE_VIOLATION`, `PATTERN_VIOLATION`, `ENUM_VIOLATION`, `LENGTH_VIOLATION`, `UNEXPECTED_PRESENT`, `SCHEMA_INVALID`. Family-level: `IDENTICAL_TO_BASELINE`, `REPEAT_DIFFERS`, `DEPENDENCE_CHANGED`, `DEPENDENCE_UNCHANGED`, `CONTROL_ACCEPTED`, `CONTROL_REJECTED`, `FORMAT_NOT_ENFORCED`. Grounding: `SPAN_MISSING`, `SPAN_NOT_IN_DOCUMENT`, `VALUE_NOT_IN_SPAN`.
+- **Triggers.** Response-level: `TRANSPORT_ERROR`, `EMPTY_RESPONSE`, `TRUNCATED`, `INVALID_JSON`, `NOT_AN_OBJECT`, `REFUSAL_SUSPECTED`, `PREREQUISITE_UNAVAILABLE`. Field-level: `MISMATCH`, `MISSING_REQUIRED`, `EXTRA_FIELD`, `TYPE_VIOLATION`, `PATTERN_VIOLATION`, `ENUM_VIOLATION`, `LENGTH_VIOLATION`, `UNEXPECTED_PRESENT`, `SCHEMA_INVALID`. Family-level: `IDENTICAL_TO_BASELINE`, `REPEAT_DIFFERS`, `DEPENDENCE_CHANGED`, `DEPENDENCE_UNCHANGED` (a removed instruction sentence or, for UNIT_DEPENDENCE, a removed unit of the document), `CONTROL_ACCEPTED`, `CONTROL_REJECTED`, `FORMAT_NOT_ENFORCED`. Grounding: `SPAN_MISSING`, `SPAN_NOT_IN_DOCUMENT`, `VALUE_NOT_IN_SPAN`.
 - **Exit codes.** `run` exits 1 when any observation carries live loci. That means look, not failed.
 - **Interrupted runs.** A killed run leaves its observations and no run record. They are valid on their own but `report` will not see them; delete them or keep them as orphans, and rerun with a new `--created-on`.
 
