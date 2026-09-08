@@ -410,6 +410,24 @@ def compile_condition(raw: Any, where: str = "condition") -> Predicate:
             return field in output and canonical_bytes(_plain(output[field])) in wanted
 
         return field_value
+    if key == "field_contains":
+        # An array field of the reply holds at least one of the listed items, compared as canonical
+        # JSON. False, not a counterexample by default, when the field is absent or not an array.
+        spec = object_value(value, f"{where}.field_contains")
+        field = text(spec["field"], f"{where}.field_contains.field")
+        listed = array_value(spec["values"], f"{where}.field_contains.values")
+        if not listed:
+            raise RecordError(f"{where}.field_contains.values must list at least one value")
+        wanted = frozenset(canonical_bytes(_plain(item)) for item in listed)
+
+        def field_contains(o: ObservationRecord, c: Context) -> bool:
+            output = _output(o)
+            items = output.get(field)
+            if not isinstance(items, list):
+                return False
+            return any(canonical_bytes(_plain(item)) in wanted for item in items)
+
+        return field_contains
     if key == "value_changed":
         # The field's value or presence differs from the observation this one is compared with
         # (the baseline, or for a cycle the step it follows). False, not a counterexample by
@@ -592,7 +610,7 @@ def condition_footprint(raw: Any) -> tuple[frozenset[str] | None, frozenset[str]
                 triggers.add(verdict)
         elif key == "value_null":
             fields.add(str(object_value(value, "value_null")["field"]))
-        elif key in ("field_value", "value_changed"):
+        elif key in ("field_value", "field_contains", "value_changed"):
             fields.add(str(object_value(value, key)["field"]))
     walk(raw)
     return (None if any_field else frozenset(fields)), frozenset(triggers)

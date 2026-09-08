@@ -40,6 +40,7 @@ from .families import (
 )
 from .cycles import render_cycles_markdown, summarise_cycles
 from .dependence import render_dependence_markdown, summarise_dependence
+from .controls import render_controls_markdown, summarise_controls
 from .units import UnitDependence, relate_units, remove_unit, split_units, unit_dependence_from_dict
 from .oracle import FieldVerdict, Scoring, score
 from .prompt import build_chat_request
@@ -111,6 +112,8 @@ __all__ = [
     "materialize_cycle",
     "render_cycles_markdown",
     "render_dependence_markdown",
+    "render_controls_markdown",
+    "summarise_controls",
     "summarise_dependence",
     "UnitDependence",
     "relate_units",

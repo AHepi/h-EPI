@@ -177,6 +177,13 @@ PYTHONPATH=src python tools/run_conformance_pilot.py run --pilot forge/conforman
 PYTHONPATH=src python tools/run_conformance_pilot.py dependence --observations-dir forge/conformance/runs/my-document --markdown dependence.md
 ```
 
+A removal that moves nothing has three readings, and a second generator writes the controls that separate them, all computed from the document: the claim with no document (answered from the claim alone), with its own section only (answered from the argument), with that section and the units defining the terms it uses, with every other unit carrying a term the argument uses removed at once (the block the redundancy reading needs), with the whole vocabulary consistently renamed so that a reply naming the old names names what is not on the page, and with the claim negated. Each control is a case paired with its full-document case (`pair_of`, with `varied` naming the control as `control=<kind>`), so the corpus needs no new family: baselines and repeats do the work. The `controls` command tables, per run and kind, how many controls left each field as the full-document reply had it, beside each control's own repeat floor, which vocabulary each reply to the renamed document named, and whether the verdict followed the negation.
+
+```sh
+python tools/gen_unit_controls_corpus.py --document my-document.md --source-pilot forge/conformance/pilots/my-document --pilot-dir forge/conformance/pilots/my-document-controls --corpus-id MY-DOCUMENT-CONTROLS-001
+PYTHONPATH=src python tools/run_conformance_pilot.py controls --pilot forge/conformance/pilots/my-document-controls/pilot.json --observations-dir forge/conformance/runs/my-document-controls --markdown controls.md
+```
+
 The generator turns a markdown document into probes with no key: every section whose body carries the document's own argument markup (a bold `Claim.`, `Counterexample.`, `Derivation.`, `Construction.` or `Consequence.` label) is one case, the claim under assessment is the section's heading restated in a short preamble, and the whole document follows. It prints the model-free unit table, which is the first result: every unit, the terms it is taken to define, and each probe's self and declared units, before any model is called. What it cannot do is decide which reply is right, or whether a unit that moved nothing is redundant in the document or unread by the model; those stay live.
 
 ## The hard battery

@@ -95,6 +95,10 @@ def _parser() -> argparse.ArgumentParser:
     dependence = subparsers.add_parser("dependence", help="per run and relation (self, declared, other): unit removals whose form stayed as the baseline had it or moved, which fields moved, the repeat floor, and the model's own named dependencies beside what removal moved; never a score")
     dependence.add_argument("--observations-dir", type=Path, required=True, action="append", help="directories holding the runs and their observations; may be given more than once")
     dependence.add_argument("--markdown", type=Path, default=None)
+    controls = subparsers.add_parser("controls", help="per run and control kind: each control case's reply beside the same model's reply on the paired full-document case, the control's repeat floor, which vocabulary a reply to the renamed document named, and whether the verdict followed a negated claim; never a score")
+    controls.add_argument("--pilot", type=Path, required=True, help="the controls pilot, whose corpus pairs each control case with its full-document case")
+    controls.add_argument("--observations-dir", type=Path, required=True, action="append", help="directories holding the runs and their observations; may be given more than once")
+    controls.add_argument("--markdown", type=Path, default=None)
     return parser
 
 
@@ -336,6 +340,20 @@ def main(argv: Sequence[str] | None = None) -> int:
             if args.markdown is not None:
                 publish_no_clobber(args.markdown, render_compare_markdown(comparison).encode("utf-8"))
             _emit(comparison)
+            return 0
+        if args.command == "controls":
+            from creib.forge.conformance.controls import render_controls_markdown, summarise_controls
+            from creib.forge.conformance.records import enumerate_record_directory
+            config, corpus = _load(args.pilot)
+            runs = []
+            observations = []
+            for directory in args.observations_dir:
+                runs.extend(load_run(path) for path in enumerate_record_directory(directory).run_paths)
+                observations.extend(load_observation_directory(directory))
+            summary = summarise_controls(corpus, runs, observations)
+            if args.markdown is not None:
+                publish_no_clobber(args.markdown, render_controls_markdown(summary).encode("utf-8"))
+            _emit(summary)
             return 0
         if args.command == "dependence":
             from creib.forge.conformance.dependence import render_dependence_markdown, summarise_dependence
