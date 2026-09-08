@@ -211,6 +211,30 @@ class ModelExecutor(Protocol):
     def complete(self, request: ChatRequest) -> ChatResponse: ...
 
 
+TRANSPORT_ERROR_KINDS: tuple[str, ...] = ("timeout", "disconnected", "http_status", "other")
+_HTTP_STATUS = re.compile(r"^HTTPError: status (\d{3})")
+
+
+def transport_error_kind(message: str) -> tuple[str, int | None]:
+    """Classify a recorded transport error by the exception it was written from.
+
+    ``timeout`` is the client's own read timeout (``TimeoutError``, or a URLError that says it
+    timed out); ``disconnected`` is the remote end closing the connection without a response
+    or resetting it; ``http_status`` is an HTTP error reply, with its status; anything else is
+    ``other``. The kind is read from the text the executor recorded, so a record says which.
+    """
+
+    match = _HTTP_STATUS.match(message)
+    if match is not None:
+        return "http_status", int(match.group(1))
+    head = message.split(":", 1)[0]
+    if head in ("TimeoutError", "timeout", "socket.timeout") or "timed out" in message:
+        return "timeout", None
+    if head in ("RemoteDisconnected", "ConnectionResetError", "IncompleteRead", "BadStatusLine", "ConnectionAbortedError", "BrokenPipeError"):
+        return "disconnected", None
+    return "other", None
+
+
 def _error_response(message: str, *, http_status: int | None, body: bytes | None, attempt: int) -> ChatResponse:
     digest_source = body if body is not None else message.encode("utf-8")
     return ChatResponse(

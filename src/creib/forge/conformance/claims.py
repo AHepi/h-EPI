@@ -30,10 +30,12 @@ from .common import (
     optional_text,
     text,
     validate_instance,
+    integer,
 )
 from .families import Family
 from .spec import CYCLE_CRITICISMS, THINK_LEVELS
 from .units import UNIT_RELATIONS
+from .executor import TRANSPORT_ERROR_KINDS, transport_error_kind
 from .oracle import FIELD_VERDICTS, GROUNDING_VERDICTS, RESPONSE_VERDICTS
 from .appraisal import Appraisal
 from .records import ObservationRecord, RunRecord
@@ -421,6 +423,36 @@ def compile_condition(raw: Any, where: str = "condition") -> Predicate:
             return _value_changed(field, o, previous)
 
         return value_changed
+    if key == "transport_error":
+        # The kind of transport failure the record carries, read from the recorded error text:
+        # the client's own read timeout, the remote end closing the connection without a
+        # response, an HTTP status (optionally a particular one), or anything else. The final
+        # attempt by default; with any_attempt the retried attempts count too.
+        spec = object_value(value, f"{where}.transport_error")
+        kinds = frozenset(text(item, f"{where}.transport_error.kind[{i}]") for i, item in enumerate(array_value(spec["kind"], f"{where}.transport_error.kind")))
+        unknown = sorted(kinds - set(TRANSPORT_ERROR_KINDS))
+        if unknown:
+            raise RecordError(f"{where}.transport_error.kind names unknown kinds {unknown}; known: {list(TRANSPORT_ERROR_KINDS)}")
+        if not kinds:
+            raise RecordError(f"{where}.transport_error.kind must name at least one kind")
+        status = None if spec.get("status") is None else integer(spec["status"], f"{where}.transport_error.status", minimum=100)
+        if status is not None and kinds != frozenset({"http_status"}):
+            raise RecordError(f"{where}.transport_error.status applies to the http_status kind alone")
+        any_attempt = optional_boolean(spec.get("any_attempt"), f"{where}.transport_error.any_attempt") or False
+
+        def transport_error(o: ObservationRecord, c: Context) -> bool:
+            if o.response is None:
+                return False
+            attempts = [o.response] + (list(o.response.prior_attempts) if any_attempt else [])
+            for attempt in attempts:
+                if attempt.transport_error is None:
+                    continue
+                kind, code = transport_error_kind(attempt.transport_error)
+                if kind in kinds and (status is None or code == status):
+                    return True
+            return False
+
+        return transport_error
     if key == "trigger":
         trigger = text(value, f"{where}.trigger")
         if trigger not in TRIGGERS:

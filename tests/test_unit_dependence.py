@@ -411,6 +411,62 @@ class RunTests(unittest.TestCase):
             self.assertIn("## Removals by relation", markdown.read_text(encoding="utf-8"))
 
 
+class TransportErrorPredicateTests(unittest.TestCase):
+    """A conjecture about delivery can name the kind of failure the record carries."""
+
+    def test_kinds_are_read_from_the_recorded_text(self) -> None:
+        from creib.forge.conformance.executor import transport_error_kind
+        self.assertEqual(transport_error_kind("TimeoutError: The read operation timed out"), ("timeout", None))
+        self.assertEqual(transport_error_kind("URLError: <urlopen error timed out>"), ("timeout", None))
+        self.assertEqual(transport_error_kind("RemoteDisconnected: Remote end closed connection without response"), ("disconnected", None))
+        self.assertEqual(transport_error_kind("ConnectionResetError: [Errno 104] Connection reset by peer"), ("disconnected", None))
+        self.assertEqual(transport_error_kind('HTTPError: status 503: {"error":"overloaded"}'), ("http_status", 503))
+        self.assertEqual(transport_error_kind("ExecutorException: ValueError"), ("other", None))
+
+    def test_predicate_over_a_run_with_transport_errors(self) -> None:
+        from creib.forge.conformance.executor import _error_response
+        disconnected = _error_response("RemoteDisconnected: Remote end closed connection without response", http_status=None, body=None, attempt=2)
+        timed_out = _error_response("TimeoutError: The read operation timed out", http_status=None, body=None, attempt=1)
+        final = dataclasses.replace(disconnected, prior_attempts=(timed_out,))
+        overloaded = _error_response('HTTPError: status 503: {"error":"temporarily overloaded"}', http_status=503, body=b"{}", attempt=1)
+        calls = {"n": 0}
+
+        def respond(request: ChatRequest):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                return final
+            if calls["n"] == 2:
+                return overloaded
+            return response_from_content(json.dumps({"follows": "follows", "essential": []}))
+
+        with tempfile.TemporaryDirectory() as directory:
+            result = run_pilot(
+                spec=_CONFIG.spec, corpus=_CORPUS, plan=_PLAN, model="gpt-oss:20b", executor=FakeExecutor(respond), executor_kind="fake",
+                output_dir=Path(directory), created_on=CREATED_ON, families=(Family.BASELINE,), limit=3,
+            )
+        observations = list(result.observations)
+        context = claims_module.Context(observations, [result.run_record])
+        holds = lambda condition, o: claims_module.compile_condition(condition, "c")(o, context)
+        first, second, third = observations
+        self.assertEqual(first.scoring.response_verdict, "TRANSPORT_ERROR")
+        self.assertTrue(holds({"transport_error": {"kind": ["disconnected"]}}, first))
+        self.assertFalse(holds({"transport_error": {"kind": ["timeout"]}}, first), "the final attempt was a disconnection")
+        self.assertTrue(holds({"transport_error": {"kind": ["timeout"], "any_attempt": True}}, first), "the retried attempt had timed out")
+        self.assertTrue(holds({"transport_error": {"kind": ["http_status"], "status": 503}}, second))
+        self.assertFalse(holds({"transport_error": {"kind": ["http_status"], "status": 500}}, second))
+        self.assertTrue(holds({"transport_error": {"kind": ["http_status", "disconnected"]}}, second))
+        self.assertFalse(holds({"transport_error": {"kind": ["timeout", "disconnected", "http_status", "other"]}}, third), "a reply is not a transport error")
+        for condition, message in (
+            ({"transport_error": {"kind": ["lost"]}}, "unknown kinds"),
+            ({"transport_error": {"kind": []}}, "at least one kind"),
+            ({"transport_error": {"kind": ["timeout"], "status": 503}}, "http_status kind alone"),
+        ):
+            with self.assertRaisesRegex(RecordError, message):
+                claims_module.compile_condition(condition, "c")
+        fields, triggers = claims_module.condition_footprint({"transport_error": {"kind": ["timeout"]}})
+        self.assertEqual((fields, triggers), (frozenset(), frozenset()), "a delivery predicate rests on no reading")
+
+
 class GeneratorTests(unittest.TestCase):
     def test_probes_are_the_argued_sections_and_the_claim_is_the_heading(self) -> None:
         config = _config()
