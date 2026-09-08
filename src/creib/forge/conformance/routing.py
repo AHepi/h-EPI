@@ -34,6 +34,8 @@ Table (trigger -> loci; family restrictions in brackets):
     CONTROL_REJECTED [NON_VACUITY]          -> TEST
     DEPENDENCE_CHANGED [IMPORT_DEPENDENCY]  -> AUXILIARY, SCOPE
     DEPENDENCE_UNCHANGED [IMPORT_DEPENDENCY]-> AUXILIARY, TEST, SCOPE
+    DEPENDENCE_CHANGED [UNIT_DEPENDENCE]    -> AUXILIARY, TEST, SCOPE
+    DEPENDENCE_UNCHANGED [UNIT_DEPENDENCE]  -> AUXILIARY, TEST, SCOPE
     REPEAT_DIFFERS [REPEAT]                 -> AUXILIARY, CANDIDATE
     LENGTH_VIOLATION under active grounding -> adds AUXILIARY (the appended quotation
         instruction may have induced verbatim copying into a bounded value field)
@@ -299,6 +301,24 @@ ROUTING_TABLE: tuple[RoutingRule, ...] = (
             ("SCOPE", "This case may not exercise the removed sentence at all."),
         ),
         (Family.IMPORT_DEPENDENCY,),
+    ),
+    _rule(
+        "DEPENDENCE_CHANGED",
+        (
+            ("AUXILIARY", "The removed unit did work for this reply, or its removal moved the reply by position and length alone; which is a question about the document as sent."),
+            ("TEST", "The probe compares two replies with no key and has a floor: the same run's REPEAT family says how often an unchanged request moved, and a move inside that floor is not evidence about the unit."),
+            ("SCOPE", "Which units, which claim, and which relation a unit is given are scope decisions made from the document by pattern."),
+        ),
+        (Family.UNIT_DEPENDENCE,),
+    ),
+    _rule(
+        "DEPENDENCE_UNCHANGED",
+        (
+            ("AUXILIARY", "The removed unit had no observable effect on this reply; the document as sent may carry the same content elsewhere, or the reply may not rest on the document at all."),
+            ("TEST", "The probe records two replies and no key; that nothing moved says nothing about whether either reply is right."),
+            ("SCOPE", "This claim may not exercise the removed unit at all."),
+        ),
+        (Family.UNIT_DEPENDENCE,),
     ),
     _rule(
         "REPEAT_DIFFERS",

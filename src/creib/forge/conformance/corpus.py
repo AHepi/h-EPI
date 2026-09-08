@@ -216,6 +216,10 @@ def parse_oracle(
         if not values:
             raise RecordError(f"{where}.values must not be empty")
     json_type = str(properties[field]["type"]) if field in properties else "string"
+    if json_type == "array" and kind not in ("unknown", "absent"):
+        # An array field carries no scalar key; it is recorded, compared with other replies, and
+        # checked against its own schema, never judged against a listed value.
+        raise RecordError(f"{where} array field {field!r} admits only the unknown or absent oracle")
     if kind == "exact":
         if value is None or values is not None or pattern is not None:
             raise RecordError(f"{where} exact oracle needs value only")

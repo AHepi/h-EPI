@@ -29,7 +29,7 @@ from .routing import route
 from .spec import TaskSpec
 
 
-_BASELINE_DEPENDENT = frozenset({Family.NEGATION, Family.IMPORT_DEPENDENCY, Family.ROUND_TRIP, Family.REPEAT, Family.CYCLE})
+_BASELINE_DEPENDENT = frozenset({Family.NEGATION, Family.IMPORT_DEPENDENCY, Family.ROUND_TRIP, Family.REPEAT, Family.CYCLE, Family.UNIT_DEPENDENCE})
 
 
 @dataclass(frozen=True)

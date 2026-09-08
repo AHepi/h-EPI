@@ -158,7 +158,8 @@
         "NON_VACUITY",
         "ROUND_TRIP",
         "REPEAT",
-        "CYCLE"
+        "CYCLE",
+        "UNIT_DEPENDENCE"
       ]
     },
     "oracle_status": {
@@ -252,7 +253,8 @@
           "enum": [
             "string",
             "boolean",
-            "integer"
+            "integer",
+            "array"
           ]
         },
         "description": {
@@ -260,6 +262,38 @@
         },
         "pattern": {
           "$ref": "#/$defs/nonempty_string"
+        },
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type"
+          ],
+          "properties": {
+            "type": {
+              "const": "string"
+            },
+            "enum": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Array fields only: every item is a string, optionally from a closed list."
+        },
+        "uniqueItems": {
+          "type": "boolean"
+        },
+        "minItems": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxItems": {
+          "type": "integer",
+          "minimum": 0
         },
         "enum": {
           "type": "array",
@@ -533,7 +567,29 @@
             }
           },
           "description": "CYCLE only: the failed checks shown to the model with the previous answer; the vocabulary is the oracle-free one, so the answer key can never appear here. Empty for a self-revision cycle."
+        },
+        "removed_unit_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "UNIT_DEPENDENCE only: the unit of the case document removed for this variant. Absent for every other family, and the three keys below are present exactly when it is."
+        },
+        "removed_unit_title": {
+          "type": "string",
+          "description": "The heading of the removed unit."
+        },
+        "removed_unit_relation": {
+          "type": "string",
+          "enum": ["self", "declared", "other"],
+          "description": "The unit's relation to the claim the case preamble names, computed from the document by pattern: self (the document's own argument for the claim), declared (defines a term that argument uses), other."
+        },
+        "removed_unit_defines": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The terms the removed unit is taken to define, by the same pattern heuristic; may be empty."
         }
+
       }
     },
     "response_attempt": {

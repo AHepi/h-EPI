@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Iterable, Mapping
 
+from creib.canonical import canonical_bytes
 from creib.errors import RecordError
 from creib.strict_json import loads_strict
 
@@ -32,6 +33,7 @@ from .common import (
 )
 from .families import Family
 from .spec import CYCLE_CRITICISMS, THINK_LEVELS
+from .units import UNIT_RELATIONS
 from .oracle import FIELD_VERDICTS, GROUNDING_VERDICTS, RESPONSE_VERDICTS
 from .appraisal import Appraisal
 from .records import ObservationRecord, RunRecord
@@ -363,6 +365,62 @@ def compile_condition(raw: Any, where: str = "condition") -> Predicate:
             return count == sum(1 for name in of if type(output[name]) is type(counted) and output[name] == counted)
 
         return internal_count
+    if key == "unit":
+        # UNIT_DEPENDENCE only: which unit of the document was removed, by id or by its relation
+        # to the claim (self, declared, other) as the plan computed it from the document.
+        spec = object_value(value, f"{where}.unit")
+        relations = None
+        if spec.get("relation") is not None:
+            relations = frozenset(text(item, f"{where}.unit.relation[{i}]") for i, item in enumerate(array_value(spec["relation"], f"{where}.unit.relation")))
+            unknown = sorted(relations - set(UNIT_RELATIONS))
+            if unknown:
+                raise RecordError(f"{where}.unit.relation names unknown relations {unknown}; known: {list(UNIT_RELATIONS)}")
+        removed = None
+        if spec.get("removed") is not None:
+            removed = frozenset(text(item, f"{where}.unit.removed[{i}]") for i, item in enumerate(array_value(spec["removed"], f"{where}.unit.removed")))
+        if relations is None and removed is None:
+            raise RecordError(f"{where}.unit must name a relation or a removed unit")
+
+        def unit(o: ObservationRecord, c: Context) -> bool:
+            variant = o.variant
+            if variant.removed_unit_id is None:
+                return False
+            if relations is not None and variant.removed_unit_relation not in relations:
+                return False
+            if removed is not None and variant.removed_unit_id not in removed:
+                return False
+            return True
+
+        return unit
+    if key == "field_value":
+        # The value the model returned for a field is one of the listed values, compared as
+        # canonical JSON so that lists and objects can be named as well as scalars. False, not a
+        # counterexample by default, when the field is absent or the reply did not parse.
+        spec = object_value(value, f"{where}.field_value")
+        field = text(spec["field"], f"{where}.field_value.field")
+        listed = array_value(spec["values"], f"{where}.field_value.values")
+        if not listed:
+            raise RecordError(f"{where}.field_value.values must list at least one value")
+        wanted = frozenset(canonical_bytes(_plain(item)) for item in listed)
+
+        def field_value(o: ObservationRecord, c: Context) -> bool:
+            output = _output(o)
+            return field in output and canonical_bytes(_plain(output[field])) in wanted
+
+        return field_value
+    if key == "value_changed":
+        # The field's value or presence differs from the observation this one is compared with
+        # (the baseline, or for a cycle the step it follows). False, not a counterexample by
+        # default, when either reply did not parse or there is nothing to compare with.
+        field = text(object_value(value, f"{where}.value_changed")["field"], f"{where}.value_changed.field")
+
+        def value_changed(o: ObservationRecord, c: Context) -> bool:
+            previous = c.previous_of(o)
+            if previous is None or o.scoring.parsed_output is None or previous.scoring.parsed_output is None:
+                return False
+            return _value_changed(field, o, previous)
+
+        return value_changed
     if key == "trigger":
         trigger = text(value, f"{where}.trigger")
         if trigger not in TRIGGERS:
@@ -502,6 +560,8 @@ def condition_footprint(raw: Any) -> tuple[frozenset[str] | None, frozenset[str]
                 triggers.add(verdict)
         elif key == "value_null":
             fields.add(str(object_value(value, "value_null")["field"]))
+        elif key in ("field_value", "value_changed"):
+            fields.add(str(object_value(value, key)["field"]))
     walk(raw)
     return (None if any_field else frozenset(fields)), frozenset(triggers)
 

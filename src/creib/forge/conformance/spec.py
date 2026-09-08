@@ -24,6 +24,7 @@ from jsonschema.exceptions import SchemaError
 
 from creib.errors import RecordError
 from .common import NON_INDUCTIVE_LIMIT
+from .units import UnitDependence, unit_dependence_from_dict
 from creib.strict_json import loads_strict
 
 from .common import (
@@ -389,6 +390,8 @@ class TaskSpec:
     grounding: Grounding
     repeats: int
     cycles: Cycles = Cycles(count=0, criticism=())
+    # UNIT_DEPENDENCE: off unless the pilot names heading levels; absent adds no variant and no bytes.
+    unit_dependence: UnitDependence = UnitDependence(levels=(), term_patterns=(), min_occurrences=1)
 
     @property
     def required_fields(self) -> tuple[str, ...]:
@@ -729,6 +732,7 @@ def build_task_spec(
     if repeats > MAX_REPEATS:
         raise RecordError(f"repeats must be at most {MAX_REPEATS}")
     cycles = cycles_from_dict(raw_config.get("cycles"))
+    unit_dependence = unit_dependence_from_dict(raw_config.get("unit_dependence"))
     refusal_phrases = unique_texts(raw_config["refusal_phrases"], "refusal_phrases")
     models = tuple(model_id(item, f"models[{index}]") for index, item in enumerate(raw_config["models"]))
     if len(models) != len(set(models)):
@@ -756,6 +760,7 @@ def build_task_spec(
         grounding=grounding,
         repeats=repeats,
         cycles=cycles,
+        unit_dependence=unit_dependence,
     )
 
 

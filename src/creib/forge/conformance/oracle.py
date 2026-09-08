@@ -65,7 +65,7 @@ FIELD_VERDICTS: tuple[str, ...] = (
     "UNEXPECTED_PRESENT",
     "NOT_SCORED",
 )
-_JSON_TYPES: Mapping[str, type] = {"string": str, "boolean": bool, "integer": int}
+_JSON_TYPES: Mapping[str, type] = {"string": str, "boolean": bool, "integer": int, "array": list}
 GROUNDING_VERDICTS: tuple[str, ...] = ("GROUNDED", "SPAN_MISSING", "SPAN_NOT_IN_DOCUMENT", "VALUE_NOT_IN_SPAN", "ABSTAINED")
 GROUNDING_CRITICISMS: tuple[str, ...] = ("SPAN_MISSING", "SPAN_NOT_IN_DOCUMENT", "VALUE_NOT_IN_SPAN")
 _FENCE = re.compile(r"```(?:json|JSON)?\s*(.*?)```", re.DOTALL)
@@ -325,6 +325,25 @@ def _constraint_verdict(value: Any, property_schema: Mapping[str, Any]) -> tuple
     expected_type = _JSON_TYPES.get(str(json_type))
     if expected_type is None or type(value) is not expected_type:
         return "TYPE_VIOLATION", f"expected JSON type {json_type}"
+    if type(value) is list:
+        # The form profile admits arrays of strings only, optionally from a closed list, optionally
+        # unique and bounded in length; each constraint reports under the verdict it most resembles.
+        items = property_schema.get("items") or {}
+        if any(type(item) is not str for item in value):
+            return "TYPE_VIOLATION", "expected every item to be a string"
+        allowed = items.get("enum")
+        if allowed is not None:
+            outside = [item for item in value if item not in allowed]
+            if outside:
+                return "ENUM_VIOLATION", f"items not in the closed list: {outside!r}"
+        if property_schema.get("uniqueItems") and len(set(value)) != len(value):
+            return "LENGTH_VIOLATION", "repeated item where uniqueItems is required"
+        maximum = property_schema.get("maxItems")
+        if maximum is not None and len(value) > maximum:
+            return "LENGTH_VIOLATION", f"{len(value)} items exceeds maxItems {maximum}"
+        minimum = property_schema.get("minItems")
+        if minimum is not None and len(value) < minimum:
+            return "LENGTH_VIOLATION", f"{len(value)} items below minItems {minimum}"
     if type(value) is str:
         pattern = property_schema.get("pattern")
         if pattern is not None and re.search(pattern, value) is None:

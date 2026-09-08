@@ -51,6 +51,7 @@ from .common import (
 )
 from .corpus import Case, Corpus, Oracle, Scalar, parse_oracle, RENDERINGS
 from .spec import CYCLE_CRITICISMS, TaskSpec, render_instructions, validate_form_schema, Grounding, grounding_from_dict
+from .units import UNIT_RELATIONS, relate_units, remove_unit
 
 
 VARIANT_DOMAIN = "creib.conformance-pilot.variant.v1"
@@ -70,6 +71,7 @@ class Family(str, Enum):
     ROUND_TRIP = "ROUND_TRIP"
     REPEAT = "REPEAT"
     CYCLE = "CYCLE"
+    UNIT_DEPENDENCE = "UNIT_DEPENDENCE"
 
 
 TEST_FAMILIES: tuple[Family, ...] = tuple(family for family in Family if family is not Family.BASELINE)
@@ -132,6 +134,14 @@ class Variant:
     cycle_of: str | None = None
     cycle_previous_output: str | None = None
     cycle_criticisms: tuple[Criticism, ...] | None = None
+    # UNIT_DEPENDENCE only, written to the body only when removed_unit_id is set: the unit of the
+    # case document that was removed, its heading, its relation to the claim the case names
+    # (self, declared, other), and the terms the unit is taken to define, all computed from the
+    # document by pattern at plan time.
+    removed_unit_id: str | None = None
+    removed_unit_title: str | None = None
+    removed_unit_relation: str | None = None
+    removed_unit_defines: tuple[str, ...] | None = None
 
     @property
     def criticised_fields(self) -> tuple[str, ...]:
@@ -290,6 +300,11 @@ class Variant:
             body["cycle_of"] = self.cycle_of
             body["cycle_previous_output"] = self.cycle_previous_output
             body["cycle_criticisms"] = None if self.cycle_criticisms is None else [item.to_dict() for item in self.cycle_criticisms]
+        if self.removed_unit_id is not None:
+            body["removed_unit_id"] = self.removed_unit_id
+            body["removed_unit_title"] = self.removed_unit_title
+            body["removed_unit_relation"] = self.removed_unit_relation
+            body["removed_unit_defines"] = None if self.removed_unit_defines is None else list(self.removed_unit_defines)
         return body
 
     def to_dict(self) -> dict[str, object]:
@@ -353,10 +368,31 @@ def variant_from_dict(raw: Any) -> Variant:
         grounding=None if record["grounding"] is None else grounding_from_dict(record["grounding"], field_order, "variant.grounding"),
         repeat_index=None if record.get("repeat_index") is None else integer(record["repeat_index"], "variant.repeat_index", minimum=1),
         **_cycle_fields_from_dict(record),
+        **_unit_fields_from_dict(record),
     )
     if rebuilt.variant_id != hex_digest(record["variant_id"], "variant.variant_id"):
         raise RecordError("variant_id does not replay from the variant content")
     return rebuilt
+
+
+def _unit_fields_from_dict(record: Mapping[str, Any]) -> dict[str, Any]:
+    """The UNIT_DEPENDENCE keys of a variant record; all absent for every other family."""
+
+    if record.get("removed_unit_id") is None:
+        for key in ("removed_unit_title", "removed_unit_relation", "removed_unit_defines"):
+            if record.get(key) is not None:
+                raise RecordError(f"variant.{key} is set without removed_unit_id")
+        return {}
+    relation = text(record["removed_unit_relation"], "variant.removed_unit_relation")
+    if relation not in UNIT_RELATIONS:
+        raise RecordError(f"variant.removed_unit_relation {relation!r} is not a known relation; known: {list(UNIT_RELATIONS)}")
+    defines = tuple(text(item, f"variant.removed_unit_defines[{index}]") for index, item in enumerate(array_value(record["removed_unit_defines"], "variant.removed_unit_defines")))
+    return {
+        "removed_unit_id": text(record["removed_unit_id"], "variant.removed_unit_id"),
+        "removed_unit_title": text(record["removed_unit_title"], "variant.removed_unit_title"),
+        "removed_unit_relation": relation,
+        "removed_unit_defines": defines,
+    }
 
 
 def _cycle_fields_from_dict(record: Mapping[str, Any]) -> dict[str, Any]:
@@ -849,6 +885,41 @@ def cycle(spec: TaskSpec, case: Case) -> list[Variant]:
     return variants
 
 
+def unit_dependence(spec: TaskSpec, case: Case) -> list[Variant]:
+    """Remove one unit of the case document at a time; record dependence, never a score.
+
+    The units are the document's own headed sections at the configured levels, found by
+    pattern with no manifest. Each variant carries the unit removed, its heading, its
+    relation to the claim the case's preamble names (``self`` for the document's own
+    argument, ``declared`` for a unit defining a term that argument uses, ``other``), and
+    the terms it is taken to define. What the model does with one unit fewer is compared
+    with its baseline reply and recorded; no key is consulted.
+    """
+
+    if case.boundary or not spec.unit_dependence.active:
+        return []
+    document = case.input_document
+    variants: list[Variant] = []
+    for item in relate_units(document, spec.unit_dependence):
+        fields = _base_fields(spec, case, document=remove_unit(document, item.unit))
+        fields.update(
+            family=Family.UNIT_DEPENDENCE,
+            expectation_kind=ExpectationKind.RECORD_DEPENDENCE,
+            removed_unit_id=item.unit.unit_id,
+            removed_unit_title=item.unit.title,
+            removed_unit_relation=item.relation,
+            removed_unit_defines=item.defines,
+            held_fixed="the claim, form schema, instructions, every other unit of the document, and every request option",
+            controlled_difference=(
+                f"unit {item.unit.unit_id} {item.unit.title!r} removed from the document; relation to the claim: {item.relation}"
+                + (f"; taken to define {', '.join(item.defines)}" if item.defines else "")
+                + "; dependence is recorded, not scored"
+            ),
+        )
+        variants.append(make_variant(**fields))
+    return variants
+
+
 FAMILY_GENERATORS: Mapping[Family, Callable[[TaskSpec, Case], list[Variant]]] = {
     Family.BASELINE: baseline,
     Family.DELETION: deletion,
@@ -862,6 +933,7 @@ FAMILY_GENERATORS: Mapping[Family, Callable[[TaskSpec, Case], list[Variant]]] = 
     Family.ROUND_TRIP: round_trip,
     Family.REPEAT: repeat,
     Family.CYCLE: cycle,
+    Family.UNIT_DEPENDENCE: unit_dependence,
 }
 
 

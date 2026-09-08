@@ -223,6 +223,7 @@ class FamilyTests(unittest.TestCase):
                 "ROUND_TRIP": 9,
                 "REPEAT": 0,
                 "CYCLE": 0,
+                "UNIT_DEPENDENCE": 0,
             },
         )
         again = plan(load_pilot_config(PILOT).spec, load_corpus(_CONFIG.corpus_path, _CONFIG.spec))

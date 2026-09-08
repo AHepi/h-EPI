@@ -92,6 +92,9 @@ def _parser() -> argparse.ArgumentParser:
     cycles = subparsers.add_parser("cycles", help="per run, criticism source, and cycle index: forms identical to or differing from the step before and the verdict moves between them, beside the run's own REPEAT floor; never a score")
     cycles.add_argument("--observations-dir", type=Path, required=True, action="append", help="directories holding the runs and their observations; may be given more than once")
     cycles.add_argument("--markdown", type=Path, default=None)
+    dependence = subparsers.add_parser("dependence", help="per run and relation (self, declared, other): unit removals whose form stayed as the baseline had it or moved, which fields moved, the repeat floor, and the model's own named dependencies beside what removal moved; never a score")
+    dependence.add_argument("--observations-dir", type=Path, required=True, action="append", help="directories holding the runs and their observations; may be given more than once")
+    dependence.add_argument("--markdown", type=Path, default=None)
     return parser
 
 
@@ -333,6 +336,19 @@ def main(argv: Sequence[str] | None = None) -> int:
             if args.markdown is not None:
                 publish_no_clobber(args.markdown, render_compare_markdown(comparison).encode("utf-8"))
             _emit(comparison)
+            return 0
+        if args.command == "dependence":
+            from creib.forge.conformance.dependence import render_dependence_markdown, summarise_dependence
+            from creib.forge.conformance.records import enumerate_record_directory
+            runs = []
+            observations = []
+            for directory in args.observations_dir:
+                runs.extend(load_run(path) for path in enumerate_record_directory(directory).run_paths)
+                observations.extend(load_observation_directory(directory))
+            summary = summarise_dependence(runs, observations)
+            if args.markdown is not None:
+                publish_no_clobber(args.markdown, render_dependence_markdown(summary).encode("utf-8"))
+            _emit(summary)
             return 0
         if args.command == "cycles":
             from creib.forge.conformance.cycles import render_cycles_markdown, summarise_cycles
