@@ -13,10 +13,12 @@ separate prior attempt inside the final response.
 
 from __future__ import annotations
 
+import dataclasses
 from dataclasses import dataclass, field
 import http.client
 import json
 import os
+import time
 from pathlib import Path
 import re
 from typing import Any, Callable, Mapping, Protocol
@@ -36,6 +38,7 @@ from .common import (
     optional_integer,
     optional_text,
     text,
+    rfc3339,
 )
 
 
@@ -154,9 +157,14 @@ class ChatResponse:
     response_digest: str
     attempt: int = 1
     prior_attempts: tuple["ChatResponse", ...] = field(default=())
+    # v3, written when known: when the attempt was sent (UTC, to the second), how long it took by
+    # the harness's clock, and on a transport error the kind read from the exception.
+    started_at: str | None = None
+    elapsed_ms: int | None = None
+    transport_kind: str | None = None
 
     def _attempt_dict(self) -> dict[str, object]:
-        return {
+        record: dict[str, object] = {
             "content": self.content,
             "thinking_present": self.thinking_present,
             "done": self.done,
@@ -169,6 +177,13 @@ class ChatResponse:
             "response_digest": self.response_digest,
             "attempt": self.attempt,
         }
+        if self.started_at is not None:
+            record["started_at"] = self.started_at
+        if self.elapsed_ms is not None:
+            record["elapsed_ms"] = self.elapsed_ms
+        if self.transport_kind is not None:
+            record["transport_kind"] = self.transport_kind
+        return record
 
     def to_dict(self) -> dict[str, object]:
         record = self._attempt_dict()
@@ -194,7 +209,19 @@ def _response_from_attempt(raw: Any, where: str) -> ChatResponse:
         transport_error=optional_text(record["transport_error"], f"{where}.transport_error"),
         response_digest=hex_digest(record["response_digest"], f"{where}.response_digest"),
         attempt=integer(record["attempt"], f"{where}.attempt", minimum=1),
+        started_at=None if record.get("started_at") is None else rfc3339(record["started_at"], f"{where}.started_at"),
+        elapsed_ms=None if record.get("elapsed_ms") is None else integer(record["elapsed_ms"], f"{where}.elapsed_ms", minimum=0),
+        transport_kind=_transport_kind_value(record.get("transport_kind"), f"{where}.transport_kind"),
     )
+
+
+def _transport_kind_value(value: Any, where: str) -> str | None:
+    if value is None:
+        return None
+    kind = text(value, where)
+    if kind not in TRANSPORT_ERROR_KINDS:
+        raise RecordError(f"{where} must be one of {list(TRANSPORT_ERROR_KINDS)}")
+    return kind
 
 
 def response_from_dict(raw: Any, where: str = "response") -> ChatResponse:
@@ -249,7 +276,19 @@ def _error_response(message: str, *, http_status: int | None, body: bytes | None
         transport_error=message,
         response_digest=bytes_digest(digest_source),
         attempt=attempt,
+        transport_kind=transport_error_kind(message)[0],
     )
+
+
+def _timed(response: ChatResponse, started_at: str, started_monotonic: float) -> ChatResponse:
+    """Stamp an attempt with when it was sent and how long it took, by the harness's own clock."""
+
+    elapsed = max(0, int(round((time.monotonic() - started_monotonic) * 1000)))
+    return dataclasses.replace(response, started_at=started_at, elapsed_ms=elapsed)
+
+
+def _now_rfc3339() -> str:
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 
 def parse_chat_body(body: bytes, *, http_status: int, attempt: int, secret: str | None) -> ChatResponse:
@@ -320,6 +359,13 @@ class OllamaChatExecutor:
         return f"OllamaChatExecutor(base_url={self.base_url!r}, timeout_seconds={self.timeout_seconds}, retries={self.retries}, auth={self.auth!r})"
 
     def _attempt(self, request: ChatRequest, attempt: int) -> ChatResponse:
+        """One timed attempt: the reply or the recorded failure, stamped with when it was sent and how long it took."""
+
+        started_at = _now_rfc3339()
+        started = time.monotonic()
+        return _timed(self._attempt_untimed(request, attempt), started_at, started)
+
+    def _attempt_untimed(self, request: ChatRequest, attempt: int) -> ChatResponse:
         # auth none is for a local Ollama: no key is read and no Authorization header is sent.
         # Redaction still runs against whatever the environment holds, so a key set by accident never leaks.
         secret = os.environ.get(API_KEY_ENV)
@@ -470,12 +516,15 @@ class ReplayExecutor:
 
         if not isinstance(observation_records_dir, Path):
             raise TypeError("observation_records_dir must be pathlib.Path")
-        self._responses: dict[tuple[str, int], list[tuple[str, ChatResponse]]] = {}
+        self._responses: dict[tuple[str, int], list[tuple[str, ChatResponse, str]]] = {}
+        # The observation whose reply the last complete() returned: the runner writes it to the new
+        # record as replayed_from, so a re-score names the reply it re-scored.
+        self.last_source_id: str | None = None
         for record in load_observation_directory(observation_records_dir):
             if record.request_digest is None or record.response is None:
                 continue
             key = (record.request_digest, record.variant.repeat_index or 0)
-            self._responses.setdefault(key, []).append((record.variant.variant_id, record.response))
+            self._responses.setdefault(key, []).append((record.variant.variant_id, record.response, record.observation_id))
 
     @staticmethod
     def _same_text(a: ChatResponse, b: ChatResponse) -> bool:
@@ -487,11 +536,13 @@ class ReplayExecutor:
         if not recorded:
             raise RecordError(f"no recorded response for request {request.request_digest} repeat {key[1]}")
         if request.variant_id is not None:
-            for variant_id, response in recorded:
+            for variant_id, response, observation_id in recorded:
                 if variant_id == request.variant_id:
+                    self.last_source_id = observation_id
                     return response
         first = recorded[0][1]
-        if all(self._same_text(first, response) for _, response in recorded):
+        if all(self._same_text(first, response) for _, response, _ in recorded):
+            self.last_source_id = recorded[0][2]
             return first
         raise RecordError(
             f"replay directory holds {len(recorded)} different replies for request {request.request_digest} repeat {key[1]} "

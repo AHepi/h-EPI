@@ -66,7 +66,8 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--retries", type=int, default=0)
     run.add_argument("--think", default=None, help="override the pilot endpoint's reasoning setting for this run: true, false, none, low, medium, or high; recorded in the run record's endpoint")
     run.add_argument("--timeout-seconds", type=int, default=None, help="override the pilot endpoint's call timeout for this run; recorded in the run record's endpoint")
-    run.add_argument("--order", choices=["family", "interleaved"], default="family", help="sending order: every baseline first (family), or each case's baseline followed by its other variants (interleaved)")
+    run.add_argument("--order", choices=["family", "interleaved", "shuffled"], default="family", help="sending order: every baseline first (family), each case's baseline followed by its other variants (interleaved), or interleaved with the cases in an order drawn from --seed (shuffled); recorded in the run record")
+    run.add_argument("--seed", type=int, default=None, help="the seed for --order shuffled; recorded in the run record")
 
     fills = subparsers.add_parser("fills", help="print the filled forms from recorded observations (what the model actually returned)")
     fills.add_argument("--observations-dir", type=Path, required=True)
@@ -223,6 +224,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 families=families,
                 limit=args.limit,
                 order=args.order,
+                seed=args.seed,
             )
             record = result.run_record
             _emit(

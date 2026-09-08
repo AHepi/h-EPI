@@ -121,9 +121,11 @@ class Scoring:
     field_verdicts: tuple[FieldVerdict, ...]
     changed_vs_baseline: bool | None
     grounding_verdicts: tuple[GroundingVerdict, ...] = ()
+    # v3, written when true: a refusal phrase occurred in the text whether or not an object was recovered.
+    refusal_phrase_present: bool = False
 
     def to_dict(self) -> dict[str, object]:
-        return {
+        record: dict[str, object] = {
             "response_verdict": self.response_verdict,
             "response_detail": self.response_detail,
             "recovered_from_prose": self.recovered_from_prose,
@@ -134,6 +136,9 @@ class Scoring:
             "changed_vs_baseline": self.changed_vs_baseline,
             "grounding_verdicts": [verdict.to_dict() for verdict in self.grounding_verdicts],
         }
+        if self.refusal_phrase_present:
+            record["refusal_phrase_present"] = True
+        return record
 
     def grounding_kinds(self) -> tuple[str, ...]:
         """Distinct grounding criticisms (never GROUNDED or ABSTAINED), in field order."""
@@ -212,6 +217,7 @@ def scoring_from_dict(raw: Any, where: str = "scoring") -> Scoring:
         field_verdicts=tuple(verdicts),
         changed_vs_baseline=optional_boolean(record["changed_vs_baseline"], f"{where}.changed_vs_baseline"),
         grounding_verdicts=tuple(grounding),
+        refusal_phrase_present=boolean(record.get("refusal_phrase_present", False), f"{where}.refusal_phrase_present"),
     )
 
 
@@ -296,8 +302,23 @@ def _plain_quotes(text: str) -> str:
     return text.translate(_TYPOGRAPHIC_QUOTES)
 
 
+def refusal_phrase_in(content: str, refusal_phrases: tuple[str, ...]) -> str | None:
+    """The first refusal phrase the text contains, typographic quotes read as straight ones, or None."""
+
+    lowered = _plain_quotes(content).lower()
+    for phrase in refusal_phrases:
+        if _plain_quotes(phrase).lower() in lowered:
+            return phrase
+    return None
+
+
 def parse_content(content: str, refusal_phrases: tuple[str, ...]) -> tuple[Any, str, str | None, bool]:
-    """Return (parsed, response_verdict, detail, recovered_from_prose)."""
+    """Return (parsed, response_verdict, detail, recovered_from_prose).
+
+    The refusal heuristic decides the verdict only when no object can be recovered; whether a
+    phrase occurred at all is a separate fact, :func:`refusal_phrase_in`, recorded beside a
+    recovered object (H36: a refusal followed by a form is a refusal and a form).
+    """
 
     try:
         return loads_strict(content), "JSON_OBJECT", None, False
@@ -305,10 +326,9 @@ def parse_content(content: str, refusal_phrases: tuple[str, ...]) -> tuple[Any, 
         try:
             recovered, duplicates = recover_json_object(content)
         except RecordError:
-            lowered = _plain_quotes(content).lower()
-            for phrase in refusal_phrases:
-                if _plain_quotes(phrase).lower() in lowered:
-                    return None, "REFUSAL_SUSPECTED", f"matched refusal phrase {phrase!r}; heuristic", False
+            phrase = refusal_phrase_in(content, refusal_phrases)
+            if phrase is not None:
+                return None, "REFUSAL_SUSPECTED", f"matched refusal phrase {phrase!r}; heuristic", False
             return None, "INVALID_JSON", str(strict_error), False
         if duplicates:
             detail = (
@@ -554,10 +574,11 @@ def score(
     if response.done_reason == "length":
         return Scoring("TRUNCATED", "done_reason is length", False, None, None, None, (), None)
     parsed, verdict, detail, recovered = parse_content(response.content, refusal_phrases)
+    present = refusal_phrase_in(response.content, refusal_phrases) is not None
     if verdict != "JSON_OBJECT":
-        return Scoring(verdict, detail, False, None, None, None, (), None)
+        return Scoring(verdict, detail, False, None, None, None, (), None, (), present)
     if type(parsed) is not dict:
-        return Scoring("NOT_AN_OBJECT", f"parsed JSON is {type(parsed).__name__}", recovered, None, None, None, (), None)
+        return Scoring("NOT_AN_OBJECT", f"parsed JSON is {type(parsed).__name__}", recovered, None, None, None, (), None, (), present)
     schema_valid, verdicts, grounding = score_output(variant, parsed)
     return Scoring(
         response_verdict="JSON_OBJECT",
@@ -569,6 +590,7 @@ def score(
         field_verdicts=verdicts,
         changed_vs_baseline=_changed(parsed, baseline_output, variant.field_order),
         grounding_verdicts=grounding,
+        refusal_phrase_present=present,
     )
 
 

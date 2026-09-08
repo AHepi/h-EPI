@@ -405,6 +405,10 @@ def derive_triggers(variant: Variant, scoring: Scoring, *, format_sent: bool) ->
         else:
             triggers.append("DEPENDENCE_UNCHANGED")
         return tuple(triggers)
+    if scoring.refusal_phrase_present and scoring.response_verdict == "JSON_OBJECT":
+        # H36: a refusal phrase beside a recovered object is a refusal and a form; the object is
+        # scored and the refusal is still a criticism.
+        triggers.append("REFUSAL_SUSPECTED")
     field_triggers = list(scoring.verdict_kinds())
     if scoring.schema_valid is False and not any(t in _CRITICISM_FIELD_VERDICTS | _STRUCTURAL_FIELD_VERDICTS for t in field_triggers):
         field_triggers.append("SCHEMA_INVALID")

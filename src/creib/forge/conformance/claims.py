@@ -127,11 +127,23 @@ class Context:
     def __init__(self, observations: list[ObservationRecord], runs: Iterable[RunRecord] = ()) -> None:
         self._baselines: dict[tuple[str, str], ObservationRecord] = {}
         self._by_id: dict[str, ObservationRecord] = {}
+        self._repeats: dict[tuple[str, str], list[ObservationRecord]] = {}
         self._runs: dict[str, RunRecord] = {run.run_id: run for run in runs}
         for observation in observations:
+            if observation.observation_id in self._by_id:
+                raise RecordError(f"observation {observation.observation_id} was supplied twice; one reply is counted once")
             self._by_id[observation.observation_id] = observation
             if observation.variant.family is Family.BASELINE:
                 self._baselines[(observation.run_id, observation.variant.base_case_id)] = observation
+            if observation.variant.family is Family.REPEAT:
+                self._repeats.setdefault((observation.run_id, observation.variant.base_case_id), []).append(observation)
+        for observation in observations:
+            source = observation.replayed_from
+            if source is not None and source in self._by_id:
+                raise RecordError(
+                    f"observation {observation.observation_id} is a replay of {source}, which is also supplied; "
+                    "a reply and its replay are one reply and are not counted together: supply one run or the other"
+                )
 
     def run_of(self, observation: ObservationRecord) -> RunRecord | None:
         """The run record an observation belongs to, when the run records were supplied."""
@@ -140,6 +152,11 @@ class Context:
 
     def baseline_of(self, observation: ObservationRecord) -> ObservationRecord | None:
         return self._baselines.get((observation.run_id, observation.variant.base_case_id))
+
+    def repeats_of(self, observation: ObservationRecord) -> tuple[ObservationRecord, ...]:
+        """The REPEAT observations of the same run and case, the observation itself excepted: its repeat floor."""
+
+        return tuple(r for r in self._repeats.get((observation.run_id, observation.variant.base_case_id), ()) if r.observation_id != observation.observation_id)
 
     def previous_of(self, observation: ObservationRecord) -> ObservationRecord | None:
         """The observation this one was compared with: the record it names, else the baseline of its run and case."""
@@ -709,6 +726,18 @@ class ClaimResult:
     # satisfy the refuting predicate. A survival whose predicate held nowhere, in or out of
     # scope, has not been shown to be a survival of anything the records could have said.
     witnesses_outside_scope: int = 0
+    # Each refuting observation against the repeat floor of its own run and case: the REPEAT
+    # observations of that case other than itself. ``floor_all`` counts refutations whose
+    # condition also held on every repeat, ``floor_some`` on some, ``floor_none`` on none, and
+    # ``floor_absent`` those with no repeat to compare with. For a condition that compares a
+    # reply with the baseline, ``floor_all`` says the repeats moved too, so the refutation is not
+    # distinguished from the floor; for a condition about a reply's own content it says the
+    # condition recurred on every identical request. Neither is a score.
+    floor_all: int = 0
+    floor_some: int = 0
+    floor_none: int = 0
+    floor_absent: int = 0
+    example_floors: tuple[str, ...] = ()
 
     @property
     def shown_able_to_fail(self) -> bool:
@@ -730,8 +759,12 @@ class ClaimResult:
             "readings": list(self.readings),
             "witnesses_outside_scope": self.witnesses_outside_scope,
             "shown_able_to_fail": self.shown_able_to_fail,
+            "refuting_by_floor": {"all": self.floor_all, "some": self.floor_some, "none": self.floor_none, "absent": self.floor_absent},
             "per_model": [{"model": m, "tested": t, "refuting": r} for m, t, r in self.per_model],
-            "examples": [{"observation_id": i, "model": m, "case_id": c, "family": f} for i, m, c, f in self.examples],
+            "examples": [
+                {"observation_id": i, "model": m, "case_id": c, "family": f, "floor": floor}
+                for (i, m, c, f), floor in zip(self.examples, self.example_floors, strict=True)
+            ],
             "note": self.claim.note,
             "epistemic_limit": NON_INDUCTIVE_LIMIT,
         }
@@ -745,12 +778,17 @@ def evaluate_claim(claim: Claim, observations: list[ObservationRecord], context:
     tested: dict[str, int] = {}
     refuting: dict[str, int] = {}
     standing = {"usable": 0, "contested": 0, "defeated": 0}
+    floor = {"all": 0, "some": 0, "none": 0, "absent": 0}
     readings: set[str] = set()
     examples: list[tuple[str, str, str, str]] = []
+    example_floors: list[str] = []
     witnesses = 0
+    refutes_by_id: dict[str, bool] = {}
     for observation in observations:
         holds = predicate(observation, context)
-        refutes = holds if claim.kind == "never" else not holds
+        refutes_by_id[observation.observation_id] = holds if claim.kind == "never" else not holds
+    for observation in observations:
+        refutes = refutes_by_id[observation.observation_id]
         if not claim.scope.admits(observation):
             if refutes:
                 witnesses += 1
@@ -763,8 +801,11 @@ def evaluate_claim(claim: Claim, observations: list[ObservationRecord], context:
             else:
                 standing[appraisal.standing_of(observation, fields, triggers)] += 1
                 readings.update(appraisal.readings_of(observation, fields, triggers))
+            floor_class = _floor_class(observation, context, refutes_by_id)
+            floor[floor_class] += 1
             if len(examples) < _MAX_EXAMPLES:
                 examples.append((observation.observation_id, observation.model, observation.variant.base_case_id, observation.variant.family.value))
+                example_floors.append(floor_class)
     total = sum(tested.values())
     if total == 0:
         status = "NOT_TESTED"
@@ -789,7 +830,35 @@ def evaluate_claim(claim: Claim, observations: list[ObservationRecord], context:
         refuting_defeated=standing["defeated"],
         readings=tuple(sorted(readings)),
         witnesses_outside_scope=witnesses,
+        floor_all=floor["all"],
+        floor_some=floor["some"],
+        floor_none=floor["none"],
+        floor_absent=floor["absent"],
+        example_floors=tuple(example_floors),
     )
+
+
+FLOOR_CLASSES: tuple[str, ...] = ("all", "some", "none", "absent")
+
+
+def _floor_class(observation: ObservationRecord, context: Context, refutes_by_id: Mapping[str, bool]) -> str:
+    """Where a refuting observation stands against the repeat floor of its run and case.
+
+    ``absent``: no REPEAT observation of the same run and case was supplied. Otherwise the
+    class says on how many of those repeats the refuting condition also held: ``all``,
+    ``some``, or ``none``. The baseline is the reply the repeats are compared with and is not
+    itself a member of the floor.
+    """
+
+    repeats = context.repeats_of(observation)
+    if not repeats:
+        return "absent"
+    held = sum(1 for repeat in repeats if refutes_by_id.get(repeat.observation_id, False))
+    if held == 0:
+        return "none"
+    if held == len(repeats):
+        return "all"
+    return "some"
 
 
 def evaluate_claims(claims: tuple[Claim, ...], observations: list[ObservationRecord], appraisal: Appraisal | None = None, runs: Iterable[RunRecord] = ()) -> tuple[ClaimResult, ...]:
@@ -803,7 +872,7 @@ def _plural(count: int, noun: str) -> str:
 
 def render_claims_markdown(results: tuple[ClaimResult, ...]) -> str:
     parts = ["# Conjectures tested against the records", ""]
-    parts.append("A `never` claim is refuted by one observation where its condition holds; an `always` claim by one where it does not. `UNREFUTED_FOR_DECLARED_SCOPE` means no supplied record refuted the claim, or every refutation rests on a reading of the key that the appraisal labels out; it is not a proof. `REFUTED_ON_CONTESTED_READING` means every refutation rests on a reading that is under criticism and undecided. An unrefuted claim also says whether its refuting condition held on any supplied record outside the declared scope: a condition that never held anywhere has not been shown able to fail. Counts are of observations, not of quality, and imply no ranking.")
+    parts.append("A `never` claim is refuted by one observation where its condition holds; an `always` claim by one where it does not. `UNREFUTED_FOR_DECLARED_SCOPE` means no supplied record refuted the claim, or every refutation rests on a reading of the key that the appraisal labels out; it is not a proof. `REFUTED_ON_CONTESTED_READING` means every refutation rests on a reading that is under criticism and undecided. An unrefuted claim also says whether its refuting condition held on any supplied record outside the declared scope: a condition that never held anywhere has not been shown able to fail. Each refutation is also placed against the repeat floor of its own run and case, the REPEAT observations of that case other than itself: whether the refuting condition held on every one of them, on some, on none, or whether there was none to compare with. For a condition that compares a reply with the baseline, holding on every repeat means the repeats moved too and the refutation is not distinguished from the floor; for a condition about a reply's own content it means the condition recurred on every identical request. Counts are of observations, not of quality, and imply no ranking.")
     parts.append("")
     for result in results:
         parts.append(f"## {result.claim.claim_id}: {result.status}")
@@ -816,7 +885,11 @@ def render_claims_markdown(results: tuple[ClaimResult, ...]) -> str:
             parts.append("- not refuted by: " + (", ".join(m for m in result.models_tested if m not in result.refuting_models) or "-"))
             if result.readings:
                 parts.append(f"- standing under the appraisal: {result.refuting_usable} usable, {result.refuting_contested} on a contested reading, {result.refuting_defeated} on a defeated reading; readings involved: {', '.join(result.readings)}")
-            parts.append("- examples: " + "; ".join(f"`{i[:16]}` ({m}, {c}, {f})" for i, m, c, f in result.examples))
+            parts.append(
+                f"- against the repeat floor of the same run and case: the refuting condition also held on every repeat for {result.floor_all}, "
+                f"on some repeats for {result.floor_some}, on no repeat for {result.floor_none}; {result.floor_absent} had no repeat to compare with"
+            )
+            parts.append("- examples: " + "; ".join(f"`{i[:16]}` ({m}, {c}, {f}; floor: {floor})" for (i, m, c, f), floor in zip(result.examples, result.example_floors, strict=True)))
         elif result.status != "NOT_TESTED":
             if result.shown_able_to_fail:
                 parts.append(f"- the refuting condition held on {_plural(result.witnesses_outside_scope, 'supplied observation')} outside the declared scope, so the check has been shown able to fail")
@@ -838,6 +911,7 @@ __all__ = [
     "Claim",
     "ClaimResult",
     "Context",
+    "FLOOR_CLASSES",
     "Scope",
     "claims_from_dict",
     "compile_condition",

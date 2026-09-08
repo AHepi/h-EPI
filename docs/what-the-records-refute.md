@@ -169,6 +169,19 @@ Thirty-three of the filling statements have counterexamples (READ-01's being cal
 - **Provenance fails in two directions.** Six models cited words that do not occur in the document under the configuration in force (PROV-01): a misspelt name, a range with a different separator, a date the document gives only as an interval, once a place that does not exist, and, in rounds one and two before the range relaxation existed, full dates completed from a range. The last of these is the reason the relaxation was added; the records from those rounds keep their verdicts. Twelve models completed a range into a full date at least once (PROV-02), which the battery accepts as a quotation and records as accepted by a relaxation, not verbatim.
 - **Stability is a property of the model, not of the seed.** Sixteen of eighteen models returned different form values for a byte-identical request under a fixed seed at least once (STAB-01); the two that never did were the two glm-5.3 variants. Five models changed a form value when their own filled form was rendered back to prose and filled again (STAB-02). The rendering and label-swap statements (STAB-03, STAB-04) refute only where the swapped variant mismatched and the baseline did not; nine and seven models respectively did that at least once, mostly on a total the baseline happened to get right.
 
+## Each refutation against the repeat floor
+
+The table above was generated before `claims` placed refutations against the repeat floor (8 September, `docs/failure-modes.md` H39), and its counts stand as they were read. Re-evaluating the same claims file record set by record set, the command now says for each refuting observation whether its condition also held on every other REPEAT observation of the same run and case (`all`), on some (`some`), on none (`none`), or whether there was none (`absent`):
+
+| Records | Refuted claims | Refuting observations | `all` | `some` | `none` | `absent` |
+|---|---|---|---|---|---|---|
+| `travel-claim-round3` | 27 of 68 | 712 | 539 | 27 | 50 | 96 |
+| `travel-claim-sweep` | 31 of 68 | 2,638 | 2,012 | 113 | 175 | 338 |
+| `travel-claim-cycles` | 20 of 68 | 469 | 332 | 3 | 134 | 0 |
+| `travel-claim-reasoning` | 20 of 68 | 286 | 250 | 5 | 31 | 0 |
+
+The class is read with the condition. Most refuting observations of the structural claims (STRUCT-03, STRUCT-06) are `all`: the reply that added a key or missed a required one did so on every identical request, so the refutation is not a one-off of the floor. The `none` class in the cycles run is mostly structural: a cycle's condition (CYC-01 to CYC-05, CYC-11, CYC-12) and a transport failure on the longest calls (XPRT-03) cannot hold on a plain repeat. The `absent` class belongs to the cases the pilot does not repeat. The class describes; it withdraws no refutation and estimates no rate, and `claims --markdown` prints it per claim and per example for any record set.
+
 ## What can be said about language models in general
 
 Very little, and that is the point of stating it carefully. These records refute universal claims: "a language model never emits a key outside the schema" is false, because two did; "a fixed seed makes output repeatable" is false for sixteen of eighteen models on this endpoint; "a larger model in a family is more repeatable" is false for the nemotron family, whose three sizes reproduced their output 8, 5 and 6 times in 18. A refutation needs one record and these have thousands.

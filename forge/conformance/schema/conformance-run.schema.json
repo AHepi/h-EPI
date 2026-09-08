@@ -18,6 +18,8 @@
     "created_on",
     "selected_families",
     "variant_limit",
+    "order",
+    "shuffle_seed",
     "observation_ids",
     "family_counts",
     "response_verdict_counts",
@@ -35,7 +37,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "creib.conformance-pilot.run.v2"
+      "const": "creib.conformance-pilot.run.v3"
     },
     "run_id": {
       "$ref": "#/$defs/hex_digest"
@@ -89,6 +91,18 @@
         "null"
       ],
       "minimum": 1
+    },
+    "order": {
+      "type": "string",
+      "enum": ["family", "interleaved", "shuffled"],
+      "description": "v3: the sending order of this run: every baseline first, each case's baseline followed by its variants, or the cases in an order drawn from shuffle_seed."
+    },
+    "shuffle_seed": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "description": "v3: the seed the shuffled order was drawn from; null for the other orders."
     },
     "observation_ids": {
       "type": "array",

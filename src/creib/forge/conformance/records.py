@@ -22,10 +22,15 @@ from typing import Any, Mapping
 from creib.canonical import canonical_bytes
 from creib.errors import PolicyViolation, RecordError
 from .common import NON_INDUCTIVE_LIMIT
+from .common import RUN_ORDERS as ORDERS
 from creib.strict_json import loads_strict
 
 from .common import (
     OBSERVATION_SCHEMA_NAME,
+    OBSERVATION_SCHEMA_NAME_V2,
+    OBSERVATION_SCHEMA_VERSION_V2,
+    RUN_SCHEMA_NAME_V2,
+    RUN_SCHEMA_VERSION_V2,
     OBSERVATION_SCHEMA_VERSION,
     OVERALL_STATUS_UNRESOLVED,
     ROUTE_AWAITING_HUMAN_TRIAGE,
@@ -60,14 +65,39 @@ from .spec import Binding, Endpoint, endpoint_from_dict
 # v2: the variant carries its grounding configuration, the scoring its grounding verdicts, and the
 # run its grounding verdict counts. v1 records (the archived nine-model incident-form run) are read
 # only by the code that wrote them; this loader names the version it found and stops.
-OBSERVATION_DOMAIN = "creib.conformance-pilot.observation.v2"
-RUN_HEADER_DOMAIN = "creib.conformance-pilot.run-header.v2"
-RUN_CONTENT_DOMAIN = "creib.conformance-pilot.run-content.v2"
+# v3 adds per-attempt timing and transport kind, the refusal flag, replay provenance, and the run's
+# sending order. A record's id is a content id under the domain of its own version, so a v2 record
+# replays its id under the v2 domains and a v3 record under the v3 ones; the loaders read both.
+OBSERVATION_DOMAIN = "creib.conformance-pilot.observation.v3"
+RUN_HEADER_DOMAIN = "creib.conformance-pilot.run-header.v3"
+RUN_CONTENT_DOMAIN = "creib.conformance-pilot.run-content.v3"
+_OBSERVATION_DOMAINS: Mapping[str, str] = {
+    OBSERVATION_SCHEMA_VERSION_V2: "creib.conformance-pilot.observation.v2",
+    OBSERVATION_SCHEMA_VERSION: OBSERVATION_DOMAIN,
+}
+_RUN_HEADER_DOMAINS: Mapping[str, str] = {
+    RUN_SCHEMA_VERSION_V2: "creib.conformance-pilot.run-header.v2",
+    RUN_SCHEMA_VERSION: RUN_HEADER_DOMAIN,
+}
+_RUN_CONTENT_DOMAINS: Mapping[str, str] = {
+    RUN_SCHEMA_VERSION_V2: "creib.conformance-pilot.run-content.v2",
+    RUN_SCHEMA_VERSION: RUN_CONTENT_DOMAIN,
+}
 EXECUTOR_KINDS: tuple[str, ...] = ("ollama-chat", "fake", "replay", "canned")
 _SCHEMA_SHORT_NAMES: Mapping[str, tuple[str, str, str]] = {
+    OBSERVATION_SCHEMA_VERSION_V2: ("observation", "observation_id", OBSERVATION_SCHEMA_NAME_V2),
     OBSERVATION_SCHEMA_VERSION: ("observation", "observation_id", OBSERVATION_SCHEMA_NAME),
+    RUN_SCHEMA_VERSION_V2: ("run", "run_id", RUN_SCHEMA_NAME_V2),
     RUN_SCHEMA_VERSION: ("run", "run_id", RUN_SCHEMA_NAME),
 }
+
+
+def _known_version(record: Mapping[str, Any], kind: str, where: str) -> str:
+    version = str(record.get("schema_version"))
+    short = _SCHEMA_SHORT_NAMES.get(version)
+    if short is None or short[0] != kind:
+        raise RecordError(f"{where} is not a {kind} record of a known version (schema_version {record.get('schema_version')!r})")
+    return version
 
 
 def _bindings_from(raw: Any, where: str) -> tuple[Binding, ...]:
@@ -99,10 +129,14 @@ class ObservationRecord:
     routing: Routing
     baseline_observation_id: str | None
     created_on: str
+    # v3: the version the record was written under (a v2 record keeps v2 and its v2 id), and for a
+    # replay run the observation whose recorded reply this one re-scores.
+    schema_version: str = OBSERVATION_SCHEMA_VERSION
+    replayed_from: str | None = None
 
     def body(self) -> dict[str, object]:
-        return {
-            "schema_version": OBSERVATION_SCHEMA_VERSION,
+        record: dict[str, object] = {
+            "schema_version": self.schema_version,
             "run_id": self.run_id,
             "pilot_id": self.pilot_id,
             "plan_id": self.plan_id,
@@ -117,6 +151,9 @@ class ObservationRecord:
             "baseline_observation_id": self.baseline_observation_id,
             "created_on": self.created_on,
         }
+        if self.schema_version != OBSERVATION_SCHEMA_VERSION_V2:
+            record["replayed_from"] = self.replayed_from
+        return record
 
     def to_dict(self) -> dict[str, object]:
         record = self.body()
@@ -126,14 +163,20 @@ class ObservationRecord:
 
 def build_observation(**fields: Any) -> ObservationRecord:
     draft = ObservationRecord(observation_id="0" * 64, **fields)
-    return ObservationRecord(observation_id=content_id(OBSERVATION_DOMAIN, draft.body()), **fields)
+    domain = _OBSERVATION_DOMAINS.get(draft.schema_version)
+    if domain is None:
+        raise RecordError(f"unknown observation schema_version {draft.schema_version!r}")
+    if draft.schema_version == OBSERVATION_SCHEMA_VERSION_V2 and draft.replayed_from is not None:
+        raise RecordError("a v2 observation cannot carry replayed_from")
+    return ObservationRecord(observation_id=content_id(domain, draft.body()), **fields)
 
 
 def observation_from_dict(raw: Any) -> ObservationRecord:
     """Rebuild an observation, re-validating the schema and replaying its id."""
 
     record = object_value(raw, "observation")
-    validate_instance(record, OBSERVATION_SCHEMA_NAME)
+    version = _known_version(record, "observation", "observation")
+    validate_instance(record, _SCHEMA_SHORT_NAMES[version][2])
     request_digest = optional_text(record["request_digest"], "observation.request_digest")
     response = None if record["response"] is None else response_from_dict(record["response"], "observation.response")
     rebuilt = build_observation(
@@ -150,6 +193,8 @@ def observation_from_dict(raw: Any) -> ObservationRecord:
         routing=routing_from_dict(record["routing"], "observation.routing"),
         baseline_observation_id=None if record["baseline_observation_id"] is None else hex_digest(record["baseline_observation_id"], "observation.baseline_observation_id"),
         created_on=rfc3339(record["created_on"], "observation.created_on"),
+        schema_version=version,
+        replayed_from=None if record.get("replayed_from") is None else hex_digest(record["replayed_from"], "observation.replayed_from"),
     )
     if rebuilt.observation_id != hex_digest(record["observation_id"], "observation.observation_id"):
         raise RecordError("observation_id does not replay from the record content")
@@ -195,6 +240,10 @@ class RunRecord:
     transport_error_count: int
     scope_label: str
     format_enforced_by_server: bool | None
+    # v3: the version the record was written under, and the sending order with its seed.
+    schema_version: str = RUN_SCHEMA_VERSION
+    order: str | None = None
+    shuffle_seed: int | None = None
     overall_status: str = OVERALL_STATUS_UNRESOLVED
     route: str = ROUTE_AWAITING_HUMAN_TRIAGE
     epistemic_limit: str = NON_INDUCTIVE_LIMIT
@@ -212,8 +261,8 @@ class RunRecord:
             raise RecordError("run record executor_kind is unknown")
 
     def header(self) -> dict[str, object]:
-        return {
-            "schema_version": RUN_SCHEMA_VERSION,
+        header: dict[str, object] = {
+            "schema_version": self.schema_version,
             "pilot_id": self.pilot_id,
             "plan_id": self.plan_id,
             "model": self.model,
@@ -224,6 +273,10 @@ class RunRecord:
             "selected_families": list(self.selected_families),
             "variant_limit": self.variant_limit,
         }
+        if self.schema_version != RUN_SCHEMA_VERSION_V2:
+            header["order"] = self.order
+            header["shuffle_seed"] = self.shuffle_seed
+        return header
 
     def body(self) -> dict[str, object]:
         record = self.header()
@@ -255,16 +308,26 @@ class RunRecord:
 
 
 def compute_run_id(header: Mapping[str, Any]) -> str:
-    return content_id(RUN_HEADER_DOMAIN, dict(header))
+    domain = _RUN_HEADER_DOMAINS.get(str(header.get("schema_version")))
+    if domain is None:
+        raise RecordError(f"unknown run schema_version {header.get('schema_version')!r}")
+    return content_id(domain, dict(header))
 
 
 def build_run_record(**fields: Any) -> RunRecord:
     """Assign the header-derived run_id and the whole-record content digest."""
 
     draft = RunRecord(run_id="0" * 64, content_digest="0" * 64, **fields)
+    if draft.schema_version != RUN_SCHEMA_VERSION_V2:
+        if draft.order not in ORDERS:
+            raise RecordError(f"run order must be one of {list(ORDERS)}")
+        if (draft.order == "shuffled") != (draft.shuffle_seed is not None):
+            raise RecordError("run shuffle_seed is set exactly when the order is shuffled")
+    elif draft.order is not None or draft.shuffle_seed is not None:
+        raise RecordError("a v2 run record cannot carry order or shuffle_seed")
     run_id = compute_run_id(draft.header())
     with_id = RunRecord(run_id=run_id, content_digest="0" * 64, **fields)
-    return RunRecord(run_id=run_id, content_digest=content_id(RUN_CONTENT_DOMAIN, with_id.body()), **fields)
+    return RunRecord(run_id=run_id, content_digest=content_id(_RUN_CONTENT_DOMAINS[draft.schema_version], with_id.body()), **fields)
 
 
 def _count_pairs(raw: Any, where: str, key: str) -> tuple[tuple[str, int], ...]:
@@ -282,7 +345,8 @@ def _count_pairs(raw: Any, where: str, key: str) -> tuple[tuple[str, int], ...]:
 
 def run_from_dict(raw: Any) -> RunRecord:
     record = object_value(raw, "run")
-    validate_instance(record, RUN_SCHEMA_NAME)
+    version = _known_version(record, "run", "run")
+    validate_instance(record, _SCHEMA_SHORT_NAMES[version][2])
     families = tuple(text(item, "run.selected_families") for item in array_value(record["selected_families"], "run.selected_families"))
     for family in families:
         try:
@@ -313,6 +377,9 @@ def run_from_dict(raw: Any) -> RunRecord:
         overall_status=text(record["overall_status"], "run.overall_status"),
         route=text(record["route"], "run.route"),
         epistemic_limit=text(record["epistemic_limit"], "run.epistemic_limit"),
+        schema_version=version,
+        order=None if version == RUN_SCHEMA_VERSION_V2 else text(record["order"], "run.order"),
+        shuffle_seed=None if version == RUN_SCHEMA_VERSION_V2 or record["shuffle_seed"] is None else integer(record["shuffle_seed"], "run.shuffle_seed", minimum=0),
     )
     if rebuilt.run_id != hex_digest(record["run_id"], "run.run_id"):
         raise RecordError("run_id does not replay from the run header")
@@ -341,7 +408,7 @@ def publish_record(record: ObservationRecord | RunRecord | Mapping[str, Any], di
         raise RecordError(f"unknown conformance record schema_version {schema_version!r}")
     validate_instance(data, _SCHEMA_SHORT_NAMES[schema_version][2])
     if isinstance(record, Mapping):
-        if schema_version == OBSERVATION_SCHEMA_VERSION:
+        if _SCHEMA_SHORT_NAMES[schema_version][0] == "observation":
             observation_from_dict(data)
         else:
             run_from_dict(data)
@@ -368,11 +435,7 @@ def _load_canonical(path: Path) -> dict[str, Any]:
 
 def load_observation(path: Path) -> ObservationRecord:
     record = _load_canonical(path)
-    if record.get("schema_version") != OBSERVATION_SCHEMA_VERSION:
-        raise RecordError(
-            f"{path} is not a {OBSERVATION_SCHEMA_VERSION} record (schema_version {record.get('schema_version')!r}); "
-            "a record written under an earlier version is read by the code that wrote it"
-        )
+    _known_version(record, "observation", str(path))
     observation = observation_from_dict(record)
     _check_name_binds_id(path, observation.observation_id)
     return observation
@@ -380,11 +443,7 @@ def load_observation(path: Path) -> ObservationRecord:
 
 def load_run(path: Path) -> RunRecord:
     record = _load_canonical(path)
-    if record.get("schema_version") != RUN_SCHEMA_VERSION:
-        raise RecordError(
-            f"{path} is not a {RUN_SCHEMA_VERSION} record (schema_version {record.get('schema_version')!r}); "
-            "a record written under an earlier version is read by the code that wrote it"
-        )
+    _known_version(record, "run", str(path))
     run = run_from_dict(record)
     _check_name_binds_id(path, run.run_id)
     return run

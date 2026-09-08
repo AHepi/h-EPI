@@ -8,7 +8,7 @@
 python3.12 tools/check.py bootstrap     # once: .venv with the hash-locked dependencies
 source .venv/bin/activate
 export PYTHONPATH=src
-python tools/check.py all               # lint, offline suite, every pilot validated and planned; no model is called
+python tools/check.py all               # lint, offline suite, every pilot validated and planned, every cited record id resolved; no model is called
 ```
 
 For a hosted Ollama, export `OLLAMA_API_KEY` in the shell that runs `run`; it is read at call time and never written to a file, a record, a log, or an error message. For a local Ollama, set `"auth": "none"` and `"base_url": "http://localhost:11434"` in the pilot's endpoint and export nothing. In a Claude Code web session the SessionStart hook does the bootstrap and the exports.
@@ -100,7 +100,7 @@ The output pairs every shared request, repeat by repeat, and gives identical, di
 
 ## Use 5: measure the noise floor
 
-Set `repeats` to 2 or more. The run summary and the report state how many repeats were identical to the baseline and how many differed, per case. A model whose repeats never differ can be run with `0`; one whose repeats differ half the time cannot support any single-observation claim, and every comparison family's findings for it must be read against that count.
+Set `repeats` to 2 or more. The run summary and the report state how many repeats were identical to the baseline and how many differed, per case. A model whose repeats never differ can be run with `0`; one whose repeats differ half the time cannot support any single-observation claim, and every comparison family's findings for it must be read against that count. `claims` places each refutation against that floor by machine: whether the refuting condition also held on every other repeat of the same run and case (`all`), on some (`some`), on none (`none`), or whether there was no repeat to compare with (`absent`), in `refuting_by_floor` and on each example. The class describes the records and withdraws nothing. When a case's position in the run should not be its position in the corpus, run with `--order shuffled --seed <n>`; the order and the seed are in the run record.
 
 ## Use 6: audit citations
 
@@ -119,7 +119,7 @@ python tools/run_conformance_pilot.py claims --claims forge/conformance/pilots/m
     --observations-dir forge/conformance/runs/my-form --markdown my-form-claims.md
 ```
 
-Each claim comes out `REFUTED` (with the refuting models, the survivors, and example ids), `UNREFUTED_FOR_DECLARED_SCOPE`, or `NOT_TESTED`. For an unrefuted claim, read the liveness line: if the refuting condition held on no supplied record inside or outside the scope, the check has not been shown able to fail and the survival is a fact about what the models did, not a test the harness passed. Cite claim ids and observation ids in anything you write.
+Each claim comes out `REFUTED` (with the refuting models, the survivors, and example ids), `UNREFUTED_FOR_DECLARED_SCOPE`, or `NOT_TESTED`. For an unrefuted claim, read the liveness line: if the refuting condition held on no supplied record inside or outside the scope, the check has not been shown able to fail and the survival is a fact about what the models did, not a test the harness passed. Cite claim ids and observation ids in anything you write, with each refutation's floor class (Use 5). Never supply a run and its re-score together: `claims` refuses an observation supplied beside the reply it was replayed from (`replayed_from`), and refuses one observation supplied twice.
 
 ## Use 8: record what a refutation rests on
 
@@ -140,7 +140,7 @@ python tools/run_conformance_pilot.py run --pilot forge/conformance/pilots/my-fo
     --replay-dir forge/conformance/runs/my-form --output-dir /tmp/my-form-rescore --created-on "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
-The replay executor pairs each request with the reply that same request received in the recorded run, repeat by repeat, and makes no network call. The result is a new run with new observation ids; the original records stand. Decide deliberately where re-scored records go: a re-scored run committed beside its original counts that model twice in every table.
+The replay executor pairs each request with the reply that same request received in the recorded run, repeat by repeat, and makes no network call. The result is a new run with new observation ids, each naming in `replayed_from` the observation whose reply it re-scored; the original records stand. Decide deliberately where re-scored records go: a re-scored run committed beside its original counts that model twice in every table that works from run records, and `claims` refuses the pair.
 
 ## Use 10: ask whether a further cycle helps
 
@@ -188,6 +188,7 @@ A removal that moved nothing is read by the controls: generate them from the sam
 - **Run labels.** `UNREFUTED_FOR_DECLARED_SCOPE` is the strongest: every judged field matched and nothing more. `REFUTED_CASES_PRESENT` means the model is a live suspect on at least one observation; it does not mean the model failed the battery. `INCONCLUSIVE_NO_SCORED_OUTPUT` means some field went unjudged or a call did not complete, which is the normal label for a plain fill with no key.
 - **Live loci.** Every failure after a model call names a set from CANDIDATE (the model), AUXILIARY (prompt, executor, format plumbing), TEST (the oracle), SCOPE (the task as framed). A set is never a single locus; the routing is in `routing.py` and each report translates every trigger in prose.
 - **Triggers.** Response-level: `TRANSPORT_ERROR`, `EMPTY_RESPONSE`, `TRUNCATED`, `INVALID_JSON`, `NOT_AN_OBJECT`, `REFUSAL_SUSPECTED`, `PREREQUISITE_UNAVAILABLE`. Field-level: `MISMATCH`, `MISSING_REQUIRED`, `EXTRA_FIELD`, `TYPE_VIOLATION`, `PATTERN_VIOLATION`, `ENUM_VIOLATION`, `LENGTH_VIOLATION`, `UNEXPECTED_PRESENT`, `SCHEMA_INVALID`. Family-level: `IDENTICAL_TO_BASELINE`, `REPEAT_DIFFERS`, `DEPENDENCE_CHANGED`, `DEPENDENCE_UNCHANGED` (a removed instruction sentence or, for UNIT_DEPENDENCE, a removed unit of the document), `CONTROL_ACCEPTED`, `CONTROL_REJECTED`, `FORMAT_NOT_ENFORCED`. Grounding: `SPAN_MISSING`, `SPAN_NOT_IN_DOCUMENT`, `VALUE_NOT_IN_SPAN`.
+- **Timing and transport.** From record version 3 every attempt carries `started_at` and `elapsed_ms`, measured by the client around the call, and a failed attempt carries `transport_kind`: `timeout` (the client's timeout fired), `disconnected` (the remote end closed the connection), `http_status`, or `other`. A version 2 record has none of these and says nothing about how long a call took; the exception text it carries is what H34 was read from.
 - **Exit codes.** `run` exits 1 when any observation carries live loci. That means look, not failed.
 - **Interrupted runs.** A killed run leaves its observations and no run record. They are valid on their own but `report` will not see them; delete them or keep them as orphans, and rerun with a new `--created-on`.
 
@@ -199,7 +200,7 @@ A removal that moved nothing is read by the controls: generate them from the sam
 
 ## Publishing
 
-Work on a branch (`claude/*`, `codex/*`, or a human-chosen name); never commit on or push to `main`. Before every commit run `python tools/check.py all`, stage explicit paths (never `.venv`, key material, or documents you are not licensed to share), run `git diff --cached --check`, and confirm no key is in the diff (`git grep -l Bearer -- forge/conformance/runs` must print nothing). Push with `git push -u origin HEAD`; never force, never `HEAD:main`, never rebase, reset, or amend published history. Publication is a pull request and merging is a human action. The `h-epi-safe-publish` skill walks through the same steps.
+Work on a branch (`claude/*`, `codex/*`, or a human-chosen name); never commit on or push to `main`. Before every commit run `python tools/check.py all` (lint, the offline suite, every pilot planned, and `cite`, which resolves every record id the documents cite), stage explicit paths (never `.venv`, key material, or documents you are not licensed to share), run `git diff --cached --check`, and confirm no key is in the diff (`git grep -l Bearer -- forge/conformance/runs` must print nothing). Push with `git push -u origin HEAD`; never force, never `HEAD:main`, never rebase, reset, or amend published history. Publication is a pull request and merging is a human action. The `h-epi-safe-publish` skill walks through the same steps.
 
 ## What not to expect
 

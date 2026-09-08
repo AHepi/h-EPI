@@ -113,8 +113,10 @@ class SchemaAndVocabularyTests(unittest.TestCase):
                 "conformance-claims.schema.json",
                 "conformance-corpus.schema.json",
                 "conformance-observation.schema.json",
+                "conformance-observation.v2.schema.json",
                 "conformance-pilot-config.schema.json",
                 "conformance-run.schema.json",
+                "conformance-run.v2.schema.json",
             ),
         )
         for name in catalog.schema_names:
@@ -532,8 +534,8 @@ class RecordVersionTests(unittest.TestCase):
             self.assertTrue(observation_path.exists())
             for path in (observation_path, out / f"run.{result.run_record.run_id[:16]}.json"):
                 record = load_strict(path)
-                self.assertTrue(str(record["schema_version"]).endswith(".v2"))
-                record["schema_version"] = str(record["schema_version"]).replace(".v2", ".v1")
+                self.assertTrue(str(record["schema_version"]).endswith(".v3"))
+                record["schema_version"] = str(record["schema_version"]).replace(".v3", ".v1")
                 old = out / ("old-" + path.name)
                 old.write_bytes(canonical_bytes(record) + b"\n")
                 loader = load_observation if path.name.startswith("observation.") else load_run

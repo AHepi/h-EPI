@@ -20,11 +20,12 @@
     "scoring",
     "routing",
     "baseline_observation_id",
+    "replayed_from",
     "created_on"
   ],
   "properties": {
     "schema_version": {
-      "const": "creib.conformance-pilot.observation.v2"
+      "const": "creib.conformance-pilot.observation.v3"
     },
     "observation_id": {
       "$ref": "#/$defs/hex_digest"
@@ -83,6 +84,14 @@
         "null"
       ],
       "pattern": "^[0-9a-f]{64}$"
+    },
+    "replayed_from": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "v3: for a replay run, the id of the observation whose recorded reply this one re-scores; null for a live call. A claims evaluation refuses a reply and its replay together."
     },
     "created_on": {
       "$ref": "#/$defs/rfc3339"
@@ -665,6 +674,21 @@
         "attempt": {
           "type": "integer",
           "minimum": 1
+        },
+        "started_at": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+          "description": "v3, written when known: when this attempt was sent, UTC, to the second."
+        },
+        "elapsed_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "v3, written when known: wall-clock milliseconds from sending this attempt to its reply or failure, measured by the harness."
+        },
+        "transport_kind": {
+          "type": "string",
+          "enum": ["timeout", "disconnected", "http_status", "other"],
+          "description": "v3, written on a transport error: the kind read from the exception it was written from (the client's read timeout, the remote end closing the connection, an HTTP error status, other)."
         }
       }
     },
@@ -742,6 +766,21 @@
         "attempt": {
           "type": "integer",
           "minimum": 1
+        },
+        "started_at": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$",
+          "description": "v3, written when known: when this attempt was sent, UTC, to the second."
+        },
+        "elapsed_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "v3, written when known: wall-clock milliseconds from sending this attempt to its reply or failure, measured by the harness."
+        },
+        "transport_kind": {
+          "type": "string",
+          "enum": ["timeout", "disconnected", "http_status", "other"],
+          "description": "v3, written on a transport error: the kind read from the exception it was written from (the client's read timeout, the remote end closing the connection, an HTTP error status, other)."
         },
         "prior_attempts": {
           "type": "array",
@@ -893,6 +932,10 @@
             "boolean",
             "null"
           ]
+        },
+        "refusal_phrase_present": {
+          "type": "boolean",
+          "description": "v3, written when true: a refusal phrase occurred in the reply's text whether or not a JSON object was recovered from it; the observation then carries REFUSAL_SUSPECTED beside its response verdict."
         },
         "grounding_verdicts": {
           "type": "array",
