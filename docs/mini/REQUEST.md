@@ -163,3 +163,86 @@ A run that declares nothing runs the operator's declared order exactly.
 R18 and R19 are marked open by the operator's own words ("I'm not sure how to
 implement it", "I'm unsure how to achieve it"). `DESIGN.md` records the smallest
 reading taken for each, as a numbered assumption that one sentence can overturn.
+
+---
+
+# Amendment 1
+
+Sent after the first delivery was pushed. The operator's words are reproduced
+below unedited; the split into numbered requirements follows, continuing the
+numbering at R22. Where Amendment 1 and the original request disagree,
+Amendment 1 governs, and the superseded sentence is named.
+
+## The amendment as sent
+
+> AMENDMENT 1 to docs/mini/REQUEST.md — append these words verbatim as new requirements before acting, then revise DESIGN.md, the code, the tests and SPEC.md in that order. The operator's intent, now specified:
+>
+> 1. PORTS READ THROUGH ROUTING. One rule for artifacts and evidence alike: a port's DEFAULT draw is every artifact of its drawn kinds; a DECLARED route for a kind REPLACES that default for the kind it names; a PUSH is additive on top of whatever the route allows; a kind routed NOWHERE reaches no port, and the test for it asserts absence from every port, not only the routed event. Remove the asymmetry with evidence tiers.
+>
+> 2. CYCLES ARE FIRST-CLASS. The manifest's stage list is the body of ONE cycle. The runner repeats the cycle until a typed stop the HOST decides: a cycle cap, a budget cap, or a registered machine stop-condition over signals — never a seat's prose and never a verdict artifact's content. Stage ids are unique within a cycle; every artifact and every event carries (cycle, stage) coordinates. A port declaration may carry a window: `this_cycle`, `previous_cycle`, `last_n: N`, `all` (default `all`). The cycle-count signal counts real cycles; its test drives the runner, not the state directly. Attention may reorder the remaining stages of the current cycle and may REPEAT a stage only up to `max_repeats` declared per stage in the manifest (default 0), so the record's cycle and stage counts stay bounded by the manifest. Per-cycle kind ids are no longer needed for scoping; keep the template's ability to declare them, but the blind-spot run uses windows.
+>
+> 3. THE FORMAT IS SHOWN BEFORE THE FIRST ATTEMPT. `describe` renders the compiled format in full into the seat's brief — the JSON schema text, the keyword list, the grammar — on every attempt, and on a retry the validation error is shown beside the rendered format. Test: the schema text appears in the dispatched request bytes for a json_schema format on attempt one.
+>
+> 4. MACHINE SEATS ARE A RESPONDER KIND. A stage's seat may be a MODEL or a MACHINE: a registered responder keyed by kind id that runs a deterministic function over the record (the executor that runs a proposal through the kernel functions; a verdict that is computed from execution results). The record states per artifact which kind of seat produced it, so a reading and a function of the record are never confused. Test: the same manifest with the verdict seat as model (stub) and as machine produces artifacts whose provenance differs and whose bodies are checked by the same format.
+>
+> 5. THE BLIND-SPOT RUN IS THE FIRST TEMPLATE, rebuilt on 1–4: several proposer stages of one kind drawing earlier proposals and earlier verdicts (windows `all`); one machine executor; one critic reading proposals beside executions and citing the catalogue's blocks; one verdict stage drawing THIS cycle's executions and criticisms and all earlier verdicts, committing a JSON verdict per proposal (executed moved / unchanged; catalogued or not; standing: candidate point / defect / rejected), with the verdict schema rendered per 3. Run it under the stub for three cycles; the last verdict artifact is the deliverable a person turns into boundary points. Nothing in the loop promotes anything.
+>
+> 6. COMPARISON, NOT OPTIMISATION. Add a `compare` command that takes two run roots with byte-identical sources and script and prints their verdict artifacts side by side with their executed-invariance ledgers (invariances the catalogue lacked that a machine seat confirmed executed). It prints no score, no count-as-merit, and no ranking; a template's own verdict counts are never an objective, and DESIGN.md states that rule under h-EPI's "never promote". Test: `compare` over two stub roots emits both ledgers and refuses a `--score` flag.
+>
+> Record any further interpretation as a numbered assumption. Rerun `python tools/check.py all` at every commit; push the branch; update DELIVERY.md's table for the new requirements; SPEC.md is rewritten from the code that results, not patched. Stop when pushed.
+
+## The requirements
+
+### Ports and routing
+
+**R22 — One routing rule for artifacts and evidence alike.**
+> "PORTS READ THROUGH ROUTING. One rule for artifacts and evidence alike: a port's DEFAULT draw is every artifact of its drawn kinds; a DECLARED route for a kind REPLACES that default for the kind it names; a PUSH is additive on top of whatever the route allows; a kind routed NOWHERE reaches no port, and the test for it asserts absence from every port, not only the routed event. Remove the asymmetry with evidence tiers."
+
+**Supersedes** the original R16's reading as built, in which a declared route for
+an artifact kind added a destination while the default pull still delivered that
+kind to every port drawing it. Under R22 the route replaces the default, exactly
+as evidence tiers already behaved. The test obligation is strengthened: absence
+from every port, not merely the presence of a routing event.
+
+### Cycles
+
+**R23 — The stage list is one cycle, repeated until a typed stop the host decides.**
+> "CYCLES ARE FIRST-CLASS. The manifest's stage list is the body of ONE cycle. The runner repeats the cycle until a typed stop the HOST decides: a cycle cap, a budget cap, or a registered machine stop-condition over signals — never a seat's prose and never a verdict artifact's content. Stage ids are unique within a cycle; every artifact and every event carries (cycle, stage) coordinates. A port declaration may carry a window: `this_cycle`, `previous_cycle`, `last_n: N`, `all` (default `all`). The cycle-count signal counts real cycles; its test drives the runner, not the state directly. Attention may reorder the remaining stages of the current cycle and may REPEAT a stage only up to `max_repeats` declared per stage in the manifest (default 0), so the record's cycle and stage counts stay bounded by the manifest. Per-cycle kind ids are no longer needed for scoping; keep the template's ability to declare them, but the blind-spot run uses windows."
+
+**Supersedes** the original R14 as built, in which the stage list ran once and the
+end stage was the only terminal. It also supersedes assumption A12's reading of
+attention's scope: attention now reorders within the current cycle and may
+repeat a stage under a declared bound. The stop is the host's and is typed;
+nothing a seat writes can end a run.
+
+### The brief
+
+**R24 — The compiled format is rendered in full, on every attempt.**
+> "THE FORMAT IS SHOWN BEFORE THE FIRST ATTEMPT. `describe` renders the compiled format in full into the seat's brief — the JSON schema text, the keyword list, the grammar — on every attempt, and on a retry the validation error is shown beside the rendered format. Test: the schema text appears in the dispatched request bytes for a json_schema format on attempt one."
+
+**Strengthens** the original R8/R10 as built, in which the brief carried a short
+description of each check and the full schema text was never shown. The test
+obligation names the dispatched request bytes, not the rendered brief.
+
+### Seats
+
+**R25 — A seat may be a model or a machine, and the record says which.**
+> "MACHINE SEATS ARE A RESPONDER KIND. A stage's seat may be a MODEL or a MACHINE: a registered responder keyed by kind id that runs a deterministic function over the record (the executor that runs a proposal through the kernel functions; a verdict that is computed from execution results). The record states per artifact which kind of seat produced it, so a reading and a function of the record are never confused. Test: the same manifest with the verdict seat as model (stub) and as machine produces artifacts whose provenance differs and whose bodies are checked by the same format."
+
+### The first template
+
+**R26 — The blind-spot run, rebuilt on R22 to R25.**
+> "THE BLIND-SPOT RUN IS THE FIRST TEMPLATE, rebuilt on 1–4: several proposer stages of one kind drawing earlier proposals and earlier verdicts (windows `all`); one machine executor; one critic reading proposals beside executions and citing the catalogue's blocks; one verdict stage drawing THIS cycle's executions and criticisms and all earlier verdicts, committing a JSON verdict per proposal (executed moved / unchanged; catalogued or not; standing: candidate point / defect / rejected), with the verdict schema rendered per 3. Run it under the stub for three cycles; the last verdict artifact is the deliverable a person turns into boundary points. Nothing in the loop promotes anything."
+
+### Comparison
+
+**R27 — A compare command that ranks nothing.**
+> "COMPARISON, NOT OPTIMISATION. Add a `compare` command that takes two run roots with byte-identical sources and script and prints their verdict artifacts side by side with their executed-invariance ledgers (invariances the catalogue lacked that a machine seat confirmed executed). It prints no score, no count-as-merit, and no ranking; a template's own verdict counts are never an objective, and DESIGN.md states that rule under h-EPI's 'never promote'. Test: `compare` over two stub roots emits both ledgers and refuses a `--score` flag."
+
+### How the work is to be done
+
+**R28 — The order of work, and the standing obligations.**
+> "Record any further interpretation as a numbered assumption. Rerun `python tools/check.py all` at every commit; push the branch; update DELIVERY.md's table for the new requirements; SPEC.md is rewritten from the code that results, not patched. Stop when pushed."
+
+Amendment 1's own further interpretations are numbered from B1 in `DESIGN.md`,
+kept apart from the original A-series so either can be overturned alone.
