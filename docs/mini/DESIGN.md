@@ -367,3 +367,218 @@ them.
   responder.
 - No attention brain. The plug is built and one demonstration policy ships;
   what attention should become is written up honestly in `SPEC.md`.
+
+---
+
+# Amendment 1 — design
+
+Authority: `REQUEST.md`, Amendment 1, R22–R28. Interpretations are numbered
+from **B1**, kept apart from the A-series above so either set can be overturned
+alone. Where this section and the design above disagree, this section governs
+and names what it supersedes.
+
+## 14. One routing rule (R22)
+
+The asymmetry being removed: as built, a declared route for an artifact kind
+*added* a destination while the default pull still delivered that kind to every
+port drawing it, whereas an evidence tier's route *replaced* its default. Both
+now replace.
+
+**What a port draws, for a kind K:**
+
+| K's routes | the ports K reaches |
+|---|---|
+| none declared | every port whose drawn kinds include K — the default |
+| `nowhere` | none |
+| `port(S, P)` | the port `P` of stage `S`, and no other |
+| `scratch(D)` | scratch ports whose destination is `D` |
+| `evidence_store(T)` | no artifact port; K's blocks reach evidence ports drawing tier `T` |
+
+**And for an evidence tier T, the same shape:**
+
+| T's routes | the ports T's blocks reach |
+|---|---|
+| none declared | every evidence port drawing T — the default |
+| `nowhere` | none |
+| `port_type(P)` | evidence ports of type `P` |
+| `scratch(D)` | scratch ports whose destination is `D` |
+
+**B1 — a kind or tier may carry more than one route.** "A push is additive on
+top of whatever the route allows" has content only if a route and a push can
+coexist, so `routing.artifacts` and `routing.evidence` may name one kind or tier
+more than once, and its reach is the union of what those routes allow. This
+supersedes the built refusal of a kind routed twice. `nowhere` may not be
+combined with any other route for the same kind or tier: that is a typed
+refusal, because the union of "nowhere" and anything is not nowhere.
+
+**B2 — "reaches no port" is tested as absence from every port**, by rendering
+every stage's brief and asserting the artifact's body appears in none of them —
+not by asserting a routing event was written.
+
+## 15. Cycles (R23)
+
+**Supersedes** R14 as built (the stage list ran once) and A12 (attention's
+scope). The stage list is the body of one cycle. The runner repeats it.
+
+**The stop is the host's, and typed.** Three sources, checked in this order
+before each cycle begins, and no other:
+
+| stop | declared as | reason recorded |
+|---|---|---|
+| cycle cap | `cycles.max_cycles` | `cycle_cap` |
+| budget cap | `cycles.max_calls` | `budget_cap` |
+| a registered stop condition | `cycles.stop_condition` | `stop_condition:<id>` |
+
+Nothing a seat writes can end a run. The end stage remains, and ends the
+*cycle*, not the run; a run ends only on one of the three above, or when a
+stage's failure tolerance is exceeded, which was already the host's decision.
+
+**B3 — the budget cap counts model-seat calls, retries included.** Machine
+seats cost nothing and are not counted. A run reaching the cap stops before the
+next cycle, never mid-cycle: a half-finished cycle is harder to read than one
+fewer cycle.
+
+**B4 — the event record moves to `creib.mini.event.v2`.** Adding the cycle
+coordinate changes the shape of a record, which this repository treats as a
+version change. The v1 schema file is kept unchanged, the reader reads both, and
+a v1 event replays under the v1 domain with cycle 0 — so the three runs already
+committed stay readable and the failure-mode register's replay instructions stay
+true.
+
+**Windows.** A port declaration may carry `window`, evaluated against the cycle
+coordinate of what it draws:
+
+| window | draws |
+|---|---|
+| `all` (default) | every cycle |
+| `this_cycle` | the cycle now running |
+| `previous_cycle` | the cycle before this one |
+| `{"last_n": N}` | the last N cycles, this one included |
+
+**B5 — windows apply to evidence blocks as well as artifacts.** A block carries
+the cycle it was batched in; supplied sources are batched before cycle 1 and
+carry cycle 0, so `this_cycle` on an evidence port draws only what the run
+itself generated.
+
+**B6 — a stop condition is a registry, like signals and attention.** It declares
+the signals it reads, is handed a view of exactly those, and returns a reason or
+nothing. Two ship: `mini.stop.never`, the default, and
+`mini.stop.no-artifact-last-cycle`, which stops when a whole cycle produced
+nothing. A stop condition cannot reach the record for the same reason an
+attention policy cannot.
+
+**B7 — `max_repeats` bounds a stage per cycle.** Declared per stage, default 0.
+Within one cycle a stage runs at most `1 + max_repeats` times, so the record's
+stage count is bounded by the manifest whatever attention does. Attention may
+reorder the stages remaining in the current cycle and may re-offer a stage only
+while its repeat budget for that cycle is unspent.
+
+**The cycle-count signal counts real cycles**, and its test drives the runner
+over three cycles rather than assembling a state by hand.
+
+## 16. The format, rendered in full (R24)
+
+**Strengthens** R8 and R10 as built, where the brief carried a one-line
+description per check and the schema text was never shown. `describe` now
+renders the compiled format in full — the keyword list, the section markers, the
+expression, the line shape, and the JSON schema as text — into the brief on
+every attempt, first included. On a retry the validation error is shown beside
+that rendering, not instead of it.
+
+The test asserts the schema text appears in the **dispatched request bytes**, so
+it is driven through the live responder against a stand-in executor and reads
+the body that would have gone over the wire.
+
+## 17. Machine seats (R25)
+
+A stage declares `seat`: `"model"` (default) or `"machine"`.
+
+**B8 — a machine seat is resolved by kind id**, as the amendment says: a
+registry maps a kind id to a deterministic function of the record. The function
+is handed a typed context — the plan, the state, the stage, the blob store — and
+returns a reply string in exactly the shape a model would have returned, so the
+same submission reader and the same compiled format check it. A machine seat
+that returns something its kind's format refuses is a `FORMAT_FAILURE` like any
+other; it is not privileged.
+
+**Provenance.** Every `ARTIFACT_SUBMITTED` and every `FORMAT_FAILURE` records
+`seat`, so a reading and a function of the record are never confused when the
+record is read back.
+
+## 18. The blind-spot run (R26)
+
+The template hunts for places where one of this prototype's own checks fails to
+see something it claims to see.
+
+**B9 — what a proposal, a kernel and the catalogue are.** The amendment names
+"the executor that runs a proposal through the kernel functions" without saying
+what a kernel function is here, so the smallest self-contained reading:
+
+- A **kernel function** is a registered, deterministic verdict of this
+  prototype's own machinery over a piece of text — the citation quote check, the
+  keyword format check, the block cutter. Registered, so more can be added.
+- A **transform** is a registered, deterministic rewrite of a piece of text —
+  folding whitespace, changing case, wrapping in a code fence, reordering
+  paragraphs.
+- A **proposal** commits JSON naming a kernel, a transform, and an input, and
+  claims the kernel's verdict moves, or does not, under that transform.
+- The **catalogue** is a committed JSON document listing the kernel/transform
+  pairs already known, and whether each is known to move. It is supplied as a
+  run source, so it is cut into blocks and the critic can cite it like any other
+  evidence.
+- The **machine executor** applies the transform, runs the kernel before and
+  after, and commits `moved` or `unchanged` with both verdicts.
+
+**B10 — the standing rule**, computed by the machine verdict seat and filled by
+a model verdict seat under the same schema:
+
+| executed | catalogued | standing |
+|---|---|---|
+| moved | no | `candidate point` |
+| unchanged | yes | `defect` |
+| anything else | | `rejected` |
+
+A candidate point is a boundary nobody had written down. A defect is the
+catalogue claiming a movement that did not happen. Neither is promoted by
+anything in the loop: the verdict is an artifact, it mints no standing, and a
+person turns the last one into boundary points or does not.
+
+**The shape of the run**: several proposer stages of one kind drawing earlier
+proposals and earlier verdicts at window `all`; one machine executor; one critic
+reading proposals beside executions and citing the catalogue; one verdict stage
+drawing this cycle's executions and criticisms at `this_cycle` and all earlier
+verdicts at `all`. Three cycles under the scripted responder.
+
+## 19. Comparison, never optimisation (R27)
+
+`compare` takes two run roots, prints their verdict artifacts side by side, and
+prints each root's executed-invariance ledger.
+
+**B11 — "byte-identical sources and script" is made checkable.** The script was
+not in the record, so a run now records a `responder_id` on `RUN_STARTED`: the
+digest of the script file for the scripted responder, and `model:<name>` for the
+live one. `compare` refuses two roots whose source digests or responder ids
+differ, and says which. The manifests may differ — that is the point of
+comparing.
+
+**B12 — the executed-invariance ledger** is the kernel/transform pairs the
+catalogue does not list, that a **machine** seat executed, and that came out
+`unchanged`. A model's prose about an invariance never enters the ledger; only a
+machine seat's executed result does.
+
+**B13 — never promote, stated as this repository states it.** `compare` prints
+no score, no total, no ordering, and no count presented as merit. A template's
+own verdict counts are never an objective: a run that produced more candidate
+points is not thereby a better run, and nothing in this prototype may be tuned
+to raise that number. A `--score` flag is refused by name, so the refusal is
+reachable and tested rather than merely intended. This is h-EPI's own rule —
+"the report never ranks models, computes scores, or uses words like best, worst,
+pass, or accuracy" — applied to a mini run's own output.
+
+## 20. What Amendment 1 does not change
+
+The permission layer still mints no standing; `changes: "nothing"` is still the
+only implemented value. Citations are still measures that decide nothing. The
+record is still append-only and hash-chained, and a refused reply is still kept.
+Attention is still off by default, and a stop condition is not attention: it
+decides whether the run continues, never which stage runs next.
