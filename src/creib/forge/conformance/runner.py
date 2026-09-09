@@ -222,10 +222,22 @@ def run_pilot(
                     routing = route(planned, scoring, format_sent=True)
                 else:
                     request = build_chat_request(variant, model=model, endpoint=spec.endpoint)
-                    request_digest = request.request_digest
-                    response = _complete(executor, request)
-                    scoring = score(variant, response, refusal_phrases=spec.refusal_phrases, baseline_output=baseline_output)
-                    routing = route(variant, scoring, format_sent=True)
+                    try:
+                        response = _complete(executor, request)
+                    except RecordError as exc:
+                        if executor_kind != "replay":
+                            raise
+                        # The same reading as a cycle step's: the request carries the baseline's output, and
+                        # when the re-score reads that output differently from the recorded run, the request
+                        # was never sent and has no recorded reply. Outside a replay a missing reply still aborts.
+                        variant = planned
+                        response = None
+                        scoring = prerequisite_unavailable(f"no recorded reply for the request this variant makes under the re-score; the baseline's re-scored output is not the output the recorded run rendered: {exc}")
+                        routing = route(planned, scoring, format_sent=True)
+                    else:
+                        request_digest = request.request_digest
+                        scoring = score(variant, response, refusal_phrases=spec.refusal_phrases, baseline_output=baseline_output)
+                        routing = route(variant, scoring, format_sent=True)
         else:
             request = build_chat_request(planned, model=model, endpoint=spec.endpoint)
             request_digest = request.request_digest

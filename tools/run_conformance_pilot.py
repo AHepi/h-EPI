@@ -53,7 +53,7 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--pilot", type=Path, required=True)
     run.add_argument("--model", required=True)
     run.add_argument("--family", action="append", choices=[family.value for family in Family], default=None)
-    run.add_argument("--limit", type=int, default=None)
+    run.add_argument("--limit", type=int, default=None, help="send at most this many of the selected variants, in plan order; a baseline a selected variant depends on is added after the cut, so the run can make more calls than the limit")
     run.add_argument("--output-dir", type=Path, required=True)
     run.add_argument("--created-on", required=True, help="RFC 3339 timestamp recorded verbatim")
     run.add_argument("--dry-run", action="store_true", help="use the canned executor; no network")
@@ -282,7 +282,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
         if args.command == "claims":
             from creib.forge.conformance.appraisal import Appraisal, load_appraisal
-            from creib.forge.conformance.claims import CLAIM_STATUSES, evaluate_claims, load_claims, render_claims_markdown, without_runs
+            from creib.forge.conformance.claims import CLAIM_STATUSES, evaluate_claims, load_claims, render_claims_markdown, runs_without_record, without_runs
             from creib.forge.conformance.records import enumerate_record_directory
             loaded = load_claims(args.claims)
             observations = []
@@ -292,6 +292,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 runs.extend(load_run(path) for path in enumerate_record_directory(directory).run_paths)
             observations, runs, excluded_runs = without_runs(observations, runs, args.without_run)
             appraisal = None if args.appraisal is None else Appraisal.build(load_appraisal(args.appraisal))
+            without_record = runs_without_record(observations, runs)
             results = evaluate_claims(loaded, observations, appraisal, runs=runs)
             for result in results:
                 _emit(result.to_dict())
@@ -304,13 +305,14 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "status_counts": counts,
                 "unrefuted_not_shown_able_to_fail": unwitnessed,
                 "without_runs": list(excluded_runs),
+                "observations_without_run_record": without_record,
                 "semantic_verdict": None,
             }
             if appraisal is not None:
                 summary["appraisal_labels"] = appraisal.labels.to_dict()
             _emit(summary)
             if args.markdown is not None:
-                args.markdown.write_text(render_claims_markdown(results), encoding="utf-8")
+                args.markdown.write_text(render_claims_markdown(results, without_record), encoding="utf-8")
             return 0
         if args.command == "evidence":
             observations = load_observation_directory(args.observations_dir)

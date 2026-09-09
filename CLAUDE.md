@@ -18,6 +18,7 @@ A criticism-first harness that checks how a language model fills a form from a d
 - An unrefuted claim says whether its refuting condition held on any supplied record outside its scope; a survival whose condition held nowhere has not been shown able to fail and is never cited as a survival without saying so. A control whose corruption leaves the reference output unchanged is refused when the plan is built.
 - A refutation is placed against the repeat floor of its own run and case: the refuting condition held on `all`, `some`, or `none` of that case's other REPEAT observations, or the floor is `absent`. The class describes two records beside each other; it never withdraws a refutation, and `none` is not a verdict on the model. A reply and its replay are one reply: `claims` refuses an observation supplied beside the record it names in `replayed_from`, and any observation supplied twice.
 - Conjectures for a run are committed with the pilot change, before the run's records exist. A conjecture written after the records is a description of them, and the document that reports it says so.
+- `claims` tests every observation in the directories it is given, whether or not a run record names it, and names the ones no supplied run record carries; the tables that read a directory through its run records (`dependence`, `controls`, `cycles`, `compare`, `report`) do not see them. A document that reports a `claims` table states the directories, every `--without-run`, and whether observations without a run record were read (H43).
 
 ## Environment
 
@@ -57,6 +58,7 @@ Run `all` before every commit. No model is called by any check. Do not add `asse
 - Work on a branch (`claude/*`, `codex/*`, or a human-chosen name). Never commit on or push to `main`; publication is a pull request and merging is a human action.
 - Push only to the branch's own upstream: `git push -u origin HEAD`. Never `--force`, never `HEAD:main`, never rebase, reset, amend, or rewrite published history. `.claude/settings.json` denies these commands.
 - Stage explicit paths. Run `git diff --cached --check`. Never stage `.venv`, key material, or source documents you are not licensed to share.
+- Observations are committed with their run record. When a long run's observations are committed before its record exists, to keep them safe, the commit message says so and the run record follows in its own commit; a run stopped before its record leaves observations that `claims` names and that any document reading the directory accounts for (H43).
 
 ## Style
 

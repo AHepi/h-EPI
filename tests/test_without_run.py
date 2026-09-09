@@ -8,6 +8,7 @@ check, so the option is the only way to read the corrected records with the rest
 
 from __future__ import annotations
 
+import dataclasses
 import json
 from pathlib import Path
 import tempfile
@@ -64,17 +65,38 @@ class WithoutRunTests(unittest.TestCase):
                 claims_module.without_runs(list(live.observations), [live.run_record], ["ffffffff"])
             with self.assertRaisesRegex(RecordError, "non-empty prefixes"):
                 claims_module.without_runs(list(live.observations), [live.run_record], [""])
-            # A one-character prefix shared by two runs names two.
-            other = run_pilot(spec=_CONFIG.spec, corpus=_CORPUS, plan=_PLAN, model="qwen3.5:397b", executor=_fake(), executor_kind="fake",
-                              output_dir=Path(directory) / "other", created_on="2026-09-09T12:00:00Z", families=(Family.BASELINE,), limit=2)
-            shared = ""
-            for a, b in zip(live.run_record.run_id, other.run_record.run_id):
-                if a != b:
-                    break
-                shared += a
-            if shared:
-                with self.assertRaisesRegex(RecordError, "names 2 of the supplied runs"):
-                    claims_module.without_runs(list(live.observations) + list(other.observations), [live.run_record, other.run_record], [shared])
+            # A prefix shared by two runs names two. Run ids are hashes, so two real runs share a prefix
+            # only by chance; the resolution reads nothing but the id, so two records that differ in the
+            # last character of the id stand for the case.
+            first = dataclasses.replace(live.run_record, run_id="a" * 15 + "1")
+            second = dataclasses.replace(live.run_record, run_id="a" * 15 + "2")
+            with self.assertRaisesRegex(RecordError, "names 2 of the supplied runs"):
+                claims_module.without_runs([], [first, second], ["a" * 15])
+            kept, kept_runs, excluded = claims_module.without_runs([], [first, second], ["a" * 15 + "2"])
+            self.assertEqual((kept, [r.run_id for r in kept_runs], excluded), ([], [first.run_id], (second.run_id,)))
+
+    def test_observations_without_a_run_record_are_tested_and_named(self) -> None:
+        """An observation is one reply, tested whether or not a run record names it; the output says which were read so."""
+
+        with tempfile.TemporaryDirectory() as directory:
+            live = run_pilot(spec=_CONFIG.spec, corpus=_CORPUS, plan=_PLAN, model="gemma4:31b", executor=_fake(), executor_kind="fake",
+                             output_dir=Path(directory) / "live", created_on="2026-09-09T12:00:00Z", families=(Family.BASELINE,), limit=2)
+            observations = list(live.observations)
+            self.assertEqual(claims_module.runs_without_record(observations, [live.run_record]), {})
+            without = claims_module.runs_without_record(observations, [])
+            self.assertEqual(without, {live.run_record.run_id: len(observations)})
+            with_record = claims_module.evaluate_claims(_claim(), observations, runs=[live.run_record])[0]
+            no_record = claims_module.evaluate_claims(_claim(), observations, runs=[])[0]
+            self.assertEqual((with_record.tested, no_record.tested), (len(observations), len(observations)))
+            rendered = claims_module.render_claims_markdown((no_record,), without)
+            self.assertIn(f"{len(observations)} observations of run `{live.run_record.run_id}`", rendered)
+            self.assertIn("leave such a run out with `--without-run`", rendered)
+            self.assertNotIn("no supplied run record names", claims_module.render_claims_markdown((with_record,), {}))
+            self.assertNotIn("no supplied run record names", claims_module.render_claims_markdown((with_record,)))
+            # Left out, the run's observations are neither tested nor named.
+            kept, kept_runs, excluded = claims_module.without_runs(observations, [], [live.run_record.run_id])
+            self.assertEqual((kept, kept_runs, excluded), ([], [], (live.run_record.run_id,)))
+            self.assertEqual(claims_module.runs_without_record(kept, kept_runs), {})
 
 
 if __name__ == "__main__":

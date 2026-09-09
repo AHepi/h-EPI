@@ -889,6 +889,25 @@ def without_runs(observations: list[ObservationRecord], runs: Iterable[RunRecord
     )
 
 
+def runs_without_record(observations: Iterable[ObservationRecord], runs: Iterable[RunRecord]) -> dict[str, int]:
+    """The run ids the supplied observations name that no supplied run record carries, each with its count of observations.
+
+    ``claims`` tests every supplied observation, whether or not a run record names it: an
+    observation is one reply, and one reply where a condition holds refutes a claim. A run
+    stopped before its record was written, or a directory supplied without its run records,
+    leaves observations of this kind; the output names them so that a table can be regenerated
+    from the tree by the method its document states (``docs/failure-modes.md``, H43). To read
+    only the completed runs, leave the run out with ``without_runs``.
+    """
+
+    recorded = {run.run_id for run in runs}
+    counts: dict[str, int] = {}
+    for observation in observations:
+        if observation.run_id not in recorded:
+            counts[observation.run_id] = counts.get(observation.run_id, 0) + 1
+    return dict(sorted(counts.items()))
+
+
 def evaluate_claims(claims: tuple[Claim, ...], observations: list[ObservationRecord], appraisal: Appraisal | None = None, runs: Iterable[RunRecord] = ()) -> tuple[ClaimResult, ...]:
     context = Context(observations, runs)
     return tuple(evaluate_claim(claim, observations, context, appraisal) for claim in claims)
@@ -898,8 +917,17 @@ def _plural(count: int, noun: str) -> str:
     return f"{count} {noun}" + ("" if count == 1 else "s")
 
 
-def render_claims_markdown(results: tuple[ClaimResult, ...]) -> str:
+def render_claims_markdown(results: tuple[ClaimResult, ...], without_record: Mapping[str, int] | None = None) -> str:
+    """Render the results; ``without_record`` is what ``runs_without_record`` returned for the same observations, when it is not empty."""
+
     parts = ["# Conjectures tested against the records", ""]
+    if without_record:
+        parts.append(
+            "Observations no supplied run record names were read and tested like every other: "
+            + "; ".join(f"{_plural(count, 'observation')} of run `{run_id}`" for run_id, count in sorted(without_record.items()))
+            + ". A run stopped before its record was written leaves observations of this kind. To test the completed runs only, leave such a run out with `--without-run` and say so."
+        )
+        parts.append("")
     parts.append("A `never` claim is refuted by one observation where its condition holds; an `always` claim by one where it does not. `UNREFUTED_FOR_DECLARED_SCOPE` means no supplied record refuted the claim, or every refutation rests on a reading of the key that the appraisal labels out; it is not a proof. `REFUTED_ON_CONTESTED_READING` means every refutation rests on a reading that is under criticism and undecided. An unrefuted claim also says whether its refuting condition held on any supplied record outside the declared scope: a condition that never held anywhere has not been shown able to fail. Each refutation is also placed against the repeat floor of its own run and case, the REPEAT observations of that case other than itself: whether the refuting condition held on every one of them, on some, on none, or whether there was none to compare with. For a condition that compares a reply with the baseline, holding on every repeat means the repeats moved too and the refutation is not distinguished from the floor; for a condition about a reply's own content it means the condition recurred on every identical request. Counts are of observations, not of quality, and imply no ranking.")
     parts.append("")
     for result in results:
@@ -947,5 +975,6 @@ __all__ = [
     "evaluate_claims",
     "load_claims",
     "render_claims_markdown",
+    "runs_without_record",
     "without_runs",
 ]

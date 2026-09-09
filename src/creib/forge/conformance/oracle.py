@@ -230,29 +230,22 @@ def recover_json_object(content: str) -> Any:
     The object scored is the last one inside a code fence when any fence holds one, else the
     last top-level object in the text, because a model places its final answer last and marks
     it: a reply that quotes its previous answer and then gives a corrected one is scored on the
-    correction. Until 9 September 2026 the object with the most keys was taken, ties to the
-    last, and nine cycle replies that dropped a criticised key were scored on the draft that
-    still carried it (``docs/failure-modes.md``, H40). A candidate that parses as strict JSON,
-    or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float,
-    for instance) is passed over, so a final answer refused for a float loses to an earlier
-    draft that parsed (``docs/kernel.md``, P-06).
+    correction. A fence's candidates are the top-level objects inside its body, so a fence that
+    holds a sentence, or a language tag other than ``json``, beside its object still holds the
+    object (``docs/kernel.md``, P-08; until 9 September 2026 only a fence whose whole body was
+    one object counted, and the object inside a fence with prose fell to the bare pool). Until
+    the same day the object with the most keys was taken, ties to the last, and nine cycle
+    replies that dropped a criticised key were scored on the draft that still carried it
+    (``docs/failure-modes.md``, H40). A candidate that parses as strict JSON, or as JSON with
+    repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance)
+    is passed over, so a final answer refused for a float loses to an earlier draft that parsed
+    (``docs/kernel.md``, P-07).
     """
 
-    decoder = json.JSONDecoder()
     fenced: list[str] = []
     for match in _FENCE.finditer(content):
-        fenced.append(match.group(1))
-    top_level: list[str] = []
-    cursor = 0
-    for index, character in enumerate(content):
-        if character != "{" or index < cursor:
-            continue
-        try:
-            _value, end = decoder.raw_decode(content, index)
-        except (ValueError, RecursionError):
-            continue
-        top_level.append(content[index:end])
-        cursor = end
+        fenced.extend(_top_level_objects(match.group(1)))
+    top_level = _top_level_objects(content)
     for pool in (fenced, top_level):
         for candidate in reversed(pool):
             duplicates: tuple[str, ...] = ()
@@ -268,6 +261,24 @@ def recover_json_object(content: str) -> Any:
             if type(value) is dict:
                 return value, duplicates
     raise RecordError("no JSON object could be recovered from the response")
+
+
+def _top_level_objects(text: str) -> list[str]:
+    """Every balanced object in the text that is not inside another, in order; a brace inside an object is skipped."""
+
+    decoder = json.JSONDecoder()
+    found: list[str] = []
+    cursor = 0
+    for index, character in enumerate(text):
+        if character != "{" or index < cursor:
+            continue
+        try:
+            _value, end = decoder.raw_decode(text, index)
+        except (ValueError, RecursionError):
+            continue
+        found.append(text[index:end])
+        cursor = end
+    return found
 
 
 def _loads_last_wins(candidate: str) -> tuple[Any, tuple[str, ...]] | None:

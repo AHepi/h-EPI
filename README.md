@@ -4,7 +4,7 @@ A small, fail-closed harness for one question: **when a language model fills a f
 
 You give it three things: a form (a JSON Schema), the rules for filling it (numbered sentences), and one or more documents. It calls a model, records the returned form byte-for-byte in a content-addressed record, enforces the form's own constraints, compares each field to whatever expectation you declared, and routes every failure to a *plural* set of suspects: the model, the prompt and plumbing, the answer key, or the task as framed. It never declares a model correct. Switched on in configuration, it also asks the model to quote the words each value came from and checks that they exist in the document, lets the model answer `null` on fields you say may be unstated, sends each request again to measure how often the same request returns a different form, and shows a model its own previous answer to record what a further cycle changes.
 
-It has been run against eighteen hosted models on a battery built to be hard, producing 4,110 records for about ten dollars. What those records refute, and what they leave standing, is in `docs/`.
+It has been run against eighteen hosted models on a battery built to be hard, 4,110 records for about ten dollars, and on further batteries since: the tree holds 12,962 observation records under 99 run records as of 9 September 2026. What those records refute, and what they leave standing, is in `docs/`.
 
 [![ci](https://github.com/AHepi/h-EPI/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AHepi/h-EPI/actions/workflows/ci.yml)
 
