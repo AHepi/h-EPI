@@ -137,9 +137,21 @@ SYSTEM = (
 class LiveResponder:
     """One model call per attempt, through the harness's own Ollama executor."""
 
-    def __init__(self, model: str, executor: Any | None = None, *, seed: int = 7) -> None:
+    def __init__(
+        self,
+        model: str,
+        executor: Any | None = None,
+        *,
+        seed: int = 7,
+        timeout_seconds: int = 180,
+        retries: int = 0,
+    ) -> None:
         self.model = model
-        self._executor = executor if executor is not None else OllamaChatExecutor()
+        self._executor = (
+            executor
+            if executor is not None
+            else OllamaChatExecutor(timeout_seconds=timeout_seconds, retries=retries)
+        )
         self._seed = seed
         self._calls = 0
 

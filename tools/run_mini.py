@@ -92,13 +92,14 @@ def target_compare(args: argparse.Namespace) -> int:
 
 def target_live(args: argparse.Namespace) -> int:
     plan = compile_manifest(Path(args.manifest))
-    responder = LiveResponder(args.model)
+    responder = LiveResponder(args.model, timeout_seconds=args.timeout_seconds, retries=args.retries)
     outcome = run_mini(plan, Path(args.output_dir), responder, f"model:{args.model}")
     print(
         json.dumps(
             {
                 "run_id": outcome.run_id,
                 "model": args.model,
+                "timeout_seconds": args.timeout_seconds,
                 "root": str(outcome.root),
                 "calls": responder.calls,
                 "stop_reason": outcome.stop_reason,
@@ -155,6 +156,8 @@ def main(argv: list[str] | None = None) -> int:
     live_parser.add_argument("--manifest", required=True)
     live_parser.add_argument("--model", required=True)
     live_parser.add_argument("--output-dir", required=True)
+    live_parser.add_argument("--timeout-seconds", type=int, default=180)
+    live_parser.add_argument("--retries", type=int, default=0)
     live_parser.set_defaults(run=target_live)
     compare_parser = sub.add_parser("compare")
     compare_parser.add_argument("--root", action="append", required=True)

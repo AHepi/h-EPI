@@ -1,8 +1,8 @@
 # Mini — the specification, written from what was built
 
-Authority: `REQUEST.md`, the original request (R1–R21) and Amendment 1
-(R22–R28). Design and assumptions: `DESIGN.md`, A1–A15 and B1–B13. Failure
-modes seen in live runs: `FAILURE_MODES.md`.
+Authority: `REQUEST.md` — the original request (R1–R21), Amendment 1 (R22–R28)
+and Amendment 2 (R29–R36). Design and assumptions: `DESIGN.md`, A1–A15, B1–B13
+and C1–C12. Failure modes seen in live runs: `FAILURE_MODES.md`.
 
 This document is rewritten from the code that exists and passes its tests, as
 Amendment 1 requires — not patched. Every contract names the module, the schema
@@ -20,6 +20,13 @@ back, and writes down exactly what happened.
 **An artifact** is one thing a seat produced. Every artifact has a **body** and
 some **commitments**, and those two are all any artifact needs.
 
+**An artifact is written in two goes.** The first call sees everything the seat
+is entitled to see and writes the body. The second call sees **only that body** —
+not the problem, not the sources, not any other artifact — and writes what is
+being committed to. Both requests and both replies are kept, so that the
+commitments were written blind is something you can check rather than something
+I am telling you.
+
 **A seat** is not a kind of thing in the code. There is one template, and you
 fill it in: what this seat is shown, and what it produces. Fill it in one way
 and you have a conjecturer; another way and you have a critic; a third way and
@@ -28,7 +35,9 @@ written. A seat can also be a **machine** — a function of the record rather
 than a model — and the record always says which of the two made each artifact,
 so a computation is never mistaken for a judgement.
 
-**A cycle** is the list of stages you wrote. It repeats. What stops it is
+**A cycle** is the list of stages you wrote, and it always ends with a
+**verdict** — one stage that looks at everything the cycle produced and says
+what it makes of it. It repeats. What stops it is
 always the host: a limit on cycles, a limit on calls, or a small function that
 looks at counts drawn from the record. Nothing a seat writes can end a run —
 a seat can say "stop, we are finished" as often as it likes and the run
@@ -61,6 +70,12 @@ small function reads counts from the record and picks what runs next, within
 the current cycle, and may repeat a stage only as often as your manifest allows.
 You cannot tell it what to pick; you can only choose which function is in
 charge.
+
+**Things a seat writes badly are recovered where the record can show it.** An
+answer wrapped in the three backticks people use for code is read, and the
+record says it was unwrapped. Quotations a seat writes into its prose instead of
+the field for them are pulled out and checked like any other, and the record says
+where each came from. Nothing is silently tidied.
 
 **Nothing decides anything is true, or better.** No artifact stands or falls.
 Two runs can be set side by side, and `compare` will not order them, total
@@ -374,7 +389,97 @@ Nothing is ordered or added up. `--score` is declared so it can be refused by
 name, and a test asserts the rendered output contains none of *score*, *best*,
 *worst*, *better*, *wins*, *rank*, *accuracy* or *total*.
 
-### 14. Compile, the loop, and the command line
+### 14. Two calls per artifact (R35 a, b)
+
+**Modules** `runner.py`, `kinds.py`, `formats.py`. **Tests** `test_two_calls.py`.
+
+| call | is shown | returns |
+|---|---|---|
+| body | the stage's full brief: every declared port, the evidence legend, the compiled body format, the worked citation example | `body`, and optionally `citations`, `about`, `answers`, the kind's optional fields |
+| commitments | `render_commitments_brief`: the body text, the compiled commitments format, one line of instruction | `commitments` |
+
+The two replies are joined by `Submission.joined`. The record's
+`ARTIFACT_SUBMITTED` carries `calls`, a list of `{phase, request_ref,
+reply_ref}`, so **both requests and both replies** are blobs anyone can read.
+`test_the_second_call_sees_the_body_and_nothing_else` asserts the second
+request contains the body and contains none of: the problem text, another
+artifact's body, any block id, any of the source's words.
+
+The format splits across the calls: a body failure never reaches the second
+call, and a commitments failure names its phase. `commitment_call: "single"`
+per kind keeps the one-call shape, and the record carries which shape produced
+each artifact either way. A machine seat makes one call and the record says
+`machine_single`.
+
+### 15. One verdict node per cycle (R35 c)
+
+**Module** `manifest.py`. **Tests** `test_two_calls.py::VerdictNodeTests`.
+
+Every cycle ends with exactly one stage of kind `mini.verdict.v1`. Compile
+refuses a manifest with none (`MINI_VERDICT_MISSING`), with more than one
+(`MINI_VERDICT_DUPLICATE`), or with one that is not the last stage before the
+end stage (`MINI_VERDICT_NOT_LAST`). Every shipped manifest carries one, and a
+test walks the directory to say so. Attention may not reach the verdict stage
+until it is the only one left, so "ends with" survives a re-ordering policy.
+
+Its body call sees everything the cycle produced, through its declared ports and
+their windows; its commitments call sees only its own body. Its seat may be
+model or machine.
+
+### 16. Scripts addressed by coordinate (R29)
+
+**Module** `executor.py`. **Tests** `test_scripts.py`.
+
+Two script forms, told apart by shape. A stage whose value is a **list** is
+consumed in order. A stage whose value is an **object** is keyed by cycle and
+indexed by attempt, so the stage gets the same reply wherever the cycle puts it.
+Both may appear in one script; a `<stage>@commitments` entry answers the second
+call, and without one the stage's own replies serve both phases, consumed
+independently.
+
+**Which is which:** the committed blind-spot script is by coordinate. Every
+other test script is ordered, because ordered is the shorter thing to write when
+a stage runs once and nothing re-orders it.
+
+One script now drives the same manifest with attention off and on, and
+`compare` sets the two roots side by side. On the blind-spot template the
+demonstration policy finds nothing to prefer, so the two logs differ only in the
+run header — asserted event by event, and worth asserting: attention on but idle
+should be the same run as attention off.
+
+### 17. What is recovered, and how the record shows it (R30, R31)
+
+**Modules** `kinds.py`, `evidence.py`. **Tests** `test_recovery.py`.
+
+**A fenced reply is read.** `strip_fence` removes a leading ```` ``` ```` fence
+and its close before reading. `ARTIFACT_SUBMITTED` carries `recovered:
+["fence"]` and names the verbatim reply in `reply_ref`, so the stored bytes and
+the parsed submission are both reachable from one event. A reply that is still
+not JSON after stripping is a `FORMAT_FAILURE`.
+
+**Citations at both ends.** A declared citation must carry a non-empty `block`
+and a non-empty `quote`; an empty pair is `MINI_SUBMISSION_FIELD_TYPE`, which
+reaches the record as a format failure — a fact about the reply, not about the
+evidence. The live wire schema carries the same requirement. The reader then
+recovers bracketed `[<hex prefix>] "quote"` pairs from `body` prose, marks each
+`recovered: prose`, and byte-checks them exactly as declared ones; every measure
+says which it was. The committed gpt-oss run's two artifacts yield **eleven
+recovered citations, every one verified**.
+
+The brief shows one worked example of a declared citation, built from a block
+the stage can actually see.
+
+### 18. An empty input port (R32)
+
+**Module** `runner.py`. **Tests** `test_failures.py::EmptyPortTests`.
+
+A declared **artifact** port that draws nothing writes `PORT_EMPTY` naming the
+port, before dispatch. Only artifact ports: an empty evidence port is the
+ordinary state of a first cycle. The kind's failure policy gains
+`skip_on_empty_port`, default false, so the earlier behaviour is unchanged and
+disclosed; set true, the stage writes its notice and produces nothing.
+
+### 19. Compile, the loop, and the command line
 
 `compile_manifest` refuses at the first thing that does not resolve and then
 fixes a run header whose digest is the run id and the chain's genesis.
@@ -386,45 +491,51 @@ through the permission layer. Every outcome is an event.
 `tools/run_mini.py`: `compile`, `run`, `live`, `replay`, `compare`. Only `live`
 calls a model, reading the key from `OLLAMA_API_KEY` at call time through the
 conformance harness's own executor — one place in this repository where a key is
-touched.
+touched — and taking `--timeout-seconds` and `--retries`, which a long brief
+needs.
 
 ---
 
-## Part three: what is proposed and not built
+## Part three: decisions, and what is genuinely still unbuilt
 
-**Attention has a plug and no brain.** What ships is the shape: a signal
-registry, a policy registry, a view that refuses to answer for an undeclared
-signal, a bound on repeats, and one demonstration policy of about ten lines.
-What does not exist is any reason to believe that policy is a good one. It has
-never been run against a live model, and "most unanswered criticisms" is a guess
-dressed as a rule.
+### Four things that are settled, not missing (R34)
 
-What attention should become: the signal interface is the durable part and
-should stay; the policy is disposable and should be treated so. A real one needs
-to be set against the declared order **on the same run**, and `compare` is now
-half of that — it will put two roots side by side, but a run cannot yet be
-replayed with attention on and off from one script, because attention changes
-which stage consumes which scripted reply. Making the script addressable by
-(cycle, stage) rather than by consumption order is the next thing to build, and
-it is not built.
+The operator has decided these. They are not gaps and this document stops
+listing them as absences:
 
-**Also proposed and not built:**
+| Decision | What it means |
+|---|---|
+| Standing stays `changes: "nothing"` | The permission layer will not grant an artifact a standing. Nothing in a mini run makes any other artifact stand or fall, and the slot exists only so the shape is visible. |
+| Evidence is cut at blank lines | A paragraph is the unit. Tables, lists and headings are cut as prose, deliberately. |
+| A kind's optional fields are strings | Structure goes inside `commitments` under a JSON-schema format, not into new field types. |
+| One writer per run root | No locking. A second writer is detected on the next read, which is enough for a prototype and is a choice, not an oversight. |
+
+### What attention still has, and still has not
+
+The plug is built and the socket is now testable: one script drives the same
+manifest with attention off and on, and `compare` sets the two roots side by
+side. That was the missing half after Amendment 1, and it is here.
+
+What is still missing is any reason to believe the one demonstration policy is a
+good one. It has never been run against a live model. "Most unanswered
+criticisms" remains a guess dressed as a rule, and on the blind-spot template it
+finds nothing to prefer at all. Building a policy worth trusting means running
+the same template several ways and reading the verdicts — which the machinery
+now permits and nobody has done.
+
+### Genuinely unbuilt
 
 | Thing | Where it stands |
 |---|---|
-| A standing an artifact can gain or lose | `changes: "nothing"` is the only implemented value; the slot and its refusal exist so the shape is visible |
-| Replaying one script under two attention policies | see above; the script is consumed in order, not addressed by coordinate |
-| Deciding what to do about a fenced reply | a reply that is correct JSON inside a code fence is refused as unreadable; whether the reader should strip the fence or the brief should carry the cost is stated in `FAILURE_MODES.md` M4 and decided neither way |
-| A place for citations a model will actually use | two live runs, two opposite behaviours; `FAILURE_MODES.md` M1 and M2 |
-| Noticing that a stage's input port was empty | a stage whose port drew nothing runs anyway and nothing records it; `FAILURE_MODES.md` M3 |
-| Cutting evidence by anything but blank lines | tables, lists and headings are cut as prose |
-| A structured optional field on a kind | `optional_fields` admit strings; structure goes in `commitments` under a JSON-schema format |
-| Concurrency | one writer, one root, no lock; a second writer is detected on the next read, not prevented |
-| A live blind-spot run | the template has been run under the stub only; no model has proposed a kernel and transform pair |
+| An attention policy worth trusting | see above: testable now, untested |
+| A live blind-spot run at any scale | one run of three cycles exists; nine to a dozen proposals is not a survey of which checks are blind |
+| Recovering a citation from prose that carries no block id | the recogniser is deliberately narrow and finds only the shape the record has actually seen |
+| A transport failure as a typed outcome rather than a stopped run | a live call that times out or disconnects raises out of the loop and leaves a partial record; `--retries` softens it and does not fix it |
+| Concurrency | one writer, by decision above |
 
-**And one thing worth saying plainly about the blind-spot template.** It found a
-defect on its first outing, and the defect was in my own standing rule, not in
-any kernel. That is the sort of thing this shape is good for and it is also a
-warning: nine proposals over three cycles, all written by hand into a script, is
-not a survey of anything. The record shows what those nine pairs did. It does
-not show which of this prototype's checks are blind.
+### One thing worth saying plainly about the blind-spot template
+
+It found a defect on its first outing, and the defect was in my own standing
+rule, not in any kernel. That is what this shape is good for. It is also a
+warning: a handful of proposals over three cycles, written into a script by
+hand, is not a survey of anything. The record shows what those pairs did.
