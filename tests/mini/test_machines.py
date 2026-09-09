@@ -48,9 +48,11 @@ def _blind_spot_manifest() -> dict:
 
 
 def _script() -> dict:
+    """A fresh copy of the committed script, which is addressed by coordinate."""
+
     from creib.strict_json import load_strict
 
-    return {key: list(value) for key, value in dict(load_strict(SCRIPT)).items()}
+    return json.loads(json.dumps(load_strict(SCRIPT)))
 
 
 class TheSameManifestBothWaysTests(MiniTestCase):
@@ -73,8 +75,8 @@ class TheSameManifestBothWaysTests(MiniTestCase):
     def test_provenance_differs_and_the_same_format_checks_both(self) -> None:
         script = _script()
         machine_plan, machine_outcome = self.run_manifest(self._manifest("machine"), script, name="machine")
-        model_script = dict(_script())
-        model_script["verdict"] = [A_MODEL_VERDICT]
+        model_script = _script()
+        model_script["verdict"] = {"1": [A_MODEL_VERDICT]}
         model_plan, model_outcome = self.run_manifest(self._manifest("model"), model_script, name="model")
 
         def verdict_seat(plan, outcome) -> str:
@@ -92,7 +94,7 @@ class TheSameManifestBothWaysTests(MiniTestCase):
 
     def test_a_model_verdict_that_misses_the_schema_is_refused_like_any_other(self) -> None:
         script = _script()
-        script["verdict"] = [json.dumps({"body": "b", "commitments": json.dumps({"verdicts": [{"nope": 1}]})})] * 2
+        script["verdict"] = {"1": [json.dumps({"body": "b", "commitments": json.dumps({"verdicts": [{"nope": 1}]})})] * 2}
         _, outcome = self.run_manifest(self._manifest("model"), script, name="model-bad")
         failures = self.events_of(outcome, FORMAT_FAILURE)
         self.assertTrue(failures)

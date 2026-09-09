@@ -36,7 +36,9 @@ def _manifest() -> dict:
 
 
 def _script() -> dict:
-    return {key: list(value) for key, value in dict(load_strict(SCRIPT)).items()}
+    """A fresh copy of the committed script, which is addressed by coordinate."""
+
+    return json.loads(json.dumps(load_strict(SCRIPT)))
 
 
 class TheStandingRuleTests(MiniTestCase):
@@ -166,17 +168,19 @@ class CompareTests(MiniTestCase):
                 stage["seat"] = "model"
         script = _script()
         model_script = _script()
-        model_script["verdict"] = [
-            json.dumps(
-                {
-                    "body": "My own reading of cycle {index}.".format(index=index),
-                    "commitments": json.dumps(
-                        {"verdicts": [{"proposal": "aaaaaaaaaaaaaaaa", "executed": "moved", "catalogued": False, "standing": "candidate point"}]}
-                    ),
-                }
-            )
+        model_script["verdict"] = {
+            str(index + 1): [
+                json.dumps(
+                    {
+                        "body": f"My own reading of cycle {index + 1}.",
+                        "commitments": json.dumps(
+                            {"verdicts": [{"proposal": "aaaaaaaaaaaaaaaa", "executed": "moved", "catalogued": False, "standing": "candidate point"}]}
+                        ),
+                    }
+                )
+            ]
             for index in range(3)
-        ]
+        }
         _, first = self.run_manifest(machine, script, name="machine-root")
         plan = self.compile(model)
         from creib.forge.mini.executor import ScriptedResponder
