@@ -167,7 +167,7 @@ class BlobStore:
         try:
             publish_no_clobber(path, data)
         except RecordError as error:
-            raise MiniError("MINI_BLOB_CORRUPT", f"cannot store blob {reference[:16]}: {error}") from error
+            raise MiniError("MINI_BLOB_UNWRITABLE", f"cannot store blob {reference[:16]}: {error}") from error
         return reference
 
     def get(self, reference: str) -> bytes:

@@ -91,6 +91,7 @@ MINI_CODES: frozenset[str] = frozenset(
         "MINI_LOG_UNREADABLE",
         "MINI_BLOB_CORRUPT",
         "MINI_BLOB_MISSING",
+        "MINI_BLOB_UNWRITABLE",
         "MINI_RUN_ROOT_OCCUPIED",
     }
 )

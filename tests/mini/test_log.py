@@ -169,3 +169,30 @@ class BlobTests(MiniTestCase):
 
 def _replace_event_id(entry: dict) -> None:
     entry["event_id"] = "0" * 64
+
+
+class SurvivingGuardTests(MiniTestCase):
+    """Four guards the refusal sweep found undetected, each now reached.
+
+    A guard whose deletion the suite does not notice is a guard the suite is not
+    holding, however plausible its code looks.
+    """
+
+    def test_a_store_that_cannot_be_written_is_refused(self) -> None:
+        """The blob directory cannot be made: its parent is a file."""
+
+        blocker = self.tmp / "a-file"
+        blocker.write_text("not a directory", encoding="utf-8")
+        self.assertRefuses("MINI_BLOB_UNWRITABLE", BlobStore(blocker / "blobs").put, b"anything")
+
+    def test_a_log_that_is_not_text_is_refused(self) -> None:
+        """Bytes that are not UTF-8 fail before any line is parsed."""
+
+        path = self.tmp / "log.jsonl"
+        path.write_bytes(b"\xff\xfe not text at all\n")
+        self.assertRefuses("MINI_LOG_UNREADABLE", lambda: list(EventLog(path, "0" * 64).read()))
+
+    def test_a_log_path_that_is_a_directory_is_refused(self) -> None:
+        path = self.tmp / "log.jsonl"
+        path.mkdir()
+        self.assertRefuses("MINI_LOG_UNREADABLE", lambda: list(EventLog(path, "0" * 64).read()))

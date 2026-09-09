@@ -117,8 +117,10 @@ class StoreTests(MiniTestCase):
             BlobStore("not/a/path")
 
     def test_a_run_root_must_be_a_path(self) -> None:
+        """The guard's own message, not whatever the next line would raise."""
+
         plan = self.compile(base_manifest())
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, "root must be pathlib.Path"):
             run_mini(plan, "not/a/path", ScriptedResponder({}))
 
     def test_an_event_log_takes_a_path_and_says_so(self) -> None:
