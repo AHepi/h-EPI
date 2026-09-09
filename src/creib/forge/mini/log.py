@@ -265,6 +265,7 @@ class MiniState:
 
     run_id: str = ""
     manifest_id: str = ""
+    responder_id: str = ""
     cycle: int = 0
     cycles_completed: int = 0
     stages_entered: list[str] = field(default_factory=list)
@@ -288,6 +289,7 @@ class MiniState:
         return {
             "run_id": self.run_id,
             "manifest_id": self.manifest_id,
+            "responder_id": self.responder_id,
             "cycle": self.cycle,
             "cycles_completed": self.cycles_completed,
             "stages_entered": list(self.stages_entered),
@@ -330,6 +332,7 @@ def apply_event(state: MiniState, event: Event) -> None:
     if event.type == RUN_STARTED:
         state.run_id = str(payload.get("run_id", ""))
         state.manifest_id = str(payload.get("manifest_id", ""))
+        state.responder_id = str(payload.get("responder_id", ""))
     elif event.type == STAGE_ENTERED:
         state.stages_entered.append(str(event.stage_id))
         state.stage_coordinates.append([event.cycle, str(event.stage_id)])

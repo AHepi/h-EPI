@@ -532,16 +532,27 @@ what a kernel function is here, so the smallest self-contained reading:
 **B10 — the standing rule**, computed by the machine verdict seat and filled by
 a model verdict seat under the same schema:
 
-| executed | catalogued | standing |
+| executed | catalogue | standing |
 |---|---|---|
-| moved | no | `candidate point` |
-| unchanged | yes | `defect` |
-| anything else | | `rejected` |
+| moved | does not list the pair | `candidate point` |
+| moved | says it does not move | `defect` |
+| unchanged | says it moves | `defect` |
+| unchanged | does not list the pair | `rejected` (it is an invariance; see §19) |
+| either | agrees with what happened | `rejected` |
 
 A candidate point is a boundary nobody had written down. A defect is the
-catalogue claiming a movement that did not happen. Neither is promoted by
-anything in the loop: the verdict is an artifact, it mints no standing, and a
-person turns the last one into boundary points or does not.
+catalogue and the execution DISAGREEING, in either direction. Neither is
+promoted by anything in the loop: the verdict is an artifact, it mints no
+standing, and a person turns the last one into boundary points or does not.
+
+**B10 was first written wrongly**, and the run found it. It said "unchanged and
+catalogued is a defect", which marked a pair the catalogue correctly lists as
+not moving, and that did not move, as a defect — the catalogue agreeing with the
+execution, recorded as a fault. The rule now turns on agreement, and the
+catalogue's own claim is carried on the verdict beside `catalogued` so the
+reading is visible on the record rather than buried in the rule. The first
+version is left here because a design document that silently acquires the right
+answer is not a record of anything.
 
 **The shape of the run**: several proposer stages of one kind drawing earlier
 proposals and earlier verdicts at window `all`; one machine executor; one critic

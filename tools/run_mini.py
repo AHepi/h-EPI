@@ -5,6 +5,7 @@
     python tools/run_mini.py run     --manifest … --script … --output-dir …
     python tools/run_mini.py replay  --root <a run root>
     python tools/run_mini.py live    --manifest … --model … --output-dir …
+    python tools/run_mini.py compare --root <a run root> --root <another>
 
 Only ``live`` calls a model. ``run`` drives the scripted responder, so the
 replies come from the script file and nothing leaves the machine. ``live``
@@ -24,6 +25,8 @@ import sys
 from creib.errors import CREIBError
 from creib.strict_json import load_strict
 from creib.forge.mini.executor import LiveResponder, ScriptedResponder
+from creib.forge.mini.compare import UNSUPPORTED, compare_roots
+from creib.forge.mini.common import MiniError, digest_bytes
 from creib.forge.mini.log import LOG_NAME, replay
 from creib.forge.mini.manifest import compile_manifest
 from creib.forge.mini.runner import run_mini
@@ -54,14 +57,17 @@ def target_compile(args: argparse.Namespace) -> int:
 
 def target_run(args: argparse.Namespace) -> int:
     plan = compile_manifest(Path(args.manifest))
-    script = load_strict(Path(args.script))
-    outcome = run_mini(plan, Path(args.output_dir), ScriptedResponder(script))
+    script_path = Path(args.script)
+    script = load_strict(script_path)
+    responder_id = f"script:{digest_bytes(script_path.read_bytes())[:16]}"
+    outcome = run_mini(plan, Path(args.output_dir), ScriptedResponder(script), responder_id)
     print(
         json.dumps(
             {
                 "run_id": outcome.run_id,
                 "root": str(outcome.root),
                 "stop_reason": outcome.stop_reason,
+                "cycles_completed": outcome.cycles_completed,
                 "stages_entered": list(outcome.stages_entered),
                 "state_digest": outcome.state_digest,
             },
@@ -73,10 +79,21 @@ def target_run(args: argparse.Namespace) -> int:
     return 0
 
 
+def target_compare(args: argparse.Namespace) -> int:
+    if getattr(args, "score", False):
+        raise MiniError(
+            UNSUPPORTED,
+            "compare computes no score. A template's own verdict counts are not a measure of a run, "
+            "and nothing here may be tuned to raise one.",
+        )
+    print(compare_roots(Path(args.root[0]), Path(args.root[1])))
+    return 0
+
+
 def target_live(args: argparse.Namespace) -> int:
     plan = compile_manifest(Path(args.manifest))
     responder = LiveResponder(args.model)
-    outcome = run_mini(plan, Path(args.output_dir), responder)
+    outcome = run_mini(plan, Path(args.output_dir), responder, f"model:{args.model}")
     print(
         json.dumps(
             {
@@ -139,10 +156,19 @@ def main(argv: list[str] | None = None) -> int:
     live_parser.add_argument("--model", required=True)
     live_parser.add_argument("--output-dir", required=True)
     live_parser.set_defaults(run=target_live)
+    compare_parser = sub.add_parser("compare")
+    compare_parser.add_argument("--root", action="append", required=True)
+    # Declared so it can be REFUSED by name rather than merely absent: a flag
+    # nobody declared produces an argparse error, which is not this repository
+    # saying it will not rank things.
+    compare_parser.add_argument("--score", action="store_true")
+    compare_parser.set_defaults(run=target_compare)
     replay_parser = sub.add_parser("replay")
     replay_parser.add_argument("--root", required=True)
     replay_parser.set_defaults(run=target_replay)
     args = parser.parse_args(argv)
+    if args.target == "compare" and len(args.root) != 2:
+        parser.error("compare takes exactly two --root arguments")
     try:
         return args.run(args)
     except CREIBError as error:
