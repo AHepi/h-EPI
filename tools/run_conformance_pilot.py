@@ -78,6 +78,7 @@ def _parser() -> argparse.ArgumentParser:
     claims.add_argument("--observations-dir", type=Path, required=True, action="append", help="may be given more than once")
     claims.add_argument("--markdown", type=Path, help="also write a Markdown rendering here")
     claims.add_argument("--appraisal", type=Path, help="arguments about the readings refutations rest on; labelled in, out, or undecided, and refutations classed usable, contested, or defeated")
+    claims.add_argument("--without-run", action="append", default=[], metavar="RUN_ID", help="leave out this run's observations and run record (an id or a prefix naming exactly one supplied run), because a re-score of it is supplied in another directory; may be given more than once")
     evidence = subparsers.add_parser("evidence", help="list observation ids per model and criticism trigger, for the failure-mode register")
     evidence.add_argument("--observations-dir", type=Path, required=True)
     evidence.add_argument("--trigger", help="restrict to one trigger or grounding verdict")
@@ -281,7 +282,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
         if args.command == "claims":
             from creib.forge.conformance.appraisal import Appraisal, load_appraisal
-            from creib.forge.conformance.claims import CLAIM_STATUSES, evaluate_claims, load_claims, render_claims_markdown
+            from creib.forge.conformance.claims import CLAIM_STATUSES, evaluate_claims, load_claims, render_claims_markdown, without_runs
             from creib.forge.conformance.records import enumerate_record_directory
             loaded = load_claims(args.claims)
             observations = []
@@ -289,6 +290,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             for directory in args.observations_dir:
                 observations.extend(load_observation_directory(directory))
                 runs.extend(load_run(path) for path in enumerate_record_directory(directory).run_paths)
+            observations, runs, excluded_runs = without_runs(observations, runs, args.without_run)
             appraisal = None if args.appraisal is None else Appraisal.build(load_appraisal(args.appraisal))
             results = evaluate_claims(loaded, observations, appraisal, runs=runs)
             for result in results:
@@ -301,6 +303,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "models": sorted({o.model for o in observations}),
                 "status_counts": counts,
                 "unrefuted_not_shown_able_to_fail": unwitnessed,
+                "without_runs": list(excluded_runs),
                 "semantic_verdict": None,
             }
             if appraisal is not None:

@@ -861,6 +861,34 @@ def _floor_class(observation: ObservationRecord, context: Context, refutes_by_id
     return "some"
 
 
+def without_runs(observations: list[ObservationRecord], runs: Iterable[RunRecord], prefixes: Iterable[str]) -> tuple[list[ObservationRecord], list[RunRecord], tuple[str, ...]]:
+    """Leave out the named runs, each given as a run id or a prefix of one that names exactly one supplied run.
+
+    For a run whose re-score is supplied in another directory: the re-score stands in for the run,
+    and the two are never counted together. The excluded run ids are returned so that the output
+    can say what was left out. A prefix that names no supplied run, or more than one, is refused.
+    """
+
+    runs = list(runs)
+    wanted = list(prefixes)
+    if not wanted:
+        return list(observations), runs, ()
+    supplied = {run.run_id for run in runs} | {observation.run_id for observation in observations}
+    excluded: set[str] = set()
+    for prefix in wanted:
+        if not isinstance(prefix, str) or not prefix:
+            raise RecordError("without_runs takes run ids or non-empty prefixes")
+        matches = {run_id for run_id in supplied if run_id.startswith(prefix)}
+        if len(matches) != 1:
+            raise RecordError(f"--without-run {prefix!r} names {len(matches)} of the supplied runs; it must name exactly one")
+        excluded |= matches
+    return (
+        [observation for observation in observations if observation.run_id not in excluded],
+        [run for run in runs if run.run_id not in excluded],
+        tuple(sorted(excluded)),
+    )
+
+
 def evaluate_claims(claims: tuple[Claim, ...], observations: list[ObservationRecord], appraisal: Appraisal | None = None, runs: Iterable[RunRecord] = ()) -> tuple[ClaimResult, ...]:
     context = Context(observations, runs)
     return tuple(evaluate_claim(claim, observations, context, appraisal) for claim in claims)
@@ -919,4 +947,5 @@ __all__ = [
     "evaluate_claims",
     "load_claims",
     "render_claims_markdown",
+    "without_runs",
 ]
