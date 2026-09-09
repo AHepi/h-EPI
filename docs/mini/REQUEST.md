@@ -246,3 +246,79 @@ obligation names the dispatched request bytes, not the rendered brief.
 
 Amendment 1's own further interpretations are numbered from B1 in `DESIGN.md`,
 kept apart from the original A-series so either can be overturned alone.
+
+---
+
+# Amendment 2
+
+Sent after Amendment 1 was pushed. The operator's words are reproduced below
+unedited; the split into numbered requirements follows, continuing at R29. Where
+Amendment 2 and anything earlier disagree, Amendment 2 governs, and the
+superseded sentence is named.
+
+## The amendment as sent
+
+> AMENDMENT 2 to docs/mini/REQUEST.md — append these words verbatim as new requirements, then revise DESIGN.md, code, tests and SPEC.md in that order, on a new branch `claude/mini-finish` from `claude/mini-prototype`. The operator's decisions on the register's open items and the spec's "not built" list:
+>
+> 1. SCRIPTS ADDRESSED BY COORDINATE. The scripted responder answers by (cycle, stage, attempt), not by consumption order, so one script can drive the same manifest under attention `off` and under a policy, and `compare` can set the two roots side by side. Keep the ordered script as a second form for old tests, or migrate them; say which. Test: the blind-spot script replayed under `off` and under the demonstration policy yields two roots whose logs differ only where the policy re-ordered, and `compare` shows it.
+>
+> 2. FENCED REPLIES ARE READ AND THE READING IS RECORDED. A reply that is valid JSON inside a markdown code fence is accepted; the event records `recovered: fence` beside the verbatim stored reply, so the stored bytes and the parsed submission are both on the record. A reply that is not JSON after stripping is still a FORMAT_FAILURE. Test both.
+>
+> 3. CITATIONS: BOTH ENDS FIXED. The wire schema requires non-empty `block` and `quote` on every citation entry, so an empty pair is a format failure, not an unknown block. The reader additionally recovers bracketed `[<block-id-prefix>] "quote"` pairs found in `body` prose into the citations field, each marked `recovered: prose`, and byte-checks them exactly as declared citations; the brief shows one worked example of a declared citation. Tests: the gpt-oss run's two artifacts, re-read from their stored replies, yield eleven recovered citations all verified; an empty pair is refused.
+>
+> 4. AN EMPTY INPUT PORT IS A TYPED NOTICE. A stage whose declared artifact port draws nothing writes `PORT_EMPTY` naming the port before dispatch; the failure policy for the kind gains one option, `skip_on_empty_port` (default false, so today's behaviour is unchanged and disclosed). Test both settings on the glm run's shape.
+>
+> 5. THE BLIND-SPOT TEMPLATE RUNS LIVE, ONCE. With the operator's key present, one live run of `forge/mini/manifests/blind-spot/` through three cycles with a model proposer and machine executor and machine verdict, records committed under `forge/mini/runs/blind-spot-<model>/`; RESULTS reported as what the record shows (proposals, executions, verdicts, the last verdict artifact whole) and nothing more; every new failure mode registered in FAILURE_MODES.md with event ids. Absent a key, deliver 1–4 and 7 and say so.
+>
+> 6. LEAVE ALONE, AND SAY SO IN SPEC.md: standing stays `changes: "nothing"`; evidence cutting stays blank-line; optional fields stay strings; single writer. These are decisions, not gaps.
+>
+> 7. TWO CALLS PER ARTIFACT, AND ONE VERDICT NODE PER CYCLE. The operator's words, verbatim: "Keep the schema simple inside the artifacts, try filling commitments within the same artifact into a second call that only ever sees the body content and nothing else. And at the end of each cycle, add a single verdict node that sees everything for body generation, but only the body for the second call." Read as: (a) an artifact's schema stays the two required fields, `body` and `commitments`, and nothing structural is added inside them; (b) producing an artifact becomes TWO model calls by default — the FIRST call receives the stage's full brief (ports, evidence legend, format) and returns `body` only; the SECOND call receives the body text and nothing else — no problem, no evidence, no other artifacts, no earlier commitments — and returns `commitments` only, under the kind's commitments format; the two replies are joined into one artifact whose record carries both requests and both replies, so anyone can see that the commitments were written blind; a manifest may set `commitment_call: single` per kind to keep the old one-call behaviour, disclosed; (c) every cycle ends with ONE verdict stage of a registered kind `mini.verdict.v1`, whose body call sees everything the cycle produced (all artifacts of the cycle, evidence, earlier verdicts, per the port windows) and whose commitments call sees ONLY the verdict's own body; the verdict seat may be model or machine per R25, and a machine verdict skips the second call and says so on the record. Tests: the second call's dispatched request bytes contain the body and no block id, no problem text, no other artifact; a kind set to `single` dispatches once; the cycle-end verdict is present exactly once per cycle and its two requests differ exactly as (c) says; the blind-spot template is rebuilt on this shape.
+>
+> `python tools/check.py all` green at every commit; push the branch; DELIVERY.md's table extended to R29 onward; SPEC.md rewritten from the code, with Part three reduced to what is genuinely still unbuilt. Stop when pushed.
+
+## The requirements
+
+**R29 — The scripted responder answers by coordinate.**
+> "SCRIPTS ADDRESSED BY COORDINATE. The scripted responder answers by (cycle, stage, attempt), not by consumption order, so one script can drive the same manifest under attention `off` and under a policy, and `compare` can set the two roots side by side. Keep the ordered script as a second form for old tests, or migrate them; say which. Test: the blind-spot script replayed under `off` and under the demonstration policy yields two roots whose logs differ only where the policy re-ordered, and `compare` shows it."
+
+**Closes** the gap `SPEC.md` Part three named after Amendment 1: a run could not
+be replayed with attention on and off from one script, because attention changed
+which stage consumed which reply.
+
+**R30 — A fenced reply is read, and the reading is on the record.**
+> "FENCED REPLIES ARE READ AND THE READING IS RECORDED. A reply that is valid JSON inside a markdown code fence is accepted; the event records `recovered: fence` beside the verbatim stored reply, so the stored bytes and the parsed submission are both on the record. A reply that is not JSON after stripping is still a FORMAT_FAILURE. Test both."
+
+**Decides** the fork left open in `FAILURE_MODES.md` M4: the reader strips the
+fence, and the record carries both the stored bytes and the fact of the
+recovery, so the two can never be confused.
+
+**R31 — Citations fixed at both ends.**
+> "CITATIONS: BOTH ENDS FIXED. The wire schema requires non-empty `block` and `quote` on every citation entry, so an empty pair is a format failure, not an unknown block. The reader additionally recovers bracketed `[<block-id-prefix>] \"quote\"` pairs found in `body` prose into the citations field, each marked `recovered: prose`, and byte-checks them exactly as declared citations; the brief shows one worked example of a declared citation. Tests: the gpt-oss run's two artifacts, re-read from their stored replies, yield eleven recovered citations all verified; an empty pair is refused."
+
+**Closes** `FAILURE_MODES.md` M1 and M2 together: M1's prose citations are
+recovered and checked, and M2's empty pairs become a format failure rather than
+an unknown block.
+
+**R32 — An empty input port is a typed notice.**
+> "AN EMPTY INPUT PORT IS A TYPED NOTICE. A stage whose declared artifact port draws nothing writes `PORT_EMPTY` naming the port before dispatch; the failure policy for the kind gains one option, `skip_on_empty_port` (default false, so today's behaviour is unchanged and disclosed). Test both settings on the glm run's shape."
+
+**Closes** `FAILURE_MODES.md` M3's open design question.
+
+**R33 — One live run of the blind-spot template.**
+> "THE BLIND-SPOT TEMPLATE RUNS LIVE, ONCE. With the operator's key present, one live run of `forge/mini/manifests/blind-spot/` through three cycles with a model proposer and machine executor and machine verdict, records committed under `forge/mini/runs/blind-spot-<model>/`; RESULTS reported as what the record shows (proposals, executions, verdicts, the last verdict artifact whole) and nothing more; every new failure mode registered in FAILURE_MODES.md with event ids. Absent a key, deliver 1–4 and 7 and say so."
+
+**R34 — Four things are decisions, not gaps, and `SPEC.md` says so.**
+> "LEAVE ALONE, AND SAY SO IN SPEC.md: standing stays `changes: \"nothing\"`; evidence cutting stays blank-line; optional fields stay strings; single writer. These are decisions, not gaps."
+
+**R35 — Two calls per artifact, and one verdict node per cycle.**
+> "TWO CALLS PER ARTIFACT, AND ONE VERDICT NODE PER CYCLE. The operator's words, verbatim: \"Keep the schema simple inside the artifacts, try filling commitments within the same artifact into a second call that only ever sees the body content and nothing else. And at the end of each cycle, add a single verdict node that sees everything for body generation, but only the body for the second call.\" Read as: (a) an artifact's schema stays the two required fields, `body` and `commitments`, and nothing structural is added inside them; (b) producing an artifact becomes TWO model calls by default — the FIRST call receives the stage's full brief (ports, evidence legend, format) and returns `body` only; the SECOND call receives the body text and nothing else — no problem, no evidence, no other artifacts, no earlier commitments — and returns `commitments` only, under the kind's commitments format; the two replies are joined into one artifact whose record carries both requests and both replies, so anyone can see that the commitments were written blind; a manifest may set `commitment_call: single` per kind to keep the old one-call behaviour, disclosed; (c) every cycle ends with ONE verdict stage of a registered kind `mini.verdict.v1`, whose body call sees everything the cycle produced (all artifacts of the cycle, evidence, earlier verdicts, per the port windows) and whose commitments call sees ONLY the verdict's own body; the verdict seat may be model or machine per R25, and a machine verdict skips the second call and says so on the record. Tests: the second call's dispatched request bytes contain the body and no block id, no problem text, no other artifact; a kind set to `single` dispatches once; the cycle-end verdict is present exactly once per cycle and its two requests differ exactly as (c) says; the blind-spot template is rebuilt on this shape."
+
+**Supersedes** the one-call production of an artifact assumed everywhere before
+it, and adds a structural obligation on every manifest: a cycle ends with a
+verdict stage.
+
+**R36 — The standing obligations.**
+> "`python tools/check.py all` green at every commit; push the branch; DELIVERY.md's table extended to R29 onward; SPEC.md rewritten from the code, with Part three reduced to what is genuinely still unbuilt. Stop when pushed."
+
+Amendment 2's own further interpretations are numbered from **C1** in
+`DESIGN.md`, kept apart from the A- and B-series.
