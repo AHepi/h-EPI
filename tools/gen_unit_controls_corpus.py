@@ -58,6 +58,15 @@ PREAMBLE = (
     "follows from the document's commitments and definitions, and name the commitments and "
     "defined terms it depends on. The document begins at its title."
 )
+# When the probes are given explicitly (--probes-file), the claim is a statement and the section it is
+# drawn from is named, so that the section is the probe's self unit exactly as a heading-claim would be.
+PREAMBLE_STATED = (
+    "Claim under assessment: {claim}\n\n"
+    "The claim is drawn from the section titled \"{title}\".\n\n"
+    "The document below is to be read as written. Decide whether the claim under assessment "
+    "follows from the document's commitments and definitions, and name the commitments and "
+    "defined terms it depends on. The document begins at its title."
+)
 PREAMBLE_NODOC = (
     "Claim under assessment: {title}\n\n"
     "No document is supplied. Decide whether the claim under assessment follows, and name the "
@@ -108,15 +117,20 @@ def renaming(terms: tuple[str, ...]) -> dict[str, str]:
     mapping: dict[str, str] = {}
     k_index = 0
     word_index = 0
+
+    def greek(index: int) -> str:
+        # Past the twenty-four letters the name takes a numeral, so any vocabulary size renames.
+        return GREEK[index % len(GREEK)] + (str(index // len(GREEK) + 1) if index >= len(GREEK) else "")
+
     for term in terms:
         if term.startswith("K-"):
-            mapping[term] = "K-" + GREEK[k_index]
+            mapping[term] = "K-" + greek(k_index)
             k_index += 1
         elif term.isupper():
-            mapping[term] = "X" + chr(ord("A") + word_index)
+            mapping[term] = "X" + chr(ord("A") + word_index % 26) + (str(word_index // 26 + 1) if word_index >= 26 else "")
             word_index += 1
         else:
-            mapping[term] = "Term" + GREEK[word_index].title()
+            mapping[term] = "Term" + greek(word_index).title()
             word_index += 1
     if len(set(mapping.values())) != len(mapping) or set(mapping.values()) & set(terms):
         raise RecordError("renaming produced a collision")
@@ -144,7 +158,21 @@ def rename(text_value: str, patterns: tuple[str, ...], mapping: dict[str, str]) 
     return "".join(out)
 
 
-def probes(document: str, levels: tuple[int, ...], labels: tuple[str, ...], probe_level: int) -> list[Unit]:
+def probes(document: str, levels: tuple[int, ...], labels: tuple[str, ...], probe_level: int, stated: list | None = None) -> list:
+    """(unit, claim) pairs, as in gen_unit_dependence_corpus: argued sections with their headings, or the stated probes."""
+
+    if stated is not None:
+        by_title = {unit.title: unit for unit in split_units(document, levels)}
+        found = []
+        for index, item in enumerate(stated):
+            if item["section"] not in by_title:
+                raise RecordError(f"probes[{index}] names a section that is not a unit heading: {item['section']!r}")
+            found.append((by_title[item["section"]], item["claim"]))
+        return found
+    return [(unit, unit.title) for unit in _labelled_probes(document, levels, labels, probe_level)]
+
+
+def _labelled_probes(document: str, levels: tuple[int, ...], labels: tuple[str, ...], probe_level: int) -> list[Unit]:
     found = []
     for unit in split_units(document, levels):
         if unit.level == probe_level and any(f"**{label}.**" in unit_text(document, unit) for label in labels):
@@ -182,7 +210,7 @@ def case(case_id: str, prose: str, *, pair_of: str | None, varied: str | None, h
     }
 
 
-def build(document: str, config, corpus_id: str, labels: tuple[str, ...], probe_level: int, digest: str) -> tuple[dict, dict]:
+def build(document: str, config, corpus_id: str, labels: tuple[str, ...], probe_level: int, digest: str, stated: list | None = None) -> tuple[dict, dict]:
     terms = document_terms(document, config)
     if not terms:
         raise RecordError("the document has no term the patterns match")
@@ -191,9 +219,13 @@ def build(document: str, config, corpus_id: str, labels: tuple[str, ...], probe_
     renamed_document = rename(document, config.term_patterns, mapping)
     cases = []
     summary = []
-    for index, unit in enumerate(probes(document, config.levels, labels, probe_level), start=1):
+    for index, (unit, claim) in enumerate(probes(document, config.levels, labels, probe_level, stated), start=1):
         base_id = f"DEP-{index:02d}"
-        preamble = PREAMBLE.format(title=unit.title)
+        heading_claim = claim == unit.title
+        preamble = PREAMBLE.format(title=unit.title) if heading_claim else PREAMBLE_STATED.format(claim=claim, title=unit.title)
+        negated = "It is not the case that " + claim[0].lower() + claim[1:]
+        nodoc = PREAMBLE_NODOC.format(title=claim)
+        negated_preamble = PREAMBLE.format(title=negated) if heading_claim else PREAMBLE_STATED.format(claim=negated, title=unit.title)
         full_text = preamble + "\n\n" + document
         relations = relate_units(full_text, config)
         # relate_units works on the case text, whose units are offset by the preamble; map back by title.
@@ -206,7 +238,7 @@ def build(document: str, config, corpus_id: str, labels: tuple[str, ...], probe_
         used_terms = tuple(sorted(set(_terms(preamble + "\n" + unit_text(document, self_unit), config.term_patterns))))
         common = f"probe of section {unit.title!r}; document sha256 {digest}; self {self_unit.unit_id}; declared {', '.join(u.unit_id for u in declared) or 'none'}; terms used {', '.join(used_terms) or 'none'}"
         cases.append(case(base_id, full_text, pair_of=None, varied=None, held_fixed="the whole document as written; the claim is the section's own heading", notes=common + "; no key"))
-        cases.append(case(f"{base_id}.NODOC", PREAMBLE_NODOC.format(title=unit.title), pair_of=base_id, varied="control=nodoc", held_fixed="the claim", notes=common + "; control: no document"))
+        cases.append(case(f"{base_id}.NODOC", nodoc, pair_of=base_id, varied="control=nodoc", held_fixed="the claim", notes=common + "; control: no document"))
         cases.append(case(f"{base_id}.SELF", preamble + "\n\n" + _document_only(document, units, [self_unit.unit_id]), pair_of=base_id, varied="control=self", held_fixed="the claim and the document's own argument for it", notes=common + "; control: the self unit only"))
         cases.append(case(f"{base_id}.SELFDEF", preamble + "\n\n" + _document_only(document, units, [u.unit_id for u in units if u.unit_id == self_unit.unit_id or u in declared]), pair_of=base_id, varied="control=selfdef", held_fixed="the claim, its own argument, and the definitions that argument uses", notes=common + "; control: the self unit and the declared units"))
         all_carriers: set[str] = set()
@@ -215,16 +247,22 @@ def build(document: str, config, corpus_id: str, labels: tuple[str, ...], probe_
             all_carriers.update(carriers)
             if not carriers:
                 continue
-            cases.append(case(f"{base_id}.BLOCK.{term}", preamble + "\n\n" + _document_without(document, units, set(carriers)), pair_of=base_id, varied=f"control=block:{term}", held_fixed="the claim, its own argument, and every unit that does not mention the term", notes=common + f"; control: every other unit mentioning {term} removed ({', '.join(carriers)})"))
+            cases.append(case(f"{base_id}.BLOCK.{_slug(term)}", preamble + "\n\n" + _document_without(document, units, set(carriers)), pair_of=base_id, varied=f"control=block:{term}", held_fixed="the claim, its own argument, and every unit that does not mention the term", notes=common + f"; control: every other unit mentioning {term} removed ({', '.join(carriers)})"))
         if all_carriers:
             cases.append(case(f"{base_id}.BLOCKALL", preamble + "\n\n" + _document_without(document, units, all_carriers), pair_of=base_id, varied="control=blockall", held_fixed="the claim, its own argument, and every unit that mentions none of the terms the argument uses", notes=common + f"; control: every other unit mentioning any used term removed ({', '.join(sorted(all_carriers))})"))
         cases.append(case(f"{base_id}.RENAMED", preamble + "\n\n" + renamed_document, pair_of=base_id, varied="control=renamed", held_fixed="the whole document, every term consistently renamed", notes=common + "; control: renamed vocabulary; map " + ", ".join(f"{k}->{v}" for k, v in mapping.items() if k in used_terms or not used_terms)))
-        cases.append(case(f"{base_id}.NEGATED", PREAMBLE.format(title="It is not the case that " + unit.title[0].lower() + unit.title[1:]) + "\n\n" + document, pair_of=base_id, varied="control=negated", held_fixed="the whole document; the claim negated", notes=common + "; control: the claim negated"))
+        cases.append(case(f"{base_id}.NEGATED", negated_preamble + "\n\n" + document, pair_of=base_id, varied="control=negated", held_fixed="the whole document; the claim negated", notes=common + "; control: the claim negated"))
         summary.append((base_id, unit.title, self_unit.unit_id, [u.unit_id for u in declared], used_terms, sorted(all_carriers)))
     if not cases:
         raise RecordError("no section carries an argument label; nothing to probe")
     corpus = {"schema_version": "creib.conformance-pilot.corpus.v1", "corpus_id": corpus_id, "cases": cases}
     return corpus, {"form_schema": form_schema(terms + tuple(mapping[t] for t in terms)), "mapping": mapping, "summary": summary, "terms": terms}
+
+
+def _slug(term: str) -> str:
+    """A term as a case-id segment: characters outside the identifier alphabet become their code point."""
+
+    return re.sub(r"[^A-Za-z0-9._:-]", lambda m: f"u{ord(m.group(0)):04x}", term)
 
 
 def _terms(text_value: str, patterns: tuple[str, ...]) -> tuple[str, ...]:
@@ -239,6 +277,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--pilot-dir", type=Path, required=True, help="directory holding this pilot's pilot.json; corpus.json and form.schema.json are written here")
     parser.add_argument("--corpus-id", required=True)
     parser.add_argument("--labels", nargs="+", default=list(DEFAULT_LABELS))
+    parser.add_argument("--probes-file", type=Path, default=None, help="JSON list of {section, claim}: the claims to assess, each drawn from the named section heading; replaces label detection")
     parser.add_argument("--probe-level", type=int, default=2)
     args = parser.parse_args(argv)
     source = loads_strict((args.source_pilot / "pilot.json").read_text(encoding="utf-8"))
@@ -248,7 +287,8 @@ def main(argv: list[str] | None = None) -> int:
     document_bytes = args.document.read_bytes()
     document = document_bytes.decode("utf-8")
     digest = hashlib.sha256(document_bytes).hexdigest()
-    corpus, extra = build(document, config, args.corpus_id, tuple(args.labels), args.probe_level, digest)
+    stated = None if args.probes_file is None else loads_strict(args.probes_file.read_text(encoding="utf-8"))
+    corpus, extra = build(document, config, args.corpus_id, tuple(args.labels), args.probe_level, digest, stated)
     (args.pilot_dir / "corpus.json").write_text(json.dumps(corpus, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     (args.pilot_dir / "form.schema.json").write_text(json.dumps(extra["form_schema"], indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"{len(corpus['cases'])} cases; {len(extra['terms'])} terms renamed")

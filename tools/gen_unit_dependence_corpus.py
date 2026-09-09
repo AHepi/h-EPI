@@ -46,6 +46,15 @@ PREAMBLE = (
     "follows from the document's commitments and definitions, and name the commitments and "
     "defined terms it depends on. The document begins at its title."
 )
+# When the probes are given explicitly (--probes-file), the claim is a statement and the section it is
+# drawn from is named, so that the section is the probe's self unit exactly as a heading-claim would be.
+PREAMBLE_STATED = (
+    "Claim under assessment: {claim}\n\n"
+    "The claim is drawn from the section titled \"{title}\".\n\n"
+    "The document below is to be read as written. Decide whether the claim under assessment "
+    "follows from the document's commitments and definitions, and name the commitments and "
+    "defined terms it depends on. The document begins at its title."
+)
 
 
 def oracle(field: str) -> dict:
@@ -84,26 +93,38 @@ def form_schema(terms: tuple[str, ...]) -> dict:
     }
 
 
-def probes(document: str, levels: tuple[int, ...], labels: tuple[str, ...], probe_level: int) -> list:
+def probes(document: str, levels: tuple[int, ...], labels: tuple[str, ...], probe_level: int, stated: list | None = None) -> list:
+    """(unit, claim) pairs: the argued sections with their headings as claims, or the stated probes by section title."""
+
+    units = split_units(document, levels)
+    if stated is not None:
+        by_title = {unit.title: unit for unit in units}
+        found = []
+        for index, item in enumerate(stated):
+            section, claim = item["section"], item["claim"]
+            if section not in by_title:
+                raise RecordError(f"probes[{index}] names a section that is not a unit heading: {section!r}")
+            found.append((by_title[section], claim))
+        return found
     found = []
-    for unit in split_units(document, levels):
+    for unit in units:
         if unit.level != probe_level:
             continue
         body = unit_text(document, unit)
         if any(f"**{label}.**" in body for label in labels):
-            found.append(unit)
+            found.append((unit, unit.title))
     return found
 
 
-def build(document: str, config, corpus_id: str, labels: tuple[str, ...], probe_level: int, digest: str) -> tuple[dict, dict]:
+def build(document: str, config, corpus_id: str, labels: tuple[str, ...], probe_level: int, digest: str, stated: list | None = None) -> tuple[dict, dict]:
     terms = document_terms(document, config)
     if not terms:
         raise RecordError("the document has no term the patterns match")
     cases = []
     relations_by_probe: dict[str, tuple] = {}
-    for index, unit in enumerate(probes(document, config.levels, labels, probe_level), start=1):
+    for index, (unit, claim) in enumerate(probes(document, config.levels, labels, probe_level, stated), start=1):
         case_id = f"DEP-{index:02d}"
-        preamble = PREAMBLE.format(title=unit.title)
+        preamble = PREAMBLE.format(title=unit.title) if claim == unit.title else PREAMBLE_STATED.format(claim=claim, title=unit.title)
         text_value = preamble + "\n\n" + document
         relations = relate_units(text_value, config)
         selves = [r.unit.unit_id for r in relations if r.relation == "self"]
@@ -118,13 +139,13 @@ def build(document: str, config, corpus_id: str, labels: tuple[str, ...], probe_
             "rendering": "prose",
             "renderings": {"prose": text_value},
             "expected": [oracle("follows"), oracle("essential")],
-            "held_fixed": "the whole document as written; the claim is the section's own heading",
+            "held_fixed": "the whole document as written; the claim is the section's own heading" if claim == unit.title else "the whole document as written; the claim is a statement drawn from the named section",
             "varied": None,
             "pair_of": None,
             "reference_output": None,
             "rival_expected": [],
             "notes": (
-                f"probe of section {unit.title!r} (document lines {unit.start + 1}-{unit.end}); document sha256 {digest}; "
+                f"probe of section {unit.title!r} (document lines {unit.start + 1}-{unit.end}); claim {claim!r}; document sha256 {digest}; "
                 f"self {selves[0]}; declared {', '.join(declared) or 'none'}; other {others} units; no key"
             ),
         })
@@ -141,6 +162,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--pilot-dir", type=Path, required=True, help="directory holding pilot.json; form.schema.json and corpus.json are written here")
     parser.add_argument("--corpus-id", required=True)
     parser.add_argument("--labels", nargs="+", default=list(DEFAULT_LABELS), help="bold labels that mark a section as argued, and so as a probe")
+    parser.add_argument("--probes-file", type=Path, default=None, help="JSON list of {section, claim}: the claims to assess, each drawn from the named section heading; replaces label detection")
     parser.add_argument("--probe-level", type=int, default=2, help="heading level of the sections that can be probes")
     parser.add_argument("--units-markdown", type=Path, default=None, help="also write the unit table here")
     args = parser.parse_args(argv)
@@ -151,7 +173,8 @@ def main(argv: list[str] | None = None) -> int:
     document_bytes = args.document.read_bytes()
     document = document_bytes.decode("utf-8")
     digest = hashlib.sha256(document_bytes).hexdigest()
-    corpus, extra = build(document, config, args.corpus_id, tuple(args.labels), args.probe_level, digest)
+    stated = None if args.probes_file is None else loads_strict(args.probes_file.read_text(encoding="utf-8"))
+    corpus, extra = build(document, config, args.corpus_id, tuple(args.labels), args.probe_level, digest, stated)
     (args.pilot_dir / "corpus.json").write_text(json.dumps(corpus, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     (args.pilot_dir / "form.schema.json").write_text(json.dumps(extra["form_schema"], indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     table = f"# Units of {args.document.name} (sha256 {digest})\n\n{len(corpus['cases'])} probes; {len(extra['terms'])} terms.\n\n" + extra["table"]

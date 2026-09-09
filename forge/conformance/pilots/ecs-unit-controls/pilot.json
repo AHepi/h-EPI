@@ -1,0 +1,71 @@
+{
+  "schema_version": "creib.conformance-pilot.config.v1",
+  "pilot_id": "SMF-CONFORMANCE-ECS-UNIT-CONTROLS-001",
+  "title": "Redundant, unread, or answered from the claim: controls for an unmoved removal on ECS 2.0",
+  "form_schema": "form.schema.json",
+  "instructions": "instructions.md",
+  "corpus": "corpus.json",
+  "models": [
+    "gemma4:31b",
+    "mistral-large-3:675b"
+  ],
+  "endpoint": {
+    "kind": "ollama-chat",
+    "base_url": "https://ollama.com",
+    "timeout_seconds": 600,
+    "options": {
+      "temperature": 0,
+      "seed": 7
+    },
+    "think": false
+  },
+  "charter": {
+    "purpose": "Separate the three readings of a removal that moved nothing in the unit-dependence pilot: the document carries the content elsewhere, the model answers the claim without the document, or the model does not read the unit. Each probe is sent with no document, with its own argument only, with the argument and the definitions it uses, with every other unit carrying a term the argument uses removed at once, with the vocabulary consistently renamed, and with the claim negated; every control is computed from the document.",
+    "output": "Per-model observation and run records in which every field is recorded and none is scored, plus the controls table: each control's reply beside the same model's reply on the full document, the repeat floor, and for the renamed document which vocabulary the reply used.",
+    "scope_in": [
+      "The same document and the same six stated probes as the ecs-unit-dependence pilot, read whole where a control keeps it.",
+      "Seven kinds of control per probe, one case each, with the full document as the paired case; two repeats of every baseline."
+    ],
+    "scope_out": [
+      "Any answer key: no reply is judged right or wrong.",
+      "Any claim that a model understands the document; a control that leaves the reply unmoved criticises the document as sent, the probe, and the choice of controls together.",
+      "Ranking models, scoring them, or declaring any model fit for use."
+    ]
+  },
+  "load_bearing": [],
+  "negations": [],
+  "twins": [],
+  "ambiguity": [],
+  "controls": [
+    {
+      "control_id": "C-EXTRA-CONFIDENCE",
+      "corruption": {
+        "kind": "extra_key",
+        "key": "confidence",
+        "value": "high"
+      }
+    },
+    {
+      "control_id": "C-CORRECT",
+      "corruption": {
+        "kind": "none"
+      }
+    }
+  ],
+  "refusal_phrases": [
+    "I cannot",
+    "I can't",
+    "I'm sorry",
+    "I am unable",
+    "as an AI",
+    "cannot assist"
+  ],
+  "grounding": {
+    "mode": "none",
+    "span_suffix": "_span",
+    "span_fields": [],
+    "value_in_span_fields": [],
+    "abstain_fields": []
+  },
+  "repeats": 2
+}

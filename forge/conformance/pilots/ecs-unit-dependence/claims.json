@@ -1,0 +1,233 @@
+{
+  "schema_version": "creib.conformance-pilot.claims.v1",
+  "title": "Conjectures for the ECS 2.0 unit-dependence run, written before it",
+  "claims": [
+    {
+      "claim_id": "EDP-01",
+      "statement": "Removing a unit unrelated to the claim (neither its own argument nor a definition that argument uses) never moves the model's answer to whether the claim follows.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "UNIT_DEPENDENCE"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "response_verdict": "JSON_OBJECT"
+          },
+          {
+            "unit": {
+              "relation": [
+                "other"
+              ]
+            }
+          },
+          {
+            "value_changed": {
+              "field": "follows"
+            }
+          }
+        ]
+      },
+      "note": "A refutation says the answer moved with a unit the document's own argument does not use; whether that is the model, the position of the unit, or a dependence the pattern heuristic missed is what the loci keep open."
+    },
+    {
+      "claim_id": "EDP-02",
+      "statement": "Removing a unit that defines a term the claim's own argument uses never leaves both form fields unmoved.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "UNIT_DEPENDENCE"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "response_verdict": "JSON_OBJECT"
+          },
+          {
+            "unit": {
+              "relation": [
+                "declared"
+              ]
+            }
+          },
+          {
+            "not": {
+              "value_changed": {
+                "field": "follows"
+              }
+            }
+          },
+          {
+            "not": {
+              "value_changed": {
+                "field": "essential"
+              }
+            }
+          }
+        ]
+      },
+      "note": "A refutation says a definition the document's argument rests on did no observable work for this model; the JSON guard keeps a reply that did not parse from counting."
+    },
+    {
+      "claim_id": "EDP-03",
+      "statement": "Removing the section the claim is drawn from never moves the model's answer to whether the claim follows.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "UNIT_DEPENDENCE"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "response_verdict": "JSON_OBJECT"
+          },
+          {
+            "unit": {
+              "relation": [
+                "self"
+              ]
+            }
+          },
+          {
+            "value_changed": {
+              "field": "follows"
+            }
+          }
+        ]
+      },
+      "note": "The claim is restated in the preamble; a refutation says the model needed the document's derivation and not only its definitions."
+    },
+    {
+      "claim_id": "EDP-04",
+      "statement": "A byte-identical repeat of the request never moves the model's answer to whether the claim follows.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "REPEAT"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "response_verdict": "JSON_OBJECT"
+          },
+          {
+            "value_changed": {
+              "field": "follows"
+            }
+          }
+        ]
+      },
+      "note": "The floor: any UDP-01 or UDP-03 refutation is read against this count."
+    },
+    {
+      "claim_id": "EDP-05",
+      "statement": "On the full document a model never says that a point the document itself states does not follow.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "response_verdict": "JSON_OBJECT"
+          },
+          {
+            "field_value": {
+              "field": "follows",
+              "values": [
+                "does_not_follow"
+              ]
+            }
+          }
+        ]
+      },
+      "note": "Every probe is a section carrying the document's own argument markup; the document says each follows."
+    },
+    {
+      "claim_id": "EDP-06",
+      "statement": "On the full document a model never returns an empty list of essential terms.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "response_verdict": "JSON_OBJECT"
+          },
+          {
+            "field_value": {
+              "field": "essential",
+              "values": [
+                []
+              ]
+            }
+          }
+        ]
+      },
+      "note": "Each probed argument names at least one commitment or defined term."
+    },
+    {
+      "claim_id": "EDP-07",
+      "statement": "Within a 600-second budget a call on the whole document never fails by the client's own timeout.",
+      "kind": "never",
+      "scope": {
+        "families": [
+          "BASELINE",
+          "REPEAT",
+          "UNIT_DEPENDENCE"
+        ],
+        "cases": null,
+        "models": null,
+        "model_call": true
+      },
+      "condition": {
+        "all_of": [
+          {
+            "endpoint": {
+              "timeout_seconds": 600
+            }
+          },
+          {
+            "transport_error": {
+              "kind": [
+                "timeout"
+              ],
+              "any_attempt": true
+            }
+          }
+        ]
+      },
+      "note": "Stated on the transport kind, not on every failure of delivery (H33): a 503 or a closed connection is a failure of delivery and not a timeout."
+    }
+  ]
+}

@@ -169,6 +169,8 @@ The plan is the same at every level; each run record's `endpoint` says what was 
 
 ## Use 12: find what a model's reading of a document depends on, with no key
 
+When the document's headings are topics rather than claims, give the generators `--probes-file probes.json`, a list of `{"section", "claim"}` pairs: each claim is a statement drawn from the named section, which becomes the probe's self unit (the ECS 2.0 pilots are the example).
+
 For a document with headings, let the harness find the units and the terms itself. Write `pilot.json` with a `unit_dependence` block (heading levels, term patterns) and a two-field form with an array of terms, generate the probes, and run baselines, repeats, and removals together:
 
 ```sh
