@@ -39,10 +39,12 @@ from .log import (
     apply_event,
     build_event,
 )
-from .manifest import RunPlan, Stage
+from .machines import MachineContext, MachineResponder, resolve_machine_seat
+from .manifest import SEAT_MACHINE, RunPlan, Stage
 from .ports import PortType, port_draws_kinds, port_draws_tiers
 from .routing import Destination
 from .signals import compute_signals
+from .stops import STOP_NEVER, should_stop
 
 MAX_STEPS = 512
 
@@ -57,6 +59,7 @@ class RunOutcome:
     state_digest: str
     stop_reason: str
     stages_entered: tuple[str, ...]
+    cycles_completed: int = 0
 
 
 class _Recorder:
@@ -67,13 +70,14 @@ class _Recorder:
         self._state = state
         self._prev = genesis
         self._seq = 0
+        self.cycle = 0
 
     @property
     def seq(self) -> int:
         return self._seq
 
     def emit(self, event_type: str, payload: Mapping[str, Any], **fields: Any) -> None:
-        event = build_event(seq=self._seq, prev=self._prev, type=event_type, payload=payload, **fields)
+        event = build_event(seq=self._seq, prev=self._prev, cycle=self.cycle, type=event_type, payload=payload, **fields)
         self._log.append(event)
         apply_event(self._state, event)
         self._prev = event.event_id
@@ -175,11 +179,19 @@ def _artifact_lines(blobs: BlobStore, records: tuple[Mapping[str, Any], ...], ru
     return lines
 
 
-def render_port(plan: RunPlan, state: MiniState, blobs: BlobStore, stage: Stage, port_id: str) -> tuple[str, tuple[str, ...]]:
+def render_port(
+    plan: RunPlan,
+    state: MiniState,
+    blobs: BlobStore,
+    stage: Stage,
+    port_id: str,
+    cycle: int = 0,
+) -> tuple[str, tuple[str, ...]]:
     """Render one port, and say which evidence blocks it exposed."""
 
     kind = plan.kinds[str(stage.kind_id)]
     port = kind.port(port_id)
+    in_window = lambda item: port.window.admits(int(item.get("cycle", 0)), cycle)
     port_type = plan.port_types[port.port_type]
     header = f"## {port_type.header} ({port_id})"
     if port_type.source == "problem":
@@ -188,35 +200,47 @@ def render_port(plan: RunPlan, state: MiniState, blobs: BlobStore, stage: Stage,
         ordered = tuple(
             state.artifacts[key]
             for key in state.artifact_order
-            if _artifact_reaches_port(plan, state, port_type, port.params, stage.stage_id, port_id, state.artifacts[key])
+            if in_window(state.artifacts[key])
+            and _artifact_reaches_port(plan, state, port_type, port.params, stage.stage_id, port_id, state.artifacts[key])
         )
         lines = _artifact_lines(blobs, ordered, port_type.render_rule) or ["(nothing yet)"]
         return "\n".join([header, *lines]), ()
     if port_type.source == "evidence":
-        entries = [item for item in state.blocks if _block_reaches_port(plan, state, port_type, port.params, port.port_type, item)]
+        entries = [
+            item
+            for item in state.blocks
+            if in_window(item) and _block_reaches_port(plan, state, port_type, port.params, port.port_type, item)
+        ]
         blocks = [_as_block(blobs, item) for item in entries]
         return render_legend(blocks, header), tuple(block.block_id for block in blocks)
     records = tuple(
         state.artifacts[key]
         for key in state.artifact_order
-        if _artifact_reaches_port(plan, state, port_type, port.params, stage.stage_id, port_id, state.artifacts[key])
+        if in_window(state.artifacts[key])
+        and _artifact_reaches_port(plan, state, port_type, port.params, stage.stage_id, port_id, state.artifacts[key])
     )
     lines = _artifact_lines(blobs, records, port_type.render_rule)
-    entries = [item for item in state.blocks if _block_reaches_port(plan, state, port_type, port.params, port.port_type, item)]
+    entries = [
+        item
+        for item in state.blocks
+        if in_window(item) and _block_reaches_port(plan, state, port_type, port.params, port.port_type, item)
+    ]
     blocks = [_as_block(blobs, item) for item in entries]
     if blocks:
         lines.append(render_legend(blocks, "admitted blocks"))
     return "\n".join([header, *(lines or ["(nothing yet)"])]), tuple(block.block_id for block in blocks)
 
 
-def render_brief(plan: RunPlan, state: MiniState, blobs: BlobStore, stage: Stage) -> tuple[str, frozenset[str]]:
+def render_brief(
+    plan: RunPlan, state: MiniState, blobs: BlobStore, stage: Stage, cycle: int = 0
+) -> tuple[str, frozenset[str]]:
     """Render everything a stage is shown, and the blocks it may cite."""
 
     kind = plan.kinds[str(stage.kind_id)]
     sections = [f"# {kind.title}"]
     exposed: set[str] = set()
     for port_id in stage.ports:
-        rendered, block_ids = render_port(plan, state, blobs, stage, port_id)
+        rendered, block_ids = render_port(plan, state, blobs, stage, port_id, cycle)
         sections.append(rendered)
         exposed.update(block_ids)
     compiled = plan.formats[kind.kind_id]
@@ -374,7 +398,7 @@ def _attempt_submission(
             refused_refs.append(reply_ref)
             recorder.emit(
                 FORMAT_FAILURE,
-                {"attempt": attempt, "reasons": list(reasons), "code": error.code},
+                {"attempt": attempt, "reasons": list(reasons), "code": error.code, "seat": stage.seat},
                 stage_id=stage.stage_id,
                 kind_id=kind.kind_id,
                 body_ref=reply_ref,
@@ -385,7 +409,7 @@ def _attempt_submission(
             refused_refs.append(reply_ref)
             recorder.emit(
                 FORMAT_FAILURE,
-                {"attempt": attempt, "reasons": list(reasons), "code": "MINI_SUBMISSION_MISSING_FIELD"},
+                {"attempt": attempt, "reasons": list(reasons), "code": "MINI_SUBMISSION_MISSING_FIELD", "seat": stage.seat},
                 stage_id=stage.stage_id,
                 kind_id=kind.kind_id,
                 body_ref=reply_ref,
@@ -397,7 +421,7 @@ def _attempt_submission(
         refused_refs.append(reply_ref)
         recorder.emit(
             FORMAT_FAILURE,
-            {"attempt": attempt, "reasons": list(reasons), "code": "MINI_FORMAT_FAILURE"},
+            {"attempt": attempt, "reasons": list(reasons), "code": "MINI_FORMAT_FAILURE", "seat": stage.seat},
             stage_id=stage.stage_id,
             kind_id=kind.kind_id,
             body_ref=reply_ref,
@@ -411,8 +435,47 @@ def _attempt_submission(
     return None
 
 
-def run_mini(plan: RunPlan, root: Path, responder: Responder) -> RunOutcome:
-    """Run one plan into one root, and return what the record says."""
+def machine_responder(plan: RunPlan, state: MiniState, blobs: BlobStore, stage: Stage, cycle: int) -> MachineResponder:
+    """The responder for a machine seat: its kind's registered function."""
+
+    seat = resolve_machine_seat(str(stage.kind_id))
+    return MachineResponder(seat, MachineContext(plan=plan, state=state, blobs=blobs, stage=stage, cycle=cycle))
+
+
+def _host_stop(plan: RunPlan, state: MiniState, cycle: int, calls: int) -> str | None:
+    """Is there another cycle? Decided here, never by anything a seat wrote."""
+
+    if cycle > plan.cycles.max_cycles:
+        return "cycle_cap"
+    if plan.cycles.max_calls is not None and calls >= plan.cycles.max_calls:
+        return "budget_cap"
+    condition = plan.cycles.stop_condition
+    if condition.condition_id == STOP_NEVER:
+        return None
+    signals = compute_signals(state, condition.reads_signals)
+    reason = should_stop(condition, signals, cycle)
+    return None if reason is None else f"stop_condition:{condition.condition_id}"
+
+
+def _offered(
+    plan: RunPlan, remaining: list[Stage], repeats_used: Mapping[str, int]
+) -> tuple[PendingStage, ...]:
+    """The stages attention may choose from: what is left, plus what may repeat."""
+
+    offered = [PendingStage(item.stage_id, str(item.kind_id)) for item in remaining if not item.end]
+    for stage_id, used in repeats_used.items():
+        if used < plan.stage(stage_id).max_repeats:
+            offered.append(PendingStage(stage_id, str(plan.stage(stage_id).kind_id)))
+    return tuple(offered)
+
+
+def run_mini(plan: RunPlan, root: Path, responder: Responder, responder_id: str = "unrecorded") -> RunOutcome:
+    """Run one plan into one root, and return what the record says.
+
+    The stage list is the body of one cycle; the cycle repeats until the host
+    stops it. ``responder_id`` names what answered — a digest of a script, or a
+    model — so two roots can later be checked for having been asked the same way.
+    """
 
     if not isinstance(root, Path):
         raise TypeError("root must be pathlib.Path")
@@ -431,70 +494,95 @@ def run_mini(plan: RunPlan, root: Path, responder: Responder) -> RunOutcome:
             "run_id": plan.run_id,
             "manifest_id": plan.manifest_id,
             "manifest_digest": plan.manifest_digest,
+            "responder_id": responder_id,
             "policy_id": plan.policy.policy_id,
             "policy_overrides": [dict(item) for item in plan.policy_overrides],
             "attention_policy": plan.attention.policy_id,
+            "cycles": plan.cycles.to_dict(),
             "declared_order": [stage.stage_id for stage in plan.stages],
         },
     )
     _batch_evidence(plan, blobs, recorder)
 
-    remaining = list(plan.stages)
-    stop_reason = "stages_exhausted"
-    steps = 0
-    while remaining and steps < MAX_STEPS:
-        steps += 1
-        stage = remaining[0]
-        if plan.attention.policy_id != ATTENTION_OFF:
-            pending = tuple(PendingStage(item.stage_id, str(item.kind_id)) for item in remaining if not item.end)
-            signals = compute_signals(state, plan.attention.reads_signals)
-            chosen = choose_next(plan.attention, signals, pending)
-            if chosen is not None:
-                stage = next(item for item in remaining if item.stage_id == chosen)
-                recorder.emit(
-                    ATTENTION_CHOSE,
-                    {"policy": plan.attention.policy_id, "chosen": chosen, "declared_next": remaining[0].stage_id},
-                )
-        remaining = [item for item in remaining if item.stage_id != stage.stage_id]
-        if stage.end:
-            stop_reason = "end_stage"
+    calls = 0
+    cycle = 0
+    stop_reason = "cycle_cap"
+    while True:
+        cycle += 1
+        stop = _host_stop(plan, state, cycle, calls)
+        if stop is not None:
+            stop_reason = stop
             break
-        recorder.emit(STAGE_ENTERED, {"ports": list(stage.ports)}, stage_id=stage.stage_id, kind_id=stage.kind_id)
-        if not _check_reads(plan, recorder, stage):
-            continue
-        kind = plan.kinds[str(stage.kind_id)]
-        brief, exposed = render_brief(plan, state, blobs, stage)
-        attempt = _attempt_submission(plan, recorder, responder, stage, kind, brief, blobs)
-        if attempt is None:
-            drops = state.drops_by_kind.get(kind.kind_id, 0)
-            attempts = drops + state.submissions_by_kind.get(kind.kind_id, 0)
-            if kind.failure_policy.exceeded(drops, attempts) and kind.failure_policy.action == "stop":
-                stop_reason = "format_failures_exceeded"
+        recorder.cycle = cycle
+        remaining = list(plan.stages)
+        repeats_used: dict[str, int] = {}
+        halted = False
+        steps = 0
+        while remaining and steps < MAX_STEPS:
+            steps += 1
+            stage = remaining[0]
+            if plan.attention.policy_id != ATTENTION_OFF:
+                offered = _offered(plan, remaining, repeats_used)
+                if offered:
+                    signals = compute_signals(state, plan.attention.reads_signals)
+                    chosen = choose_next(plan.attention, signals, offered)
+                    if chosen is not None:
+                        stage = plan.stage(chosen)
+                        recorder.emit(
+                            ATTENTION_CHOSE,
+                            {"policy": plan.attention.policy_id, "chosen": chosen, "declared_next": remaining[0].stage_id},
+                        )
+            if stage.stage_id in repeats_used and stage not in remaining:
+                repeats_used[stage.stage_id] += 1
+            else:
+                remaining = [item for item in remaining if item.stage_id != stage.stage_id]
+                repeats_used.setdefault(stage.stage_id, 0)
+            if stage.end:
                 break
-            continue
-        submission, prompt_tokens, completion_tokens = attempt
-        artifact_id, body_ref, commitments_ref = _store_artifact(blobs, stage, submission, recorder.seq)
-        blocks = {str(item["block_id"]): _as_block(blobs, item) for item in state.blocks}
-        measures = check_citations(submission.citations, blocks, exposed)
-        recorder.emit(
-            ARTIFACT_SUBMITTED,
-            {
-                "about": list(submission.about),
-                "answers": list(submission.answers),
-                "citations": [measure.to_dict() for measure in measures],
-                "extra": dict(submission.extra),
-                "prompt_tokens": prompt_tokens,
-                "completion_tokens": completion_tokens,
-            },
-            stage_id=stage.stage_id,
-            kind_id=kind.kind_id,
-            artifact_id=artifact_id,
-            body_ref=body_ref,
-            commitments_ref=commitments_ref,
-        )
-        _route_output(plan, state, blobs, recorder, stage, artifact_id, body_ref)
+            recorder.emit(STAGE_ENTERED, {"ports": list(stage.ports)}, stage_id=stage.stage_id, kind_id=stage.kind_id)
+            if not _check_reads(plan, recorder, stage):
+                continue
+            kind = plan.kinds[str(stage.kind_id)]
+            brief, exposed = render_brief(plan, state, blobs, stage, cycle)
+            seat_responder = machine_responder(plan, state, blobs, stage, cycle) if stage.seat == SEAT_MACHINE else responder
+            before = getattr(seat_responder, "calls", None)
+            attempt = _attempt_submission(plan, recorder, seat_responder, stage, kind, brief, blobs)
+            if stage.seat != SEAT_MACHINE:
+                calls += 1 + (kind.failure_policy.retries if attempt is None else 0)
+            if attempt is None:
+                drops = state.drops_by_kind.get(kind.kind_id, 0)
+                attempts = drops + state.submissions_by_kind.get(kind.kind_id, 0)
+                if kind.failure_policy.exceeded(drops, attempts) and kind.failure_policy.action == "stop":
+                    stop_reason = "format_failures_exceeded"
+                    halted = True
+                    break
+                continue
+            submission, prompt_tokens, completion_tokens = attempt
+            artifact_id, body_ref, commitments_ref = _store_artifact(blobs, stage, submission, recorder.seq)
+            blocks = {str(item["block_id"]): _as_block(blobs, item) for item in state.blocks}
+            measures = check_citations(submission.citations, blocks, exposed)
+            recorder.emit(
+                ARTIFACT_SUBMITTED,
+                {
+                    "seat": stage.seat,
+                    "about": list(submission.about),
+                    "answers": list(submission.answers),
+                    "citations": [measure.to_dict() for measure in measures],
+                    "extra": dict(submission.extra),
+                    "prompt_tokens": prompt_tokens,
+                    "completion_tokens": completion_tokens,
+                },
+                stage_id=stage.stage_id,
+                kind_id=kind.kind_id,
+                artifact_id=artifact_id,
+                body_ref=body_ref,
+                commitments_ref=commitments_ref,
+            )
+            _route_output(plan, state, blobs, recorder, stage, artifact_id, body_ref)
+        if halted:
+            break
 
-    recorder.emit(RUN_ENDED, {"stop_reason": stop_reason})
+    recorder.emit(RUN_ENDED, {"stop_reason": stop_reason, "cycles_completed": max(cycle - 1, 0)})
     return RunOutcome(
         run_id=plan.run_id,
         root=root,
@@ -502,4 +590,5 @@ def run_mini(plan: RunPlan, root: Path, responder: Responder) -> RunOutcome:
         state_digest=state.digest(),
         stop_reason=stop_reason,
         stages_entered=tuple(state.stages_entered),
+        cycles_completed=max(cycle - 1, 0),
     )

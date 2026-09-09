@@ -28,8 +28,11 @@ from creib.strict_json import load_strict, loads_strict
 
 from .common import (
     EVENT_DOMAIN,
+    EVENT_DOMAIN_V1,
     EVENT_SCHEMA_NAME,
+    EVENT_SCHEMA_NAME_V1,
     EVENT_SCHEMA_VERSION,
+    EVENT_SCHEMA_VERSION_V1,
     STATE_DOMAIN,
     MiniError,
     content_id,
@@ -64,6 +67,14 @@ EVENT_TYPES: tuple[str, ...] = (
 LOG_NAME = "log.jsonl"
 BLOBS_DIR = "blobs"
 
+#: Version 2 adds the cycle coordinate. Version 1 is kept exactly as it was and
+#: is still read: a record written by the code of its own version stays
+#: readable, which is what makes the committed runs' replay instructions true.
+_SCHEMAS: Mapping[str, tuple[str, str]] = {
+    EVENT_SCHEMA_VERSION: (EVENT_SCHEMA_NAME, EVENT_DOMAIN),
+    EVENT_SCHEMA_VERSION_V1: (EVENT_SCHEMA_NAME_V1, EVENT_DOMAIN_V1),
+}
+
 
 @dataclass(frozen=True)
 class Event:
@@ -79,10 +90,12 @@ class Event:
     commitments_ref: str | None
     payload: Mapping[str, Any]
     event_id: str
+    cycle: int = 0
+    schema_version: str = EVENT_SCHEMA_VERSION
 
     def body(self) -> dict[str, Any]:
-        return {
-            "schema_version": EVENT_SCHEMA_VERSION,
+        record: dict[str, Any] = {
+            "schema_version": self.schema_version,
             "seq": self.seq,
             "prev": self.prev,
             "type": self.type,
@@ -93,9 +106,18 @@ class Event:
             "commitments_ref": self.commitments_ref,
             "payload": dict(self.payload),
         }
+        if self.schema_version == EVENT_SCHEMA_VERSION:
+            record["cycle"] = self.cycle
+        return record
 
     def to_dict(self) -> dict[str, Any]:
         return {**self.body(), "event_id": self.event_id}
+
+    @property
+    def coordinates(self) -> tuple[int, str | None]:
+        """Where this event happened: which cycle, and which stage."""
+
+        return (self.cycle, self.stage_id)
 
 
 def build_event(
@@ -104,6 +126,7 @@ def build_event(
     prev: str,
     type: str,
     payload: Mapping[str, Any],
+    cycle: int = 0,
     stage_id: str | None = None,
     kind_id: str | None = None,
     artifact_id: str | None = None,
@@ -115,6 +138,7 @@ def build_event(
     partial = Event(
         seq=seq,
         prev=prev,
+        cycle=cycle,
         type=type,
         stage_id=stage_id,
         kind_id=kind_id,
@@ -127,12 +151,23 @@ def build_event(
     return replace(partial, event_id=content_id(EVENT_DOMAIN, partial.body()))
 
 
+def _version_of(raw: Any, where: str) -> str:
+    version = str(dict(raw).get("schema_version")) if type(raw) is dict else ""
+    if version not in _SCHEMAS:
+        raise MiniError("MINI_LOG_UNREADABLE", f"{where} is not an event of a version this reads: {version!r}")
+    return version
+
+
 def event_from_dict(raw: Any, where: str) -> Event:
-    validate_instance(raw, EVENT_SCHEMA_NAME, "MINI_LOG_UNREADABLE")
+    version = _version_of(raw, where)
+    schema_name, domain = _SCHEMAS[version]
+    validate_instance(raw, schema_name, "MINI_LOG_UNREADABLE")
     entry = dict(raw)
     event = Event(
         seq=entry["seq"],
         prev=entry["prev"],
+        cycle=entry.get("cycle", 0),
+        schema_version=version,
         type=entry["type"],
         stage_id=entry["stage_id"],
         kind_id=entry["kind_id"],
@@ -144,7 +179,7 @@ def event_from_dict(raw: Any, where: str) -> Event:
     )
     if event.type not in EVENT_TYPES:
         raise MiniError("MINI_LOG_EVENT_TYPE_UNKNOWN", f"{where} carries the unknown event type {event.type!r}")
-    if content_id(EVENT_DOMAIN, event.body()) != event.event_id:
+    if content_id(domain, event.body()) != event.event_id:
         raise MiniError("MINI_LOG_EVENT_ID_MISMATCH", f"{where} does not replay its own identity: the bytes have moved")
     return event
 
@@ -192,7 +227,7 @@ class EventLog:
 
     def append(self, event: Event) -> Event:
         record = event.to_dict()
-        validate_instance(record, EVENT_SCHEMA_NAME, "MINI_LOG_UNREADABLE")
+        validate_instance(record, _SCHEMAS[event.schema_version][0], "MINI_LOG_UNREADABLE")
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with open(self.path, "ab") as handle:
             handle.write(canonical_bytes(record) + b"\n")
@@ -230,6 +265,8 @@ class MiniState:
 
     run_id: str = ""
     manifest_id: str = ""
+    cycle: int = 0
+    cycles_completed: int = 0
     stages_entered: list[str] = field(default_factory=list)
     artifacts: dict[str, dict[str, Any]] = field(default_factory=dict)
     artifact_order: list[str] = field(default_factory=list)
@@ -243,6 +280,7 @@ class MiniState:
     tokens_by_kind: dict[str, int] = field(default_factory=dict)
     refusals: list[dict[str, Any]] = field(default_factory=list)
     attention_choices: list[dict[str, Any]] = field(default_factory=list)
+    stage_coordinates: list[list[Any]] = field(default_factory=list)
     ended: bool = False
     stop_reason: str = ""
 
@@ -250,6 +288,8 @@ class MiniState:
         return {
             "run_id": self.run_id,
             "manifest_id": self.manifest_id,
+            "cycle": self.cycle,
+            "cycles_completed": self.cycles_completed,
             "stages_entered": list(self.stages_entered),
             "artifacts": {key: self.artifacts[key] for key in sorted(self.artifacts)},
             "artifact_order": list(self.artifact_order),
@@ -263,6 +303,7 @@ class MiniState:
             "tokens_by_kind": {key: self.tokens_by_kind[key] for key in sorted(self.tokens_by_kind)},
             "refusals": list(self.refusals),
             "attention_choices": list(self.attention_choices),
+            "stage_coordinates": list(self.stage_coordinates),
             "ended": self.ended,
             "stop_reason": self.stop_reason,
         }
@@ -285,17 +326,21 @@ def apply_event(state: MiniState, event: Event) -> None:
     """Apply one event. This is the only function that changes state."""
 
     payload = dict(event.payload)
+    state.cycle = max(state.cycle, event.cycle)
     if event.type == RUN_STARTED:
         state.run_id = str(payload.get("run_id", ""))
         state.manifest_id = str(payload.get("manifest_id", ""))
     elif event.type == STAGE_ENTERED:
         state.stages_entered.append(str(event.stage_id))
+        state.stage_coordinates.append([event.cycle, str(event.stage_id)])
     elif event.type == ARTIFACT_SUBMITTED:
         artifact_id = str(event.artifact_id)
         state.artifacts[artifact_id] = {
             "artifact_id": artifact_id,
             "kind_id": event.kind_id,
             "stage_id": event.stage_id,
+            "cycle": event.cycle,
+            "seat": payload.get("seat", "model"),
             "seq": event.seq,
             "body_ref": event.body_ref,
             "commitments_ref": event.commitments_ref,
@@ -316,7 +361,7 @@ def apply_event(state: MiniState, event: Event) -> None:
     elif event.type == EVIDENCE_BATCHED:
         destination = dict(payload.get("to", {}))
         for block in payload.get("blocks", []):
-            state.blocks.append({**block, "source_ref": payload.get("source_ref")})
+            state.blocks.append({**block, "source_ref": payload.get("source_ref"), "cycle": event.cycle})
             if destination.get("target") == "scratch":
                 state.scratch_blocks.setdefault(str(destination.get("destination")), []).append(str(block["block_id"]))
     elif event.type == ROUTED:
@@ -330,6 +375,7 @@ def apply_event(state: MiniState, event: Event) -> None:
     elif event.type == ATTENTION_CHOSE:
         state.attention_choices.append({"policy": payload.get("policy"), "chosen": payload.get("chosen")})
     elif event.type == RUN_ENDED:
+        state.cycles_completed = int(payload.get("cycles_completed", state.cycle))
         state.ended = True
         state.stop_reason = str(payload.get("stop_reason", ""))
     else:

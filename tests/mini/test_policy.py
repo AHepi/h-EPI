@@ -54,7 +54,7 @@ class DefaultPolicyTests(MiniTestCase):
     def test_the_refusal_does_not_stop_the_run(self) -> None:
         _, outcome = self.run_manifest(_two_conjecturers(), _SCRIPT)
         self.assertEqual(outcome.stages_entered, ("c1", "x1", "c2"))
-        self.assertEqual(outcome.stop_reason, "end_stage")
+        self.assertEqual(outcome.stop_reason, "cycle_cap")
 
 
 class OverrideTests(MiniTestCase):

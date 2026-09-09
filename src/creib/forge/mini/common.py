@@ -24,13 +24,16 @@ MANIFEST_SCHEMA_NAME = "mini-manifest.schema.json"
 KIND_SCHEMA_NAME = "mini-kind.schema.json"
 POLICY_SCHEMA_NAME = "mini-policy.schema.json"
 EVENT_SCHEMA_NAME = "mini-event.schema.json"
+EVENT_SCHEMA_NAME_V1 = "mini-event.v1.schema.json"
 
 MANIFEST_SCHEMA_VERSION = "creib.mini.manifest.v1"
 KIND_SCHEMA_VERSION = "creib.mini.kind.v1"
 POLICY_SCHEMA_VERSION = "creib.mini.policy.v1"
-EVENT_SCHEMA_VERSION = "creib.mini.event.v1"
+EVENT_SCHEMA_VERSION = "creib.mini.event.v2"
+EVENT_SCHEMA_VERSION_V1 = "creib.mini.event.v1"
 
-EVENT_DOMAIN = "creib.mini.event.v1"
+EVENT_DOMAIN = "creib.mini.event.v2"
+EVENT_DOMAIN_V1 = "creib.mini.event.v1"
 RUN_HEADER_DOMAIN = "creib.mini.run-header.v1"
 BLOCK_DOMAIN = "creib.mini.evidence-block.v1"
 ARTIFACT_DOMAIN = "creib.mini.artifact.v1"
@@ -84,6 +87,13 @@ MINI_CODES: frozenset[str] = frozenset(
         "MINI_SUBMISSION_FIELD_TYPE",
         "MINI_SCRIPT_EXHAUSTED",
         "MINI_LIVE_CALL_FAILED",
+        "MINI_CYCLES_INVALID",
+        "MINI_WINDOW_INVALID",
+        "MINI_STOP_CONDITION_UNKNOWN",
+        "MINI_STOP_CONDITION_DUPLICATE",
+        "MINI_STOP_CONDITION_SIGNATURE",
+        "MINI_MACHINE_SEAT_UNKNOWN",
+        "MINI_MACHINE_SEAT_DUPLICATE",
         "MINI_LOG_SEQUENCE_BROKEN",
         "MINI_LOG_CHAIN_BROKEN",
         "MINI_LOG_EVENT_ID_MISMATCH",

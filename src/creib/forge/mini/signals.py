@@ -24,6 +24,7 @@ SIGNAL_CITATIONS_VERIFIED = "mini.signal.citations-verified-by-artifact"
 SIGNAL_UNANSWERED_BY_KIND = "mini.signal.unanswered-criticisms-by-kind"
 SIGNAL_TOKENS_BY_KIND = "mini.signal.tokens-by-kind"
 SIGNAL_CYCLE_COUNT = "mini.signal.cycle-count"
+SIGNAL_ARTIFACTS_IN_LAST_CYCLE = "mini.signal.artifacts-in-last-cycle"
 
 
 @dataclass(frozen=True)
@@ -110,12 +111,19 @@ def _tokens_by_kind(state: MiniState) -> dict[str, int]:
 
 
 def _cycle_count(state: MiniState) -> int:
-    """How many times the run has come back round to the stage it began with."""
+    """How many cycles the run has reached. A real cycle, not a guess at one."""
 
-    if not state.stages_entered:
-        return 0
-    first = state.stages_entered[0]
-    return sum(1 for stage_id in state.stages_entered if stage_id == first)
+    return state.cycle
+
+
+def _artifacts_in_last_cycle(state: MiniState) -> dict[str, int]:
+    """How many artifacts each cycle produced, keyed by the cycle number."""
+
+    counts: dict[str, int] = {}
+    for record in state.artifacts.values():
+        key = str(record.get("cycle", 0))
+        counts[key] = counts.get(key, 0) + 1
+    return counts
 
 
 SHIPPED_SIGNALS: Mapping[str, str] = {
@@ -124,6 +132,7 @@ SHIPPED_SIGNALS: Mapping[str, str] = {
     SIGNAL_UNANSWERED_BY_KIND: "criticisms",
     SIGNAL_TOKENS_BY_KIND: "tokens",
     SIGNAL_CYCLE_COUNT: "cycles",
+    SIGNAL_ARTIFACTS_IN_LAST_CYCLE: "artifacts",
 }
 
 register_signal(
@@ -143,6 +152,10 @@ register_signal(
     _tokens_by_kind,
 )
 register_signal(
-    SignalDecl(SIGNAL_CYCLE_COUNT, "cycles", "How many times the run has returned to the stage it began with."),
+    SignalDecl(SIGNAL_CYCLE_COUNT, "cycles", "How many cycles the run has reached."),
     _cycle_count,
+)
+register_signal(
+    SignalDecl(SIGNAL_ARTIFACTS_IN_LAST_CYCLE, "artifacts", "How many artifacts each cycle produced, by cycle number."),
+    _artifacts_in_last_cycle,
 )

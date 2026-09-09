@@ -42,17 +42,50 @@ from .ports import (
     port_type_from_dict,
 )
 from .routing import Routing, routing_from_dict
+from .stops import STOP_NEVER, StopCondition, resolve_stop_condition
+
+
+SEAT_MODEL = "model"
+SEAT_MACHINE = "machine"
+SEATS: tuple[str, ...] = (SEAT_MODEL, SEAT_MACHINE)
 
 
 @dataclass(frozen=True)
 class Stage:
+    """One turn in a cycle. ``max_repeats`` is what bounds attention."""
+
     stage_id: str
     kind_id: str | None
     ports: tuple[str, ...]
     end: bool
+    seat: str = SEAT_MODEL
+    max_repeats: int = 0
 
     def to_dict(self) -> dict[str, object]:
-        return {"stage_id": self.stage_id, "kind_id": self.kind_id, "ports": list(self.ports), "end": self.end}
+        return {
+            "stage_id": self.stage_id,
+            "kind_id": self.kind_id,
+            "ports": list(self.ports),
+            "end": self.end,
+            "seat": self.seat,
+            "max_repeats": self.max_repeats,
+        }
+
+
+@dataclass(frozen=True)
+class Cycles:
+    """What ends a run: a cycle cap, a budget cap, a registered condition."""
+
+    max_cycles: int
+    max_calls: int | None
+    stop_condition: StopCondition
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "max_cycles": self.max_cycles,
+            "max_calls": self.max_calls,
+            "stop_condition": self.stop_condition.condition_id,
+        }
 
 
 @dataclass(frozen=True)
@@ -81,6 +114,7 @@ class RunPlan:
     formats: Mapping[str, CompiledFormat]
     stages: tuple[Stage, ...]
     routing: Routing
+    cycles: Cycles
     policy: Policy
     policy_overrides: tuple[Mapping[str, Any], ...]
     attention: AttentionPolicy
@@ -175,6 +209,12 @@ def compile_manifest(path: Path, policy_dir: Path | None = None) -> RunPlan:
         if end:
             stages.append(Stage(stage_id=stage_id, kind_id=None, ports=(), end=True))
             continue
+        seat = entry.get("seat", SEAT_MODEL)
+        if seat not in SEATS:
+            raise MiniError("MINI_STAGE_UNKNOWN", f"stages[{index}].seat must be one of {list(SEATS)}, got {seat!r}")
+        repeats = entry.get("max_repeats", 0)
+        if type(repeats) is not int or not 0 <= repeats <= 16:
+            raise MiniError("MINI_CYCLES_INVALID", f"stages[{index}].max_repeats must be a whole number from 0 to 16")
         kind_id = text(entry.get("kind_id"), f"stages[{index}].kind_id", "MINI_KIND_UNKNOWN")
         if kind_id not in kinds:
             raise MiniError("MINI_KIND_UNKNOWN", f"stages[{index}] names the kind {kind_id!r}, which nothing declares")
@@ -186,7 +226,9 @@ def compile_manifest(path: Path, policy_dir: Path | None = None) -> RunPlan:
         unknown = sorted(set(ports) - declared_ports)
         if unknown:
             raise MiniError("MINI_PORT_UNKNOWN", f"stages[{index}] names ports kind {kind_id!r} does not declare: {unknown}")
-        stages.append(Stage(stage_id=stage_id, kind_id=kind_id, ports=ports, end=False))
+        stages.append(
+            Stage(stage_id=stage_id, kind_id=kind_id, ports=ports, end=False, seat=str(seat), max_repeats=repeats)
+        )
     if not stages[-1].end:
         raise MiniError("MINI_STAGE_NO_END", "the stage list must end in a stage marked end")
     for index, stage in enumerate(stages[:-1]):
@@ -213,6 +255,21 @@ def compile_manifest(path: Path, policy_dir: Path | None = None) -> RunPlan:
             raise MiniError("MINI_TIER_UNKNOWN", f"routing names the tier {tier!r}, which nothing declares")
         if destination.target == "port_type" and str(destination.port_type) not in port_types:
             raise MiniError("MINI_ROUTE_INVALID", f"routing sends the tier {tier!r} to the port type {destination.port_type!r}, which nothing declares")
+
+    cycles_raw = object_value(manifest.get("cycles") or {}, "cycles", "MINI_CYCLES_INVALID")
+    max_cycles = cycles_raw.get("max_cycles", 1)
+    if type(max_cycles) is not int or max_cycles < 1:
+        raise MiniError("MINI_CYCLES_INVALID", "cycles.max_cycles must be a whole number of cycles, at least 1")
+    max_calls = cycles_raw.get("max_calls")
+    if max_calls is not None and (type(max_calls) is not int or max_calls < 1):
+        raise MiniError("MINI_CYCLES_INVALID", "cycles.max_calls must be a whole number of calls, at least 1")
+    cycles = Cycles(
+        max_cycles=max_cycles,
+        max_calls=max_calls,
+        stop_condition=resolve_stop_condition(
+            text(cycles_raw.get("stop_condition", STOP_NEVER), "cycles.stop_condition", "MINI_STOP_CONDITION_UNKNOWN")
+        ),
+    )
 
     policy_raw = manifest.get("policy") or {}
     base_id = policy_raw.get("base", DEFAULT_POLICY_ID)
@@ -265,6 +322,7 @@ def compile_manifest(path: Path, policy_dir: Path | None = None) -> RunPlan:
         "kinds": [kinds[name].to_dict() for name in sorted(kinds)],
         "stages": [stage.to_dict() for stage in stages],
         "routing": routing.to_dict(),
+        "cycles": cycles.to_dict(),
         "policy": policy.to_dict(),
         "attention": attention.policy_id,
         "sources": [source.to_dict() for source in sources],
@@ -283,6 +341,7 @@ def compile_manifest(path: Path, policy_dir: Path | None = None) -> RunPlan:
         formats=formats,
         stages=tuple(stages),
         routing=routing,
+        cycles=cycles,
         policy=policy,
         policy_overrides=overrides,
         attention=attention,

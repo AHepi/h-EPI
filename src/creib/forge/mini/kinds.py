@@ -28,6 +28,7 @@ from .common import (
 )
 from .failures import FailurePolicy, failure_policy_from_dict
 from .formats import CompiledFormat
+from .windows import ALL, Window, window_from_dict
 
 
 @dataclass(frozen=True)
@@ -35,9 +36,15 @@ class InputPort:
     port_id: str
     port_type: str
     params: Mapping[str, Any] = field(default_factory=dict)
+    window: Window = ALL
 
     def to_dict(self) -> dict[str, object]:
-        return {"port_id": self.port_id, "port_type": self.port_type, "params": dict(self.params)}
+        return {
+            "port_id": self.port_id,
+            "port_type": self.port_type,
+            "params": dict(self.params),
+            **self.window.to_dict(),
+        }
 
 
 @dataclass(frozen=True)
@@ -97,6 +104,7 @@ def kind_from_dict(raw: Any, where: str) -> ArtifactKind:
                 port_id=port_id,
                 port_type=text(port_entry.get("port_type"), f"{where}.input_ports[{index}].port_type"),
                 params=object_value(port_entry.get("params") or {}, f"{where}.input_ports[{index}].params"),
+                window=window_from_dict(port_entry.get("window"), f"{where}.input_ports[{index}].window"),
             )
         )
     output_raw = object_value(entry.get("output_port"), f"{where}.output_port")

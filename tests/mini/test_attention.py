@@ -189,11 +189,20 @@ class SignalRegistryTests(MiniTestCase):
     def test_asking_for_an_unregistered_signal_is_refused(self) -> None:
         self.assertRefuses("MINI_SIGNAL_UNKNOWN", compute_signals, MiniState(), ("mini.signal.absent",))
 
-    def test_the_cycle_count_counts_returns_to_the_first_stage(self) -> None:
-        state = MiniState()
-        self.assertEqual(compute_signals(state, (SIGNAL_CYCLE_COUNT,))[SIGNAL_CYCLE_COUNT], 0)
-        state.stages_entered = ["c1", "x1", "c1"]
-        self.assertEqual(compute_signals(state, (SIGNAL_CYCLE_COUNT,))[SIGNAL_CYCLE_COUNT], 2)
+    def test_the_cycle_count_counts_real_cycles(self) -> None:
+        """R23: driven through the runner over three cycles, not assembled by hand."""
+
+        manifest = base_manifest()
+        manifest["cycles"] = {"max_cycles": 3}
+        script = {
+            "c1": [submission(f"conjecture {index}", "c") for index in range(3)],
+            "x1": [submission(f"criticism {index}", "c") for index in range(3)],
+        }
+        plan, outcome = self.run_manifest(manifest, script)
+        state = replay(outcome.root / "log.jsonl", plan.genesis)
+        self.assertEqual(compute_signals(state, (SIGNAL_CYCLE_COUNT,))[SIGNAL_CYCLE_COUNT], 3)
+        self.assertEqual(outcome.cycles_completed, 3)
+        self.assertEqual(outcome.stages_entered, ("c1", "x1") * 3)
 
 
 class SignalViewTests(MiniTestCase):

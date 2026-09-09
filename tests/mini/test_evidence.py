@@ -136,7 +136,7 @@ class CitationsOnTheRecordTests(MiniTestCase):
         codes = [item["code"] for item in submitted["payload"]["citations"]]
         self.assertEqual(codes, [CITATION_VERIFIED, CITATION_UNKNOWN_BLOCK])
         self.assertEqual(len(self.events_of(outcome, ARTIFACT_SUBMITTED)), 2)
-        self.assertEqual(outcome.stop_reason, "end_stage")
+        self.assertEqual(outcome.stop_reason, "cycle_cap")
 
     def test_a_block_routed_nowhere_is_never_shown_and_a_citation_to_it_is_withheld(self) -> None:
         manifest = base_manifest()

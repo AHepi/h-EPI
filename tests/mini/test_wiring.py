@@ -53,7 +53,7 @@ class DeclaredOrderTests(MiniTestCase):
             outcome.stages_entered,
             ("conjecture-1", "conjecture-2", "note-1", "criticism", "note-2"),
         )
-        self.assertEqual(outcome.stop_reason, "end_stage")
+        self.assertEqual(outcome.stop_reason, "cycle_cap")
         self.assertEqual(
             [event["kind_id"] for event in self.events_of(outcome, ARTIFACT_SUBMITTED)],
             ["k.conjecture", "k.conjecture", "example.note.v1", "k.criticism", "example.note.v1"],

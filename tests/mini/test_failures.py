@@ -43,7 +43,7 @@ class DropTests(MiniTestCase):
         _, outcome = self.run_manifest(manifest, {"c1": [BAD, BAD], "c2": [GOOD]})
         self.assertEqual(len(self.events_of(outcome, SUBMISSION_DROPPED)), 1)
         self.assertEqual(len(self.events_of(outcome, ARTIFACT_SUBMITTED)), 1)
-        self.assertEqual(self.events_of(outcome, RUN_ENDED)[0]["payload"]["stop_reason"], "end_stage")
+        self.assertEqual(self.events_of(outcome, RUN_ENDED)[0]["payload"]["stop_reason"], "cycle_cap")
 
     def test_the_default_is_drop_after_one_retry_and_never_stops(self) -> None:
         self.assertEqual(DEFAULT_FAILURE_POLICY.retries, 1)
@@ -57,7 +57,7 @@ class DropTests(MiniTestCase):
         ]
         _, outcome = self.run_manifest(manifest, {"c1": [BAD, BAD], "c2": [BAD, BAD]})
         self.assertEqual(len(self.events_of(outcome, SUBMISSION_DROPPED)), 2)
-        self.assertEqual(self.events_of(outcome, RUN_ENDED)[0]["payload"]["stop_reason"], "end_stage")
+        self.assertEqual(self.events_of(outcome, RUN_ENDED)[0]["payload"]["stop_reason"], "cycle_cap")
 
 
 class StopTests(MiniTestCase):
@@ -70,13 +70,13 @@ class StopTests(MiniTestCase):
         manifest = _manifest({"retries": 0, "tolerance": 1, "action": "stop"}, stages=2)
         _, outcome = self.run_manifest(manifest, {"c1": [BAD], "c2": [GOOD]})
         self.assertEqual(len(self.events_of(outcome, SUBMISSION_DROPPED)), 1)
-        self.assertEqual(self.events_of(outcome, RUN_ENDED)[0]["payload"]["stop_reason"], "end_stage")
+        self.assertEqual(self.events_of(outcome, RUN_ENDED)[0]["payload"]["stop_reason"], "cycle_cap")
 
     def test_action_drop_goes_on_dropping_past_the_tolerance(self) -> None:
         manifest = _manifest({"retries": 0, "tolerance": 0, "action": "drop"}, stages=2)
         _, outcome = self.run_manifest(manifest, {"c1": [BAD], "c2": [BAD]})
         self.assertEqual(len(self.events_of(outcome, SUBMISSION_DROPPED)), 2)
-        self.assertEqual(self.events_of(outcome, RUN_ENDED)[0]["payload"]["stop_reason"], "end_stage")
+        self.assertEqual(self.events_of(outcome, RUN_ENDED)[0]["payload"]["stop_reason"], "cycle_cap")
 
     def test_a_fraction_tolerance_is_read_against_that_kinds_submissions(self) -> None:
         policy = FailurePolicy(retries=0, tolerance=None, tolerance_fraction=(1, 2), action="stop")
