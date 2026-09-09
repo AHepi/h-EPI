@@ -17,6 +17,7 @@ synthetic replies and documents, and the verdicts compared are the machine's own
 
 from __future__ import annotations
 
+import atexit
 from dataclasses import dataclass
 import json
 from pathlib import Path
@@ -80,6 +81,13 @@ class Boundary:
 # --------------------------------------------------------------------------
 
 _cache: dict[str, Any] = {}
+# Every run the points write goes under one directory, removed when the interpreter exits.
+_SCRATCH = tempfile.TemporaryDirectory(prefix="kernel-boundaries-")
+atexit.register(_SCRATCH.cleanup)
+
+
+def _scratch(prefix: str) -> Path:
+    return Path(tempfile.mkdtemp(prefix=prefix, dir=_SCRATCH.name))
 
 
 def _pilot(name: str) -> tuple[Any, Any, Any]:
@@ -157,10 +165,10 @@ def _travel_run() -> Any:
                 body["destination_city"] = "Nowhere"
             return response_from_content(json.dumps(body))
 
-        directory = tempfile.mkdtemp(prefix="kernel-travel-")
+        directory = _scratch("travel-")
         _cache["travel_run"] = run_pilot(
             spec=config.spec, corpus=corpus, plan=planned, model="gemma4:31b", executor=FakeExecutor(respond), executor_kind="fake",
-            output_dir=Path(directory), created_on=CREATED_ON, families=(Family.BASELINE, Family.REPEAT, Family.NEGATION), limit=None,
+            output_dir=directory, created_on=CREATED_ON, families=(Family.BASELINE, Family.REPEAT, Family.NEGATION), limit=None,
         )
     return _cache["travel_run"]
 
@@ -274,7 +282,7 @@ def _v3_pair() -> tuple[Any, Any]:
             variant = by_variant[request.variant_id]
             return response_from_content(json.dumps(dict(corpus.case(variant.base_case_id).reference_output or ())))
 
-        directory = Path(tempfile.mkdtemp(prefix="kernel-replay-"))
+        directory = _scratch("replay-")
         live = run_pilot(spec=config.spec, corpus=corpus, plan=planned, model="gemma4:31b", executor=FakeExecutor(respond), executor_kind="fake",
                          output_dir=directory / "live", created_on=CREATED_ON, families=(Family.BASELINE,), limit=1)
         again = run_pilot(spec=config.spec, corpus=corpus, plan=planned, model="gemma4:31b", executor=ReplayExecutor(directory / "live"), executor_kind="replay",
@@ -299,7 +307,7 @@ def _chain_replay(remove: str) -> int:
             case = next(c for c in corpus.cases if c.renderings[c.rendering] in request.user)
             return response_from_content(json.dumps(dict(case.reference_output or ())))
 
-        directory = Path(tempfile.mkdtemp(prefix="kernel-chain-"))
+        directory = _scratch("chain-")
         live = run_pilot(spec=config.spec, corpus=corpus, plan=planned, model="gemma4:31b", executor=FakeExecutor(respond), executor_kind="fake",
                          output_dir=directory / "live", created_on=CREATED_ON, families=(Family.BASELINE, Family.CYCLE), limit=None)
         if remove == "chain":
