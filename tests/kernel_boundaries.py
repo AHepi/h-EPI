@@ -43,7 +43,9 @@ from creib.forge.conformance import (
 )
 from creib.forge.conformance import claims as claims_module
 from creib.forge.conformance.appraisal import Appraisal, Argument, Support
+from creib.forge.conformance.compare import compare_runs
 from creib.forge.conformance.controls import _vocabularies, summarise_controls
+from creib.forge.conformance.cycles import summarise_cycles
 from creib.forge.conformance.dependence import _moved_fields, _reordered_fields
 from creib.forge.conformance.executor import transport_error_kind
 from creib.forge.conformance.oracle import _changed, _span_occurs, parse_content
@@ -320,6 +322,71 @@ def _chain_replay(remove: str) -> int:
                           output_dir=directory / "again", created_on=CREATED_ON, families=(Family.BASELINE, Family.CYCLE), limit=None)
         _cache[key] = sum(1 for o in again.observations if o.scoring.response_verdict == "PREREQUISITE_UNAVAILABLE")
     return _cache[key]
+
+
+def _baseline_run(limit: int, edit: str = "none", created_on: str = CREATED_ON) -> Any:
+    """``limit`` travel-claim baselines answered by the key, with the named edit applied to each reply.
+
+    Two runs with byte-identical replies and the same ``created_on`` are one run (their ids are content
+    ids), so a second run of the same replies takes a later ``created_on``.
+    """
+
+    key = f"baseline_run:{limit}:{edit}:{created_on}"
+    if key not in _cache:
+        config, corpus, planned = _pilot("travel-claim")
+
+        def respond(request: ChatRequest):
+            case = next(c for c in corpus.cases if c.renderings[c.rendering] in request.user)
+            body = dict(case.reference_output or ())
+            _EDITS[edit](case.case_id, body)
+            return response_from_content(json.dumps(body))
+
+        _cache[key] = run_pilot(spec=config.spec, corpus=corpus, plan=planned, model="gemma4:31b", executor=FakeExecutor(respond), executor_kind="fake",
+                                output_dir=_scratch("compare-"), created_on=created_on, families=(Family.BASELINE,), limit=limit)
+    return _cache[key]
+
+
+def _compare(left: Any, right: Any) -> dict[str, Any]:
+    return compare_runs(left.run_record, right.run_record, list(left.observations) + list(right.observations))
+
+
+def _edit_destination(case_id: str, body: dict[str, Any]) -> None:
+    if case_id == "TRV-001":
+        body["destination_city"] = "Nowhere"
+
+
+def _edit_span(case_id: str, body: dict[str, Any]) -> None:
+    if case_id == "TRV-001":
+        body["destination_city_span"] = "flew from Sydney to Melbourne"
+
+
+_EDITS: dict[str, Callable[[str, dict[str, Any]], None]] = {"none": lambda case_id, body: None, "destination": _edit_destination, "span": _edit_span}
+
+
+def _cycles_run(first_total: int, later_total: int) -> Any:
+    """The travel-claim baselines and cycles: a case's first reply carries ``first_total``, every later one ``later_total``."""
+
+    key = f"cycles_run:{first_total}:{later_total}"
+    if key not in _cache:
+        config, corpus, planned = _pilot("travel-claim")
+        calls: dict[str, int] = {}
+
+        def respond(request: ChatRequest):
+            case = next(c for c in corpus.cases if c.renderings[c.rendering] in request.user)
+            calls[case.case_id] = calls.get(case.case_id, 0) + 1
+            body = dict(case.reference_output or ())
+            body["total_claimed_cents"] = first_total if calls[case.case_id] == 1 else later_total
+            return response_from_content(json.dumps(body))
+
+        _cache[key] = run_pilot(spec=config.spec, corpus=corpus, plan=planned, model="gemma4:31b", executor=FakeExecutor(respond), executor_kind="fake",
+                                output_dir=_scratch("cycles-"), created_on=CREATED_ON, families=(Family.BASELINE, Family.CYCLE), limit=None)
+    return _cache[key]
+
+
+def _cycle_rows(first_total: int, later_total: int, column: str) -> int:
+    run = _cycles_run(first_total, later_total)
+    summary = summarise_cycles([run.run_record], list(run.observations))
+    return sum(int(row[column]) for row in summary["rows"] if row["kind"] == "cycle")
 
 
 def _claims_accept(observations: list[Any]) -> str:
@@ -629,9 +696,33 @@ def _record_points() -> list[Boundary]:
         Boundary("Replay of a cycle chain", "K-04", "a step whose request has no recorded reply (here, the recorded replies of one chain removed): the step and those after it are `PREREQUISITE_UNAVAILABLE`, the rest of the run re-scores", "the run record's absence from the replay directory: a replay reads the observations alone",
                  lambda: (_chain_replay("none"), _chain_replay("chain"), _chain_replay("run_record")),
                  "H40: a re-score that reads a step's output differently from the recorded run changes the next step's request, which was never sent; a request identical to another recorded one is answered by that recorded reply and the record names it in `replayed_from` (H31)"),
+        Boundary("Run identity", "K-05", "the run's header: another `created_on`, model, plan, or endpoint", "the replies: two runs whose headers agree carry one run id whatever their observations say, and the second cannot be published beside the first (no-clobber)",
+                 lambda: (_baseline_run(3).run_record.run_id, _baseline_run(3, "none", "2026-09-09T09:30:00Z").run_record.run_id, _baseline_run(3, "destination").run_record.run_id),
+                 "the run record's content digest covers the observations; the id does not, so a run is named by what was asked and when, not by what came back"),
         Boundary("Citation check", "K-03", "an id that names no record", "an id that names a record the sentence is not about",
                  lambda: (_cite("Run `" + "a" * 16 + "` was complete.", "run." + "a" * 16 + ".json"), _cite("Run `" + "b" * 16 + "` was complete.", "run." + "a" * 16 + ".json"),
                           _cite("Observation `" + "a" * 16 + "` shows the refusal.", "run." + "a" * 16 + ".json"))),
+    ]
+
+
+def _comparison_points() -> list[Boundary]:
+    same = _baseline_run(3)
+    again = _baseline_run(3, "none", "2026-09-09T09:30:00Z")  # the same replies a second time, as a second run
+    drifted = _baseline_run(3, "destination", "2026-09-09T09:31:00Z")
+    respanned = _baseline_run(3, "span", "2026-09-09T09:32:00Z")
+    shorter = _baseline_run(2, "none", "2026-09-09T09:33:00Z")
+    right_total = 196640
+    return [
+        Boundary("Comparison of two runs: identity", "M-01", "a form field that differs between the paired replies", "a companion span key that differs: identity is decided on the form's fields, and without the oracle",
+                 lambda: (_compare(same, again)["differing"], _compare(same, drifted)["differing"], _compare(same, respanned)["differing"])),
+        Boundary("Comparison of two runs: pairing", "M-02", "a request present in one run only (it is counted, not paired)", "which run is given first",
+                 lambda: (_compare(same, again)["shared_requests"], _compare(same, shorter)["shared_requests"], _compare(again, same)["shared_requests"])),
+        Boundary("Cycles table: a differing form", "Y-01", None, "the size of a change between a cycle and the step before: one cent and everything are one `differing` each",
+                 lambda: (_cycle_rows(right_total, right_total + 1, "differing_from_previous"), None, _cycle_rows(right_total, 0, "differing_from_previous")),
+                 "an unchanged form is `identical_to_previous`; the count moves only between identical and differing"),
+        Boundary("Cycles table: verdict moves", "Y-02", "a change that crosses the key (a miss becoming a match, or the reverse)", "a wrong value replaced by another wrong value: `differing`, and no verdict move",
+                 lambda: (_cycle_rows(1, 2, "miss_to_match") + _cycle_rows(1, 2, "match_to_miss"), _cycle_rows(1, right_total, "miss_to_match") + _cycle_rows(1, right_total, "match_to_miss"), _cycle_rows(1, 3, "miss_to_match") + _cycle_rows(1, 3, "match_to_miss")),
+                 "the moves are the oracle's reading of two records; the table says nothing about which wrong value was closer"),
     ]
 
 
@@ -664,7 +755,7 @@ def _appraisal_points() -> list[Boundary]:
 def boundaries() -> tuple[Boundary, ...]:
     points = (
         _schema_points() + _oracle_points() + _parse_points() + _refusal_points() + _span_points() + _change_points()
-        + _claims_points() + _unit_points() + _control_points() + _record_points() + _routing_points() + _appraisal_points()
+        + _claims_points() + _unit_points() + _control_points() + _record_points() + _comparison_points() + _routing_points() + _appraisal_points()
     )
     ids = [p.point for p in points]
     if len(set(ids)) != len(ids):
