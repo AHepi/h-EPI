@@ -17,6 +17,13 @@ cannot happen. Two runs of two calls each cannot show what models generally do.
 |---|---|---|---|
 | `forge/mini/runs/default-gpt-oss-120b/` | gpt-oss:120b | `forge/mini/manifests/default/manifest.json` | 2 |
 | `forge/mini/runs/default-glm-5.3-flash/` | glm-5.3-flash | the same | 3 |
+| `forge/mini/runs/default-glm-5.3-flash-after-h1/` | glm-5.3-flash | the same | 3 |
+
+The third root is the same plan and the same model sent again after H1 below was
+fixed. It is not a repeat measurement of anything: it exists because the fix
+could only be shown to work on a reply that a model actually refused to shape
+properly, and the scripted responder cannot produce one that was not written by
+hand.
 
 Both ran the same plan: conjecture, then criticism, then end, over one short
 supplied source cut into three blocks. Replay either with
@@ -66,6 +73,11 @@ wire schema requires `block` and `quote` on each citation entry but does not
 constrain them to be non-empty, so an empty pair satisfies the schema the model
 was sent. The check behaved correctly and said so three times.
 
+**Seen again** on `forge/mini/runs/default-glm-5.3-flash-after-h1/`, this time
+on **both** artifacts, three empty citations each. So this model did it on every
+artifact it completed across two runs of the same plan. That is two runs, not a
+measurement of a rate.
+
 **Against M1.** Two models, one manifest, two opposite behaviours: one grounded
 its claims properly in the wrong place, the other used the right place with
 nothing in it. Neither run says which is typical.
@@ -93,10 +105,51 @@ against any requirement.
 
 ---
 
-## H1 — A failing reply is not kept
+## M4 — A well-formed reply wrapped in a markdown code fence
+
+**Seen on** `forge/mini/runs/default-glm-5.3-flash-after-h1/`, the criticism
+stage's first attempt.
+
+This is what M3's "unreadable" replies actually were, and it could only be seen
+once H1 was fixed. The reply was **not** malformed. It was valid JSON of exactly
+the right shape, wrapped in a markdown code fence:
+
+    ```json
+    {
+      "body": "This criticism targets conjecture …",
+      …
+    }
+    ```
+
+The reader takes the reply as JSON, the fence is not JSON, and the whole thing
+was refused as `MINI_SUBMISSION_NOT_JSON`. The retry, unfenced, was accepted, so
+the run produced its artifact and the shipped one-retry default absorbed it.
+
+**Where the blame lies, and the fork this opens.** It is a plumbing question,
+not a model question, and it is genuinely open:
+
+- **Strip a fence before reading.** Cheap, and it would have turned two of the
+  three refusals across these runs into acceptances. But the harness would then
+  be accepting something the model was not asked for, and every later reader of
+  the record would have to know that the stored reply and the parsed submission
+  can differ.
+- **Leave it, and say so in the brief.** The record stays literal — what was
+  stored is what was read — and the instruction carries the cost instead.
+
+Nothing has been decided and nothing has been changed: the reader still refuses
+a fenced reply. This is an entry in the register, not a fix.
+
+**One more thing this run shows, in passing.** The conjecture stage succeeded
+here and failed twice on the run before it, on the same plan and the same model.
+Two sends of one request behaved differently. Every comparison anyone later
+draws between two of these runs has to be read against that.
+
+---
+
+## H1 — A failing reply was not kept
 
 **Found by** `forge/mini/runs/default-glm-5.3-flash/`, events 3 and 4.
-**Status: OPEN.**
+**Status: FIXED**, shown by `forge/mini/runs/default-glm-5.3-flash-after-h1/`.
 
 M3's two format failures record the *reason* a reply was refused and not the
 reply. The reply itself is discarded, so the record cannot say what the model
@@ -113,6 +166,15 @@ support.
 said at the conjecture stage is gone. The evidence that it said something
 unreadable survives; the something does not.
 
-**The fix, when it lands.** Store the raw reply as a blob and name it on the
-`FORMAT_FAILURE` event, which already carries a `body_ref` field for exactly
-this shape. It needs no new event type and no schema change.
+**The fix.** Every reply is now stored as a blob before it is read, and the
+`FORMAT_FAILURE` event names it in the `body_ref` field the event shape already
+carried; a `SUBMISSION_DROPPED` event lists every reply refused for that
+submission in `refused_refs`. No new event type, no schema change. Four tests in
+`tests/mini/test_failures.py::RefusedRepliesAreKeptTests` hold it, and the run
+above shows it live.
+
+**What the fix immediately bought.** M4. The very first refused reply the record
+kept turned out not to be malformed at all — it was correct JSON in a markdown
+fence. With H1 open, that would have stayed on the record as "not readable as
+JSON" and nobody would have known why. This is the whole argument for keeping a
+refused reply, made once, by the record, at the first opportunity.

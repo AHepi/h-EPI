@@ -161,10 +161,16 @@ submission and carried on to the criticism stage, which then ran with no
 conjectures to criticise. Its criticism did use the `citations` field, and
 filled it with three entries naming no block.
 
-The two runs together give three model-side or brief-side findings and one
-defect in the harness, all registered with their run roots in
-`docs/mini/FAILURE_MODES.md`. The defect (H1) is that a reply refused for its
-format is not kept, only the reason it was refused.
+Those runs, and a third sent after the fix below, give four model-side or
+brief-side findings and one defect in the harness, all registered with their run
+roots in `docs/mini/FAILURE_MODES.md`.
+
+The defect (H1) was mine: a reply refused for its format was not kept, only the
+reason it was refused. It is fixed — every reply is stored before it is read —
+and the fix paid for itself on the first run after it. The first refused reply
+the record kept was not malformed at all: it was correct JSON inside a markdown
+code fence (M4). With H1 open, that would have stayed on the record as
+"unreadable" and nobody would have learned why.
 
 **What these runs do not establish.** That the prototype works on anything
 larger, that a repeat would return the same text, or that any artifact is any

@@ -116,3 +116,51 @@ class PolicyReadingTests(MiniTestCase):
             plan.kinds["k.conjecture"].failure_policy.to_dict(),
             {"retries": 2, "tolerance": 3, "action": "drop"},
         )
+
+
+class RefusedRepliesAreKeptTests(MiniTestCase):
+    """FAILURE_MODES H1: a reply refused for its format is kept, not only its reason.
+
+    Found by a live run whose conjecture stage returned something unreadable
+    twice: the record said it was unreadable and could not say what it was.
+    """
+
+    def test_a_reply_refused_for_its_format_is_stored_and_named_on_the_event(self) -> None:
+        _, outcome = self.run_manifest(_manifest({"retries": 1}), {"c1": [BAD, GOOD]})
+        from creib.forge.mini.log import BlobStore
+
+        failure = self.events_of(outcome, FORMAT_FAILURE)[0]
+        self.assertIsNotNone(failure["body_ref"])
+        kept = BlobStore(outcome.root / "blobs").get(failure["body_ref"]).decode("utf-8")
+        self.assertEqual(kept, BAD)
+
+    def test_an_unreadable_reply_is_kept_verbatim(self) -> None:
+        """The live case: not JSON at all, so nothing could be parsed out of it."""
+
+        _, outcome = self.run_manifest(_manifest({"retries": 0}), {"c1": ["Here is my answer, in prose."]})
+        from creib.forge.mini.log import BlobStore
+
+        failure = self.events_of(outcome, FORMAT_FAILURE)[0]
+        self.assertEqual(failure["payload"]["code"], "MINI_SUBMISSION_NOT_JSON")
+        self.assertEqual(
+            BlobStore(outcome.root / "blobs").get(failure["body_ref"]).decode("utf-8"),
+            "Here is my answer, in prose.",
+        )
+
+    def test_a_dropped_submission_names_every_reply_that_was_refused(self) -> None:
+        _, outcome = self.run_manifest(_manifest({"retries": 1}), {"c1": [BAD, "not json either"]})
+        from creib.forge.mini.log import BlobStore
+
+        dropped = self.events_of(outcome, SUBMISSION_DROPPED)[0]
+        refs = dropped["payload"]["refused_refs"]
+        self.assertEqual(len(refs), 2)
+        store = BlobStore(outcome.root / "blobs")
+        self.assertEqual(
+            [store.get(ref).decode("utf-8") for ref in refs],
+            [BAD, "not json either"],
+        )
+
+    def test_an_accepted_reply_leaves_no_refusal_blob_behind(self) -> None:
+        _, outcome = self.run_manifest(_manifest({"retries": 1}), {"c1": [GOOD]})
+        self.assertEqual(self.events_of(outcome, FORMAT_FAILURE), [])
+        self.assertEqual(self.events_of(outcome, SUBMISSION_DROPPED), [])

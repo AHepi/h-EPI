@@ -511,10 +511,14 @@ exists, the honest default is off, which is what ships.
   prose and left the `citations` field empty; the other used the field and put
   nothing citable in it. The byte-check is not what needs work. See
   `docs/mini/FAILURE_MODES.md` M1 and M2.
-- **Keeping a reply that was refused.** A `FORMAT_FAILURE` event records why a
-  reply was refused and not the reply, so what the model actually said is lost.
-  That contradicts the rest of the design, in which an accepted body is a blob
-  kept verbatim. Registered as `docs/mini/FAILURE_MODES.md` H1.
+- ~~**Keeping a reply that was refused.**~~ Fixed after a live run exposed it:
+  every reply is stored before it is read, a `FORMAT_FAILURE` names it in
+  `body_ref`, and a `SUBMISSION_DROPPED` lists them all in `refused_refs`.
+  `docs/mini/FAILURE_MODES.md` H1.
+- **Deciding what to do about a fenced reply.** A reply that is correct JSON
+  inside a markdown code fence is refused as unreadable. Whether the reader
+  should strip the fence, or the brief should carry the cost, is an open fork
+  stated in `docs/mini/FAILURE_MODES.md` M4. Nothing was changed either way.
 - **Noticing that a stage's input port was empty.** A stage whose port draws
   from a kind that produced nothing runs anyway, and nothing records that it
   did. See `docs/mini/FAILURE_MODES.md` M3.

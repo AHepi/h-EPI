@@ -289,45 +289,62 @@ def _attempt_submission(
     stage: Stage,
     kind: ArtifactKind,
     brief: str,
+    blobs: BlobStore,
 ) -> tuple[Submission, int, int] | None:
+    """Ask the seat, and keep every reply — the refused ones included.
+
+    A refused reply is stored as a blob and named on its FORMAT_FAILURE event,
+    so the record says what the model actually returned and not only why it was
+    turned away (FAILURE_MODES H1). An accepted body is kept verbatim; a refused
+    one is no different.
+    """
+
     compiled = plan.formats[kind.kind_id]
     policy = kind.failure_policy
     reasons: tuple[str, ...] = ()
+    refused_refs: list[str] = []
     for attempt in range(policy.retries + 1):
         shown = brief if attempt == 0 else brief + "\n\n## The last reply was refused\n" + "\n".join(reasons)
         reply = responder.reply(Request(stage_id=stage.stage_id, kind_id=kind.kind_id, attempt=attempt, brief=shown))
+        reply_ref = blobs.put(reply.text.encode("utf-8"))
         try:
             submission = read_submission(reply.text, kind)
         except MiniError as error:
             reasons = (str(error),)
+            refused_refs.append(reply_ref)
             recorder.emit(
                 FORMAT_FAILURE,
                 {"attempt": attempt, "reasons": list(reasons), "code": error.code},
                 stage_id=stage.stage_id,
                 kind_id=kind.kind_id,
+                body_ref=reply_ref,
             )
             continue
         if not submission.body.strip() or not submission.commitments.strip():
             reasons = ("body and commitments must each carry something",)
+            refused_refs.append(reply_ref)
             recorder.emit(
                 FORMAT_FAILURE,
                 {"attempt": attempt, "reasons": list(reasons), "code": "MINI_SUBMISSION_MISSING_FIELD"},
                 stage_id=stage.stage_id,
                 kind_id=kind.kind_id,
+                body_ref=reply_ref,
             )
             continue
         reasons = compiled.failures(submission.as_fields())
         if not reasons:
             return submission, reply.prompt_tokens, reply.completion_tokens
+        refused_refs.append(reply_ref)
         recorder.emit(
             FORMAT_FAILURE,
             {"attempt": attempt, "reasons": list(reasons), "code": "MINI_FORMAT_FAILURE"},
             stage_id=stage.stage_id,
             kind_id=kind.kind_id,
+            body_ref=reply_ref,
         )
     recorder.emit(
         SUBMISSION_DROPPED,
-        {"attempts": policy.retries + 1, "reasons": list(reasons)},
+        {"attempts": policy.retries + 1, "reasons": list(reasons), "refused_refs": refused_refs},
         stage_id=stage.stage_id,
         kind_id=kind.kind_id,
     )
@@ -387,7 +404,7 @@ def run_mini(plan: RunPlan, root: Path, responder: Responder) -> RunOutcome:
             continue
         kind = plan.kinds[str(stage.kind_id)]
         brief, exposed = render_brief(plan, state, blobs, stage)
-        attempt = _attempt_submission(plan, recorder, responder, stage, kind, brief)
+        attempt = _attempt_submission(plan, recorder, responder, stage, kind, brief, blobs)
         if attempt is None:
             drops = state.drops_by_kind.get(kind.kind_id, 0)
             attempts = drops + state.submissions_by_kind.get(kind.kind_id, 0)
