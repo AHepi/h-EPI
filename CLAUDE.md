@@ -35,7 +35,7 @@ A criticism-first harness that checks how a language model fills a form from a d
 | `python tools/check.py pilots` | validate and plan every pilot configuration | seconds |
 | `python tools/check.py cite` | every record id cited in `docs/`, `README.md`, `agent.md`, `CLAUDE.md` names exactly one record file in this tree or one path in `docs/archived-records.txt`; a citation its sentence marks `not committed` is listed, not failed | seconds |
 | `python tools/check.py all` | all four | under a minute |
-| `python tools/refusal_sweep.py --jobs 4 --report sweep.json` | deletes each `raise` under `src/creib` in turn and runs the suite against the mutant; names the refusal sites whose deletion the suite does not detect (unreached, masked by a later guard, or unasserted) | about an hour; run when a guard changes, not before every commit |
+| `python tools/refusal_sweep.py --jobs 4 --report sweep.json` | deletes each `raise` under `src/creib` in turn and runs the suite against the mutant; names the refusal sites whose deletion the suite does not detect (unreached, masked by a later guard, or unasserted) | hours (331 sites took four and a half with three jobs, H42); run it on a snapshot of the tree (`git worktree add`) so work can go on, when a guard changes, not before every commit |
 
 Run `all` before every commit. No model is called by any check. Do not add `assert` to `src/` or `tools/`; use explicit `raise`. A new `raise` is a new refusal site: give it a test that reaches it, or the sweep will list it as one whose deletion goes undetected.
 
