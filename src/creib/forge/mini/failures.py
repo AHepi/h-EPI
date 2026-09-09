@@ -31,6 +31,7 @@ class FailurePolicy:
     tolerance: int | None
     tolerance_fraction: tuple[int, int] | None
     action: str
+    skip_on_empty_port: bool = False
 
     def exceeded(self, drops: int, submissions: int) -> bool:
         """Has this kind's tolerance for dropped submissions been passed?"""
@@ -46,7 +47,12 @@ class FailurePolicy:
         tolerance: object = self.tolerance
         if self.tolerance_fraction is not None:
             tolerance = {"numerator": self.tolerance_fraction[0], "denominator": self.tolerance_fraction[1]}
-        return {"retries": self.retries, "tolerance": tolerance, "action": self.action}
+        return {
+            "retries": self.retries,
+            "tolerance": tolerance,
+            "action": self.action,
+            "skip_on_empty_port": self.skip_on_empty_port,
+        }
 
 
 DEFAULT_FAILURE_POLICY = FailurePolicy(retries=1, tolerance=None, tolerance_fraction=None, action="stop")
@@ -83,4 +89,13 @@ def failure_policy_from_dict(raw: Any, where: str) -> FailurePolicy:
             _integer(block.get("numerator"), f"{where}.tolerance.numerator", minimum=0, maximum=1_000_000),
             _integer(block.get("denominator"), f"{where}.tolerance.denominator", minimum=1, maximum=1_000_000),
         )
-    return FailurePolicy(retries=retries, tolerance=tolerance, tolerance_fraction=fraction, action=action)
+    skip = entry.get("skip_on_empty_port", False)
+    if type(skip) is not bool:
+        raise MiniError(_INVALID, f"{where}.skip_on_empty_port must be true or false")
+    return FailurePolicy(
+        retries=retries,
+        tolerance=tolerance,
+        tolerance_fraction=fraction,
+        action=action,
+        skip_on_empty_port=skip,
+    )

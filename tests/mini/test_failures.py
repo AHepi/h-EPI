@@ -5,7 +5,7 @@ from __future__ import annotations
 import copy
 
 from creib.forge.mini.failures import DEFAULT_FAILURE_POLICY, FailurePolicy, failure_policy_from_dict
-from creib.forge.mini.log import ARTIFACT_SUBMITTED, FORMAT_FAILURE, RUN_ENDED, SUBMISSION_DROPPED
+from creib.forge.mini.log import ARTIFACT_SUBMITTED, FORMAT_FAILURE, PORT_EMPTY, RUN_ENDED, SUBMISSION_DROPPED
 
 from .helpers import MiniTestCase, base_manifest, submission
 
@@ -114,7 +114,7 @@ class PolicyReadingTests(MiniTestCase):
         plan = self.compile(_manifest({"retries": 2, "tolerance": 3, "action": "drop"}))
         self.assertEqual(
             plan.kinds["k.conjecture"].failure_policy.to_dict(),
-            {"retries": 2, "tolerance": 3, "action": "drop"},
+            {"retries": 2, "tolerance": 3, "action": "drop", "skip_on_empty_port": False},
         )
 
 
@@ -164,3 +164,59 @@ class RefusedRepliesAreKeptTests(MiniTestCase):
         _, outcome = self.run_manifest(_manifest({"retries": 1}), {"c1": [GOOD]})
         self.assertEqual(self.events_of(outcome, FORMAT_FAILURE), [])
         self.assertEqual(self.events_of(outcome, SUBMISSION_DROPPED), [])
+
+
+class EmptyPortTests(MiniTestCase):
+    """R32: a declared artifact port that draws nothing is a typed notice.
+
+    The shape is the one the glm run produced (FAILURE_MODES M3): a conjecture
+    stage drops, and the critic then runs with no conjectures to criticise.
+    """
+
+    def _manifest(self, skip: bool) -> dict:
+        manifest = base_manifest()
+        manifest["kinds"][0]["format"] = copy.deepcopy(KEYWORD_SPEC)
+        manifest["kinds"][0]["failure_policy"] = {"retries": 0}
+        manifest["kinds"][1]["failure_policy"] = {"skip_on_empty_port": skip}
+        return manifest
+
+    def test_by_default_the_stage_still_runs_and_the_notice_is_on_the_record(self) -> None:
+        _, outcome = self.run_manifest(self._manifest(False), {"c1": [BAD], "x1": [submission("a", "b")]})
+        notices = self.events_of(outcome, "PORT_EMPTY")
+        self.assertEqual(len(notices), 1)
+        self.assertEqual(notices[0]["payload"]["port_id"], "conjectures")
+        self.assertEqual(notices[0]["stage_id"], "x1")
+        self.assertEqual(len(self.events_of(outcome, ARTIFACT_SUBMITTED)), 1)
+
+    def test_the_notice_comes_before_the_stage_is_asked(self) -> None:
+        _, outcome = self.run_manifest(self._manifest(False), {"c1": [BAD], "x1": [submission("a", "b")]})
+        types = [event["type"] for event in self.events(outcome)]
+        self.assertLess(types.index("PORT_EMPTY"), len(types) - 1 - types[::-1].index(ARTIFACT_SUBMITTED))
+
+    def test_set_to_skip_the_stage_produces_nothing(self) -> None:
+        _, outcome = self.run_manifest(self._manifest(True), {"c1": [BAD]})
+        self.assertEqual(len(self.events_of(outcome, "PORT_EMPTY")), 1)
+        self.assertEqual(self.events_of(outcome, ARTIFACT_SUBMITTED), [])
+        dropped = [event for event in self.events_of(outcome, SUBMISSION_DROPPED) if event["stage_id"] == "x1"]
+        self.assertEqual(len(dropped), 1)
+        self.assertIn("drew nothing", dropped[0]["payload"]["reasons"][0])
+
+    def test_a_port_that_drew_something_writes_no_notice(self) -> None:
+        _, outcome = self.run_manifest(self._manifest(False), {"c1": [GOOD], "x1": [submission("a", "b")]})
+        self.assertEqual(self.events_of(outcome, "PORT_EMPTY"), [])
+
+    def test_an_empty_evidence_port_is_not_a_notice(self) -> None:
+        """C6: an empty evidence port is the ordinary state of a first cycle."""
+
+        manifest = base_manifest()
+        manifest["sources"] = []
+        _, outcome = self.run_manifest(manifest)
+        self.assertEqual(self.events_of(outcome, "PORT_EMPTY"), [])
+
+    def test_the_default_is_not_to_skip(self) -> None:
+        self.assertFalse(DEFAULT_FAILURE_POLICY.skip_on_empty_port)
+
+    def test_a_bad_skip_setting_is_refused(self) -> None:
+        self.assertRefuses(
+            "MINI_FAILURE_POLICY_INVALID", failure_policy_from_dict, {"skip_on_empty_port": "yes"}, "p"
+        )

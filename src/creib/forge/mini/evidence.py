@@ -78,6 +78,7 @@ class CitationMeasure:
     block_id: str | None
     quoted: bool
     detail: str
+    recovered: str | None = None
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -86,6 +87,7 @@ class CitationMeasure:
             "block_id": self.block_id,
             "quoted": self.quoted,
             "detail": self.detail,
+            "recovered": self.recovered,
         }
 
 
@@ -189,10 +191,11 @@ def check_citations(
 
     measures: list[CitationMeasure] = []
     for entry in citations:
+        recovered = entry.get("recovered")
         raw_ref = entry.get("block")
         if type(raw_ref) is not str or not raw_ref:
             measures.append(
-                CitationMeasure(CITATION_UNKNOWN_BLOCK, "", None, False, "the citation names no block")
+                CitationMeasure(CITATION_UNKNOWN_BLOCK, "", None, False, "the citation names no block", recovered)
             )
             continue
         quote = entry.get("quote")
@@ -204,7 +207,7 @@ def check_citations(
                 if failure == CITATION_UNKNOWN_BLOCK
                 else "that id prefix names more than one admitted block"
             )
-            measures.append(CitationMeasure(failure, raw_ref, None, quoted, detail))
+            measures.append(CitationMeasure(failure, raw_ref, None, quoted, detail, recovered))
             continue
         if block.block_id not in exposed_ids:
             measures.append(
@@ -214,6 +217,7 @@ def check_citations(
                     block.block_id,
                     quoted,
                     "that block was not shown to this artifact's seat",
+                    recovered,
                 )
             )
             continue
@@ -225,6 +229,7 @@ def check_citations(
                     block.block_id,
                     True,
                     "the quoted words do not occur in that block (whitespace folded on both sides)",
+                    recovered,
                 )
             )
             continue
@@ -235,6 +240,7 @@ def check_citations(
                 block.block_id,
                 quoted,
                 "the block resolves and the quoted words occur in it" if quoted else "the block resolves; nothing was quoted",
+                recovered,
             )
         )
     return tuple(measures)

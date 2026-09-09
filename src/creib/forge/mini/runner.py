@@ -26,6 +26,7 @@ from .log import (
     BLOBS_DIR,
     EVIDENCE_BATCHED,
     FORMAT_FAILURE,
+    PORT_EMPTY,
     LOG_NAME,
     REFUSED,
     ROUTED,
@@ -231,6 +232,33 @@ def render_port(
     return "\n".join([header, *(lines or ["(nothing yet)"])]), tuple(block.block_id for block in blocks)
 
 
+def empty_artifact_ports(plan: RunPlan, state: MiniState, stage: Stage, cycle: int) -> tuple[str, ...]:
+    """Declared ARTIFACT ports of this stage that draw nothing.
+
+    Only artifact ports. An evidence port with nothing admitted, or a scratch
+    port with an empty shelf, is the ordinary state of a first cycle and says
+    nothing; an artifact port drawing nothing is the condition where a critic
+    criticises with nothing to criticise.
+    """
+
+    kind = plan.kinds[str(stage.kind_id)]
+    empty: list[str] = []
+    for port_id in stage.ports:
+        port = kind.port(port_id)
+        port_type = plan.port_types[port.port_type]
+        if port_type.source != "artifacts":
+            continue
+        in_window = port.window.admits
+        drew = any(
+            in_window(int(state.artifacts[key].get("cycle", 0)), cycle)
+            and _artifact_reaches_port(plan, state, port_type, port.params, stage.stage_id, port_id, state.artifacts[key])
+            for key in state.artifact_order
+        )
+        if not drew:
+            empty.append(port_id)
+    return tuple(empty)
+
+
 def render_brief(
     plan: RunPlan, state: MiniState, blobs: BlobStore, stage: Stage, cycle: int = 0
 ) -> tuple[str, frozenset[str]]:
@@ -244,9 +272,17 @@ def render_brief(
         sections.append(rendered)
         exposed.update(block_ids)
     compiled = plan.formats[kind.kind_id]
+    example = sorted(exposed)[0][:16] if exposed else None
+    worked = (
+        "\n\nTo ground a claim, add a citation naming a block and quoting its own words, like this:\n"
+        '  "citations": [{"block": "' + example + '", "quote": "<words copied from that block>"}]'
+        if example
+        else ""
+    )
     sections.append(
         "## What to return\n"
         'A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.'
+        + worked
     )
     if not compiled.freeform:
         sections.append("## The shape this answer must take\n" + "\n\n".join(compiled.describe()))
@@ -373,7 +409,7 @@ def _attempt_submission(
     brief: str,
     blobs: BlobStore,
     cycle: int = 0,
-) -> tuple[Submission, int, int] | None:
+) -> tuple[Submission, int, int, str] | None:
     """Ask the seat, and keep every reply — the refused ones included.
 
     A refused reply is stored as a blob and named on its FORMAT_FAILURE event,
@@ -420,7 +456,7 @@ def _attempt_submission(
             continue
         reasons = compiled.failures(submission.as_fields())
         if not reasons:
-            return submission, reply.prompt_tokens, reply.completion_tokens
+            return submission, reply.prompt_tokens, reply.completion_tokens, reply_ref
         refused_refs.append(reply_ref)
         recorder.emit(
             FORMAT_FAILURE,
@@ -546,6 +582,22 @@ def run_mini(plan: RunPlan, root: Path, responder: Responder, responder_id: str 
             if not _check_reads(plan, recorder, stage):
                 continue
             kind = plan.kinds[str(stage.kind_id)]
+            empty = empty_artifact_ports(plan, state, stage, cycle)
+            for port_id in empty:
+                recorder.emit(
+                    PORT_EMPTY,
+                    {"port_id": port_id, "kind_id": kind.kind_id},
+                    stage_id=stage.stage_id,
+                    kind_id=kind.kind_id,
+                )
+            if empty and kind.failure_policy.skip_on_empty_port:
+                recorder.emit(
+                    SUBMISSION_DROPPED,
+                    {"attempts": 0, "reasons": [f"the declared ports {list(empty)} drew nothing"], "refused_refs": []},
+                    stage_id=stage.stage_id,
+                    kind_id=kind.kind_id,
+                )
+                continue
             brief, exposed = render_brief(plan, state, blobs, stage, cycle)
             seat_responder = machine_responder(plan, state, blobs, stage, cycle) if stage.seat == SEAT_MACHINE else responder
             before = getattr(seat_responder, "calls", None)
@@ -560,7 +612,7 @@ def run_mini(plan: RunPlan, root: Path, responder: Responder, responder_id: str 
                     halted = True
                     break
                 continue
-            submission, prompt_tokens, completion_tokens = attempt
+            submission, prompt_tokens, completion_tokens, reply_ref = attempt
             artifact_id, body_ref, commitments_ref = _store_artifact(blobs, stage, submission, recorder.seq)
             blocks = {str(item["block_id"]): _as_block(blobs, item) for item in state.blocks}
             measures = check_citations(submission.citations, blocks, exposed)
@@ -568,6 +620,8 @@ def run_mini(plan: RunPlan, root: Path, responder: Responder, responder_id: str 
                 ARTIFACT_SUBMITTED,
                 {
                     "seat": stage.seat,
+                    "reply_ref": reply_ref,
+                    "recovered": list(submission.recovered),
                     "about": list(submission.about),
                     "answers": list(submission.answers),
                     "citations": [measure.to_dict() for measure in measures],

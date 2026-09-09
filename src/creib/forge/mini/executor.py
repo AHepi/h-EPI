@@ -112,7 +112,10 @@ WIRE_SCHEMA: dict[str, Any] = {
             "items": {
                 "type": "object",
                 "required": ["block", "quote"],
-                "properties": {"block": {"type": "string"}, "quote": {"type": "string"}},
+                "properties": {
+                    "block": {"type": "string", "minLength": 1},
+                    "quote": {"type": "string", "minLength": 1},
+                },
             },
         },
         "about": {"type": "array", "items": {"type": "string"}},

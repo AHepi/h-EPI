@@ -12,6 +12,7 @@ optional, and a kind may name further optional fields of its own.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import Any, Mapping
 
@@ -137,6 +138,32 @@ def kind_from_dict(raw: Any, where: str) -> ArtifactKind:
     )
 
 
+RECOVERED_FENCE = "fence"
+RECOVERED_PROSE = "prose"
+
+#: A bracketed block id prefix, then a quotation. Deliberately narrow: it
+#: recovers the shape the record has actually seen a model use, and finds
+#: nothing in prose that carries no block id.
+_PROSE_CITATION = re.compile(r"\[([0-9a-f]{8,64})\]\s*[\"\u201c]([^\"\u201d]{1,512})[\"\u201d]")
+_FENCE = re.compile(r"\A\s*```[A-Za-z0-9_-]*\s*\n(.*?)\n?\s*```\s*\Z", re.DOTALL)
+
+
+def strip_fence(reply: str) -> tuple[str, bool]:
+    """Return the reply with a markdown code fence removed, and whether one was."""
+
+    match = _FENCE.match(reply)
+    return (match.group(1), True) if match else (reply, False)
+
+
+def recover_prose_citations(body: str) -> tuple[dict[str, Any], ...]:
+    """Bracketed id-and-quote pairs a seat wrote into its prose."""
+
+    return tuple(
+        {"block": block, "quote": quote, "recovered": RECOVERED_PROSE}
+        for block, quote in _PROSE_CITATION.findall(body)
+    )
+
+
 @dataclass(frozen=True)
 class Submission:
     """One well-formed submission, before its format is checked."""
@@ -147,6 +174,7 @@ class Submission:
     about: tuple[str, ...]
     answers: tuple[str, ...]
     extra: Mapping[str, str]
+    recovered: tuple[str, ...] = ()
 
     def as_fields(self) -> dict[str, Any]:
         return {"body": self.body, "commitments": self.commitments}
@@ -163,8 +191,9 @@ def read_submission(reply: str, kind: ArtifactKind) -> Submission:
     Only ``body`` and ``commitments`` are required, whatever the kind (R7).
     """
 
+    unfenced, fenced = strip_fence(reply)
     try:
-        parsed = loads_strict(reply)
+        parsed = loads_strict(unfenced)
     except RecordError as error:
         raise MiniError("MINI_SUBMISSION_NOT_JSON", f"the reply is not readable as JSON: {error}") from error
     if type(parsed) is not dict:
@@ -182,10 +211,21 @@ def read_submission(reply: str, kind: ArtifactKind) -> Submission:
             f"the submission carries fields kind {kind.kind_id!r} does not declare: {unknown}",
         )
     citations_raw = array_value(parsed.get("citations") or [], "submission.citations", "MINI_SUBMISSION_FIELD_TYPE")
-    citations = tuple(
-        object_value(item, f"submission.citations[{index}]", "MINI_SUBMISSION_FIELD_TYPE")
-        for index, item in enumerate(citations_raw)
-    )
+    declared: list[Mapping[str, Any]] = []
+    for index, item in enumerate(citations_raw):
+        entry = object_value(item, f"submission.citations[{index}]", "MINI_SUBMISSION_FIELD_TYPE")
+        # An empty pair is a badly shaped submission, not an unknown block: it
+        # says nothing about the evidence, only about the reply (FAILURE_MODES M2).
+        for name in ("block", "quote"):
+            value = entry.get(name)
+            if type(value) is not str or not value.strip():
+                raise MiniError(
+                    "MINI_SUBMISSION_FIELD_TYPE",
+                    f"submission.citations[{index}].{name} must be a non-empty string",
+                )
+        declared.append({**entry, "recovered": None})
+    recovered_citations = recover_prose_citations(parsed["body"])
+    citations = tuple(declared) + recovered_citations
     extra: dict[str, str] = {}
     for name in kind.optional_fields:
         if name in parsed:
@@ -197,4 +237,7 @@ def read_submission(reply: str, kind: ArtifactKind) -> Submission:
         about=_string_array(parsed.get("about") or [], "submission.about"),
         answers=_string_array(parsed.get("answers") or [], "submission.answers"),
         extra=extra,
+        recovered=tuple(
+            [RECOVERED_FENCE] if fenced else []
+        ) + ((RECOVERED_PROSE,) if recovered_citations else ()),
     )
