@@ -593,3 +593,171 @@ only implemented value. Citations are still measures that decide nothing. The
 record is still append-only and hash-chained, and a refused reply is still kept.
 Attention is still off by default, and a stop condition is not attention: it
 decides whether the run continues, never which stage runs next.
+
+---
+
+# Amendment 2 — design
+
+Authority: `REQUEST.md`, Amendment 2, R29–R36. Interpretations are numbered from
+**C1**, apart from the A- and B-series. Where this section and anything above
+disagree, this governs and names what it supersedes.
+
+## 21. Scripts addressed by coordinate (R29)
+
+The scripted responder gains a second script form, and keeps the first.
+
+```json
+{"criticise": {"1": ["reply for cycle 1, attempt 0", "attempt 1"], "2": ["…"]}}
+```
+
+**C1 — the form is told apart by shape, not by a flag.** A stage whose value is
+a list is an ORDERED script, consumed as before; a stage whose value is an
+object is a COORDINATE script, keyed by cycle and then indexed by attempt. Both
+may appear in one script, so a manifest's stages migrate one at a time.
+
+**Which tests migrate.** The blind-spot script migrates, because R29's own test
+needs it. Every other test keeps the ordered form, because the ordered form is
+the shorter thing to write when a stage runs once per run and nothing re-orders
+it. `SPEC.md` says which is which.
+
+**C2 — what "differ only where the policy re-ordered" comes to on this template.**
+The demonstration policy prefers the stage whose kind has the most unanswered
+criticisms, counted through `about`, and the blind-spot script's artifacts name
+nothing in `about`. So on this template the policy finds nothing to prefer and
+returns nothing, and the two roots' logs differ only in the run header's
+attention field. That is the result, and it is worth having: attention switched
+on but idle is the same run as attention off, which is what `off` being the
+default is supposed to mean. A second test, on a manifest where the policy does
+re-order, shows the coordinate script delivering each stage its own reply across
+a re-ordering — the thing the ordered form could not do.
+
+## 22. Fenced replies (R30)
+
+`read_submission` strips a leading ```` ``` ```` fence (with or without a
+language tag) and its closing fence before reading, and records the recovery.
+
+**C3 — the recovery is named on the artifact, and the raw reply is referenced
+from it.** Every reply was already stored verbatim before being read (H1's fix).
+The `ARTIFACT_SUBMITTED` event now names that blob in `reply_ref` and lists what
+was recovered in `recovered`, so the stored bytes and the parsed submission are
+both reachable from one event and cannot be mistaken for each other. A reply
+that is not JSON after the fence is stripped is a `FORMAT_FAILURE` exactly as
+before.
+
+**Supersedes** `FAILURE_MODES.md` M4's open fork, in the direction of stripping.
+
+## 23. Citations, both ends (R31)
+
+**The declaring end.** A citation entry must carry a non-empty `block` and a
+non-empty `quote`. An entry missing either is `MINI_SUBMISSION_FIELD_TYPE`,
+which reaches the record as a `FORMAT_FAILURE` — not as an unknown block. The
+wire schema sent to a live model carries the same requirement.
+
+**The recovering end.** After reading, the reader scans `body` for bracketed
+pairs of the form `[<hex prefix>] "quoted words"` and adds each to `citations`
+marked `recovered: prose`. Recovered citations are byte-checked exactly as
+declared ones; the measure carries which it was, so nobody has to guess.
+
+**C4 — what the recogniser matches.** A bracketed run of 8 to 64 hexadecimal
+characters, then optional whitespace, then a quoted run in straight or curly
+quotes. It is deliberately narrow: it recovers the shape the record has actually
+seen a model use, and it does not try to find citations in prose that does not
+carry a block id.
+
+**C5 — a recovered citation never displaces a declared one.** Recovery appends;
+a block cited both ways produces two measures. Counting citations is not a
+purpose this prototype has, so the duplicate costs nothing and hiding it would
+cost the reader.
+
+**The brief shows one worked example** of a declared citation, built from a real
+block id the stage can see, so the shape a seat is asked for is demonstrated
+rather than described.
+
+**Supersedes** `FAILURE_MODES.md` M1 and M2 as open items.
+
+## 24. An empty input port (R32)
+
+A stage whose declared artifact port draws nothing writes `PORT_EMPTY` naming
+the port, before dispatch. It is a notice, not a refusal.
+
+**C6 — only artifact ports.** An evidence port with nothing admitted, or a
+scratch port with an empty shelf, is the ordinary state of a run's first cycle
+and says nothing. An artifact port drawing nothing is the condition M3 recorded,
+where a critic criticised with nothing to criticise.
+
+The kind's failure policy gains `skip_on_empty_port`, default **false**, so
+today's behaviour is unchanged; a stage set to skip writes its `PORT_EMPTY` and
+then a `SUBMISSION_DROPPED` carrying the reason, and produces nothing.
+
+**PORT_EMPTY is a new event type.** It is about the run, not about any kind, so
+"a new artifact kind adds no event type" is untouched: the vocabulary grows when
+the run learns to notice something new, never when a manifest declares a kind.
+
+## 25. Two calls per artifact (R35 a, b)
+
+**Supersedes** the one-call production of an artifact assumed everywhere before.
+
+An artifact is produced by two calls by default:
+
+| call | is shown | returns |
+|---|---|---|
+| body | the stage's full brief: every declared port, the evidence legend, the compiled format, the worked citation example | `body`, and optionally `citations`, `about`, `answers`, and the kind's own optional fields |
+| commitments | the body text, and the compiled format for `commitments`. Nothing else — no problem, no evidence, no other artifact, no earlier commitments | `commitments` |
+
+The two replies are joined into one artifact. The record carries **both requests
+and both replies**, each as a blob, on the `ARTIFACT_SUBMITTED` event under
+`calls`, so that the commitments were written blind is a thing anyone can check
+from the record rather than a thing this document asserts.
+
+**C7 — what "and nothing else" is taken to exclude, exactly.** The second call's
+prompt contains the body text, the rendered commitments format, and a one-line
+instruction. It contains no problem statement, no block id, no source excerpt,
+no other artifact's text, and no commitments from any earlier artifact. The test
+asserts absence of each in the dispatched request bytes rather than trusting the
+construction.
+
+**C8 — the format is split across the calls.** A kind's `body` format checks the
+first call's reply; its `commitments` format checks the second call's. A failure
+in either is a `FORMAT_FAILURE` naming the phase, and the retry re-asks **that
+call** with its own error shown, not the other.
+
+**C9 — `commitment_call: single` keeps the old shape**, per kind, and is
+disclosed: the artifact's record carries `commitment_call` either way, so a
+one-call artifact is never mistaken for a blind-written one.
+
+**C10 — a machine seat makes one call and says so.** A machine seat computes the
+whole artifact from the record; there is no second call to make blind, and the
+record carries `commitment_call: "machine_single"` rather than pretending
+otherwise.
+
+## 26. One verdict node per cycle (R35 c)
+
+**Every cycle ends with exactly one stage of kind `mini.verdict.v1`**, and
+compile refuses a manifest without one, with more than one, or with one that is
+not the last stage before the end stage: `MINI_VERDICT_MISSING`,
+`MINI_VERDICT_DUPLICATE`, `MINI_VERDICT_NOT_LAST`.
+
+**C11 — this binds every manifest, and the shipped ones are rebuilt.** The
+default and operator-example manifests gain a verdict stage. A structural rule
+that the repository's own examples do not follow is not a rule.
+
+**C12 — attention may not reach the verdict early.** The verdict stage is
+withheld from the set attention chooses among until it is the only stage left in
+the cycle, so "ends with" survives a re-ordering policy.
+
+The verdict's body call sees everything the cycle produced, through its declared
+ports and their windows; its commitments call sees only its own body, exactly as
+every other artifact's does. Its seat may be model or machine.
+
+## 27. Four decisions, not gaps (R34)
+
+`SPEC.md` records these as settled, and stops listing them as absences: the
+permission layer's `changes` stays `"nothing"`; evidence is cut at blank lines;
+a kind's optional fields are strings; one writer per run root.
+
+## 28. What Amendment 2 does not change
+
+The record is still append-only and hash-chained, and a refused reply is still
+kept. Citations are still measures that decide nothing. Attention is still off
+by default and still cannot reach the record. `compare` still ranks nothing. The
+stop is still the host's.
