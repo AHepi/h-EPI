@@ -396,14 +396,23 @@ name, and a test asserts the rendered output contains none of *score*, *best*,
 | call | is shown | returns |
 |---|---|---|
 | body | the stage's full brief: every declared port, the evidence legend, the compiled body format, the worked citation example | `body`, and optionally `citations`, `about`, `answers`, the kind's optional fields |
-| commitments | `render_commitments_brief`: the body text, the compiled commitments format, one line of instruction | `commitments` |
+| commitments | the body text, the compiled commitments format, one line of instruction — **and whatever ports the kind's `commitment_ports` declares, which by default is none** | `commitments` |
+
+**What an artifact sees is configuration** (R37). The blind second call is the
+DEFAULT, not a law: a kind may name any of its own declared ports in
+`commitment_ports`, and those are rendered into the second call as well. A port
+the kind does not declare is `MINI_PORT_UNKNOWN` at compile. The record carries
+`commitment_ports` on every artifact, so "written blind" is read off the record
+rather than assumed from a default.
 
 The two replies are joined by `Submission.joined`. The record's
 `ARTIFACT_SUBMITTED` carries `calls`, a list of `{phase, request_ref,
 reply_ref}`, so **both requests and both replies** are blobs anyone can read.
-`test_the_second_call_sees_the_body_and_nothing_else` asserts the second
-request contains the body and contains none of: the problem text, another
-artifact's body, any block id, any of the source's words.
+`test_by_default_the_second_call_sees_the_body_and_nothing_else` asserts the
+second request contains the body and contains none of: the problem text,
+another artifact's body, any block id, any of the source's words — of the
+default. `WhatTheCommitmentsCallSeesTests` then shows a declared port arriving
+in the same bytes, so the default is checked as a default.
 
 The format splits across the calls: a body failure never reaches the second
 call, and a commitments failure names its phase. `commitment_call: "single"`

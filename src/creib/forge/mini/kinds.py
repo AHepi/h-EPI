@@ -69,6 +69,10 @@ class ArtifactKind:
     format_spec: Mapping[str, Any] | None
     failure_policy: FailurePolicy
     commitment_call: str = "two"
+    #: The kind's own ports the COMMITMENTS call also sees. Empty by default,
+    #: so the second call sees the body alone; what it sees is the operator's
+    #: to declare, and the default is only a default (R37).
+    commitment_ports: tuple[str, ...] = ()
 
     def port(self, port_id: str) -> InputPort:
         for item in self.input_ports:
@@ -85,6 +89,7 @@ class ArtifactKind:
             "optional_fields": list(self.optional_fields),
             "failure_policy": self.failure_policy.to_dict(),
             "commitment_call": self.commitment_call,
+            "commitment_ports": list(self.commitment_ports),
         }
 
 
@@ -131,6 +136,16 @@ def kind_from_dict(raw: Any, where: str) -> ArtifactKind:
             "MINI_COMMITMENT_CALL_UNKNOWN",
             f"kind {kind_id!r} sets commitment_call to {commitment_call!r}; it must be 'two' or 'single'",
         )
+    commitment_ports = tuple(
+        text(item, f"{where}.commitment_ports[{index}]", "MINI_PORT_UNKNOWN")
+        for index, item in enumerate(array_value(entry.get("commitment_ports") or [], f"{where}.commitment_ports", "MINI_PORT_UNKNOWN"))
+    )
+    unknown_commitment = sorted(set(commitment_ports) - seen)
+    if unknown_commitment:
+        raise MiniError(
+            "MINI_PORT_UNKNOWN",
+            f"kind {kind_id!r} sends its commitments call ports it does not declare: {unknown_commitment}",
+        )
     reserved = set(REQUIRED_SUBMISSION_FIELDS) | set(TEMPLATE_SUBMISSION_FIELDS)
     clash = sorted(set(optional) & reserved)
     if clash:
@@ -144,6 +159,7 @@ def kind_from_dict(raw: Any, where: str) -> ArtifactKind:
         format_spec=entry.get("format"),
         failure_policy=failure_policy_from_dict(entry.get("failure_policy"), f"{where}.failure_policy"),
         commitment_call=commitment_call,
+        commitment_ports=commitment_ports,
     )
 
 

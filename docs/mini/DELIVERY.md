@@ -15,7 +15,7 @@ python tools/check.py all                     # lint, the whole suite, pilots, c
 python -m unittest discover -s tests/mini     # the mini suite alone, 204 tests
 ```
 
-The full suite is **585 tests, 0 failed** — 250 that were there before, 335
+The full suite is **592 tests, 0 failed** — 250 that were there before, 342
 added here. No test calls a model. `python tools/check.py all` is green at every
 commit on this branch.
 
@@ -71,6 +71,18 @@ On branch `claude/mini-finish`, from `claude/mini-prototype`.
 | R34 | Four things are decisions, not gaps | recorded | `SPEC.md` Part three, first table |
 | R35 | Two calls per artifact, one verdict node per cycle | built, with assumptions C7–C12 | `python -m unittest discover -s tests -p test_two_calls.py` (15 tests) |
 | R36 | The standing obligations | followed | the branch history, in the order the amendment set; `python tools/check.py all` green at each commit |
+
+## Amendment 3
+
+| # | Requirement | State | The command that proves it |
+|---|---|---|---|
+| R37 | What an artifact sees is configuration; the blind second call is only the default | built, with assumptions C13, C14 | `python -m unittest mini.test_two_calls.WhatTheCommitmentsCallSeesTests` (7 tests) |
+
+R37 corrects R35(b) **as I built it**, not as it was written. I fixed the
+commitments call's exposure in code and gave a manifest no way to change it
+short of turning the second call off — turning a default into a law, in a
+prototype whose whole point is that every behaviour a run can vary is reachable
+as configuration. The default is unchanged for anyone who declares nothing.
 
 One commit on this branch was pushed with a red gate, and the commit after it
 says so by name. I read the mini suite alone, saw it green, and did not re-read

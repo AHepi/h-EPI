@@ -322,3 +322,31 @@ verdict stage.
 
 Amendment 2's own further interpretations are numbered from **C1** in
 `DESIGN.md`, kept apart from the A- and B-series.
+
+---
+
+# Amendment 3
+
+Sent while Amendment 2's live run was still going, correcting R35(b).
+
+## The amendment as sent
+
+> oh no. one modification. What an artifact sees is upto whoever configures mini. This is just the default setting.
+
+## The requirement
+
+**R37 — What an artifact sees is configuration, and the blind second call is
+only the default.**
+> "What an artifact sees is upto whoever configures mini. This is just the default setting."
+
+**Corrects R35(b) as built.** The two-call shape was implemented with the
+commitments call's exposure FIXED in code: the body text and nothing else, with
+no way for a manifest to say otherwise short of turning the second call off
+altogether. That made a default into a law, which is the opposite of this
+prototype's whole point — every behaviour a run can vary is reachable as
+configuration.
+
+What R35(b) states remains the DEFAULT and is unchanged for anyone who declares
+nothing: the second call sees the body alone. What changes is that a kind may
+now declare what else its commitments call sees, and the record says what it
+saw.

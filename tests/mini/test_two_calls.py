@@ -43,8 +43,12 @@ class TwoCallsTests(MiniTestCase):
         self.assertEqual(phases[:2], [("c1", "body"), ("c1", "commitments")])
         self.assertEqual(plan.kinds["k.conjecture"].commitment_call, COMMITMENT_CALL_TWO)
 
-    def test_the_second_call_sees_the_body_and_nothing_else(self) -> None:
-        """C7: asserted as absence in the dispatched bytes, not trusted."""
+    def test_by_default_the_second_call_sees_the_body_and_nothing_else(self) -> None:
+        """C7: asserted as absence in the dispatched bytes, not trusted.
+
+        This is the DEFAULT, not a law: see the tests below for a kind that
+        declares what else its commitments call sees (R37).
+        """
 
         manifest = base_manifest()
         manifest["problem"] = "AN UNMISTAKABLE PROBLEM STATEMENT"
@@ -230,3 +234,70 @@ class BlindSpotOnTheNewShapeTests(MiniTestCase):
         self.assertEqual(len(proposals), 9)
         verdicts = [record for record in state.artifacts.values() if record["kind_id"] == VERDICT_KIND_ID]
         self.assertEqual(len(verdicts), 3)
+
+
+class WhatTheCommitmentsCallSeesTests(MiniTestCase):
+    """R37: the blind second call is the default, and the default is declared."""
+
+    def _run(self, manifest, script, name="run"):
+        from creib.forge.mini.executor import ScriptedResponder
+        from creib.forge.mini.runner import run_mini
+
+        plan = self.compile(manifest)
+        recorder = _Recorder(ScriptedResponder(script))
+        return plan, run_mini(plan, self.tmp / name, recorder), recorder
+
+    def _script(self):
+        return {"c1": [submission("THE BODY", "c")], "x1": [submission("b", "c")]}
+
+    def test_the_default_is_no_ports_at_all(self) -> None:
+        plan = self.compile(base_manifest())
+        self.assertEqual(plan.kinds["k.conjecture"].commitment_ports, ())
+
+    def test_a_kind_may_declare_what_else_its_commitments_call_sees(self) -> None:
+        manifest = base_manifest()
+        manifest["problem"] = "AN UNMISTAKABLE PROBLEM STATEMENT"
+        manifest["kinds"][0]["commitment_ports"] = ["problem"]
+        _, _, recorder = self._run(manifest, self._script())
+        second = [brief for stage, phase, brief in recorder.seen if stage == "c1" and phase == "commitments"][0]
+        self.assertIn("THE BODY", second)
+        self.assertIn("AN UNMISTAKABLE PROBLEM STATEMENT", second)
+
+    def test_a_kind_that_declares_nothing_still_sees_nothing(self) -> None:
+        manifest = base_manifest()
+        manifest["problem"] = "AN UNMISTAKABLE PROBLEM STATEMENT"
+        _, _, recorder = self._run(manifest, self._script())
+        second = [brief for stage, phase, brief in recorder.seen if stage == "c1" and phase == "commitments"][0]
+        self.assertNotIn("AN UNMISTAKABLE PROBLEM STATEMENT", second)
+        self.assertIn("You are shown nothing else", second)
+
+    def test_the_evidence_legend_can_be_sent_to_the_commitments_call(self) -> None:
+        manifest = base_manifest()
+        manifest["kinds"][0]["commitment_ports"] = ["evidence"]
+        _, outcome, recorder = self._run(manifest, self._script())
+        second = [brief for stage, phase, brief in recorder.seen if stage == "c1" and phase == "commitments"][0]
+        self.assertIn("first paragraph", second)
+
+    def test_the_record_says_what_the_second_call_saw(self) -> None:
+        """C14: written blind is read off the record, not assumed from a default."""
+
+        manifest = base_manifest()
+        manifest["kinds"][0]["commitment_ports"] = ["problem"]
+        _, outcome, _ = self._run(manifest, self._script())
+        seen = {
+            event["kind_id"]: event["payload"]["commitment_ports"]
+            for event in self.events_of(outcome, ARTIFACT_SUBMITTED)
+        }
+        self.assertEqual(seen["k.conjecture"], ["problem"])
+        self.assertEqual(seen["k.criticism"], [])
+
+    def test_a_commitment_port_the_kind_does_not_declare_is_refused(self) -> None:
+        manifest = base_manifest()
+        manifest["kinds"][0]["commitment_ports"] = ["nowhere"]
+        self.assertRefuses("MINI_PORT_UNKNOWN", self.compile, manifest)
+
+    def test_the_declared_ports_are_on_the_run_header(self) -> None:
+        manifest = base_manifest()
+        manifest["kinds"][0]["commitment_ports"] = ["problem"]
+        plan = self.compile(manifest)
+        self.assertEqual(plan.kinds["k.conjecture"].to_dict()["commitment_ports"], ["problem"])

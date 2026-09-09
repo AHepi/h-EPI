@@ -749,6 +749,36 @@ The verdict's body call sees everything the cycle produced, through its declared
 ports and their windows; its commitments call sees only its own body, exactly as
 every other artifact's does. Its seat may be model or machine.
 
+## 26a. What the commitments call sees is declared (R37)
+
+**Corrects §25 as built.** The commitments call's exposure was fixed in code.
+It is now declared, and the default is what §25 describes.
+
+A kind may carry `commitment_ports`, a list of its own declared input ports:
+
+```json
+{"kind_id": "…", "input_ports": [{"port_id": "problem", …}, {"port_id": "evidence", …}],
+ "commitment_ports": ["problem"]}
+```
+
+**C13 — the list is the kind's own ports, rendered independently of the stage.**
+`commitment_ports` must name ports the KIND declares; a port it does not declare
+is `MINI_PORT_UNKNOWN` at compile. What the stage named for the body call does
+not constrain it, because the two calls are two different questions and the
+operator configuring the run is entitled to answer them differently. Absent the
+field, the list is empty and the second call sees the body alone, exactly as
+before.
+
+**C14 — the record says what the second call saw.** `ARTIFACT_SUBMITTED` carries
+`commitment_ports`, so "written blind" is a fact read off the record rather than
+assumed from the default. A reader who finds an empty list knows the call saw
+nothing but the body; a reader who finds ports listed knows precisely what else
+reached it.
+
+The test that asserts absence in the dispatched bytes now asserts it **of the
+default**, and a second test shows a declared port arriving in the second call's
+bytes — so the default is checked as a default rather than as a law.
+
 ## 27. Four decisions, not gaps (R34)
 
 `SPEC.md` records these as settled, and stops listing them as absences: the

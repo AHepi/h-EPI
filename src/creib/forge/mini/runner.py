@@ -290,23 +290,38 @@ def render_brief(
     return "\n\n".join(sections), frozenset(exposed)
 
 
-def render_commitments_brief(plan: RunPlan, kind: ArtifactKind, body: str) -> str:
-    """What the second call is shown: the body, and the shape asked for.
+def render_commitments_brief(
+    plan: RunPlan,
+    kind: ArtifactKind,
+    body: str,
+    state: MiniState | None = None,
+    blobs: BlobStore | None = None,
+    stage: Stage | None = None,
+    cycle: int = 0,
+) -> str:
+    """What the second call is shown: the body, whatever ports the kind sends
+    it, and the shape asked for.
 
-    Nothing else reaches it — no problem, no evidence legend, no other
+    BY DEFAULT that is the body alone — no problem, no evidence legend, no other
     artifact, no earlier commitments — so the commitments are written from the
-    body alone, and the record carries this text so anyone can check that.
+    writing itself. That is a default and not a law: a kind may declare
+    ``commitment_ports``, and the record says what the call actually saw (R37).
     """
 
     compiled = plan.formats[kind.kind_id]
+    alone = not kind.commitment_ports
     sections = [
         "# Commitments",
         "Below is one piece of writing. Say what is being committed to if it is taken up.",
-        "You are shown nothing else, and nothing else is relevant.",
-        "## The writing",
-        body,
-        '## What to return\nA JSON object carrying "commitments", a string, and nothing else.',
     ]
+    if alone:
+        sections.append("You are shown nothing else, and nothing else is relevant.")
+    sections.extend(["## The writing", body])
+    if kind.commitment_ports and state is not None and blobs is not None and stage is not None:
+        for port_id in kind.commitment_ports:
+            rendered, _ = render_port(plan, state, blobs, stage, port_id, cycle)
+            sections.append(rendered)
+    sections.append('## What to return\nA JSON object carrying "commitments", a string, and nothing else.')
     if not compiled.freeform_for("commitments"):
         sections.append("## The shape this answer must take\n" + "\n\n".join(compiled.describe_field("commitments")))
     return "\n\n".join(sections)
@@ -646,7 +661,9 @@ def run_mini(plan: RunPlan, root: Path, responder: Responder, responder_id: str 
             calls_made = [{"phase": first_phase, "request_ref": blobs.put(brief.encode("utf-8"))}]
             if attempt is not None and two_calls:
                 calls_made[0]["reply_ref"] = attempt[3]
-                second_brief = render_commitments_brief(plan, kind, attempt[0].body)
+                second_brief = render_commitments_brief(
+                    plan, kind, attempt[0].body, state, blobs, stage, cycle
+                )
                 second = _attempt_submission(
                     plan, recorder, seat_responder, stage, kind, second_brief, blobs, cycle, PHASE_COMMITMENTS
                 )
@@ -682,6 +699,7 @@ def run_mini(plan: RunPlan, root: Path, responder: Responder, responder_id: str 
                     "seat": stage.seat,
                     "reply_ref": reply_ref,
                     "commitment_call": "machine_single" if machine else kind.commitment_call,
+                    "commitment_ports": [] if machine else list(kind.commitment_ports),
                     "calls": calls_made,
                     "recovered": list(submission.recovered),
                     "about": list(submission.about),

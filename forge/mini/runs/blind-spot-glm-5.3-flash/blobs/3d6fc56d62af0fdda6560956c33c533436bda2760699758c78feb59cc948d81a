@@ -1,0 +1,48 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+All three proposals last cycle came back unrunnable: MINI_KERNEL_UNKNOWN, no kernel json.rfc8259.v1. That failure is mine. I named a kernel and defined it inline, but the executor runs only kernels in its registry, and no executor holds that name; a proposal whose kernel cannot be run records nothing, and none of the three predicted movements was ever tested. The execution record did yield one usable fact: the registry itself — mini.kernel.carries-because, mini.kernel.cut-count, mini.kernel.folded, mini.kernel.json-readable. The prototype's own check list was never supplied in this thread; that registry is the closest thing to it. So this cycle I re-anchor on it: one triple per known kernel, four triples, no two sharing a (kernel, transform) pair, and no kernel named that is outside the registry.
+
+Triple 1 — mini.kernel.json-readable. The runnable successor to the unrunnable name: if the kernel does what its name says, accepting iff the input is readable as JSON, the trailing-comma boundary carries over unchanged.
+Kernel — mini.kernel.json-readable.
+Transform — json.trailing-comma: if the input's last non-whitespace character is the right square bracket, insert one comma immediately before it; otherwise return the input unchanged.
+Input — [1,2], which becomes [1,2,].
+Prediction: accept → reject. In RFC 8259 an array's commas separate values and may not trail the last value, so [1,2,] is not a JSON value and no conforming parser accepts it. Contingency: if the run accepts [1,2,], the kernel is looser than the standard its name invokes, and that looseness is then on record.
+
+Triple 2 — mini.kernel.carries-because. Reading: the verdict turns on the input carrying a reason, minimally the word because.
+Kernel — mini.kernel.carries-because.
+Transform — text.drop-because: replace every occurrence of the substring because with a single space; if the input contains none, return it unchanged.
+Input — it holds because the spec says so; the rewrite removes exactly its one reason-word.
+Prediction: accept → reject. Contingent on the name's reading: if the verdict survives deletion of the only because, the kernel does not check what it is named for, and the run says so.
+
+Triple 3 — mini.kernel.cut-count. Reading: the verdict turns on a count of cuts, divisions of the input; the most common textual division is a line break.
+Kernel — mini.kernel.cut-count.
+Transform — text.add-line-break: insert one U+000A between the input's first and second characters; if the input has fewer than two characters, append one U+000A at the end.
+Input — ab, which becomes a, U+000A, b.
+Prediction: reject → accept if acceptance requires at least one cut; accept → reject if it requires zero. Either way the verdict ought to move if cut means a line division; the direction observed settles the threshold, and no movement falsifies the reading.
+
+Triple 4 — mini.kernel.folded. Reading: the verdict turns on the input being folded, i.e. containing a line break. This is the inverse probe of triple 3: same hypothesized structure, opposite direction.
+Kernel — mini.kernel.folded.
+Transform — text.unfold: replace every U+000A with a single space; if the input contains none, return it unchanged.
+Input — a, U+000A, b, which becomes a b.
+Prediction: accept → reject. Contingent on the reading: if the verdict survives unfolding, folded does not mean what the name suggests, and the run constrains what it does mean.
+
+Reading the runs, for all four:
+- Verdict moves and the pair is absent from the catalogue: a boundary nobody had recorded; the run writes it down.
+- Verdict moves and the catalogue already lists the pair: confirmation, nothing new.
+- The catalogue lists the pair as moving and the verdict does not move: a defect in the catalogue, or in the kernel's conformance to its name; either way the mismatch is on record.
+- Triples 2–4 rest on the most natural reading of each kernel's name, since no definition of these kernels has reached this thread; a non-moving run falsifies that reading and is itself a recorded result.
+
+Caveat: the catalogue block cited below — the record of which kernel-and-transform pairs anyone has written down, and whether the verdict is known to move under each — reached me truncated mid-sentence, so I could not check from here whether any of these four pairs is already written down; I propose them anyway and let the runs settle novelty.
+
+Two further triples from last cycle remain convertible: json.single-quote-strings on the input made of U+0022, x, U+0022 (predicted accept → reject), and json.single-to-double-quotes on the input made of U+0027, x, U+0027 (predicted reject → accept), both against mini.kernel.json-readable in place of the unrunnable name. I hold them back this cycle so each check gets exactly one triple; I will re-submit them as standalone proposals next cycle or on request.
+
+If the executor resolves transforms by registry as it resolves kernels, some or all four triples may come back unrunnable on the transform; that outcome is itself a fact worth having — it would mean transforms, like kernels, must be named from the registry, and I would re-submit against whatever transform names it holds.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

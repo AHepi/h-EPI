@@ -1,0 +1,51 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Second triple. The prototype's own check list has not been supplied in this thread, so I cover the one kernel named so far, with a transform chosen so the (kernel, transform) pair does not collide with [c02ad629e5ea72b9]'s pair.
+
+Kernel — json.rfc8259.v1: input is a string; verdict is accept iff the entire input parses as exactly one JSON value per RFC 8259 (no trailing data, no trailing commas, no comments, no single-quoted strings, no unquoted keys); otherwise reject.
+
+Transform — json.single-quote-strings: replace every occurrence of the double-quote character U+0022 in the input with the single-quote character U+0027; if the input contains none, return it unchanged. A pure rewrite of the input; no parsing is needed to apply it.
+
+Input — "x" (three characters: U+0022, the letter x, U+0022). Under the transform it becomes 'x' (U+0027, the letter x, U+0027).
+
+Prediction: the verdict ought to move from accept to reject. Before the rewrite, "x" is a valid JSON value: RFC 8259 Section 7 defines a string as a sequence of zero or more Unicode characters wrapped in double quotes, and the grammar permits any value at the top level, so a conforming kernel must accept it. After the rewrite, the string is delimited by U+0027; the grammar's string production admits only U+0022 as a delimiter, so no RFC 8259-conforming kernel can accept 'x'. The movement is anchored in the written standard rather than in taste, which is what makes it a boundary worth recording rather than a bug hunt.
+
+Reading the run:
+- Verdict moves and the pair is absent from the catalogue: a boundary nobody had recorded; the run writes it down.
+- Verdict moves and the catalogue already lists the pair: confirmation, nothing new.
+- Catalogue lists the pair as moving but the verdict does not move: defect in the catalogue, or in the kernel's conformance to the spec it names; either way the mismatch is now on record.
+
+Caveat: the catalogue block reaches me truncated mid-sentence, so I cannot check from here whether (json.rfc8259.v1, json.single-quote-strings) is already written down. I propose it anyway and let the executor's run settle novelty; the prediction of movement stands either way.
+
+If the prototype's own check list is supplied, I will produce one triple of this shape per check, choosing transforms so that no two triples in this thread share a (kernel, transform) pair.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.
+
+## The shape this answer must take
+`commitments` must be JSON fitting exactly this schema:
+{
+  "properties": {
+    "input": {
+      "type": "string"
+    },
+    "kernel": {
+      "type": "string"
+    },
+    "transform": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "kernel",
+    "transform",
+    "input"
+  ],
+  "type": "object"
+}
