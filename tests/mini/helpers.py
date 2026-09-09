@@ -36,6 +36,25 @@ CRITICISM_KIND: dict[str, Any] = {
     "output_port": {"port_id": "out", "produces_kind": "k.criticism"},
 }
 
+#: Every cycle ends with one verdict stage (R35 c), so the fixture carries one.
+#: It sits on a MACHINE seat, whose function blindspot.py registers, so no test
+#: script has to feed it and no assertion about a model call is disturbed.
+VERDICT_KIND: dict[str, Any] = {
+    "kind_id": "mini.verdict.v1",
+    "title": "Verdict",
+    "input_ports": [
+        {"port_id": "this_cycle", "port_type": "artifacts_of_kind", "params": {"kind_id": "k.conjecture"}, "window": "this_cycle"}
+    ],
+    "output_port": {"port_id": "out", "produces_kind": "mini.verdict.v1"},
+}
+
+VERDICT_STAGE: dict[str, Any] = {
+    "stage_id": "verdict",
+    "kind_id": "mini.verdict.v1",
+    "seat": "machine",
+    "ports": ["this_cycle"],
+}
+
 SOURCE_TEXT = "The first paragraph says one thing.\n\nThe second paragraph says another thing entirely."
 
 
@@ -87,8 +106,47 @@ class MiniTestCase(unittest.TestCase):
         path.write_bytes(canonical_bytes(dict(payload)) + b"\n")
         return path
 
-    def compile(self, manifest: Mapping[str, Any], policy_dir: Path | None = None) -> RunPlan:
-        return compile_manifest(self.write_manifest(manifest), policy_dir)
+    def compile(self, manifest: Mapping[str, Any], policy_dir: Path | None = None, verdict: bool = True) -> RunPlan:
+        """Compile a manifest, adding the required verdict stage if it has none.
+
+        Every cycle must end with one stage of kind ``mini.verdict.v1`` (R35 c).
+        A test that is about something else should not have to say so, so the
+        fixture supplies one; a test that is about the rule itself passes
+        ``verdict=False`` and gets the manifest exactly as written.
+        """
+
+        prepared = dict(manifest)
+        if verdict:
+            prepared = self._with_verdict(prepared)
+        return compile_manifest(self.write_manifest(prepared), policy_dir)
+
+    @staticmethod
+    def _with_verdict(manifest: dict[str, Any]) -> dict[str, Any]:
+        """Add the required verdict kind, and its stage if none is declared.
+
+        The kind is APPENDED, so a test indexing into ``kinds`` keeps its
+        indices; the stage goes last before the end stage, where the rule
+        requires it.
+        """
+
+        stages = list(manifest.get("stages") or [])
+        kinds = list(manifest.get("kinds") or [])
+        if not any(isinstance(item, dict) and item.get("kind_id") == "mini.verdict.v1" for item in kinds):
+            kind = copy.deepcopy(VERDICT_KIND)
+            drawn = sorted(
+                {
+                    stage["kind_id"]
+                    for stage in stages
+                    if stage.get("kind_id") and stage["kind_id"] != "mini.verdict.v1"
+                }
+            )
+            kind["input_ports"][0]["params"]["kind_id"] = drawn[0] if drawn else "mini.verdict.v1"
+            kinds = kinds + [kind]
+        if not any(stage.get("kind_id") == "mini.verdict.v1" for stage in stages):
+            end = [stage for stage in stages if stage.get("end")]
+            body = [stage for stage in stages if not stage.get("end")]
+            stages = body + [copy.deepcopy(VERDICT_STAGE)] + end
+        return {**manifest, "kinds": kinds, "stages": stages}
 
     def run_plan(self, plan: RunPlan, script: Mapping[str, list[str]], name: str = "run") -> RunOutcome:
         return run_mini(plan, self.tmp / name, ScriptedResponder(script))

@@ -66,11 +66,19 @@ class CompiledFormat:
             f"`{field}` {item.rendered}" for field in FORMAT_FIELDS for item in self.checks.get(field, ())
         )
 
-    def failures(self, submission: dict[str, Any]) -> tuple[str, ...]:
+    def describe_field(self, field: str) -> tuple[str, ...]:
+        """The compiled format of one field, in full."""
+
+        return tuple(f"`{field}` {item.rendered}" for item in self.checks.get(field, ()))
+
+    def freeform_for(self, field: str) -> bool:
+        return not self.checks.get(field, ())
+
+    def failures(self, submission: dict[str, Any], fields: tuple[str, ...] = FORMAT_FIELDS) -> tuple[str, ...]:
         """Return one reason per failing check; empty means the format held."""
 
         reasons: list[str] = []
-        for field in FORMAT_FIELDS:
+        for field in fields:
             value = submission.get(field)
             if type(value) is not str:
                 continue

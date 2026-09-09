@@ -30,7 +30,7 @@ class FreeformTests(MiniTestCase):
         plan, outcome = self.run_manifest(base_manifest())
         self.assertTrue(plan.formats["k.conjecture"].freeform)
         self.assertEqual(self.events_of(outcome, FORMAT_FAILURE), [])
-        self.assertEqual(len(self.events_of(outcome, ARTIFACT_SUBMITTED)), 2)
+        self.assertEqual(len(self.events_of(outcome, ARTIFACT_SUBMITTED)), 3)
 
     def test_an_empty_body_is_still_refused(self) -> None:
         manifest = base_manifest()
@@ -66,7 +66,7 @@ class KeywordGrammarTests(MiniTestCase):
         script = {"c1": [submission("It holds BECAUSE the source says so.", "c")], "x1": [submission("a", "b")]}
         _, outcome = self.run_manifest(self._manifest(), script)
         self.assertEqual(self.events_of(outcome, FORMAT_FAILURE), [])
-        self.assertEqual(len(self.events_of(outcome, ARTIFACT_SUBMITTED)), 2)
+        self.assertEqual(len(self.events_of(outcome, ARTIFACT_SUBMITTED)), 3)
 
     def test_the_format_error_is_shown_to_the_seat_on_the_retry(self) -> None:
         """R10: a failing submission is re-asked with the reason in the brief."""
@@ -233,7 +233,7 @@ class TheFormatIsShownTests(MiniTestCase):
                 )
 
         run_mini(plan, self.tmp / "run", LiveResponder("a-model", _Stub()))
-        self.assertEqual(len(sent), 1)
+        self.assertEqual(len(sent), 2)  # a body call and a commitments call
         first = sent[0].decode("utf-8")
         self.assertIn('\\"commit\\"', first)
         self.assertIn("required", first)

@@ -68,6 +68,7 @@ class ArtifactKind:
     optional_fields: tuple[str, ...]
     format_spec: Mapping[str, Any] | None
     failure_policy: FailurePolicy
+    commitment_call: str = "two"
 
     def port(self, port_id: str) -> InputPort:
         for item in self.input_ports:
@@ -83,6 +84,7 @@ class ArtifactKind:
             "output_port": self.output_port.to_dict(),
             "optional_fields": list(self.optional_fields),
             "failure_policy": self.failure_policy.to_dict(),
+            "commitment_call": self.commitment_call,
         }
 
 
@@ -123,6 +125,12 @@ def kind_from_dict(raw: Any, where: str) -> ArtifactKind:
         text(item, f"{where}.optional_fields[{index}]")
         for index, item in enumerate(array_value(optional_raw, f"{where}.optional_fields"))
     )
+    commitment_call = entry.get("commitment_call", "two")
+    if commitment_call not in ("two", "single"):
+        raise MiniError(
+            "MINI_COMMITMENT_CALL_UNKNOWN",
+            f"kind {kind_id!r} sets commitment_call to {commitment_call!r}; it must be 'two' or 'single'",
+        )
     reserved = set(REQUIRED_SUBMISSION_FIELDS) | set(TEMPLATE_SUBMISSION_FIELDS)
     clash = sorted(set(optional) & reserved)
     if clash:
@@ -135,6 +143,7 @@ def kind_from_dict(raw: Any, where: str) -> ArtifactKind:
         optional_fields=optional,
         format_spec=entry.get("format"),
         failure_policy=failure_policy_from_dict(entry.get("failure_policy"), f"{where}.failure_policy"),
+        commitment_call=commitment_call,
     )
 
 
@@ -179,16 +188,37 @@ class Submission:
     def as_fields(self) -> dict[str, Any]:
         return {"body": self.body, "commitments": self.commitments}
 
+    def joined(self, other: "Submission") -> "Submission":
+        """Join a body call's reply to its commitments call's reply."""
+
+        return Submission(
+            body=self.body,
+            commitments=other.commitments,
+            citations=self.citations,
+            about=self.about,
+            answers=self.answers,
+            extra={**dict(self.extra), **dict(other.extra)},
+            recovered=tuple(dict.fromkeys(self.recovered + other.recovered)),
+        )
+
 
 def _string_array(raw: Any, where: str) -> tuple[str, ...]:
     items = array_value(raw, where, "MINI_SUBMISSION_FIELD_TYPE")
     return tuple(text(item, f"{where}[{index}]", "MINI_SUBMISSION_FIELD_TYPE") for index, item in enumerate(items))
 
 
-def read_submission(reply: str, kind: ArtifactKind) -> Submission:
+PHASE_BODY = "body"
+PHASE_COMMITMENTS = "commitments"
+PHASE_BOTH = "both"
+
+
+def read_submission(reply: str, kind: ArtifactKind, phase: str = PHASE_BOTH) -> Submission:
     """Read a reply into a submission, or refuse it with a typed reason.
 
-    Only ``body`` and ``commitments`` are required, whatever the kind (R7).
+    Only ``body`` and ``commitments`` are required, whatever the kind (R7). Under
+    the two-call shape one phase is read at a time: the body call returns the
+    body and the claims about it, the commitments call returns the commitments
+    and nothing else, and the two are joined afterwards.
     """
 
     unfenced, fenced = strip_fence(reply)
@@ -198,11 +228,16 @@ def read_submission(reply: str, kind: ArtifactKind) -> Submission:
         raise MiniError("MINI_SUBMISSION_NOT_JSON", f"the reply is not readable as JSON: {error}") from error
     if type(parsed) is not dict:
         raise MiniError("MINI_SUBMISSION_NOT_JSON", "the reply is not a JSON object")
-    for name in REQUIRED_SUBMISSION_FIELDS:
+    wanted = REQUIRED_SUBMISSION_FIELDS if phase == PHASE_BOTH else (phase,)
+    for name in wanted:
         if name not in parsed:
             raise MiniError("MINI_SUBMISSION_MISSING_FIELD", f"the submission carries no {name!r}")
         if type(parsed[name]) is not str:
             raise MiniError("MINI_SUBMISSION_FIELD_TYPE", f"{name!r} must be a string")
+    # Reading one phase, only that phase's field is required and read. Fields
+    # the other phase owns are ignored rather than refused, so a single prepared
+    # reply carrying both can drive both calls; a reply read as a WHOLE artifact
+    # is still strict about anything nobody declared.
     admitted = set(REQUIRED_SUBMISSION_FIELDS) | set(TEMPLATE_SUBMISSION_FIELDS) | set(kind.optional_fields)
     unknown = sorted(set(parsed) - admitted)
     if unknown:
@@ -224,15 +259,16 @@ def read_submission(reply: str, kind: ArtifactKind) -> Submission:
                     f"submission.citations[{index}].{name} must be a non-empty string",
                 )
         declared.append({**entry, "recovered": None})
-    recovered_citations = recover_prose_citations(parsed["body"])
+    body_text = parsed.get("body", "")
+    recovered_citations = recover_prose_citations(body_text) if type(body_text) is str else ()
     citations = tuple(declared) + recovered_citations
     extra: dict[str, str] = {}
     for name in kind.optional_fields:
         if name in parsed:
             extra[name] = text(parsed[name], f"submission.{name}", "MINI_SUBMISSION_FIELD_TYPE")
     return Submission(
-        body=parsed["body"],
-        commitments=parsed["commitments"],
+        body=parsed.get("body", ""),
+        commitments=parsed.get("commitments", ""),
         citations=citations,
         about=_string_array(parsed.get("about") or [], "submission.about"),
         answers=_string_array(parsed.get("answers") or [], "submission.answers"),

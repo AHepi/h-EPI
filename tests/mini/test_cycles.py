@@ -15,7 +15,7 @@ from creib.forge.mini.stops import (
 )
 from creib.forge.mini.windows import ALL, Window, window_from_dict
 
-from .helpers import MiniTestCase, base_manifest, submission
+from .helpers import VERDICT_KIND, MiniTestCase, base_manifest, submission
 
 
 def _script(cycles: int) -> dict[str, list[str]]:
@@ -30,7 +30,7 @@ class TheCycleRepeatsTests(MiniTestCase):
         manifest = base_manifest()
         manifest["cycles"] = {"max_cycles": 3}
         _, outcome = self.run_manifest(manifest, _script(3))
-        self.assertEqual(outcome.stages_entered, ("c1", "x1", "c1", "x1", "c1", "x1"))
+        self.assertEqual(outcome.stages_entered, ("c1", "x1", "verdict") * 3)
         self.assertEqual(outcome.cycles_completed, 3)
 
     def test_one_cycle_is_the_default(self) -> None:
@@ -43,7 +43,7 @@ class TheCycleRepeatsTests(MiniTestCase):
         manifest["cycles"] = {"max_cycles": 2}
         _, outcome = self.run_manifest(manifest, _script(2))
         entered = [(event["cycle"], event["stage_id"]) for event in self.events_of(outcome, STAGE_ENTERED)]
-        self.assertEqual(entered, [(1, "c1"), (1, "x1"), (2, "c1"), (2, "x1")])
+        self.assertEqual(entered, [(1, "c1"), (1, "x1"), (1, "verdict"), (2, "c1"), (2, "x1"), (2, "verdict")])
         for event in self.events_of(outcome, ARTIFACT_SUBMITTED):
             self.assertIn(event["cycle"], (1, 2))
 
@@ -53,7 +53,7 @@ class TheCycleRepeatsTests(MiniTestCase):
         plan, outcome = self.run_manifest(manifest, _script(2))
         state = replay(outcome.root / "log.jsonl", plan.genesis)
         self.assertEqual(
-            sorted(record["cycle"] for record in state.artifacts.values()), [1, 1, 2, 2]
+            sorted(record["cycle"] for record in state.artifacts.values()), [1, 1, 1, 2, 2, 2]
         )
 
 
@@ -66,8 +66,10 @@ class TheHostStopsTests(MiniTestCase):
         self.assertEqual(self.events_of(outcome, RUN_ENDED)[0]["payload"]["cycles_completed"], 2)
 
     def test_the_budget_cap_stops_the_run_before_a_cycle_not_inside_one(self) -> None:
+        """Two calls per artifact, so one cycle of two stages costs four."""
+
         manifest = base_manifest()
-        manifest["cycles"] = {"max_cycles": 10, "max_calls": 3}
+        manifest["cycles"] = {"max_cycles": 10, "max_calls": 5}
         _, outcome = self.run_manifest(manifest, _script(10))
         self.assertEqual(outcome.stop_reason, "budget_cap")
         self.assertEqual(outcome.cycles_completed, 2)
@@ -76,8 +78,11 @@ class TheHostStopsTests(MiniTestCase):
     def test_a_registered_stop_condition_stops_the_run(self) -> None:
         manifest = base_manifest()
         manifest["cycles"] = {"max_cycles": 9, "stop_condition": STOP_NO_ARTIFACT_LAST_CYCLE}
-        manifest["kinds"][0]["failure_policy"] = {"retries": 0}
-        manifest["kinds"][1]["failure_policy"] = {"retries": 0}
+        for kind in manifest["kinds"]:
+            kind["failure_policy"] = {"retries": 0, "skip_on_empty_port": True}
+        verdict = copy.deepcopy(VERDICT_KIND)
+        verdict["failure_policy"] = {"retries": 0, "skip_on_empty_port": True}
+        manifest["kinds"].append(verdict)
         script = {
             "c1": [submission("one", "c"), "not json", "not json"],
             "x1": [submission("two", "c"), "not json", "not json"],

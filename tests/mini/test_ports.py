@@ -40,7 +40,7 @@ class DeclaredPortTypeTests(MiniTestCase):
         }
         plan, outcome = self.run_manifest(manifest, script)
         self.assertIn("criticisms", plan.port_types)
-        self.assertEqual(outcome.stages_entered, ("c1", "x1", "r1"))
+        self.assertEqual(outcome.stages_entered, ("c1", "x1", "r1", "verdict"))
 
     def test_a_port_naming_a_type_no_registry_entry_defines_is_refused(self) -> None:
         manifest = base_manifest()

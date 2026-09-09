@@ -147,8 +147,8 @@ class ReorderingTests(MiniTestCase):
 
         _, ordered = self.run_manifest(self._manifest(ATTENTION_OFF), script, name="ordered")
         _, reordered = self.run_manifest(self._manifest(ATTENTION_MOST_UNANSWERED), script, name="reordered")
-        self.assertEqual(ordered.stages_entered, ("c1", "x1", "n1", "c2"))
-        self.assertEqual(reordered.stages_entered, ("c1", "x1", "c2", "n1"))
+        self.assertEqual(ordered.stages_entered, ("c1", "x1", "n1", "c2", "verdict"))
+        self.assertEqual(reordered.stages_entered, ("c1", "x1", "c2", "n1", "verdict"))
         self.assertTrue(self.events_of(reordered, ATTENTION_CHOSE))
 
         def bodies(outcome) -> dict[str, str]:

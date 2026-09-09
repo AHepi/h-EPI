@@ -96,7 +96,9 @@ class ResponderTests(MiniTestCase):
     def test_the_responder_reports_what_it_used(self) -> None:
         responder = ScriptedResponder({"c1": ["one", "two"]})
         responder.reply(Request(stage_id="c1", kind_id="k", attempt=0, brief="a brief"))
-        self.assertEqual(responder.used, {"c1": 1})
+        # Consumption is keyed by stage and phase, so the two calls of one
+        # artifact draw from the same list independently.
+        self.assertEqual(responder.used, {"c1#body": 1})
 
 
 class StoreTests(MiniTestCase):

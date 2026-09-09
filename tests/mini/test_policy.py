@@ -53,7 +53,7 @@ class DefaultPolicyTests(MiniTestCase):
 
     def test_the_refusal_does_not_stop_the_run(self) -> None:
         _, outcome = self.run_manifest(_two_conjecturers(), _SCRIPT)
-        self.assertEqual(outcome.stages_entered, ("c1", "x1", "c2"))
+        self.assertEqual(outcome.stages_entered, ("c1", "x1", "c2", "verdict"))
         self.assertEqual(outcome.stop_reason, "cycle_cap")
 
 
@@ -103,7 +103,7 @@ class OverrideTests(MiniTestCase):
         self.assertEqual(len(refusals), 1)
         self.assertEqual(refusals[0]["payload"]["code"], "MINI_POLICY_READ_REFUSED")
         self.assertEqual(refusals[0]["payload"]["port_id"], "conjectures")
-        self.assertEqual(len(self.events_of(outcome, "ARTIFACT_SUBMITTED")), 1)
+        self.assertEqual(len(self.events_of(outcome, "ARTIFACT_SUBMITTED")), 2)
 
     def test_a_grant_naming_an_undeclared_kind_is_refused(self) -> None:
         manifest = base_manifest()

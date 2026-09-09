@@ -7,7 +7,7 @@ import copy
 from creib.forge.mini.failures import DEFAULT_FAILURE_POLICY, FailurePolicy, failure_policy_from_dict
 from creib.forge.mini.log import ARTIFACT_SUBMITTED, FORMAT_FAILURE, PORT_EMPTY, RUN_ENDED, SUBMISSION_DROPPED
 
-from .helpers import MiniTestCase, base_manifest, submission
+from .helpers import VERDICT_KIND, MiniTestCase, base_manifest, submission
 
 BAD = submission("nothing to see", "c")
 GOOD = submission("it holds BECAUSE the source says so", "c")
@@ -28,7 +28,7 @@ class RetryTests(MiniTestCase):
     def test_the_seat_is_re_asked_and_a_good_second_reply_is_accepted(self) -> None:
         _, outcome = self.run_manifest(_manifest({"retries": 1}), {"c1": [BAD, GOOD]})
         self.assertEqual(len(self.events_of(outcome, FORMAT_FAILURE)), 1)
-        self.assertEqual(len(self.events_of(outcome, ARTIFACT_SUBMITTED)), 1)
+        self.assertEqual(len(self.events_of(outcome, ARTIFACT_SUBMITTED)), 2)
         self.assertEqual(self.events_of(outcome, SUBMISSION_DROPPED), [])
 
     def test_no_retries_means_one_attempt(self) -> None:
@@ -41,8 +41,9 @@ class DropTests(MiniTestCase):
     def test_a_submission_still_failing_after_its_retries_is_dropped_and_the_run_goes_on(self) -> None:
         manifest = _manifest({"retries": 1}, stages=2)
         _, outcome = self.run_manifest(manifest, {"c1": [BAD, BAD], "c2": [GOOD]})
-        self.assertEqual(len(self.events_of(outcome, SUBMISSION_DROPPED)), 1)
-        self.assertEqual(len(self.events_of(outcome, ARTIFACT_SUBMITTED)), 1)
+        dropped = [event for event in self.events_of(outcome, SUBMISSION_DROPPED) if event["kind_id"] == "k.conjecture"]
+        self.assertEqual(len(dropped), 1)
+        self.assertEqual(len(self.events_of(outcome, ARTIFACT_SUBMITTED)), 2)
         self.assertEqual(self.events_of(outcome, RUN_ENDED)[0]["payload"]["stop_reason"], "cycle_cap")
 
     def test_the_default_is_drop_after_one_retry_and_never_stops(self) -> None:
@@ -178,15 +179,17 @@ class EmptyPortTests(MiniTestCase):
         manifest["kinds"][0]["format"] = copy.deepcopy(KEYWORD_SPEC)
         manifest["kinds"][0]["failure_policy"] = {"retries": 0}
         manifest["kinds"][1]["failure_policy"] = {"skip_on_empty_port": skip}
+        verdict = copy.deepcopy(VERDICT_KIND)
+        verdict["failure_policy"] = {"skip_on_empty_port": skip}
+        manifest["kinds"].append(verdict)
         return manifest
 
     def test_by_default_the_stage_still_runs_and_the_notice_is_on_the_record(self) -> None:
         _, outcome = self.run_manifest(self._manifest(False), {"c1": [BAD], "x1": [submission("a", "b")]})
-        notices = self.events_of(outcome, "PORT_EMPTY")
+        notices = [event for event in self.events_of(outcome, "PORT_EMPTY") if event["stage_id"] == "x1"]
         self.assertEqual(len(notices), 1)
         self.assertEqual(notices[0]["payload"]["port_id"], "conjectures")
-        self.assertEqual(notices[0]["stage_id"], "x1")
-        self.assertEqual(len(self.events_of(outcome, ARTIFACT_SUBMITTED)), 1)
+        self.assertEqual(len(self.events_of(outcome, ARTIFACT_SUBMITTED)), 2)
 
     def test_the_notice_comes_before_the_stage_is_asked(self) -> None:
         _, outcome = self.run_manifest(self._manifest(False), {"c1": [BAD], "x1": [submission("a", "b")]})
@@ -195,15 +198,16 @@ class EmptyPortTests(MiniTestCase):
 
     def test_set_to_skip_the_stage_produces_nothing(self) -> None:
         _, outcome = self.run_manifest(self._manifest(True), {"c1": [BAD]})
-        self.assertEqual(len(self.events_of(outcome, "PORT_EMPTY")), 1)
+        self.assertEqual(len([e for e in self.events_of(outcome, "PORT_EMPTY") if e["stage_id"] == "x1"]), 1)
         self.assertEqual(self.events_of(outcome, ARTIFACT_SUBMITTED), [])
         dropped = [event for event in self.events_of(outcome, SUBMISSION_DROPPED) if event["stage_id"] == "x1"]
         self.assertEqual(len(dropped), 1)
         self.assertIn("drew nothing", dropped[0]["payload"]["reasons"][0])
+        self.assertEqual([e["stage_id"] for e in self.events_of(outcome, ARTIFACT_SUBMITTED)], [])
 
     def test_a_port_that_drew_something_writes_no_notice(self) -> None:
         _, outcome = self.run_manifest(self._manifest(False), {"c1": [GOOD], "x1": [submission("a", "b")]})
-        self.assertEqual(self.events_of(outcome, "PORT_EMPTY"), [])
+        self.assertEqual([e for e in self.events_of(outcome, "PORT_EMPTY") if e["stage_id"] == "x1"], [])
 
     def test_an_empty_evidence_port_is_not_a_notice(self) -> None:
         """C6: an empty evidence port is the ordinary state of a first cycle."""

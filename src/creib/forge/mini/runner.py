@@ -19,7 +19,8 @@ from .attention import ATTENTION_OFF, PendingStage, choose_next
 from .common import ARTIFACT_DOMAIN, MiniError, content_id, digest_bytes
 from .evidence import Block, check_citations, cut_source, render_legend
 from .executor import Request, Responder
-from .kinds import ArtifactKind, Submission, read_submission
+from .formats import FORMAT_FIELDS
+from .kinds import PHASE_BODY, PHASE_BOTH, PHASE_COMMITMENTS, ArtifactKind, Submission, read_submission
 from .log import (
     ARTIFACT_SUBMITTED,
     ATTENTION_CHOSE,
@@ -41,7 +42,7 @@ from .log import (
     build_event,
 )
 from .machines import MachineContext, MachineResponder, resolve_machine_seat
-from .manifest import SEAT_MACHINE, RunPlan, Stage
+from .manifest import COMMITMENT_CALL_TWO, SEAT_MACHINE, VERDICT_KIND_ID, RunPlan, Stage
 from .ports import PortType, port_draws_kinds, port_draws_tiers
 from .routing import Destination
 from .signals import compute_signals
@@ -289,6 +290,28 @@ def render_brief(
     return "\n\n".join(sections), frozenset(exposed)
 
 
+def render_commitments_brief(plan: RunPlan, kind: ArtifactKind, body: str) -> str:
+    """What the second call is shown: the body, and the shape asked for.
+
+    Nothing else reaches it — no problem, no evidence legend, no other
+    artifact, no earlier commitments — so the commitments are written from the
+    body alone, and the record carries this text so anyone can check that.
+    """
+
+    compiled = plan.formats[kind.kind_id]
+    sections = [
+        "# Commitments",
+        "Below is one piece of writing. Say what is being committed to if it is taken up.",
+        "You are shown nothing else, and nothing else is relevant.",
+        "## The writing",
+        body,
+        '## What to return\nA JSON object carrying "commitments", a string, and nothing else.',
+    ]
+    if not compiled.freeform_for("commitments"):
+        sections.append("## The shape this answer must take\n" + "\n\n".join(compiled.describe_field("commitments")))
+    return "\n\n".join(sections)
+
+
 def _batch_evidence(plan: RunPlan, blobs: BlobStore, recorder: _Recorder) -> None:
     for source in plan.sources:
         reference = blobs.put(source.raw)
@@ -409,6 +432,7 @@ def _attempt_submission(
     brief: str,
     blobs: BlobStore,
     cycle: int = 0,
+    phase: str = PHASE_BOTH,
 ) -> tuple[Submission, int, int, str] | None:
     """Ask the seat, and keep every reply — the refused ones included.
 
@@ -419,6 +443,7 @@ def _attempt_submission(
     """
 
     compiled = plan.formats[kind.kind_id]
+    checked = FORMAT_FIELDS if phase == PHASE_BOTH else (phase,)
     policy = kind.failure_policy
     reasons: tuple[str, ...] = ()
     refused_refs: list[str] = []
@@ -427,47 +452,54 @@ def _attempt_submission(
         # adds the error BESIDE it rather than in place of it.
         shown = brief if attempt == 0 else brief + "\n\n## The last reply was refused, for these reasons\n" + "\n".join(reasons)
         reply = responder.reply(
-            Request(stage_id=stage.stage_id, kind_id=kind.kind_id, attempt=attempt, brief=shown, cycle=cycle)
+            Request(
+                stage_id=stage.stage_id,
+                kind_id=kind.kind_id,
+                attempt=attempt,
+                brief=shown,
+                cycle=cycle,
+                phase=phase,
+            )
         )
         reply_ref = blobs.put(reply.text.encode("utf-8"))
         try:
-            submission = read_submission(reply.text, kind)
+            submission = read_submission(reply.text, kind, phase)
         except MiniError as error:
             reasons = (str(error),)
             refused_refs.append(reply_ref)
             recorder.emit(
                 FORMAT_FAILURE,
-                {"attempt": attempt, "reasons": list(reasons), "code": error.code, "seat": stage.seat},
+                {"attempt": attempt, "reasons": list(reasons), "code": error.code, "seat": stage.seat, "phase": phase},
                 stage_id=stage.stage_id,
                 kind_id=kind.kind_id,
                 body_ref=reply_ref,
             )
             continue
-        if not submission.body.strip() or not submission.commitments.strip():
+        if any(not getattr(submission, name).strip() for name in checked):
             reasons = ("body and commitments must each carry something",)
             refused_refs.append(reply_ref)
             recorder.emit(
                 FORMAT_FAILURE,
-                {"attempt": attempt, "reasons": list(reasons), "code": "MINI_SUBMISSION_MISSING_FIELD", "seat": stage.seat},
+                {"attempt": attempt, "reasons": list(reasons), "code": "MINI_SUBMISSION_MISSING_FIELD", "seat": stage.seat, "phase": phase},
                 stage_id=stage.stage_id,
                 kind_id=kind.kind_id,
                 body_ref=reply_ref,
             )
             continue
-        reasons = compiled.failures(submission.as_fields())
+        reasons = compiled.failures(submission.as_fields(), checked)
         if not reasons:
             return submission, reply.prompt_tokens, reply.completion_tokens, reply_ref
         refused_refs.append(reply_ref)
         recorder.emit(
             FORMAT_FAILURE,
-            {"attempt": attempt, "reasons": list(reasons), "code": "MINI_FORMAT_FAILURE", "seat": stage.seat},
+            {"attempt": attempt, "reasons": list(reasons), "code": "MINI_FORMAT_FAILURE", "seat": stage.seat, "phase": phase},
             stage_id=stage.stage_id,
             kind_id=kind.kind_id,
             body_ref=reply_ref,
         )
     recorder.emit(
         SUBMISSION_DROPPED,
-        {"attempts": policy.retries + 1, "reasons": list(reasons), "refused_refs": refused_refs},
+        {"attempts": policy.retries + 1, "reasons": list(reasons), "refused_refs": refused_refs, "phase": phase},
         stage_id=stage.stage_id,
         kind_id=kind.kind_id,
     )
@@ -501,7 +533,10 @@ def _offered(
 ) -> tuple[PendingStage, ...]:
     """The stages attention may choose from: what is left, plus what may repeat."""
 
-    offered = [PendingStage(item.stage_id, str(item.kind_id)) for item in remaining if not item.end]
+    # The verdict stage is withheld until it is the only one left, so "a cycle
+    # ends with the verdict" survives a re-ordering policy (C12).
+    others = [item for item in remaining if not item.end and item.kind_id != VERDICT_KIND_ID]
+    offered = [PendingStage(item.stage_id, str(item.kind_id)) for item in (others or [item for item in remaining if not item.end])]
     for stage_id, used in repeats_used.items():
         if used < plan.stage(stage_id).max_repeats:
             offered.append(PendingStage(stage_id, str(plan.stage(stage_id).kind_id)))
@@ -599,11 +634,36 @@ def run_mini(plan: RunPlan, root: Path, responder: Responder, responder_id: str 
                 )
                 continue
             brief, exposed = render_brief(plan, state, blobs, stage, cycle)
-            seat_responder = machine_responder(plan, state, blobs, stage, cycle) if stage.seat == SEAT_MACHINE else responder
-            before = getattr(seat_responder, "calls", None)
-            attempt = _attempt_submission(plan, recorder, seat_responder, stage, kind, brief, blobs, cycle)
-            if stage.seat != SEAT_MACHINE:
+            machine = stage.seat == SEAT_MACHINE
+            seat_responder = machine_responder(plan, state, blobs, stage, cycle) if machine else responder
+            two_calls = (not machine) and kind.commitment_call == COMMITMENT_CALL_TWO
+            first_phase = PHASE_BODY if two_calls else PHASE_BOTH
+            attempt = _attempt_submission(
+                plan, recorder, seat_responder, stage, kind, brief, blobs, cycle, first_phase
+            )
+            if not machine:
                 calls += 1 + (kind.failure_policy.retries if attempt is None else 0)
+            calls_made = [{"phase": first_phase, "request_ref": blobs.put(brief.encode("utf-8"))}]
+            if attempt is not None and two_calls:
+                calls_made[0]["reply_ref"] = attempt[3]
+                second_brief = render_commitments_brief(plan, kind, attempt[0].body)
+                second = _attempt_submission(
+                    plan, recorder, seat_responder, stage, kind, second_brief, blobs, cycle, PHASE_COMMITMENTS
+                )
+                calls += 1 + (kind.failure_policy.retries if second is None else 0)
+                if second is None:
+                    attempt = None
+                else:
+                    calls_made.append(
+                        {
+                            "phase": PHASE_COMMITMENTS,
+                            "request_ref": blobs.put(second_brief.encode("utf-8")),
+                            "reply_ref": second[3],
+                        }
+                    )
+                    attempt = (attempt[0].joined(second[0]), attempt[1] + second[1], attempt[2] + second[2], attempt[3])
+            elif attempt is not None:
+                calls_made[0]["reply_ref"] = attempt[3]
             if attempt is None:
                 drops = state.drops_by_kind.get(kind.kind_id, 0)
                 attempts = drops + state.submissions_by_kind.get(kind.kind_id, 0)
@@ -621,6 +681,8 @@ def run_mini(plan: RunPlan, root: Path, responder: Responder, responder_id: str 
                 {
                     "seat": stage.seat,
                     "reply_ref": reply_ref,
+                    "commitment_call": "machine_single" if machine else kind.commitment_call,
+                    "calls": calls_made,
                     "recovered": list(submission.recovered),
                     "about": list(submission.about),
                     "answers": list(submission.answers),

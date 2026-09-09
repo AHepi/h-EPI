@@ -51,12 +51,12 @@ class DeclaredOrderTests(MiniTestCase):
         _, outcome = self.run_manifest(_operator_example(), _EXAMPLE_SCRIPT)
         self.assertEqual(
             outcome.stages_entered,
-            ("conjecture-1", "conjecture-2", "note-1", "criticism", "note-2"),
+            ("conjecture-1", "conjecture-2", "note-1", "criticism", "note-2", "verdict"),
         )
         self.assertEqual(outcome.stop_reason, "cycle_cap")
         self.assertEqual(
             [event["kind_id"] for event in self.events_of(outcome, ARTIFACT_SUBMITTED)],
-            ["k.conjecture", "k.conjecture", "example.note.v1", "k.criticism", "example.note.v1"],
+            ["k.conjecture", "k.conjecture", "example.note.v1", "k.criticism", "example.note.v1", "mini.verdict.v1"],
         )
 
     def test_the_shipped_operator_example_manifest_compiles_and_runs(self) -> None:
@@ -68,10 +68,10 @@ class DeclaredOrderTests(MiniTestCase):
         plan = compile_manifest(root / "forge" / "mini" / "manifests" / "operator-example" / "manifest.json")
         self.assertEqual(
             [stage.stage_id for stage in plan.stages],
-            ["conjecture-1", "conjecture-2", "note-1", "criticism", "note-2", "end"],
+            ["conjecture-1", "conjecture-2", "note-1", "criticism", "note-2", "verdict", "end"],
         )
-        outcome = self.run_plan(plan, dict(_EXAMPLE_SCRIPT))
-        self.assertEqual(len(outcome.stages_entered), 5)
+        outcome = self.run_plan(plan, {**_EXAMPLE_SCRIPT, "verdict": [submission("a verdict", "c")]})
+        self.assertEqual(len(outcome.stages_entered), 6)
 
     def test_a_stage_list_that_does_not_end_is_refused(self) -> None:
         manifest = base_manifest()
@@ -126,7 +126,7 @@ class DefaultRoutingTests(MiniTestCase):
         plan, outcome = self.run_manifest(manifest)
         self.assertEqual(plan.routing.artifacts, {})
         self.assertEqual(self.events_of(outcome, ROUTED), [])
-        self.assertEqual(len(self.events_of(outcome, ARTIFACT_SUBMITTED)), 2)
+        self.assertEqual(len(self.events_of(outcome, ARTIFACT_SUBMITTED)), 3)
 
 
 class DeclaredRoutingTests(MiniTestCase):
@@ -151,7 +151,7 @@ class DeclaredRoutingTests(MiniTestCase):
             ],
         }
         _, outcome = self.run_manifest(manifest, _EXAMPLE_SCRIPT)
-        routed = self.events_of(outcome, ROUTED)
+        routed = [event for event in self.events_of(outcome, ROUTED) if event["kind_id"] == "k.criticism"]
         self.assertEqual(len(routed), 1)
         self.assertEqual(routed[0]["payload"]["to"]["stage_id"], "note-2")
 

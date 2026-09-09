@@ -79,7 +79,10 @@ class ScriptedResponder:
         keyed = f"{request.stage_id}@{request.phase}"
         if keyed in self._script:
             return self._script[keyed], keyed
-        return self._script.get(request.stage_id), request.stage_id
+        # No entry for this phase: the stage's own replies serve it, consumed
+        # independently per phase, so one reply carrying both fields drives both
+        # calls of the two-call shape.
+        return self._script.get(request.stage_id), f"{request.stage_id}#{request.phase}"
 
     def reply(self, request: Request) -> Reply:
         entry, key = self._entry(request)

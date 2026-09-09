@@ -1,0 +1,76 @@
+# Proposal
+
+## The problem (problem)
+For each of this prototype's own checks, name a rewrite of an input under which the check's verdict ought to move. Propose a kernel, a transform, and an input. The executor will run it; the catalogue says which pairs anyone has written down already. A pair that moves and is not catalogued is a boundary nobody has recorded; a pair the catalogue says moves and that does not move is a defect in the catalogue.
+
+## Proposals so far (earlier)
+[68384ac8f06b6e6c] (mini.proposal.v1)
+Folding keeps the letters, so putting the text in capitals should move the folded text.
+commitments: {"input": "One paragraph here.\n\nA second paragraph, with  irregular   spacing.", "kernel": "mini.kernel.folded", "transform": "mini.transform.upper-case"}
+[7850027e86c5cd4f] (mini.proposal.v1)
+A trailing newline should not change how many blocks the cutter makes.
+commitments: {"input": "One paragraph here.\n\nA second paragraph, with  irregular   spacing.", "kernel": "mini.kernel.cut-count", "transform": "mini.transform.append-blank-line"}
+[1fc038fcf40655c4] (mini.proposal.v1)
+Capitals should not change how many blocks the cutter makes.
+commitments: {"input": "One paragraph here.\n\nA second paragraph, with  irregular   spacing.", "kernel": "mini.kernel.cut-count", "transform": "mini.transform.upper-case"}
+[ada00e823b08c3f3] (mini.proposal.v1)
+Folding every blank line away should leave the cutter with one block, not two.
+commitments: {"input": "One paragraph here.\n\nA second paragraph, with  irregular   spacing.", "kernel": "mini.kernel.cut-count", "transform": "mini.transform.fold-whitespace"}
+[5032c39866c4c359] (mini.proposal.v1)
+Wrapping readable JSON in a code fence should stop the reader reading it.
+commitments: {"input": "{\"body\": \"b\", \"commitments\": \"c\"}", "kernel": "mini.kernel.json-readable", "transform": "mini.transform.wrap-in-code-fence"}
+[890ef8f3052db1d3] (mini.proposal.v1)
+A trailing newline should not stop the reader reading JSON.
+commitments: {"input": "{\"body\": \"b\", \"commitments\": \"c\"}", "kernel": "mini.kernel.json-readable", "transform": "mini.transform.append-blank-line"}
+[cd84c50512ec1f2c] (mini.proposal.v1)
+A keyword check written in capitals should notice a lower-case word turned upper.
+commitments: {"input": "it holds because of the source", "kernel": "mini.kernel.carries-because", "transform": "mini.transform.upper-case"}
+[b360d3b81c3aea5f] (mini.proposal.v1)
+Reversing the paragraphs should move the folded text.
+commitments: {"input": "One paragraph here.\n\nA second paragraph, with  irregular   spacing.", "kernel": "mini.kernel.folded", "transform": "mini.transform.reorder-paragraphs"}
+
+## Verdicts so far (verdicts)
+[af8737939fd50012] (mini.verdict.v1)
+Verdict on this cycle's executions.
+68384ac8f06b6e6c: mini.kernel.folded under mini.transform.upper-case moved, catalogue says it moves -> rejected
+7850027e86c5cd4f: mini.kernel.cut-count under mini.transform.append-blank-line unchanged, catalogue says it does not move -> rejected
+1fc038fcf40655c4: mini.kernel.cut-count under mini.transform.upper-case unchanged, not catalogued -> rejected
+commitments: {"verdicts": [{"catalogue_moves": true, "catalogued": true, "executed": "moved", "kernel": "mini.kernel.folded", "proposal": "68384ac8f06b6e6c", "standing": "rejected", "transform": "mini.transform.upper-case"}, {"catalogue_moves": false, "catalogued": true, "executed": "unchanged", "kernel": "mini.kernel.cut-count", "proposal": "7850027e86c5cd4f", "standing": "rejected", "transform": "mini.transform.append-blank-line"}, {"catalogue_moves": false, "catalogued": false, "executed": "unchanged", "kernel": "mini.kernel.cut-count", "proposal": "1fc038fcf40655c4", "standing": "rejected", "transform": "mini.transform.upper-case"}]}
+[d336a51e07f17793] (mini.verdict.v1)
+Verdict on this cycle's executions.
+ada00e823b08c3f3: mini.kernel.cut-count under mini.transform.fold-whitespace moved, not catalogued -> candidate point
+5032c39866c4c359: mini.kernel.json-readable under mini.transform.wrap-in-code-fence moved, not catalogued -> candidate point
+890ef8f3052db1d3: mini.kernel.json-readable under mini.transform.append-blank-line unchanged, catalogue says it does not move -> rejected
+commitments: {"verdicts": [{"catalogue_moves": false, "catalogued": false, "executed": "moved", "kernel": "mini.kernel.cut-count", "proposal": "ada00e823b08c3f3", "standing": "candidate point", "transform": "mini.transform.fold-whitespace"}, {"catalogue_moves": false, "catalogued": false, "executed": "moved", "kernel": "mini.kernel.json-readable", "proposal": "5032c39866c4c359", "standing": "candidate point", "transform": "mini.transform.wrap-in-code-fence"}, {"catalogue_moves": false, "catalogued": true, "executed": "unchanged", "kernel": "mini.kernel.json-readable", "proposal": "890ef8f3052db1d3", "standing": "rejected", "transform": "mini.transform.append-blank-line"}]}
+
+## Evidence (catalogue)
+To ground a claim in one of these, name its id in this artifact's citations; a quote must reproduce the block's own words.
+[c82a3c8063d2d61a] (catalogue, evidence) { "catalogue": "mini.kernel-boundaries.v1", "note": "Kernel and transform pairs already written down, and whether the kernel's verdict is known to move under th…
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+
+To ground a claim, add a citation naming a block and quoting its own words, like this:
+  "citations": [{"block": "c82a3c8063d2d61a", "quote": "<words copied from that block>"}]
+
+## The shape this answer must take
+`commitments` must be JSON fitting exactly this schema:
+{
+  "properties": {
+    "input": {
+      "type": "string"
+    },
+    "kernel": {
+      "type": "string"
+    },
+    "transform": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "kernel",
+    "transform",
+    "input"
+  ],
+  "type": "object"
+}

@@ -54,7 +54,7 @@ class OffByDefaultTests(MiniTestCase):
         declared["attention"] = {"policy": ATTENTION_OFF}
         _, silent = self.run_manifest(manifest, name="silent")
         _, explicit = self.run_manifest(declared, name="explicit")
-        self.assertEqual(silent.stages_entered, ("c1", "x1"))
+        self.assertEqual(silent.stages_entered, ("c1", "x1", "verdict"))
         self.assertEqual(explicit.stages_entered, silent.stages_entered)
         self.assertEqual(
             [stage["stage_id"] for stage in self.events_of(explicit, "STAGE_ENTERED")],
@@ -99,7 +99,7 @@ class DemonstrationPolicyTests(MiniTestCase):
         conjecture_id = self.events_of(first, "ARTIFACT_SUBMITTED")[0]["artifact_id"]
         script["x1"] = [submission("An objection.", "c", about=[conjecture_id])]
         second = self.run_plan(self.compile(self._manifest()), dict(script), name="second")
-        self.assertEqual(second.stages_entered, ("c1", "x1", "c2", "n1"))
+        self.assertEqual(second.stages_entered, ("c1", "x1", "c2", "n1", "verdict"))
         chosen = [event["payload"]["chosen"] for event in self.events_of(second, ATTENTION_CHOSE)]
         self.assertIn("c2", chosen)
 
@@ -157,9 +157,9 @@ class SignalRegistryTests(MiniTestCase):
             state,
             (SIGNAL_ARTIFACTS_BY_KIND, SIGNAL_CITATIONS_VERIFIED, SIGNAL_TOKENS_BY_KIND, SIGNAL_CYCLE_COUNT),
         )
-        self.assertEqual(values[SIGNAL_ARTIFACTS_BY_KIND], {"k.conjecture": 1, "k.criticism": 1})
+        self.assertEqual(values[SIGNAL_ARTIFACTS_BY_KIND], {"k.conjecture": 1, "k.criticism": 1, "mini.verdict.v1": 1})
         self.assertEqual(set(values[SIGNAL_CITATIONS_VERIFIED].values()), {0})
-        self.assertTrue(all(count > 0 for count in values[SIGNAL_TOKENS_BY_KIND].values()))
+        self.assertTrue(values[SIGNAL_TOKENS_BY_KIND]["k.conjecture"] > 0)
         self.assertEqual(values[SIGNAL_CYCLE_COUNT], 1)
 
     def test_a_new_signal_is_a_registration_and_nothing_else(self) -> None:
@@ -171,7 +171,7 @@ class SignalRegistryTests(MiniTestCase):
         )
         plan, outcome = self.run_manifest(base_manifest())
         state = replay(outcome.root / "log.jsonl", plan.genesis)
-        self.assertEqual(compute_signals(state, ("mini.signal.test-artifacts-total",)), {"mini.signal.test-artifacts-total": 2})
+        self.assertEqual(compute_signals(state, ("mini.signal.test-artifacts-total",)), {"mini.signal.test-artifacts-total": 3})
 
     def test_registering_a_signal_twice_is_refused(self) -> None:
         self.assertRefuses(
@@ -202,7 +202,7 @@ class SignalRegistryTests(MiniTestCase):
         state = replay(outcome.root / "log.jsonl", plan.genesis)
         self.assertEqual(compute_signals(state, (SIGNAL_CYCLE_COUNT,))[SIGNAL_CYCLE_COUNT], 3)
         self.assertEqual(outcome.cycles_completed, 3)
-        self.assertEqual(outcome.stages_entered, ("c1", "x1") * 3)
+        self.assertEqual(outcome.stages_entered, ("c1", "x1", "verdict") * 3)
 
 
 class SignalViewTests(MiniTestCase):

@@ -8,7 +8,7 @@ import json
 from creib.forge.mini.kinds import kind_from_dict, read_submission
 from creib.forge.mini.log import ARTIFACT_SUBMITTED, replay
 
-from .helpers import CONJECTURE_KIND, MiniTestCase, base_manifest, submission
+from .helpers import CONJECTURE_KIND, VERDICT_STAGE, MiniTestCase, base_manifest, submission
 
 A_THIRD_KIND = {
     "kind_id": "example.note.v1",
@@ -47,9 +47,9 @@ class OneTemplateTests(MiniTestCase):
         }
         plan, outcome = self.run_manifest(manifest, script)
         self.assertIn("example.note.v1", plan.kinds)
-        self.assertEqual(outcome.stages_entered, ("c1", "n1"))
+        self.assertEqual(outcome.stages_entered, ("c1", "n1", "verdict"))
         logged = [event["kind_id"] for event in self.events_of(outcome, ARTIFACT_SUBMITTED)]
-        self.assertEqual(logged, ["k.conjecture", "example.note.v1"])
+        self.assertEqual(logged[:2], ["k.conjecture", "example.note.v1"])
         source = (self.tmp / "manifest.json").read_text(encoding="utf-8")
         self.assertIn("example.note.v1", source)
 
@@ -144,5 +144,5 @@ class BodyAndCommitmentsTests(MiniTestCase):
     def test_an_accepted_artifact_replays_from_the_log(self) -> None:
         plan, outcome = self.run_manifest(base_manifest())
         state = replay(outcome.root / "log.jsonl", plan.genesis)
-        self.assertEqual(len(state.artifact_order), 2)
+        self.assertEqual(len(state.artifact_order), 3)
         self.assertEqual(state.digest(), outcome.state_digest)

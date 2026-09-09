@@ -45,6 +45,12 @@ from .routing import Routing, routing_from_dict
 from .stops import STOP_NEVER, StopCondition, resolve_stop_condition
 
 
+#: Every cycle ends with exactly one stage of this kind (R35 c).
+VERDICT_KIND_ID = "mini.verdict.v1"
+
+COMMITMENT_CALL_TWO = "two"
+COMMITMENT_CALL_SINGLE = "single"
+
 SEAT_MODEL = "model"
 SEAT_MACHINE = "machine"
 SEATS: tuple[str, ...] = (SEAT_MODEL, SEAT_MACHINE)
@@ -234,6 +240,22 @@ def compile_manifest(path: Path, policy_dir: Path | None = None) -> RunPlan:
     for index, stage in enumerate(stages[:-1]):
         if stage.end:
             raise MiniError("MINI_STAGE_END_NOT_LAST", f"stages[{index}] is marked end but is not the last stage")
+    verdicts = [index for index, stage in enumerate(stages) if stage.kind_id == VERDICT_KIND_ID]
+    if not verdicts:
+        raise MiniError(
+            "MINI_VERDICT_MISSING",
+            f"a cycle ends with one stage of kind {VERDICT_KIND_ID!r}; this stage list has none",
+        )
+    if len(verdicts) > 1:
+        raise MiniError(
+            "MINI_VERDICT_DUPLICATE",
+            f"a cycle ends with ONE stage of kind {VERDICT_KIND_ID!r}; this stage list has {len(verdicts)}",
+        )
+    if verdicts[0] != len(stages) - 2:
+        raise MiniError(
+            "MINI_VERDICT_NOT_LAST",
+            f"the {VERDICT_KIND_ID!r} stage must be the last stage before the end stage",
+        )
 
     routing = routing_from_dict(manifest.get("routing"), "routing")
     stage_ids = {stage.stage_id: stage for stage in stages}

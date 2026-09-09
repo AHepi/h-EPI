@@ -1,0 +1,33 @@
+# Criticism
+
+## The problem (problem)
+For each of this prototype's own checks, name a rewrite of an input under which the check's verdict ought to move. Propose a kernel, a transform, and an input. The executor will run it; the catalogue says which pairs anyone has written down already. A pair that moves and is not catalogued is a boundary nobody has recorded; a pair the catalogue says moves and that does not move is a defect in the catalogue.
+
+## Proposals so far (proposals)
+[68384ac8f06b6e6c] (mini.proposal.v1)
+Folding keeps the letters, so putting the text in capitals should move the folded text.
+commitments: {"input": "One paragraph here.\n\nA second paragraph, with  irregular   spacing.", "kernel": "mini.kernel.folded", "transform": "mini.transform.upper-case"}
+[7850027e86c5cd4f] (mini.proposal.v1)
+A trailing newline should not change how many blocks the cutter makes.
+commitments: {"input": "One paragraph here.\n\nA second paragraph, with  irregular   spacing.", "kernel": "mini.kernel.cut-count", "transform": "mini.transform.append-blank-line"}
+[1fc038fcf40655c4] (mini.proposal.v1)
+Capitals should not change how many blocks the cutter makes.
+commitments: {"input": "One paragraph here.\n\nA second paragraph, with  irregular   spacing.", "kernel": "mini.kernel.cut-count", "transform": "mini.transform.upper-case"}
+
+## Executions (executions)
+[cfa95766794fa255] (mini.execution.v1)
+Executed this cycle's proposals.
+68384ac8f06b6e6c: mini.kernel.folded under mini.transform.upper-case -> moved
+7850027e86c5cd4f: mini.kernel.cut-count under mini.transform.append-blank-line -> unchanged
+1fc038fcf40655c4: mini.kernel.cut-count under mini.transform.upper-case -> unchanged
+commitments: {"executions": [{"after": "ONE PARAGRAPH HERE. A SECOND PARAGRAPH, WITH IRREGULAR SPACING.", "before": "One paragraph here. A second paragraph, with irregular spacing.", "executed": "moved", "kernel": "mini.kernel.folded", "proposal": "68384ac8f06b6e6c", "transform": "mini.transform.upper-case"}, {"after": "2", "before": "2", "executed": "unchanged", "kernel": "mini.kernel.cut-count", "proposal": "7850027e86c5cd4f", "transform": "mini.transform.append-blank-line"}, {"after": "2", "before": "2", "executed": "unchanged", "kernel": "mini.kernel.cut-count", "proposal": "1fc038fcf40655c4", "transform": "mini.transform.upper-case"}]}
+
+## Evidence (catalogue)
+To ground a claim in one of these, name its id in this artifact's citations; a quote must reproduce the block's own words.
+[c82a3c8063d2d61a] (catalogue, evidence) { "catalogue": "mini.kernel-boundaries.v1", "note": "Kernel and transform pairs already written down, and whether the kernel's verdict is known to move under th…
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+
+To ground a claim, add a citation naming a block and quoting its own words, like this:
+  "citations": [{"block": "c82a3c8063d2d61a", "quote": "<words copied from that block>"}]
