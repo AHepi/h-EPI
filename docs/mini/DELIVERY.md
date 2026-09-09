@@ -15,7 +15,7 @@ python tools/check.py all                     # lint, the whole suite, pilots, c
 python -m unittest discover -s tests/mini     # the mini suite alone, 204 tests
 ```
 
-The full suite is **532 tests, 0 failed** — 250 that were there before, 282
+The full suite is **585 tests, 0 failed** — 250 that were there before, 335
 added here. No test calls a model. `python tools/check.py all` is green at every
 commit on this branch.
 
@@ -57,6 +57,28 @@ commit on this branch.
 | R27 | A compare command that ranks nothing | built, with assumptions B11–B13 | `python -m unittest mini.test_blindspot.CompareTests` |
 | R28 | The order of work and the standing obligations | followed | the branch history: REQUEST, DESIGN, code and tests, SPEC rewritten from the code, then this table; `python tools/check.py all` green at each |
 
+## Amendment 2
+
+On branch `claude/mini-finish`, from `claude/mini-prototype`.
+
+| # | Requirement | State | The command that proves it |
+|---|---|---|---|
+| R29 | Scripts addressed by coordinate | built, with assumptions C1, C2 | `python -m unittest discover -s tests -p test_scripts.py` (10 tests) |
+| R30 | A fenced reply is read, and the reading is recorded | built, with assumption C3 | `python -m unittest mini.test_recovery.FencedRepliesTests` |
+| R31 | Citations fixed at both ends | built, with assumptions C4, C5 | `python -m unittest mini.test_recovery.DeclaredCitationTests mini.test_recovery.ProseCitationTests mini.test_recovery.WorkedExampleTests` |
+| R32 | An empty input port is a typed notice | built, with assumption C6 | `python -m unittest mini.test_failures.EmptyPortTests` |
+| R33 | One live run of the blind-spot template | see the "Live blind-spot run" section below | — |
+| R34 | Four things are decisions, not gaps | recorded | `SPEC.md` Part three, first table |
+| R35 | Two calls per artifact, one verdict node per cycle | built, with assumptions C7–C12 | `python -m unittest discover -s tests -p test_two_calls.py` (15 tests) |
+| R36 | The standing obligations | followed | the branch history, in the order the amendment set; `python tools/check.py all` green at each commit |
+
+One commit on this branch was pushed with a red gate, and the commit after it
+says so by name. I read the mini suite alone, saw it green, and did not re-read
+the full suite after the last edit. Two test helpers had copied the migrated
+script with `list(value)`, which on the new coordinate form yields the cycle
+keys rather than the replies. Ten tests could not build their scripts. It was
+green again in the next commit.
+
 The blind-spot template can also be run and read by hand:
 
 ```sh
@@ -93,6 +115,26 @@ sentence:
 The other eleven assumptions (A1–A4, A6, A7, A11–A15) sit under requirements the
 table marks plainly "built", because the reading they take is the only one the
 request's own words admit; they are listed in `DESIGN.md` §12 all the same.
+
+### Amendment 2's assumptions
+
+Twelve, in `DESIGN.md` §21–§28. The load-bearing ones:
+
+- **C1 (R29)** — the two script forms are told apart by shape, not by a flag, so
+  stages migrate one at a time. The blind-spot script migrates; the rest stay
+  ordered.
+- **C2 (R29)** — on the blind-spot template the demonstration policy finds
+  nothing to prefer, so the two roots differ only in the run header. That is the
+  result, and a second test on a manifest that does re-order shows what the
+  ordered form could not do.
+- **C6 (R32)** — only artifact ports raise the notice.
+- **C7 (R35)** — what the second call's "nothing else" excludes, asserted as
+  absence in the dispatched bytes rather than trusted from the construction.
+- **C10 (R35)** — a machine seat makes one call and the record says
+  `machine_single` rather than pretending a blind second call happened.
+- **C11 (R35)** — the verdict-per-cycle rule binds every manifest, so the
+  shipped examples are rebuilt. A structural rule the repository's own examples
+  break is not a rule.
 
 ### Amendment 1's assumptions
 
@@ -137,7 +179,7 @@ In one line each:
 ## Refusal sites
 
 h-EPI's rule is that a new `raise` is a new refusal site and gets a test that
-reaches it. There are 115 refusal sites in `src/creib/forge/mini/`; every one
+reaches it. There are 121 refusal sites in `src/creib/forge/mini/`; every one
 has a negative test, and `tests/mini/test_refusals.py` exists for the sites the
 requirement-shaped files do not already reach.
 
@@ -178,9 +220,16 @@ code, and all four are named in the commit that fixed them:
 A confirming pass over those three files after the fixes: **24 of 24 caught, 0
 survived.**
 
-**After Amendment 1**, over all 115 sites: see the commit that follows this
-table. The sweep takes about two hours and is not run before every commit; it is
-run when guards change, which they did.
+**After Amendment 1**, over all 115 sites: **113 caught, 2 survived** — the
+`compare` root guard, masked by the next line raising a `TypeError` of its own,
+and the event-version guard, which nothing reached at all. Both are fixed on
+this branch and both were gaps in my tests rather than in the code.
+
+**Amendment 2 has not been swept.** It adds refusal sites (the commitment-call
+vocabulary, the three verdict-stage rules, the empty-port setting) and every one
+has a negative test, but no sweep has yet asked whether those tests would
+NOTICE the guard going quiet. The sweep takes about two hours. It should be run
+before this branch is merged, and it has not been.
 
 ## Live run
 
