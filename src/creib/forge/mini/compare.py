@@ -57,7 +57,7 @@ def read_root(root: Path) -> RootReading:
     """Read one run root: its identity, its verdicts, and its ledger."""
 
     if not isinstance(root, Path):
-        raise TypeError("root must be pathlib.Path")
+        raise TypeError("compare root must be pathlib.Path")
     try:
         header = load_strict(root / "run-header.json")
     except RecordError as error:

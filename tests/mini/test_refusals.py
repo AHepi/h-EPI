@@ -126,8 +126,27 @@ class StoreTests(MiniTestCase):
     def test_an_event_log_takes_a_path_and_says_so(self) -> None:
         from creib.forge.mini.log import EventLog
 
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, "path must be pathlib.Path"):
             EventLog("not/a/path", "0" * 64)
+
+    def test_a_compare_root_takes_a_path_and_says_so(self) -> None:
+        """The sweep found this guard's deletion undetected: the next line
+        raised a TypeError of its own, so asserting the type proved nothing."""
+
+        from creib.forge.mini.compare import read_root
+
+        with self.assertRaisesRegex(TypeError, "compare root must be pathlib.Path"):
+            read_root("not/a/path")
+
+    def test_an_event_of_a_version_nothing_reads_is_refused(self) -> None:
+        """Neither v1 nor v2: the version guard, which nothing else reached."""
+
+        from creib.forge.mini.log import ARTIFACT_SUBMITTED, build_event, event_from_dict
+
+        record = build_event(seq=0, prev="0" * 64, type=ARTIFACT_SUBMITTED, payload={}).to_dict()
+        record["schema_version"] = "creib.mini.event.v99"
+        self.assertRefuses("MINI_LOG_UNREADABLE", event_from_dict, record, "line 1")
+        self.assertRefuses("MINI_LOG_UNREADABLE", event_from_dict, ["not an object"], "line 1")
 
 
 class RunHeaderTests(MiniTestCase):

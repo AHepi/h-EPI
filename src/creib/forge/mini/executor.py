@@ -25,12 +25,14 @@ from .common import MiniError
 
 @dataclass(frozen=True)
 class Request:
-    """What a stage asks for."""
+    """What a stage asks for, at one coordinate of the run."""
 
     stage_id: str
     kind_id: str
     attempt: int
     brief: str
+    cycle: int = 0
+    phase: str = "body"
 
 
 @dataclass(frozen=True)
@@ -49,29 +51,50 @@ class Responder(Protocol):
 
 
 class ScriptedResponder:
-    """A prepared reply per stage, consumed in order.
+    """Prepared replies, in one of two forms, told apart by shape.
 
-    Retries consume the next reply for that stage, so a script can answer badly
-    first and well second and the run exercises the retry road exactly.
+    ORDERED — a stage's value is a list, consumed in order. The shorter thing to
+    write when a stage runs once and nothing re-orders it.
+
+    BY COORDINATE — a stage's value is an object keyed by cycle, each holding a
+    list indexed by attempt. A stage then gets the same reply wherever the cycle
+    puts it, so one script drives the same manifest with attention off and on
+    and the two runs can be set side by side.
+
+    Both forms may appear in one script, so stages migrate one at a time. A
+    phase other than the body reads from the same place: ``<stage>@commitments``
+    if the script names it, else the same entry, so a one-call script keeps
+    working under the two-call shape.
     """
 
-    def __init__(self, script: Mapping[str, Sequence[str]]) -> None:
-        self._script = {stage: list(replies) for stage, replies in script.items()}
+    def __init__(self, script: Mapping[str, Any]) -> None:
+        self._script = {stage: replies for stage, replies in script.items()}
         self._used: dict[str, int] = {}
 
     @property
     def used(self) -> Mapping[str, int]:
         return dict(self._used)
 
+    def _entry(self, request: Request) -> tuple[Any, str]:
+        keyed = f"{request.stage_id}@{request.phase}"
+        if keyed in self._script:
+            return self._script[keyed], keyed
+        return self._script.get(request.stage_id), request.stage_id
+
     def reply(self, request: Request) -> Reply:
-        replies = self._script.get(request.stage_id)
-        position = self._used.get(request.stage_id, 0)
+        entry, key = self._entry(request)
+        if isinstance(entry, Mapping):
+            replies = entry.get(str(request.cycle))
+            position = request.attempt
+            where = f"stage {request.stage_id!r} at cycle {request.cycle}, attempt {request.attempt}"
+        else:
+            replies = entry
+            position = self._used.get(key, 0)
+            where = f"stage {request.stage_id!r}"
         if replies is None or position >= len(replies):
-            raise MiniError(
-                "MINI_SCRIPT_EXHAUSTED",
-                f"the script has no further reply for the stage {request.stage_id!r}",
-            )
-        self._used[request.stage_id] = position + 1
+            raise MiniError("MINI_SCRIPT_EXHAUSTED", f"the script has no reply for {where}")
+        if not isinstance(entry, Mapping):
+            self._used[key] = position + 1
         body = replies[position]
         return Reply(text=body, prompt_tokens=len(request.brief.split()), completion_tokens=len(body.split()))
 

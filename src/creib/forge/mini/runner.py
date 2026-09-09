@@ -372,6 +372,7 @@ def _attempt_submission(
     kind: ArtifactKind,
     brief: str,
     blobs: BlobStore,
+    cycle: int = 0,
 ) -> tuple[Submission, int, int] | None:
     """Ask the seat, and keep every reply — the refused ones included.
 
@@ -389,7 +390,9 @@ def _attempt_submission(
         # The rendered format is already in the brief, on every attempt; a retry
         # adds the error BESIDE it rather than in place of it.
         shown = brief if attempt == 0 else brief + "\n\n## The last reply was refused, for these reasons\n" + "\n".join(reasons)
-        reply = responder.reply(Request(stage_id=stage.stage_id, kind_id=kind.kind_id, attempt=attempt, brief=shown))
+        reply = responder.reply(
+            Request(stage_id=stage.stage_id, kind_id=kind.kind_id, attempt=attempt, brief=shown, cycle=cycle)
+        )
         reply_ref = blobs.put(reply.text.encode("utf-8"))
         try:
             submission = read_submission(reply.text, kind)
@@ -546,7 +549,7 @@ def run_mini(plan: RunPlan, root: Path, responder: Responder, responder_id: str 
             brief, exposed = render_brief(plan, state, blobs, stage, cycle)
             seat_responder = machine_responder(plan, state, blobs, stage, cycle) if stage.seat == SEAT_MACHINE else responder
             before = getattr(seat_responder, "calls", None)
-            attempt = _attempt_submission(plan, recorder, seat_responder, stage, kind, brief, blobs)
+            attempt = _attempt_submission(plan, recorder, seat_responder, stage, kind, brief, blobs, cycle)
             if stage.seat != SEAT_MACHINE:
                 calls += 1 + (kind.failure_policy.retries if attempt is None else 0)
             if attempt is None:
