@@ -9,7 +9,7 @@ permission layer, and writes every outcome — accepted, failed, dropped, refuse
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -49,6 +49,26 @@ from .signals import compute_signals
 from .stops import STOP_NEVER, should_stop
 
 MAX_STEPS = 512
+
+
+@dataclass(frozen=True)
+class AttemptOutcome:
+    """One phase's accepted reply, and what it actually took to get it.
+
+    ``request_ref`` is the request that produced THIS reply, not the first one
+    tried: a retry is shown the format error beside the brief, so recording the
+    original would pair the accepted reply with bytes nobody sent (audit F6).
+    ``usage`` keeps every attempt's counts, refused ones included, and the
+    totals are their sum.
+    """
+
+    submission: Submission
+    prompt_tokens: int
+    completion_tokens: int
+    reply_ref: str
+    request_ref: str
+    invocations: int
+    usage: tuple[Mapping[str, Any], ...]
 
 
 @dataclass(frozen=True)
@@ -419,9 +439,31 @@ def _route_one(
         )
 
 
-def _check_reads(plan: RunPlan, recorder: _Recorder, stage: Stage) -> bool:
+def _call_record(phase: str, outcome: AttemptOutcome) -> dict[str, Any]:
+    """One call, as the record carries it."""
+
+    return {
+        "phase": phase,
+        "request_ref": outcome.request_ref,
+        "reply_ref": outcome.reply_ref,
+        "invocations": outcome.invocations,
+        "usage": [dict(item) for item in outcome.usage],
+    }
+
+
+def _check_reads(plan: RunPlan, recorder: _Recorder, stage: Stage, two_calls: bool = False) -> bool:
+    """Preflight every port the stage will actually read, both calls included.
+
+    A commitments call reads ports of its own (R37), and a permission check that
+    walked only the first call's ports let a forbidden port through the second
+    (audit F2). Ports a run will not read — a machine seat's, or a single-call
+    kind's — are not checked, because refusing a setting nobody uses would
+    refuse a legal configuration.
+    """
+
     kind = plan.kinds[str(stage.kind_id)]
-    for port_id in stage.ports:
+    ports = tuple(stage.ports) + (tuple(kind.commitment_ports) if two_calls else ())
+    for port_id in dict.fromkeys(ports):
         port = kind.port(port_id)
         if not plan.policy.may_read(kind.kind_id, port.port_type):
             recorder.emit(
@@ -448,7 +490,7 @@ def _attempt_submission(
     blobs: BlobStore,
     cycle: int = 0,
     phase: str = PHASE_BOTH,
-) -> tuple[Submission, int, int, str] | None:
+) -> AttemptOutcome | None:
     """Ask the seat, and keep every reply — the refused ones included.
 
     A refused reply is stored as a blob and named on its FORMAT_FAILURE event,
@@ -462,6 +504,7 @@ def _attempt_submission(
     policy = kind.failure_policy
     reasons: tuple[str, ...] = ()
     refused_refs: list[str] = []
+    usage: list[dict[str, Any]] = []
     for attempt in range(policy.retries + 1):
         # The rendered format is already in the brief, on every attempt; a retry
         # adds the error BESIDE it rather than in place of it.
@@ -477,6 +520,7 @@ def _attempt_submission(
             )
         )
         reply_ref = blobs.put(reply.text.encode("utf-8"))
+        usage.append({"attempt": attempt, "prompt_tokens": reply.prompt_tokens, "completion_tokens": reply.completion_tokens})
         try:
             submission = read_submission(reply.text, kind, phase)
         except MiniError as error:
@@ -503,7 +547,15 @@ def _attempt_submission(
             continue
         reasons = compiled.failures(submission.as_fields(), checked)
         if not reasons:
-            return submission, reply.prompt_tokens, reply.completion_tokens, reply_ref
+            return AttemptOutcome(
+                submission=submission,
+                prompt_tokens=sum(int(item["prompt_tokens"]) for item in usage),
+                completion_tokens=sum(int(item["completion_tokens"]) for item in usage),
+                reply_ref=reply_ref,
+                request_ref=blobs.put(shown.encode("utf-8")),
+                invocations=attempt + 1,
+                usage=tuple(usage),
+            )
         refused_refs.append(reply_ref)
         recorder.emit(
             FORMAT_FAILURE,
@@ -514,7 +566,13 @@ def _attempt_submission(
         )
     recorder.emit(
         SUBMISSION_DROPPED,
-        {"attempts": policy.retries + 1, "reasons": list(reasons), "refused_refs": refused_refs, "phase": phase},
+        {
+            "attempts": policy.retries + 1,
+            "reasons": list(reasons),
+            "refused_refs": refused_refs,
+            "phase": phase,
+            "usage": usage,
+        },
         stage_id=stage.stage_id,
         kind_id=kind.kind_id,
     )
@@ -550,11 +608,22 @@ def _offered(
 
     # The verdict stage is withheld until it is the only one left, so "a cycle
     # ends with the verdict" survives a re-ordering policy (C12).
-    others = [item for item in remaining if not item.end and item.kind_id != VERDICT_KIND_ID]
-    offered = [PendingStage(item.stage_id, str(item.kind_id)) for item in (others or [item for item in remaining if not item.end])]
-    for stage_id, used in repeats_used.items():
-        if used < plan.stage(stage_id).max_repeats:
-            offered.append(PendingStage(stage_id, str(plan.stage(stage_id).kind_id)))
+    todo = [item for item in remaining if not item.end]
+    if not todo:
+        # Only the end marker is left: the cycle is finished, and a repeat
+        # allowance is not a reason to reopen it. Offering work here let
+        # attention continue a completed cycle, and let it re-run the verdict
+        # (audit F5).
+        return ()
+    others = [item for item in todo if item.kind_id != VERDICT_KIND_ID]
+    offered = [PendingStage(item.stage_id, str(item.kind_id)) for item in (others or todo)]
+    if others:
+        # While ordinary work remains, a repeat is ordinary work too — but the
+        # verdict is never offered as one.
+        for stage_id, used in repeats_used.items():
+            stage = plan.stage(stage_id)
+            if stage.kind_id != VERDICT_KIND_ID and used < stage.max_repeats:
+                offered.append(PendingStage(stage_id, str(stage.kind_id)))
     return tuple(offered)
 
 
@@ -629,8 +698,6 @@ def run_mini(plan: RunPlan, root: Path, responder: Responder, responder_id: str 
             if stage.end:
                 break
             recorder.emit(STAGE_ENTERED, {"ports": list(stage.ports)}, stage_id=stage.stage_id, kind_id=stage.kind_id)
-            if not _check_reads(plan, recorder, stage):
-                continue
             kind = plan.kinds[str(stage.kind_id)]
             empty = empty_artifact_ports(plan, state, stage, cycle)
             for port_id in empty:
@@ -648,39 +715,41 @@ def run_mini(plan: RunPlan, root: Path, responder: Responder, responder_id: str 
                     kind_id=kind.kind_id,
                 )
                 continue
-            brief, exposed = render_brief(plan, state, blobs, stage, cycle)
             machine = stage.seat == SEAT_MACHINE
-            seat_responder = machine_responder(plan, state, blobs, stage, cycle) if machine else responder
             two_calls = (not machine) and kind.commitment_call == COMMITMENT_CALL_TWO
+            if not _check_reads(plan, recorder, stage, two_calls):
+                continue
+            brief, exposed = render_brief(plan, state, blobs, stage, cycle)
+            seat_responder = machine_responder(plan, state, blobs, stage, cycle) if machine else responder
             first_phase = PHASE_BODY if two_calls else PHASE_BOTH
             attempt = _attempt_submission(
                 plan, recorder, seat_responder, stage, kind, brief, blobs, cycle, first_phase
             )
+            # The host's budget counts what was actually invoked, so a retry
+            # that succeeded is not counted as one call (audit F3).
             if not machine:
-                calls += 1 + (kind.failure_policy.retries if attempt is None else 0)
-            calls_made = [{"phase": first_phase, "request_ref": blobs.put(brief.encode("utf-8"))}]
+                calls += attempt.invocations if attempt is not None else kind.failure_policy.retries + 1
+            calls_made: list[dict[str, Any]] = []
+            if attempt is not None:
+                calls_made.append(_call_record(first_phase, attempt))
             if attempt is not None and two_calls:
-                calls_made[0]["reply_ref"] = attempt[3]
                 second_brief = render_commitments_brief(
-                    plan, kind, attempt[0].body, state, blobs, stage, cycle
+                    plan, kind, attempt.submission.body, state, blobs, stage, cycle
                 )
                 second = _attempt_submission(
                     plan, recorder, seat_responder, stage, kind, second_brief, blobs, cycle, PHASE_COMMITMENTS
                 )
-                calls += 1 + (kind.failure_policy.retries if second is None else 0)
+                calls += second.invocations if second is not None else kind.failure_policy.retries + 1
                 if second is None:
                     attempt = None
                 else:
-                    calls_made.append(
-                        {
-                            "phase": PHASE_COMMITMENTS,
-                            "request_ref": blobs.put(second_brief.encode("utf-8")),
-                            "reply_ref": second[3],
-                        }
+                    calls_made.append(_call_record(PHASE_COMMITMENTS, second))
+                    attempt = replace(
+                        attempt,
+                        submission=attempt.submission.joined(second.submission),
+                        prompt_tokens=attempt.prompt_tokens + second.prompt_tokens,
+                        completion_tokens=attempt.completion_tokens + second.completion_tokens,
                     )
-                    attempt = (attempt[0].joined(second[0]), attempt[1] + second[1], attempt[2] + second[2], attempt[3])
-            elif attempt is not None:
-                calls_made[0]["reply_ref"] = attempt[3]
             if attempt is None:
                 drops = state.drops_by_kind.get(kind.kind_id, 0)
                 attempts = drops + state.submissions_by_kind.get(kind.kind_id, 0)
@@ -689,7 +758,8 @@ def run_mini(plan: RunPlan, root: Path, responder: Responder, responder_id: str 
                     halted = True
                     break
                 continue
-            submission, prompt_tokens, completion_tokens, reply_ref = attempt
+            submission, reply_ref = attempt.submission, attempt.reply_ref
+            prompt_tokens, completion_tokens = attempt.prompt_tokens, attempt.completion_tokens
             artifact_id, body_ref, commitments_ref = _store_artifact(blobs, stage, submission, recorder.seq)
             blocks = {str(item["block_id"]): _as_block(blobs, item) for item in state.blocks}
             measures = check_citations(submission.citations, blocks, exposed)

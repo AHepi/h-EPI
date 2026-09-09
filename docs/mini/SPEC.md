@@ -21,11 +21,12 @@ back, and writes down exactly what happened.
 some **commitments**, and those two are all any artifact needs.
 
 **An artifact is written in two goes.** The first call sees everything the seat
-is entitled to see and writes the body. The second call sees **only that body** —
-not the problem, not the sources, not any other artifact — and writes what is
-being committed to. Both requests and both replies are kept, so that the
-commitments were written blind is something you can check rather than something
-I am telling you.
+is entitled to see and writes the body. The second call writes what is being
+committed to, and **by default it sees only that body** — not the problem, not
+the sources, not any other artifact. That is a default and not a law: whoever
+configures the run decides what the second call sees, and the record says what
+it saw. Both requests and both replies are kept, so "written blind" is something
+you read off the record rather than something I am telling you.
 
 **A seat** is not a kind of thing in the code. There is one template, and you
 fill it in: what this seat is shown, and what it produces. Fill it in one way
@@ -537,7 +538,11 @@ now permits and nobody has done.
 | Thing | Where it stands |
 |---|---|
 | An attention policy worth trusting | see above: testable now, untested |
-| A live blind-spot run at any scale | one run of three cycles exists; nine to a dozen proposals is not a survey of which checks are blind |
+| A live blind-spot run | none. The first attempt ran under a self-contradictory live request (`AUDIT_RESPONSE.md` F4) and was discarded; the contract is repaired and the run has not been redone |
+| A versioned per-attempt ledger | the record now names the request that produced each accepted reply and carries every attempt's usage, which closes the two concrete holes; binding phase, coordinate, envelope, outcome and disposition in a versioned record remains proposed (`AUDIT_RESPONSE.md` F6) |
+| A recording executor below the adapter, across every mode | the generalisation of two audit findings; only the two specific tests exist |
+| Comparison that says what differs | `compare` checks sources and responder identity, which is not equality of conditions |
+| The `MAX_STEPS` boundary | whether a legal configuration can exhaust the inner loop before its verdict is untested |
 | Recovering a citation from prose that carries no block id | the recogniser is deliberately narrow and finds only the shape the record has actually seen |
 | A transport failure as a typed outcome rather than a stopped run | a live call that times out or disconnects raises out of the loop and leaves a partial record; `--retries` softens it and does not fix it |
 | Concurrency | one writer, by decision above |

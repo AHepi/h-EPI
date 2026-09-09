@@ -12,12 +12,15 @@ python3.12 tools/check.py bootstrap
 source .venv/bin/activate
 export PYTHONPATH=src
 python tools/check.py all                     # lint, the whole suite, pilots, citations
-python -m unittest discover -s tests/mini     # the mini suite alone, 204 tests
+python -m unittest discover -s tests -p 'test_*.py' -k mini   # the mini suite alone
 ```
 
-The full suite is **592 tests, 0 failed** — 250 that were there before, 342
-added here. No test calls a model. `python tools/check.py all` is green at every
-commit on this branch.
+The full suite is **615 tests, 0 failed** — 250 that were there before, 365
+added here. No test calls a model.
+
+`python tools/check.py all` is green at every commit on this branch **except
+one**, named in the Amendment 2 section below and green again in the commit
+after it.
 
 ## The table
 
@@ -77,6 +80,30 @@ On branch `claude/mini-finish`, from `claude/mini-prototype`.
 | # | Requirement | State | The command that proves it |
 |---|---|---|---|
 | R37 | What an artifact sees is configuration; the blind second call is only the default | built, with assumptions C13, C14 | `python -m unittest mini.test_two_calls.WhatTheCommitmentsCallSeesTests` (7 tests) |
+
+## The audit of 2026-09-10
+
+Six findings, all re-derived against the real package and all accepted. What was
+done with each is in `docs/mini/AUDIT_RESPONSE.md`; the regressions are
+`tests/mini/test_audit_findings.py` (23 tests), one class per finding:
+
+```sh
+python -m unittest discover -s tests -p test_audit_findings.py
+```
+
+| Finding | What it was | State |
+|---|---|---|
+| F1 | An external kind file's format changes left the run identity unchanged | fixed |
+| F2 | `commitment_ports` bypassed the read-permission preflight | fixed |
+| F3 | A retry that succeeded was counted as one call | fixed |
+| F4 | The live request contradicted the phase it was sent for | fixed |
+| F5 | Attention could be offered work, including the verdict, after the verdict | fixed |
+| F6 | A retry's recorded request was not the one that produced the reply; refused attempts' usage was dropped | fixed in part; the versioned attempt ledger stays proposed |
+
+F4 also **withdraws an earlier report**. I described the first live run's
+commitments-phase failures as a finding about the two-call shape being hard for
+a model shown only prose. The model was in fact being told by its brief to
+return one field and by its schema to return two. That reading was unfounded.
 
 R37 corrects R35(b) **as I built it**, not as it was written. I fixed the
 commitments call's exposure in code and gave a manifest no way to change it

@@ -81,11 +81,19 @@ class ArtifactKind:
         raise MiniError("MINI_PORT_UNKNOWN", f"kind {self.kind_id!r} declares no port {port_id!r}")
 
     def to_dict(self) -> dict[str, object]:
+        # The format specification is part of what a run IS: it decides the
+        # prompt a seat is shown and the answers that are accepted. A kind
+        # loaded from a file the manifest merely names would otherwise change
+        # its rules without changing the run's identity, because the manifest
+        # digest binds the manifest's own bytes and nothing it loads (audit F1).
+        # An absent format adds no key, so a freeform kind's identity is
+        # unchanged and records already published still replay.
         return {
             "kind_id": self.kind_id,
             "title": self.title,
             "input_ports": [item.to_dict() for item in self.input_ports],
             "output_port": self.output_port.to_dict(),
+            **({} if self.format_spec is None else {"format": dict(self.format_spec)}),
             "optional_fields": list(self.optional_fields),
             "failure_policy": self.failure_policy.to_dict(),
             "commitment_call": self.commitment_call,

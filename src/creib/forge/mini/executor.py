@@ -133,6 +133,58 @@ SYSTEM = (
     "\"citations\": each names a block id and quotes that block's own words exactly."
 )
 
+SYSTEM_BODY = (
+    "You write the BODY of one artifact. Return JSON only, carrying \"body\", a string: "
+    "what you have to say. If evidence blocks are listed, you may add \"citations\": "
+    "each names a block id and quotes that block's own words exactly. Do not return "
+    "commitments; you will be asked for those separately."
+)
+
+SYSTEM_COMMITMENTS = (
+    "You write the COMMITMENTS of one artifact. Return JSON only, carrying "
+    "\"commitments\", a string: what is being committed to if the writing below is "
+    "taken up. Return nothing else."
+)
+
+#: The wire contract for one phase. A brief that asks for one field and a schema
+#: that requires two are contradictory instructions, and a model asked for both
+#: at once can only guess which to obey (audit F4).
+BODY_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["body"],
+    "properties": {
+        "body": WIRE_SCHEMA["properties"]["body"],
+        "citations": WIRE_SCHEMA["properties"]["citations"],
+        "about": WIRE_SCHEMA["properties"]["about"],
+        "answers": WIRE_SCHEMA["properties"]["answers"],
+    },
+}
+
+COMMITMENTS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["commitments"],
+    "additionalProperties": False,
+    "properties": {"commitments": {"type": "string"}},
+}
+
+_CONTRACTS: Mapping[str, tuple[str, dict[str, Any]]] = {
+    "both": (SYSTEM, WIRE_SCHEMA),
+    "body": (SYSTEM_BODY, BODY_SCHEMA),
+    "commitments": (SYSTEM_COMMITMENTS, COMMITMENTS_SCHEMA),
+}
+
+
+def contract_for(phase: str) -> tuple[str, dict[str, Any]]:
+    """The system instruction and response schema one phase is entitled to."""
+
+    try:
+        return _CONTRACTS[phase]
+    except KeyError as error:
+        raise MiniError(
+            "MINI_LIVE_CALL_FAILED",
+            f"no live contract for the phase {phase!r}; known: {sorted(_CONTRACTS)}",
+        ) from error
+
 
 class LiveResponder:
     """One model call per attempt, through the harness's own Ollama executor."""
@@ -161,12 +213,13 @@ class LiveResponder:
 
     def reply(self, request: Request) -> Reply:
         self._calls += 1
+        system, schema = contract_for(request.phase)
         response = self._executor.complete(
             ChatRequest(
                 model=self.model,
-                system=SYSTEM,
+                system=system,
                 user=request.brief,
-                format_schema=WIRE_SCHEMA,
+                format_schema=schema,
                 options={"temperature": 0, "seed": self._seed},
                 think=None,
             )
