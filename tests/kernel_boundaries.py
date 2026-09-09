@@ -42,7 +42,7 @@ from creib.forge.conformance import (
 )
 from creib.forge.conformance import claims as claims_module
 from creib.forge.conformance.appraisal import Appraisal, Argument, Support
-from creib.forge.conformance.controls import _vocabularies
+from creib.forge.conformance.controls import _vocabularies, summarise_controls
 from creib.forge.conformance.dependence import _moved_fields, _reordered_fields
 from creib.forge.conformance.executor import transport_error_kind
 from creib.forge.conformance.oracle import _changed, _span_occurs, parse_content
@@ -577,6 +577,22 @@ def _unit_points() -> list[Boundary]:
     ]
 
 
+def _negation_followed(full_verdict: str, negated_verdict: str) -> int:
+    """How many negated controls the controls table counts as having followed the negation, for one pair of verdicts."""
+
+    def case(case_id: str, varied: str | None, pair_of: str | None) -> Any:
+        return SimpleNamespace(case_id=case_id, varied=varied, pair_of=pair_of)
+
+    def observation(case_id: str, verdict: str, observation_id: str) -> Any:
+        variant = SimpleNamespace(base_case_id=case_id, family=Family.BASELINE, field_order=("verdict",), form_schema={"properties": {"verdict": {"type": "string"}}}, input_document="")
+        return SimpleNamespace(observation_id=observation_id, run_id="run-1", variant=variant, scoring=SimpleNamespace(parsed_output={"verdict": verdict}))
+
+    corpus = SimpleNamespace(pairs=lambda: iter([(case("P-1", None, None), case("P-1.NEGATED", "control=negated", "P-1"))]))
+    run = SimpleNamespace(run_id="run-1", model="stub", observation_ids=("o-full", "o-neg"))
+    summary = summarise_controls(corpus, [run], [observation("P-1", full_verdict, "o-full"), observation("P-1.NEGATED", negated_verdict, "o-neg")])
+    return next(r["negation_followed"] for r in summary["rows"] if r["kind"] == "negated")
+
+
 def _control_points() -> list[Boundary]:
     items = ["K-ALPHA", "K-A", "K-BETA"]
 
@@ -587,6 +603,9 @@ def _control_points() -> list[Boundary]:
         Boundary("Controls: vocabulary on the page", "V-01", "a page that holds none of the list", "whether an item stands on its own or inside a longer item: `K-A` is on a page that holds only `K-ALPHA`",
                  lambda: (on_page("only K-ALPHA here"), on_page("only K-BETA here") - {"K-BETA"}, on_page("K-A and K-ALPHA here")),
                  "a substring test, kept: on the committed controls records every renamed-vocabulary row is the same under a longest-match rule and under a word-boundary rule, so nothing recorded supports a change"),
+        Boundary("Controls: the negated claim", "V-02", "the verdict reversing between `follows` and `does_not_follow`", "a verdict moving to any third value (`insufficient`, `unknown`): counted as not followed, exactly as an unmoved verdict is",
+                 lambda: (_negation_followed("follows", "follows"), _negation_followed("follows", "does_not_follow"), _negation_followed("follows", "insufficient")),
+                 "the table cannot tell a model that hedged on the negation from one that ignored it"),
     ]
 
 
