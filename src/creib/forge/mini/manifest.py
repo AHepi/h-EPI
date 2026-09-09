@@ -195,7 +195,8 @@ def compile_manifest(path: Path, policy_dir: Path | None = None) -> RunPlan:
 
     routing = routing_from_dict(manifest.get("routing"), "routing")
     stage_ids = {stage.stage_id: stage for stage in stages}
-    for kind_id, destination in routing.artifacts.items():
+    for kind_id, destinations in routing.artifacts.items():
+      for destination in destinations:
         if kind_id not in kinds:
             raise MiniError("MINI_ROUTE_INVALID", f"routing names the kind {kind_id!r}, which nothing declares")
         if destination.target == "port":
@@ -206,7 +207,8 @@ def compile_manifest(path: Path, policy_dir: Path | None = None) -> RunPlan:
                 raise MiniError("MINI_ROUTE_INVALID", f"routing sends {kind_id!r} to the port {destination.port_id!r}, which that stage's kind does not declare")
         if destination.target == "evidence_store" and str(destination.tier) not in tiers:
             raise MiniError("MINI_TIER_UNKNOWN", f"routing sends {kind_id!r} to the tier {destination.tier!r}, which nothing declares")
-    for tier, destination in routing.evidence.items():
+    for tier, destinations in routing.evidence.items():
+      for destination in destinations:
         if tier not in tiers:
             raise MiniError("MINI_TIER_UNKNOWN", f"routing names the tier {tier!r}, which nothing declares")
         if destination.target == "port_type" and str(destination.port_type) not in port_types:

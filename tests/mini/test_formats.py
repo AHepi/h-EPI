@@ -191,3 +191,105 @@ class MalformedSpecificationTests(MiniTestCase):
             {"body": {"all_of": [{"check": "line_shape", "pattern": "^- ", "applies_to": "any_line"}]}}, "format"
         )
         self.assertTrue(compiled.failures({"body": "   ", "commitments": "c"}))
+
+
+class TheFormatIsShownTests(MiniTestCase):
+    """R24: the compiled format is rendered in full, on every attempt."""
+
+    def test_the_schema_text_is_in_the_dispatched_request_bytes_on_attempt_one(self) -> None:
+        """Not the rendered brief — the bytes that would have gone over the wire."""
+
+        import json as json_module
+
+        from creib.forge.mini.executor import LiveResponder
+        from creib.forge.mini.runner import run_mini
+
+        manifest = base_manifest()
+        manifest["kinds"][0]["format"] = copy.deepcopy(JSON_SPEC)
+        manifest["stages"] = [
+            {"stage_id": "c1", "kind_id": "k.conjecture", "ports": ["problem"]},
+            {"stage_id": "end", "end": True},
+        ]
+        plan = self.compile(manifest)
+
+        sent: list[bytes] = []
+
+        class _Stub:
+            def complete(self, request):
+                sent.append(json_module.dumps(request.body(), ensure_ascii=False).encode("utf-8"))
+                from creib.forge.conformance.executor import ChatResponse
+
+                return ChatResponse(
+                    content=json_module.dumps({"body": "b", "commitments": json_module.dumps({"commit": "x"})}),
+                    thinking_present=False,
+                    done=True,
+                    done_reason="stop",
+                    prompt_eval_count=1,
+                    eval_count=1,
+                    total_duration_ns=None,
+                    http_status=200,
+                    transport_error=None,
+                    response_digest="0" * 64,
+                )
+
+        run_mini(plan, self.tmp / "run", LiveResponder("a-model", _Stub()))
+        self.assertEqual(len(sent), 1)
+        first = sent[0].decode("utf-8")
+        self.assertIn('\\"commit\\"', first)
+        self.assertIn("required", first)
+        self.assertIn("must be JSON fitting exactly this schema", first)
+
+    def test_the_keyword_list_is_written_out_in_full(self) -> None:
+        compiled = compile_format_spec(
+            {"body": {"all_of": [{"check": "keywords", "keywords": ["BECAUSE", "THEREFORE"]}]}}, "format"
+        )
+        rendered = "\n".join(compiled.describe())
+        self.assertIn("- BECAUSE", rendered)
+        self.assertIn("- THEREFORE", rendered)
+        self.assertIn("exactly as written", rendered)
+
+    def test_every_check_kind_renders_something_a_seat_could_act_on(self) -> None:
+        compiled = compile_format_spec(
+            {
+                "body": {
+                    "all_of": [
+                        {"check": "sections", "markers": ["## Claim"]},
+                        {"check": "regex", "pattern": "^C-[0-9]+"},
+                        {"check": "line_shape", "pattern": "^- ", "applies_to": "any_line"},
+                    ]
+                },
+                "commitments": {"all_of": [{"check": "json_schema", "schema": {"type": "object"}}]},
+            },
+            "format",
+        )
+        rendered = "\n".join(compiled.describe())
+        for expected in ("## Claim", "^C-[0-9]+", "at least one line", '"type": "object"'):
+            self.assertIn(expected, rendered)
+
+    def test_the_format_is_in_the_brief_on_the_first_attempt_and_the_error_beside_it_on_the_retry(self) -> None:
+        seen: list[str] = []
+
+        class Recording:
+            def __init__(self, inner) -> None:
+                self._inner = inner
+
+            def reply(self, request):
+                seen.append(request.brief)
+                return self._inner.reply(request)
+
+        from creib.forge.mini.executor import ScriptedResponder
+        from creib.forge.mini.runner import run_mini
+
+        manifest = base_manifest()
+        manifest["kinds"][0]["format"] = copy.deepcopy(KEYWORD_SPEC)
+        manifest["kinds"][0]["failure_policy"] = {"retries": 1}
+        plan = self.compile(manifest)
+        run_mini(
+            plan,
+            self.tmp / "run",
+            Recording(ScriptedResponder({"c1": [submission("no", "c"), submission("BECAUSE", "c")], "x1": [submission("a", "b")]})),
+        )
+        self.assertIn("- BECAUSE", seen[0])
+        self.assertNotIn("was refused", seen[0])
+        self.assertIn("- BECAUSE", seen[1])
+        self.assertIn("was refused", seen[1])

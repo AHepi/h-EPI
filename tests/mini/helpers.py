@@ -110,6 +110,22 @@ class MiniTestCase(unittest.TestCase):
     def events_of(self, outcome: RunOutcome, event_type: str) -> list[dict[str, Any]]:
         return [event for event in self.events(outcome) if event["type"] == event_type]
 
+    def _every_brief(self, plan, outcome) -> str:
+        """Every port of every producing stage, rendered — for absence assertions."""
+
+        from creib.forge.mini.log import BlobStore, replay
+        from creib.forge.mini.runner import render_brief
+
+        state = replay(outcome.root / "log.jsonl", plan.genesis)
+        blobs = BlobStore(outcome.root / "blobs")
+        rendered = []
+        for stage in plan.stages:
+            if stage.end:
+                continue
+            brief, _ = render_brief(plan, state, blobs, stage)
+            rendered.append(brief)
+        return "\n".join(rendered)
+
     def assertRefuses(self, code: str, callable_object, *args: Any, **kwargs: Any) -> None:
         from creib.forge.mini.common import MiniError
 

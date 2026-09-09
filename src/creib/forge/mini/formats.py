@@ -12,6 +12,7 @@ being present and non-empty.
 
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass
 from typing import Any, Callable
@@ -33,10 +34,18 @@ _INVALID = "MINI_FORMAT_SPEC_INVALID"
 
 @dataclass(frozen=True)
 class CompiledCheck:
-    """One compiled check: ``describe`` is what a seat is shown on failure."""
+    """One compiled check.
+
+    ``rendered`` is the check written out in full — the keyword list, the
+    markers, the expression, the schema as text — and it is what the seat is
+    shown, on the first attempt and on every retry. A seat that is only told
+    its answer was the wrong shape, without being told the shape, is being set
+    up to fail twice.
+    """
 
     check: str
     describe: str
+    rendered: str
     run: Callable[[str], str | None]
 
 
@@ -51,8 +60,10 @@ class CompiledFormat:
         return not any(self.checks.values())
 
     def describe(self) -> tuple[str, ...]:
+        """The compiled format in full, one entry per field and check."""
+
         return tuple(
-            f"{field}: {item.describe}" for field in FORMAT_FIELDS for item in self.checks.get(field, ())
+            f"`{field}` {item.rendered}" for field in FORMAT_FIELDS for item in self.checks.get(field, ())
         )
 
     def failures(self, submission: dict[str, Any]) -> tuple[str, ...]:
@@ -108,7 +119,14 @@ def _keywords(spec: dict[str, Any], where: str) -> CompiledCheck:
                 return f"the word {keyword!r} does not appear"
         return None
 
-    return CompiledCheck("keywords", f"must contain {', '.join(repr(word) for word in keywords)}", run)
+    listed = "\n".join(f"  - {word}" for word in keywords)
+    sensitivity = "exactly as written" if case_sensitive else "in any case"
+    return CompiledCheck(
+        "keywords",
+        f"must contain {', '.join(repr(word) for word in keywords)}",
+        f"must contain every one of these words, {sensitivity}:\n{listed}",
+        run,
+    )
 
 
 def _sections(spec: dict[str, Any], where: str) -> CompiledCheck:
@@ -123,7 +141,13 @@ def _sections(spec: dict[str, Any], where: str) -> CompiledCheck:
             return f"the section marker {remaining[0]!r} does not begin a line, in order"
         return None
 
-    return CompiledCheck("sections", f"must carry the section markers {list(markers)} in order", run)
+    listed = "\n".join(f"  {index + 1}. {marker}" for index, marker in enumerate(markers))
+    return CompiledCheck(
+        "sections",
+        f"must carry the section markers {list(markers)} in order",
+        f"must begin lines with these markers, in this order:\n{listed}",
+        run,
+    )
 
 
 def _regex(spec: dict[str, Any], where: str) -> CompiledCheck:
@@ -134,7 +158,12 @@ def _regex(spec: dict[str, Any], where: str) -> CompiledCheck:
             return f"nothing in it matches {compiled.pattern!r}"
         return None
 
-    return CompiledCheck("regex", f"must match {compiled.pattern!r}", run)
+    return CompiledCheck(
+        "regex",
+        f"must match {compiled.pattern!r}",
+        f"must contain something matching this expression:\n  {compiled.pattern}",
+        run,
+    )
 
 
 def _line_shape(spec: dict[str, Any], where: str) -> CompiledCheck:
@@ -154,7 +183,13 @@ def _line_shape(spec: dict[str, Any], where: str) -> CompiledCheck:
             return f"no line matches {compiled.pattern!r}"
         return None
 
-    return CompiledCheck("line_shape", f"{scope}: must match {compiled.pattern!r}", run)
+    every = "every non-blank line" if scope == "every_line" else "at least one line"
+    return CompiledCheck(
+        "line_shape",
+        f"{scope}: must match {compiled.pattern!r}",
+        f"{every} must match this expression:\n  {compiled.pattern}",
+        run,
+    )
 
 
 def _reject_references(node: Any, where: str) -> None:
@@ -189,7 +224,13 @@ def _json_schema(spec: dict[str, Any], where: str) -> CompiledCheck:
             return f"it does not fit the declared shape: {errors[0].message}"
         return None
 
-    return CompiledCheck("json_schema", "must be JSON fitting the declared shape", run)
+    as_text = json.dumps(fragment, ensure_ascii=False, sort_keys=True, indent=2)
+    return CompiledCheck(
+        "json_schema",
+        "must be JSON fitting the declared shape",
+        f"must be JSON fitting exactly this schema:\n{as_text}",
+        run,
+    )
 
 
 _COMPILERS: dict[str, Callable[[dict[str, Any], str], CompiledCheck]] = {

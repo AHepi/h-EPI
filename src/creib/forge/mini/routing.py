@@ -1,13 +1,14 @@
 """Where an artifact's contents go, and where a batch of evidence goes (R15, R16).
 
-Two lists of rules, both written by the operator. When neither is declared the
-default is a pull: a port draws from the kinds or the tiers its port type
-names, so an ordinary conjecturer to critic to end run needs no routing at all.
-A declared rule replaces the default for the one kind or tier it names, and
-leaves everything else on the default.
+Two lists of rules, both written by the operator. One rule serves both. A port's default draw is
+everything of the kinds or tiers its type names, so an ordinary conjecturer to
+critic to end run needs no routing at all. A declared route REPLACES that
+default for the one kind or tier it names, and leaves everything else on the
+default; a push is additive on top of whatever the route allows, which is why a
+kind or tier may carry more than one route.
 
-A block routed nowhere stays in the store and is never shown to a seat, which
-is exactly the condition a withheld citation reports.
+A kind or tier routed nowhere reaches NO port. It stays in the store, which is
+exactly the condition a withheld citation reports, and it is shown to nobody.
 """
 
 from __future__ import annotations
@@ -75,43 +76,54 @@ def destination_from_dict(raw: Any, where: str, admitted: tuple[str, ...]) -> De
 
 @dataclass(frozen=True)
 class Routing:
-    """The declared routes; anything unnamed keeps the default pull."""
+    """The declared routes; anything unnamed keeps the default draw."""
 
-    artifacts: Mapping[str, Destination]
-    evidence: Mapping[str, Destination]
+    artifacts: Mapping[str, tuple[Destination, ...]]
+    evidence: Mapping[str, tuple[Destination, ...]]
 
-    def for_artifact(self, kind_id: str) -> Destination | None:
-        return self.artifacts.get(kind_id)
+    def for_artifact(self, kind_id: str) -> tuple[Destination, ...]:
+        return self.artifacts.get(kind_id, ())
 
-    def for_evidence(self, tier: str) -> Destination | None:
-        return self.evidence.get(tier)
+    def for_evidence(self, tier: str) -> tuple[Destination, ...]:
+        return self.evidence.get(tier, ())
 
     def to_dict(self) -> dict[str, object]:
         return {
-            "artifacts": {key: self.artifacts[key].to_dict() for key in sorted(self.artifacts)},
-            "evidence": {key: self.evidence[key].to_dict() for key in sorted(self.evidence)},
+            "artifacts": {key: [item.to_dict() for item in self.artifacts[key]] for key in sorted(self.artifacts)},
+            "evidence": {key: [item.to_dict() for item in self.evidence[key]] for key in sorted(self.evidence)},
         }
 
 
 EMPTY_ROUTING = Routing(artifacts={}, evidence={})
 
 
+def _collected(
+    rules: Any, where: str, key: str, admitted: tuple[str, ...]
+) -> dict[str, tuple[Destination, ...]]:
+    """Group routes by the kind or tier they name; nowhere may not be combined."""
+
+    collected: dict[str, list[Destination]] = {}
+    for index, item in enumerate(rules or []):
+        rule = object_value(item, f"{where}[{index}]", "MINI_ROUTE_INVALID")
+        subject = text(rule.get(key), f"{where}[{index}].{key}", "MINI_ROUTE_INVALID")
+        collected.setdefault(subject, []).append(
+            destination_from_dict(rule.get("to"), f"{where}[{index}].to", admitted)
+        )
+    for subject, destinations in collected.items():
+        targets = [destination.target for destination in destinations]
+        if "nowhere" in targets and len(targets) > 1:
+            raise MiniError(
+                "MINI_ROUTE_INVALID",
+                f"{where} routes {subject!r} nowhere and somewhere else; the union of nowhere and anything is not nowhere",
+            )
+    return {subject: tuple(destinations) for subject, destinations in collected.items()}
+
+
 def routing_from_dict(raw: Any, where: str) -> Routing:
     if raw is None:
         return EMPTY_ROUTING
     entry = object_value(raw, where, "MINI_ROUTE_INVALID")
-    artifacts: dict[str, Destination] = {}
-    for index, item in enumerate(entry.get("artifacts") or []):
-        rule = object_value(item, f"{where}.artifacts[{index}]", "MINI_ROUTE_INVALID")
-        kind_id = text(rule.get("from_kind"), f"{where}.artifacts[{index}].from_kind", "MINI_ROUTE_INVALID")
-        if kind_id in artifacts:
-            raise MiniError("MINI_ROUTE_INVALID", f"{where} routes the kind {kind_id!r} twice")
-        artifacts[kind_id] = destination_from_dict(rule.get("to"), f"{where}.artifacts[{index}].to", ARTIFACT_TARGETS)
-    evidence: dict[str, Destination] = {}
-    for index, item in enumerate(entry.get("evidence") or []):
-        rule = object_value(item, f"{where}.evidence[{index}]", "MINI_ROUTE_INVALID")
-        tier = text(rule.get("from_tier"), f"{where}.evidence[{index}].from_tier", "MINI_ROUTE_INVALID")
-        if tier in evidence:
-            raise MiniError("MINI_ROUTE_INVALID", f"{where} routes the tier {tier!r} twice")
-        evidence[tier] = destination_from_dict(rule.get("to"), f"{where}.evidence[{index}].to", EVIDENCE_TARGETS)
-    return Routing(artifacts=artifacts, evidence=evidence)
+    return Routing(
+        artifacts=_collected(entry.get("artifacts"), f"{where}.artifacts", "from_kind", ARTIFACT_TARGETS),
+        evidence=_collected(entry.get("evidence"), f"{where}.evidence", "from_tier", EVIDENCE_TARGETS),
+    )

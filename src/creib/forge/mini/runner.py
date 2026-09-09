@@ -102,7 +102,7 @@ def _as_block(blobs: BlobStore, entry: Mapping[str, Any]) -> Block:
     )
 
 
-def _visible_through(
+def _block_reaches_port(
     plan: RunPlan,
     state: MiniState,
     port_type: PortType,
@@ -110,16 +110,58 @@ def _visible_through(
     port_type_name: str,
     entry: Mapping[str, Any],
 ) -> bool:
+    """Does one evidence block reach this port? The rule of section 14."""
+
     tier = str(entry["tier"])
-    route = plan.routing.for_evidence(tier)
-    if route is None:
+    routes = plan.routing.for_evidence(tier)
+    if not routes:
         return port_type.source == "evidence" and tier in port_draws_tiers(port_type, params)
-    if route.target == "nowhere":
-        return False
-    if route.target == "port_type":
-        return port_type_name == route.port_type and port_type.source == "evidence" and tier in port_draws_tiers(port_type, params)
-    destination = str(route.destination)
-    return port_type.source == "scratch" and str(params.get("destination")) == destination and str(entry["block_id"]) in state.scratch_blocks.get(destination, [])
+    for route in routes:
+        if route.target == "port_type":
+            if port_type_name == route.port_type and port_type.source == "evidence" and tier in port_draws_tiers(port_type, params):
+                return True
+        elif route.target == "scratch":
+            destination = str(route.destination)
+            if (
+                port_type.source == "scratch"
+                and str(params.get("destination")) == destination
+                and str(entry["block_id"]) in state.scratch_blocks.get(destination, [])
+            ):
+                return True
+    return False
+
+
+def _artifact_reaches_port(
+    plan: RunPlan,
+    state: MiniState,
+    port_type: PortType,
+    params: Mapping[str, Any],
+    stage_id: str,
+    port_id: str,
+    record: Mapping[str, Any],
+) -> bool:
+    """Does one artifact reach this port? The same rule, for artifacts.
+
+    With no route declared, the default draw applies. With a route declared, the
+    default is REPLACED: the artifact reaches only where the run actually placed
+    it, which is why a placement the permission layer refused reaches nothing.
+    """
+
+    kind_id = str(record["kind_id"])
+    routes = plan.routing.for_artifact(kind_id)
+    if not routes:
+        return port_type.source == "artifacts" and kind_id in port_draws_kinds(port_type, params)
+    artifact_id = str(record["artifact_id"])
+    for route in routes:
+        if route.target == "port":
+            if artifact_id in state.pushed.get(f"{stage_id}::{port_id}", []):
+                return True
+        elif route.target == "scratch":
+            destination = str(route.destination)
+            if port_type.source == "scratch" and str(params.get("destination")) == destination:
+                if artifact_id in state.scratch.get(destination, []):
+                    return True
+    return False
 
 
 def _artifact_lines(blobs: BlobStore, records: tuple[Mapping[str, Any], ...], rule: str) -> list[str]:
@@ -143,20 +185,24 @@ def render_port(plan: RunPlan, state: MiniState, blobs: BlobStore, stage: Stage,
     if port_type.source == "problem":
         return f"{header}\n{plan.problem}", ()
     if port_type.source == "artifacts":
-        drawn = port_draws_kinds(port_type, port.params)
-        records = tuple(state.artifacts[key] for key in state.artifact_order if state.artifacts[key]["kind_id"] in drawn)
-        pushed = tuple(state.artifacts[key] for key in state.pushed.get(f"{stage.stage_id}::{port_id}", []) if key in state.artifacts)
-        ordered = records + tuple(item for item in pushed if item not in records)
+        ordered = tuple(
+            state.artifacts[key]
+            for key in state.artifact_order
+            if _artifact_reaches_port(plan, state, port_type, port.params, stage.stage_id, port_id, state.artifacts[key])
+        )
         lines = _artifact_lines(blobs, ordered, port_type.render_rule) or ["(nothing yet)"]
         return "\n".join([header, *lines]), ()
     if port_type.source == "evidence":
-        entries = [item for item in state.blocks if _visible_through(plan, state, port_type, port.params, port.port_type, item)]
+        entries = [item for item in state.blocks if _block_reaches_port(plan, state, port_type, port.params, port.port_type, item)]
         blocks = [_as_block(blobs, item) for item in entries]
         return render_legend(blocks, header), tuple(block.block_id for block in blocks)
-    destination = str(port.params["destination"])
-    records = tuple(state.artifacts[key] for key in state.scratch.get(destination, []) if key in state.artifacts)
+    records = tuple(
+        state.artifacts[key]
+        for key in state.artifact_order
+        if _artifact_reaches_port(plan, state, port_type, port.params, stage.stage_id, port_id, state.artifacts[key])
+    )
     lines = _artifact_lines(blobs, records, port_type.render_rule)
-    entries = [item for item in state.blocks if _visible_through(plan, state, port_type, port.params, port.port_type, item)]
+    entries = [item for item in state.blocks if _block_reaches_port(plan, state, port_type, port.params, port.port_type, item)]
     blocks = [_as_block(blobs, item) for item in entries]
     if blocks:
         lines.append(render_legend(blocks, "admitted blocks"))
@@ -179,7 +225,7 @@ def render_brief(plan: RunPlan, state: MiniState, blobs: BlobStore, stage: Stage
         'A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.'
     )
     if not compiled.freeform:
-        sections.append("## Required shape\n" + "\n".join(compiled.describe()))
+        sections.append("## The shape this answer must take\n" + "\n\n".join(compiled.describe()))
     return "\n\n".join(sections), frozenset(exposed)
 
 
@@ -187,17 +233,17 @@ def _batch_evidence(plan: RunPlan, blobs: BlobStore, recorder: _Recorder) -> Non
     for source in plan.sources:
         reference = blobs.put(source.raw)
         blocks = cut_source(source.source_id, source.raw, source.tier)
-        route = plan.routing.for_evidence(source.tier)
-        recorder.emit(
-            EVIDENCE_BATCHED,
-            {
-                "source_id": source.source_id,
-                "source_ref": reference,
-                "tier": source.tier,
-                "blocks": [block.to_dict() for block in blocks],
-                "to": {} if route is None else route.to_dict(),
-            },
-        )
+        for route in plan.routing.for_evidence(source.tier) or (None,):
+            recorder.emit(
+                EVIDENCE_BATCHED,
+                {
+                    "source_id": source.source_id,
+                    "source_ref": reference,
+                    "tier": source.tier,
+                    "blocks": [block.to_dict() for block in blocks],
+                    "to": {} if route is None else route.to_dict(),
+                },
+            )
 
 
 def _store_artifact(blobs: BlobStore, stage: Stage, submission: Submission, seq: int) -> tuple[str, str, str]:
@@ -226,9 +272,21 @@ def _route_output(
     body_ref: str,
 ) -> None:
     kind_id = str(stage.kind_id)
-    destination: Destination | None = plan.routing.for_artifact(kind_id)
-    if destination is None:
-        return
+    for destination in plan.routing.for_artifact(kind_id):
+        _route_one(plan, state, blobs, recorder, stage, artifact_id, body_ref, destination)
+
+
+def _route_one(
+    plan: RunPlan,
+    state: MiniState,
+    blobs: BlobStore,
+    recorder: _Recorder,
+    stage: Stage,
+    artifact_id: str,
+    body_ref: str,
+    destination: Destination,
+) -> None:
+    kind_id = str(stage.kind_id)
     if not plan.policy.may_write(kind_id, destination):
         recorder.emit(
             REFUSED,
@@ -304,7 +362,9 @@ def _attempt_submission(
     reasons: tuple[str, ...] = ()
     refused_refs: list[str] = []
     for attempt in range(policy.retries + 1):
-        shown = brief if attempt == 0 else brief + "\n\n## The last reply was refused\n" + "\n".join(reasons)
+        # The rendered format is already in the brief, on every attempt; a retry
+        # adds the error BESIDE it rather than in place of it.
+        shown = brief if attempt == 0 else brief + "\n\n## The last reply was refused, for these reasons\n" + "\n".join(reasons)
         reply = responder.reply(Request(stage_id=stage.stage_id, kind_id=kind.kind_id, attempt=attempt, brief=shown))
         reply_ref = blobs.put(reply.text.encode("utf-8"))
         try:

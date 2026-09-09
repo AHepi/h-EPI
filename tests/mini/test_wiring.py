@@ -183,11 +183,78 @@ class DeclaredRoutingTests(MiniTestCase):
         brief, _ = render_brief(plan, state, BlobStore(outcome.root / "blobs"), plan.stage("x1"))
         self.assertIn("The two paragraphs disagree.", brief)
 
-    def test_an_artifact_can_be_routed_nowhere(self) -> None:
+    def test_a_kind_routed_nowhere_reaches_no_port_at_all(self) -> None:
+        """R22, B2: absence from every port, not merely a routing event."""
+
         manifest = base_manifest()
         manifest["routing"] = {"artifacts": [{"from_kind": "k.conjecture", "to": {"target": "nowhere"}}]}
-        _, outcome = self.run_manifest(manifest)
+        plan, outcome = self.run_manifest(manifest)
         self.assertEqual(self.events_of(outcome, ROUTED)[0]["payload"]["to"], {"target": "nowhere"})
+        self.assertNotIn("The two paragraphs disagree.", self._every_brief(plan, outcome))
+
+    def test_a_declared_route_replaces_the_default_draw(self) -> None:
+        """R22: routed to scratch, the conjecture no longer reaches the critic's port."""
+
+        manifest = base_manifest()
+        manifest["routing"] = {
+            "artifacts": [{"from_kind": "k.conjecture", "to": {"target": "scratch", "destination": "shelf"}}]
+        }
+        plan, outcome = self.run_manifest(manifest)
+        from creib.forge.mini.log import BlobStore, replay
+        from creib.forge.mini.runner import render_brief
+
+        state = replay(outcome.root / "log.jsonl", plan.genesis)
+        critic, _ = render_brief(plan, state, BlobStore(outcome.root / "blobs"), plan.stage("x1"))
+        self.assertIn("nothing yet", critic)
+        self.assertNotIn("The two paragraphs disagree.", critic)
+
+    def test_a_push_is_additive_on_top_of_what_the_route_allows(self) -> None:
+        """R22, B1: scratch and a push together, both delivered."""
+
+        manifest = base_manifest()
+        manifest["kinds"][1]["input_ports"].append(
+            {"port_id": "notes", "port_type": "scratch", "params": {"destination": "shelf"}}
+        )
+        manifest["kinds"][1]["input_ports"].append(
+            {"port_id": "pushed", "port_type": "artifacts_of_kind", "params": {"kind_id": "k.conjecture"}}
+        )
+        manifest["stages"][1]["ports"] = ["notes", "pushed"]
+        manifest["routing"] = {
+            "artifacts": [
+                {"from_kind": "k.conjecture", "to": {"target": "scratch", "destination": "shelf"}},
+                {"from_kind": "k.conjecture", "to": {"target": "port", "stage_id": "x1", "port_id": "pushed"}},
+            ]
+        }
+        manifest["policy"] = {
+            "base": "mini.policy.default.v1",
+            "grants": [
+                {"kind_id": "k.conjecture", "may_write": [{"target": "port", "stage_id": "x1", "port_id": "pushed"}]}
+            ],
+        }
+        plan, outcome = self.run_manifest(manifest)
+        from creib.forge.mini.log import BlobStore, replay
+        from creib.forge.mini.runner import render_brief, render_port
+
+        state = replay(outcome.root / "log.jsonl", plan.genesis)
+        blobs = BlobStore(outcome.root / "blobs")
+        for port_id in ("notes", "pushed"):
+            rendered, _ = render_port(plan, state, blobs, plan.stage("x1"), port_id)
+            self.assertIn("The two paragraphs disagree.", rendered, port_id)
+
+    def test_a_push_the_policy_refused_reaches_no_port(self) -> None:
+        """R22: the route replaces the default, and a refused push delivers nothing."""
+
+        manifest = base_manifest()
+        manifest["kinds"][1]["input_ports"].append(
+            {"port_id": "pushed", "port_type": "artifacts_of_kind", "params": {"kind_id": "k.conjecture"}}
+        )
+        manifest["stages"][1]["ports"] = ["problem", "conjectures", "pushed"]
+        manifest["routing"] = {
+            "artifacts": [{"from_kind": "k.conjecture", "to": {"target": "port", "stage_id": "x1", "port_id": "pushed"}}]
+        }
+        plan, outcome = self.run_manifest(manifest)
+        self.assertEqual(self.events_of(outcome, "REFUSED")[0]["payload"]["code"], "MINI_POLICY_WRITE_REFUSED")
+        self.assertNotIn("The two paragraphs disagree.", self._every_brief(plan, outcome))
 
     def test_evidence_can_be_aimed_at_one_port_type(self) -> None:
         """R15: where a batch of evidence goes is declared, not fixed."""
@@ -249,21 +316,37 @@ class RoutingRefusalTests(MiniTestCase):
             "MINI_ROUTE_INVALID", destination_from_dict, {"target": "port", "stage_id": "s"}, "routing", ("port",)
         )
 
-    def test_routing_one_kind_twice_is_refused(self) -> None:
-        self.assertRefuses(
-            "MINI_ROUTE_INVALID",
-            routing_from_dict,
-            {"artifacts": [{"from_kind": "k", "to": {"target": "nowhere"}}, {"from_kind": "k", "to": {"target": "nowhere"}}]},
-            "routing",
-        )
+    def test_a_kind_may_carry_more_than_one_route(self) -> None:
+        """R22, B1: a push is additive on top of whatever the route allows."""
 
-    def test_routing_one_tier_twice_is_refused(self) -> None:
-        self.assertRefuses(
-            "MINI_ROUTE_INVALID",
-            routing_from_dict,
-            {"evidence": [{"from_tier": "t", "to": {"target": "nowhere"}}, {"from_tier": "t", "to": {"target": "nowhere"}}]},
+        routing = routing_from_dict(
+            {
+                "artifacts": [
+                    {"from_kind": "k", "to": {"target": "scratch", "destination": "shelf"}},
+                    {"from_kind": "k", "to": {"target": "port", "stage_id": "s", "port_id": "p"}},
+                ]
+            },
             "routing",
         )
+        self.assertEqual([item.target for item in routing.for_artifact("k")], ["scratch", "port"])
+
+    def test_nowhere_may_not_be_combined_with_another_route(self) -> None:
+        for section, key in (("artifacts", "from_kind"), ("evidence", "from_tier")):
+            with self.subTest(section=section):
+                self.assertRefuses(
+                    "MINI_ROUTE_INVALID",
+                    routing_from_dict,
+                    {
+                        section: [
+                            {key: "x", "to": {"target": "nowhere"}},
+                            {key: "x", "to": {"target": "scratch", "destination": "shelf"}},
+                        ]
+                    },
+                    "routing",
+                )
+
+    def test_an_unrouted_kind_reaches_every_port_that_draws_it(self) -> None:
+        self.assertEqual(routing_from_dict(None, "routing").for_artifact("k"), ())
 
     def test_routing_an_undeclared_kind_is_refused(self) -> None:
         manifest = base_manifest()
