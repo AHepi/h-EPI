@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ahepi.example/mini/0.1/mini-kind.schema.json",
+  "title": "One artifact kind: the generic template, filled in",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "kind"],
+  "properties": {
+    "schema_version": {"const": "creib.mini.kind.v1"},
+    "kind": {"$ref": "#/$defs/kind"}
+  },
+  "$defs": {
+    "kind": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind_id", "title", "input_ports", "output_port"],
+      "properties": {
+        "kind_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "title": {"type": "string", "minLength": 1, "maxLength": 128},
+        "input_ports": {"type": "array", "items": {"$ref": "#/$defs/input_port"}, "maxItems": 32},
+        "output_port": {"$ref": "#/$defs/output_port"},
+        "optional_fields": {"type": "array", "items": {"type": "string", "minLength": 1, "maxLength": 64}, "maxItems": 16},
+        "format": {"$ref": "#/$defs/format_spec"},
+        "failure_policy": {"$ref": "#/$defs/failure_policy"}
+      }
+    },
+    "input_port": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["port_id", "port_type"],
+      "properties": {
+        "port_id": {"type": "string", "minLength": 1, "maxLength": 64},
+        "port_type": {"type": "string", "minLength": 1, "maxLength": 64},
+        "params": {"type": "object"}
+      }
+    },
+    "output_port": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["port_id", "produces_kind"],
+      "properties": {
+        "port_id": {"type": "string", "minLength": 1, "maxLength": 64},
+        "produces_kind": {"type": "string", "minLength": 1, "maxLength": 128}
+      }
+    },
+    "format_spec": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "body": {"$ref": "#/$defs/field_format"},
+        "commitments": {"$ref": "#/$defs/field_format"}
+      }
+    },
+    "field_format": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["all_of"],
+      "properties": {
+        "all_of": {"type": "array", "minItems": 1, "maxItems": 16, "items": {"$ref": "#/$defs/check"}}
+      }
+    },
+    "check": {
+      "type": "object",
+      "required": ["check"],
+      "properties": {"check": {"type": "string", "minLength": 1, "maxLength": 32}}
+    },
+    "failure_policy": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "retries": {"type": "integer", "minimum": 0, "maximum": 16},
+        "tolerance": {
+          "oneOf": [
+            {"type": "integer", "minimum": 0},
+            {"type": "null"},
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["numerator", "denominator"],
+              "properties": {
+                "numerator": {"type": "integer", "minimum": 0},
+                "denominator": {"type": "integer", "minimum": 1}
+              }
+            }
+          ]
+        },
+        "action": {"type": "string", "minLength": 1, "maxLength": 32}
+      }
+    }
+  }
+}
