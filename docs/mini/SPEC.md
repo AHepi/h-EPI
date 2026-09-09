@@ -506,11 +506,18 @@ exists, the honest default is off, which is what ships.
   to the conformance harness's own `OllamaChatExecutor`, so there is one place
   in this repository where a key is touched. One live run is recorded; see
   `DELIVERY.md`.
-- **A place for citations the model will actually use.** The one live run put
-  its block ids and quotes inside the body prose rather than in the `citations`
-  field the schema offered, so the citation channel recorded nothing while the
-  artifact was in fact grounded. See `DELIVERY.md`; the brief, not the check, is
-  what needs work.
+- **A place for citations a model will actually use.** Two live runs, two
+  opposite behaviours: one model grounded its claims correctly inside the body
+  prose and left the `citations` field empty; the other used the field and put
+  nothing citable in it. The byte-check is not what needs work. See
+  `docs/mini/FAILURE_MODES.md` M1 and M2.
+- **Keeping a reply that was refused.** A `FORMAT_FAILURE` event records why a
+  reply was refused and not the reply, so what the model actually said is lost.
+  That contradicts the rest of the design, in which an accepted body is a blob
+  kept verbatim. Registered as `docs/mini/FAILURE_MODES.md` H1.
+- **Noticing that a stage's input port was empty.** A stage whose port draws
+  from a kind that produced nothing runs anyway, and nothing records that it
+  did. See `docs/mini/FAILURE_MODES.md` M3.
 - **Cycles as a first-class idea.** The `cycle-count` signal counts returns to
   the first stage entered. A run whose attention policy re-orders freely makes
   that number harder to read than it looks. Nothing depends on it yet.

@@ -153,7 +153,21 @@ nothing further: on this one run, with this model, this manifest and this
 wording, the optional `citations` field went unused. It does not show that
 models generally will not use it, and two calls could not show that.
 
-**What this run does not establish.** That the prototype works on anything
-larger, that a second run would return the same text, or that either artifact is
-any good. Nothing here was compared with what the same model produces without
-the harness, and this run carries no such arm.
+**A second run, on a model the operator prefers to that one.** The same
+manifest on `glm-5.3-flash`, three calls, at
+`forge/mini/runs/default-glm-5.3-flash/`. Its conjecture stage returned an
+unreadable reply twice, so the failure policy retried once, dropped the
+submission and carried on to the criticism stage, which then ran with no
+conjectures to criticise. Its criticism did use the `citations` field, and
+filled it with three entries naming no block.
+
+The two runs together give three model-side or brief-side findings and one
+defect in the harness, all registered with their run roots in
+`docs/mini/FAILURE_MODES.md`. The defect (H1) is that a reply refused for its
+format is not kept, only the reason it was refused.
+
+**What these runs do not establish.** That the prototype works on anything
+larger, that a repeat would return the same text, or that any artifact is any
+good. Nothing here was compared with what the same model produces without the
+harness, and neither run carries such an arm. Two models on one manifest behaved
+oppositely on the same field; five calls cannot say which is typical.
