@@ -222,40 +222,51 @@ def scoring_from_dict(raw: Any, where: str = "scoring") -> Scoring:
 
 
 def recover_json_object(content: str) -> Any:
-    """Project import: extract a JSON object from fences or surrounding prose."""
+    """Project import: extract a JSON object from fences or surrounding prose.
 
-    candidates: list[str] = [match.group(1) for match in _FENCE.finditer(content)]
-    # Every balanced object in the text is a candidate, not only the span from
-    # the first "{" to the last "}": reasoning prose before or after the answer
-    # frequently contains stray braces. Among the candidates that parse as
-    # strict objects, the one with the most keys is taken; ties go to the last,
-    # because models place their final answer last.
+    Every top-level balanced object in the text is a candidate, not only the span from the
+    first ``{`` to the last ``}``: reasoning prose before or after the answer frequently
+    contains stray braces, and an object nested inside another is not a candidate of its own.
+    The object scored is the last one inside a code fence when any fence holds one, else the
+    last top-level object in the text, because a model places its final answer last and marks
+    it: a reply that quotes its previous answer and then gives a corrected one is scored on the
+    correction. Until 9 September 2026 the object with the most keys was taken, ties to the
+    last, and nine cycle replies that dropped a criticised key were scored on the draft that
+    still carried it (``docs/failure-modes.md``, H40). A candidate that parses as strict JSON,
+    or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float,
+    for instance) is passed over, so a final answer refused for a float loses to an earlier
+    draft that parsed (``docs/kernel.md``, P-06).
+    """
+
     decoder = json.JSONDecoder()
+    fenced: list[str] = []
+    for match in _FENCE.finditer(content):
+        fenced.append(match.group(1))
+    top_level: list[str] = []
+    cursor = 0
     for index, character in enumerate(content):
-        if character != "{":
+        if character != "{" or index < cursor:
             continue
         try:
             _value, end = decoder.raw_decode(content, index)
         except (ValueError, RecursionError):
             continue
-        candidates.append(content[index:end])
-    best: dict[str, Any] | None = None
-    best_duplicates: tuple[str, ...] = ()
-    for candidate in candidates:
-        duplicates: tuple[str, ...] = ()
-        try:
-            value = loads_strict(candidate.strip())
-        except (RecordError, ValueError, RecursionError):
-            # Strict JSON refuses duplicate keys. A reply that is otherwise one well-formed object with a
-            # repeated key is still scoreable: take the last value for each key, and say which keys repeated.
-            parsed = _loads_last_wins(candidate.strip())
-            if parsed is None:
-                continue
-            value, duplicates = parsed
-        if type(value) is dict and (best is None or len(value) >= len(best)):
-            best, best_duplicates = value, duplicates
-    if best is not None:
-        return best, best_duplicates
+        top_level.append(content[index:end])
+        cursor = end
+    for pool in (fenced, top_level):
+        for candidate in reversed(pool):
+            duplicates: tuple[str, ...] = ()
+            try:
+                value = loads_strict(candidate.strip())
+            except (RecordError, ValueError, RecursionError):
+                # Strict JSON refuses duplicate keys. A reply that is otherwise one well-formed object with a
+                # repeated key is still scoreable: take the last value for each key, and say which keys repeated.
+                parsed = _loads_last_wins(candidate.strip())
+                if parsed is None:
+                    continue
+                value, duplicates = parsed
+            if type(value) is dict:
+                return value, duplicates
     raise RecordError("no JSON object could be recovered from the response")
 
 
@@ -461,8 +472,9 @@ def _grounding_verdict(variant: Variant, field: str, value: Any, output: Mapping
     matched = _span_occurs(span, document, relaxations)
     if matched is None:
         return GroundingVerdict(field, "SPAN_NOT_IN_DOCUMENT", span, "the cited text does not occur verbatim in the document (whitespace-normalised)" + (f"; relaxations tried: {list(relaxations)}" if relaxations else ""))
-    if field in variant.active_value_in_span_fields and str(value).casefold() not in span.casefold():
-        return GroundingVerdict(field, "VALUE_NOT_IN_SPAN", span, "the value does not occur inside the cited span (case-insensitive)")
+    if field in variant.active_value_in_span_fields and _normalise_whitespace(str(value)).casefold() not in _normalise_whitespace(span).casefold():
+        # Whitespace is normalised on both sides, as the occurrence check normalises it (H41).
+        return GroundingVerdict(field, "VALUE_NOT_IN_SPAN", span, "the value does not occur inside the cited span (case-insensitive, whitespace-normalised)")
     return GroundingVerdict(field, "GROUNDED", span, None if matched == "verbatim" else f"accepted by the configured relaxation {matched!r}, not verbatim")
 
 

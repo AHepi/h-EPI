@@ -34,6 +34,21 @@ Three cycles follow each of the nine ordinary cases per source, so a chain is ba
 
 CYC-09 and CYC-10 were already refuted by the round-three records when the file was committed (four and eight refuting repeats): the floor predicate fires on records that exist, which is what a pre-registered floor is for.
 
+## Correction of 9 September 2026
+
+The tables and the reading below were generated from the records under `forge/conformance/runs/travel-claim-cycles/` and stand as written. Nine of mistral-large-3:675b's cycle observations in them were scored on a draft the reply quoted before its corrected answer, because the JSON recovery took the object with the most keys (`docs/failure-modes.md`, H40). The five runs were re-scored through the replay executor under the corrected recovery into `forge/conformance/runs/travel-claim-cycles-rescore/` (run ids `dff45f17f0aa43cf`, `7b5240a6ee61dc9e`, `3d846ec45fdaf883`, `54d445cb8f64b5d1`, `a916879c950fd978`). Four runs re-score to the same verdicts. For mistral the corrected rows are:
+
+| model | row | n | unavailable | identical | differing | match to miss | miss to match |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| mistral-large-3:675b | cycle 1, criticism external | 9 | 0 | 9 | 0 | 0 | 0 |
+| mistral-large-3:675b | cycle 2, criticism external | 9 | 0 | 9 | 0 | 0 | 0 |
+| mistral-large-3:675b | cycle 3, criticism external | 9 | 1 | 8 | 0 | 0 | 0 |
+| mistral-large-3:675b | cycle 1, criticism none | 9 | 0 | 9 | 0 | 0 | 0 |
+| mistral-large-3:675b | cycle 2, criticism none | 9 | 1 | 8 | 0 | 0 | 0 |
+| mistral-large-3:675b | cycle 3, criticism none | 9 | 1 | 8 | 0 | 0 | 0 |
+
+Every readable mistral cycle returned the form the step before it had returned; the invented `cost_centre` and `project_code` in the paragraph on mistral below, the "appeared, disappeared, and reappeared" chains, and the mistral part of the eleven miss-to-match moves in "Against the floor" were the harness scoring the model's quoted draft and then showing the model that draft again. What stands for mistral is the other half of the paragraph: its five wrong totals stood through every chain, unrepaired. In the conjecture table, STRUCT-07 and STRUCT-10 were refuted on these records by mistral alone and are unrefuted on the re-score; CYC-01 to CYC-05 and CYC-11 keep their refutations by the other models and lose every one by mistral. Three mistral steps are unavailable in the re-score: a re-score follows a chain only while the recorded replies answer the requests it now makes, and where the corrected step output differs from what the recorded run showed the model, the next request was never sent. Where it equals a request the recorded run made at another step, that step's reply answers it and the record names it in `replayed_from`. The re-score is never supplied to `claims` beside the original directory; `claims` refuses the pair.
+
 ## What the run showed
 
 Five models, the same size ladder as the semantics battery: gemma4:31b, gpt-oss:20b, gpt-oss:120b, qwen3.5:397b, mistral-large-3:675b. Each ran BASELINE, REPEAT, and CYCLE only: 9 baselines, 18 repeats, 54 cycles, 81 calls. Four runs completed every call; gpt-oss:20b's cycle calls timed out at the pilot's 180 seconds eighteen times, each after two retries, and 28 cycles behind them were never sent (H30), so its chains are read as far as they go. Records are under `forge/conformance/runs/travel-claim-cycles/`; the run ids are `0c9fc624ac3ba3ad` (gpt-oss:120b), `b06f3c8b81595cea` (mistral-large-3:675b), `1d11684a0369ced6` (gemma4:31b), `b71849f755a6c881` (qwen3.5:397b) and `324cdee92312eed7` (gpt-oss:20b).

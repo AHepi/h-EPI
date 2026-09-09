@@ -283,6 +283,37 @@ def _v3_pair() -> tuple[Any, Any]:
     return _cache["v3_pair"]
 
 
+def _chain_replay(remove: str) -> int:
+    """PREREQUISITE_UNAVAILABLE steps in a replay of a one-chain cycles run whose replay directory lacks ``remove``.
+
+    ``remove`` is ``"none"`` (a full replay), ``"chain"`` (every recorded reply of the external-criticism chain of
+    TRV-001; all three, since a fake that answers every step alike gives the three requests one digest, H31), or
+    ``"run_record"`` (the run record alone).
+    """
+
+    key = f"chain_replay:{remove}"
+    if key not in _cache:
+        config, corpus, planned = _pilot("travel-claim")
+
+        def respond(request: ChatRequest):
+            case = next(c for c in corpus.cases if c.renderings[c.rendering] in request.user)
+            return response_from_content(json.dumps(dict(case.reference_output or ())))
+
+        directory = Path(tempfile.mkdtemp(prefix="kernel-chain-"))
+        live = run_pilot(spec=config.spec, corpus=corpus, plan=planned, model="gemma4:31b", executor=FakeExecutor(respond), executor_kind="fake",
+                         output_dir=directory / "live", created_on=CREATED_ON, families=(Family.BASELINE, Family.CYCLE), limit=None)
+        if remove == "chain":
+            for o in live.observations:
+                if o.variant.family is Family.CYCLE and o.variant.base_case_id == "TRV-001" and o.variant.cycle_criticism == "external":
+                    (directory / "live" / f"observation.{o.observation_id[:16]}.json").unlink()
+        if remove == "run_record":
+            (directory / "live" / f"run.{live.run_record.run_id[:16]}.json").unlink()
+        again = run_pilot(spec=config.spec, corpus=corpus, plan=planned, model="gemma4:31b", executor=ReplayExecutor(directory / "live"), executor_kind="replay",
+                          output_dir=directory / "again", created_on=CREATED_ON, families=(Family.BASELINE, Family.CYCLE), limit=None)
+        _cache[key] = sum(1 for o in again.observations if o.scoring.response_verdict == "PREREQUISITE_UNAVAILABLE")
+    return _cache[key]
+
+
 def _claims_accept(observations: list[Any]) -> str:
     try:
         claims_module.evaluate_claims(_claim({"trigger": "EXTRA_FIELD"}), observations)
@@ -390,9 +421,14 @@ def _parse_points() -> list[Boundary]:
     return [
         Boundary("JSON recovery", "P-01", "prose or a code fence around the object (`recovered_from_prose` becomes true)", "blank lines and indentation around a bare object",
                  lambda: (_response(ord_v, body), _response(ord_v, "Here is the form:\n" + body), _response(ord_v, "\n\n  " + json.dumps(_ord_output(), indent=2) + "\n"))),
-        Boundary("JSON recovery: which object", "P-02", "the later object growing to as many keys as the earlier one (ties go to the last)", "the order of two objects with different key counts: the larger wins wherever it stands",
-                 lambda: (recovered('first {"a": 1, "b": 2} then {"a": 3}'), recovered('first {"a": 1, "b": 2} then {"a": 3, "b": 4}'), recovered('first {"a": 3} then {"a": 1, "b": 2}')),
-                 "a model's final, smaller answer after a larger draft is not the object scored"),
+        Boundary("JSON recovery: which object", "P-02", "the position of the objects: the last top-level object is scored, and the last fenced one when any fence holds an object", "the key counts: a larger draft before a smaller final answer, and a smaller draft before a larger one, both score the last",
+                 lambda: (recovered('first {"a": 1, "b": 2} then {"a": 3}'), recovered('first {"a": 3} then {"a": 1, "b": 2}'), recovered('first {"a": 1, "b": 2, "c": 0} then {"a": 3}')),
+                 "H40: until 9 September the object with the most keys was scored, and nine cycle replies that dropped a criticised key were read on the draft that still carried it"),
+        Boundary("JSON recovery: fences", "P-06", "a fence around an earlier object: the fenced object is scored over a later bare one", "a bare object after the last fenced one",
+                 lambda: (recovered('a {"a": 1} b {"a": 2}'), recovered('a ```json\n{"a": 1}\n``` b {"a": 2}'), recovered('a ```json\n{"a": 2}\n``` then {"a": 1}'))),
+        Boundary("JSON recovery: an unparsable final object", "P-07", None, "a final object refused for a float (`{\"a\": 1.5}`), or one that does not close: the earlier draft that parsed is scored",
+                 lambda: (recovered('draft {"a": 1} final {"a": 2}')["a"] == 2, None, recovered('draft {"a": 1} final {"a": 1.5}')["a"] == 1),
+                 "recorded, not changed: the reply is scored on a draft, and its recovery detail says an object was recovered from prose"),
         Boundary("JSON recovery: repeated key", "P-03", "the order of the two values (the last wins)", "which of the two the model meant",
                  lambda: (recovered('x {"a": 1, "a": 2}')["a"], recovered('x {"a": 2, "a": 1}')["a"], recovered('x {"a": 1, "b": 0, "a": 2}')["a"])),
         Boundary("Strict JSON", "P-04", "a float for an integer value (`5.0` is refused as `INVALID_JSON`)", "pretty-printing, key order, and escaped characters",
@@ -443,9 +479,9 @@ def _span_points() -> list[Boundary]:
         Boundary("Value in span", "G-06", "a quotation that does not contain the value (`VALUE_NOT_IN_SPAN`)", "a quotation that contains the value by coincidence: `Adelaide` as the employee's name, quoted from `for a family wedding in Adelaide`",
                  lambda: (_grounding(lr, out(), "employee_name"), _grounding(lr, out(employee_name_span="for a family wedding in Adelaide"), "employee_name"),
                           _grounding(lr, out(employee_name="Adelaide", employee_name_span="for a family wedding in Adelaide"), "employee_name"))),
-        Boundary("Value in span: whitespace", "G-08", "a line break inside the quoted name (`Maya \n Patel`): the quotation is found, the value is not inside it", "a trailing space on the quotation",
-                 lambda: (_grounding(lr, out(), "employee_name"), _grounding(lr, out(employee_name_span="Maya \n Patel"), "employee_name"), _grounding(lr, out(employee_name_span="Maya Patel "), "employee_name")),
-                 "the occurrence check normalises whitespace (G-01) and the containment check does not; a candidate for the same normalisation, recorded here rather than changed"),
+        Boundary("Value in span: whitespace", "G-08", "one letter less in the quotation (`Maya Pate`, which occurs, and no longer contains the value)", "a line break or a run of spaces inside the quoted name (`Maya \n Patel`)",
+                 lambda: (_grounding(lr, out(), "employee_name"), _grounding(lr, out(employee_name_span="Maya Pate"), "employee_name"), _grounding(lr, out(employee_name_span="Maya \n Patel"), "employee_name")),
+                 "H41: until 9 September the containment check did not normalise whitespace where the occurrence check did; no committed record carries a VALUE_NOT_IN_SPAN verdict"),
         Boundary("Value in span: fields not configured", "G-07", "a quotation absent from the document (`sick leave`)", "a value the quotation does not support, on a field outside `value_in_span_fields` (`sick` quoted from `annual leave`)",
                  lambda: (_grounding(lr, out(), "leave_type"), _grounding(lr, out(leave_type_span="sick leave"), "leave_type"), _grounding(lr, out(leave_type="sick"), "leave_type"))),
     ]
@@ -550,7 +586,7 @@ def _control_points() -> list[Boundary]:
     return [
         Boundary("Controls: vocabulary on the page", "V-01", "a page that holds none of the list", "whether an item stands on its own or inside a longer item: `K-A` is on a page that holds only `K-ALPHA`",
                  lambda: (on_page("only K-ALPHA here"), on_page("only K-BETA here") - {"K-BETA"}, on_page("K-A and K-ALPHA here")),
-                 "a substring test; a candidate for a word-boundary match, recorded here rather than changed"),
+                 "a substring test, kept: on the committed controls records every renamed-vocabulary row is the same under a longest-match rule and under a word-boundary rule, so nothing recorded supports a change"),
     ]
 
 
@@ -563,6 +599,9 @@ def _record_points() -> list[Boundary]:
         Boundary("A reply beside its replay", "K-02", "a version 3 replay beside the reply it names in `replayed_from` (refused)", "a version 2 re-score beside its original, which names no source (accepted and counted twice)",
                  lambda: (_claims_accept([_v3_pair()[0]]), _claims_accept(list(_v3_pair())), _claims_accept(list(_v2_pair()))),
                  "H38; the derivations pair in this tree is such a case"),
+        Boundary("Replay of a cycle chain", "K-04", "a step whose request has no recorded reply (here, the recorded replies of one chain removed): the step and those after it are `PREREQUISITE_UNAVAILABLE`, the rest of the run re-scores", "the run record's absence from the replay directory: a replay reads the observations alone",
+                 lambda: (_chain_replay("none"), _chain_replay("chain"), _chain_replay("run_record")),
+                 "H40: a re-score that reads a step's output differently from the recorded run changes the next step's request, which was never sent; a request identical to another recorded one is answered by that recorded reply and the record names it in `replayed_from` (H31)"),
         Boundary("Citation check", "K-03", "an id that names no record", "an id that names a record the sentence is not about",
                  lambda: (_cite("Run `" + "a" * 16 + "` was complete.", "run." + "a" * 16 + ".json"), _cite("Run `" + "b" * 16 + "` was complete.", "run." + "a" * 16 + ".json"),
                           _cite("Observation `" + "a" * 16 + "` shows the refusal.", "run." + "a" * 16 + ".json"))),

@@ -191,10 +191,24 @@ def run_pilot(
                 criticisms = external_criticisms(previous.scoring, previous.variant) if source == "external" else ()
                 variant = materialize_cycle(planned, canonical_text(previous_output), criticisms)
                 request = build_chat_request(variant, model=model, endpoint=spec.endpoint)
-                request_digest = request.request_digest
-                response = _complete(executor, request)
-                scoring = score(variant, response, refusal_phrases=spec.refusal_phrases, baseline_output=previous_output)
-                routing = route(variant, scoring, format_sent=True)
+                try:
+                    response = _complete(executor, request)
+                except RecordError as exc:
+                    if executor_kind != "replay":
+                        raise
+                    # A re-score reads a cycle chain as far as the recorded replies go. A cycle's request
+                    # carries the previous step's output; when the re-score reads that output differently
+                    # from the recorded run, the request the step now makes was never sent and has no
+                    # recorded reply. The step, and every step after it, is PREREQUISITE_UNAVAILABLE, and
+                    # the record says why (H40). Outside a replay a missing reply still aborts the run.
+                    variant = planned
+                    response = None
+                    scoring = prerequisite_unavailable(f"no recorded reply for the request this step makes under the re-score; the previous step's re-scored output is not the output the recorded run showed the model: {exc}")
+                    routing = route(planned, scoring, format_sent=True)
+                else:
+                    request_digest = request.request_digest
+                    scoring = score(variant, response, refusal_phrases=spec.refusal_phrases, baseline_output=previous_output)
+                    routing = route(variant, scoring, format_sent=True)
         elif planned.expectation_kind is ExpectationKind.ROUND_TRIP:
             if baseline is None or baseline_output is None:
                 detail = "baseline observation missing" if baseline is None else f"baseline response verdict {baseline.scoring.response_verdict}"

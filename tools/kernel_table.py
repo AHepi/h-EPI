@@ -21,7 +21,7 @@ Every check in the machine is invariant under some transformation of what it rea
 
 The rows are read against a survival. A reply that passed every check passed exactly these checks, with exactly these blind spots, on these records; the machine never promotes, and this table is the reason stated in full. A point that begins to fail because a check now sees what the row says it cannot is the boundary moving, and the row is rewritten in the same change.
 
-Three rows record a boundary that is arguably a defect and is kept as a boundary until decided: G-08 (the containment check does not normalise whitespace where the occurrence check does), V-01 (a closed-list item is found on a page by substring), and P-02 (a later, smaller object loses to an earlier, larger one). Each is marked in its note.
+Two rows were written as boundaries and then decided to be defects, on the committed records: P-02 (nine cycle replies were scored on a quoted draft rather than the corrected answer that followed it, H40) and G-08 (the containment check did not normalise whitespace where the occurrence check did, H41); each row now states the boundary after the change, and its note says what moved. One row records a boundary that is arguably a defect and is kept until decided: V-01 (a closed-list item is found on a page by substring). P-07 records a limit kept deliberately.
 """
 
 
