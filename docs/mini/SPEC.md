@@ -501,8 +501,16 @@ exists, the honest default is off, which is what ships.
   and the refusal are built so the shape is visible; nothing behind them is.
 - **Anything that compares two runs.** The record supports it — same plan, same
   script, byte-identical log — but there is no command that pairs two roots.
-- **A live responder.** Everything offline is delivered against the scripted
-  responder. See `DELIVERY.md` for what live evidence, if any, exists.
+- ~~**A live responder.**~~ Built after the offline delivery, when the operator
+  supplied a key: `LiveResponder` in `executor.py` builds a request and hands it
+  to the conformance harness's own `OllamaChatExecutor`, so there is one place
+  in this repository where a key is touched. One live run is recorded; see
+  `DELIVERY.md`.
+- **A place for citations the model will actually use.** The one live run put
+  its block ids and quotes inside the body prose rather than in the `citations`
+  field the schema offered, so the citation channel recorded nothing while the
+  artifact was in fact grounded. See `DELIVERY.md`; the brief, not the check, is
+  what needs work.
 - **Cycles as a first-class idea.** The `cycle-count` signal counts returns to
   the first stage entered. A run whose attention policy re-orders freely makes
   that number harder to read than it looks. Nothing depends on it yet.

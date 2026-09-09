@@ -18,7 +18,7 @@ from creib.canonical import canonical_bytes
 from .attention import ATTENTION_OFF, PendingStage, choose_next
 from .common import ARTIFACT_DOMAIN, MiniError, content_id, digest_bytes
 from .evidence import Block, check_citations, cut_source, render_legend
-from .executor import Request, ScriptedResponder
+from .executor import Request, Responder
 from .kinds import ArtifactKind, Submission, read_submission
 from .log import (
     ARTIFACT_SUBMITTED,
@@ -285,7 +285,7 @@ def _check_reads(plan: RunPlan, recorder: _Recorder, stage: Stage) -> bool:
 def _attempt_submission(
     plan: RunPlan,
     recorder: _Recorder,
-    responder: ScriptedResponder,
+    responder: Responder,
     stage: Stage,
     kind: ArtifactKind,
     brief: str,
@@ -334,7 +334,7 @@ def _attempt_submission(
     return None
 
 
-def run_mini(plan: RunPlan, root: Path, responder: ScriptedResponder) -> RunOutcome:
+def run_mini(plan: RunPlan, root: Path, responder: Responder) -> RunOutcome:
     """Run one plan into one root, and return what the record says."""
 
     if not isinstance(root, Path):

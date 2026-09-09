@@ -29,8 +29,12 @@ from .helpers import MiniTestCase, base_manifest
 
 class VocabularyTests(MiniTestCase):
     def test_a_refusal_code_nobody_declared_cannot_be_raised(self) -> None:
-        with self.assertRaises(RecordError):
-            raise MiniError("MINI_INVENTED_CODE", "this code is not in the vocabulary")
+        """The vocabulary fails closed, and the failure is not itself a MiniError."""
+
+        with self.assertRaises(RecordError) as caught:
+            MiniError("MINI_INVENTED_CODE", "this code is not in the vocabulary")
+        self.assertNotIsInstance(caught.exception, MiniError)
+        self.assertIn("unknown mini refusal code", str(caught.exception))
 
     def test_the_small_readers_refuse_what_they_are_for(self) -> None:
         self.assertRefuses("MINI_MANIFEST_INVALID", identifier, "9 not an identifier", "where")
@@ -145,3 +149,67 @@ class ShippedManifestTests(MiniTestCase):
             with self.subTest(manifest=path.name):
                 plan = compile_manifest(path)
                 self.assertTrue(plan.stages[-1].end)
+
+
+class LiveResponderTests(MiniTestCase):
+    """The live responder, driven by a stand-in executor. No model is called."""
+
+    def _response(self, **fields):
+        from creib.forge.conformance.executor import ChatResponse
+
+        base = {
+            "content": "",
+            "thinking_present": False,
+            "done": True,
+            "done_reason": "stop",
+            "prompt_eval_count": 11,
+            "eval_count": 7,
+            "total_duration_ns": None,
+            "http_status": 200,
+            "transport_error": None,
+            "response_digest": "0" * 64,
+        }
+        return ChatResponse(**{**base, **fields})
+
+    class _Stub:
+        def __init__(self, response) -> None:
+            self.response = response
+            self.seen = []
+
+        def complete(self, request):
+            self.seen.append(request)
+            return self.response
+
+    def test_a_completed_reply_becomes_a_submission_with_its_token_counts(self) -> None:
+        from creib.forge.mini.executor import LiveResponder
+
+        stub = self._Stub(self._response(content='{"body": "b", "commitments": "c"}'))
+        reply = LiveResponder("a-model", stub).reply(Request(stage_id="c1", kind_id="k", attempt=0, brief="the brief"))
+        self.assertEqual(reply.text, '{"body": "b", "commitments": "c"}')
+        self.assertEqual((reply.prompt_tokens, reply.completion_tokens), (11, 7))
+        self.assertEqual(stub.seen[0].model, "a-model")
+        self.assertEqual(stub.seen[0].user, "the brief")
+        self.assertEqual(stub.seen[0].options, {"temperature": 0, "seed": 7})
+
+    def test_a_call_that_did_not_complete_is_refused(self) -> None:
+        from creib.forge.mini.executor import LiveResponder
+
+        stub = self._Stub(self._response(done=False, transport_error="timeout", http_status=None))
+        self.assertRefuses(
+            "MINI_LIVE_CALL_FAILED",
+            LiveResponder("a-model", stub).reply,
+            Request(stage_id="c1", kind_id="k", attempt=0, brief="b"),
+        )
+
+    def test_the_live_responder_counts_its_calls(self) -> None:
+        from creib.forge.mini.executor import LiveResponder
+
+        responder = LiveResponder("a-model", self._Stub(self._response(content='{"body": "b", "commitments": "c"}')))
+        responder.reply(Request(stage_id="c1", kind_id="k", attempt=0, brief="b"))
+        responder.reply(Request(stage_id="c1", kind_id="k", attempt=1, brief="b"))
+        self.assertEqual(responder.calls, 2)
+
+    def test_the_wire_schema_requires_only_the_two_fields(self) -> None:
+        from creib.forge.mini.executor import WIRE_SCHEMA
+
+        self.assertEqual(WIRE_SCHEMA["required"], ["body", "commitments"])

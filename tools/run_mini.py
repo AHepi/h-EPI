@@ -4,9 +4,12 @@
     python tools/run_mini.py compile --manifest forge/mini/manifests/default/manifest.json
     python tools/run_mini.py run     --manifest … --script … --output-dir …
     python tools/run_mini.py replay  --root <a run root>
+    python tools/run_mini.py live    --manifest … --model … --output-dir …
 
-No model is called by any of these. ``run`` drives the scripted responder, so
-the replies come from the script file and nothing leaves the machine.
+Only ``live`` calls a model. ``run`` drives the scripted responder, so the
+replies come from the script file and nothing leaves the machine. ``live``
+reads the key from ``OLLAMA_API_KEY`` at call time through the conformance
+harness's own executor; it costs money and writes records meant to be kept.
 
 Standard library plus the package; ``PYTHONPATH=src``.
 """
@@ -20,7 +23,7 @@ import sys
 
 from creib.errors import CREIBError
 from creib.strict_json import load_strict
-from creib.forge.mini.executor import ScriptedResponder
+from creib.forge.mini.executor import LiveResponder, ScriptedResponder
 from creib.forge.mini.log import LOG_NAME, replay
 from creib.forge.mini.manifest import compile_manifest
 from creib.forge.mini.runner import run_mini
@@ -58,6 +61,29 @@ def target_run(args: argparse.Namespace) -> int:
             {
                 "run_id": outcome.run_id,
                 "root": str(outcome.root),
+                "stop_reason": outcome.stop_reason,
+                "stages_entered": list(outcome.stages_entered),
+                "state_digest": outcome.state_digest,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+            indent=2,
+        )
+    )
+    return 0
+
+
+def target_live(args: argparse.Namespace) -> int:
+    plan = compile_manifest(Path(args.manifest))
+    responder = LiveResponder(args.model)
+    outcome = run_mini(plan, Path(args.output_dir), responder)
+    print(
+        json.dumps(
+            {
+                "run_id": outcome.run_id,
+                "model": args.model,
+                "root": str(outcome.root),
+                "calls": responder.calls,
                 "stop_reason": outcome.stop_reason,
                 "stages_entered": list(outcome.stages_entered),
                 "state_digest": outcome.state_digest,
@@ -108,6 +134,11 @@ def main(argv: list[str] | None = None) -> int:
     run_parser.add_argument("--script", required=True)
     run_parser.add_argument("--output-dir", required=True)
     run_parser.set_defaults(run=target_run)
+    live_parser = sub.add_parser("live")
+    live_parser.add_argument("--manifest", required=True)
+    live_parser.add_argument("--model", required=True)
+    live_parser.add_argument("--output-dir", required=True)
+    live_parser.set_defaults(run=target_live)
     replay_parser = sub.add_parser("replay")
     replay_parser.add_argument("--root", required=True)
     replay_parser.set_defaults(run=target_replay)

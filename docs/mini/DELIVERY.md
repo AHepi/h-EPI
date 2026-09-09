@@ -107,9 +107,10 @@ The result of that run is in the "Sweep" section below.
 
 ## Live evidence
 
-The offline delivery above stands on the scripted responder alone. Any live
-evidence is reported in the "Live run" section below, as what the record shows
-and nothing more.
+The offline delivery above stands on the scripted responder alone, and was
+pushed before any model was called. The operator then supplied a key, so one
+small live run was made through the default manifest, as the brief permits. It
+is reported below as what the record shows and nothing more.
 
 ## Sweep
 
@@ -117,4 +118,42 @@ and nothing more.
 
 ## Live run
 
-*(pending)*
+One run, two calls, `gpt-oss:120b` through `https://ollama.com`, on the shipped
+default manifest (conjecture, then criticism, then end) over one short supplied
+source. The records are committed at
+`forge/mini/runs/default-gpt-oss-120b/`.
+
+```sh
+export OLLAMA_API_KEY=…            # read at call time; in no file, no record, no log
+python tools/run_mini.py live --manifest forge/mini/manifests/default/manifest.json \
+    --model gpt-oss:120b --output-dir forge/mini/runs/default-gpt-oss-120b
+python tools/run_mini.py replay --root forge/mini/runs/default-gpt-oss-120b
+```
+
+**What the record shows.** Seven events. The run entered `conjecture` and then
+`criticism` in the declared order, produced one artifact at each, wrote no
+format failure, no dropped submission and no refusal, and ended at the end stage.
+Replaying the log alone reproduces the state digest the run reported. The source
+cut into three blocks. No key appears anywhere under `forge/mini/runs/`
+(`grep -ril "Bearer\|Authorization\|OLLAMA_API_KEY" forge/mini/runs/` prints
+nothing).
+
+**One finding, which is about the brief and not about the model.** Both
+artifacts recorded **zero citations**, and both were in fact grounded. The model
+put its block ids and its quotations inside the body prose — `[dcd587efbf…]
+"A team measured a model's replies twice…"` — instead of in the `citations`
+field the wire schema offered as optional. Extracting those prose claims by hand
+and running them through the same `check_citations` used on the record verifies
+all eleven of them: five in the conjecture, six in the criticism, every one
+`MINI_CITATION_VERIFIED`.
+
+So the citation channel recorded nothing while the artifacts were grounded. The
+byte-check is not what failed; the brief is. What the record supports, and
+nothing further: on this one run, with this model, this manifest and this
+wording, the optional `citations` field went unused. It does not show that
+models generally will not use it, and two calls could not show that.
+
+**What this run does not establish.** That the prototype works on anything
+larger, that a second run would return the same text, or that either artifact is
+any good. Nothing here was compared with what the same model produces without
+the harness, and this run carries no such arm.
