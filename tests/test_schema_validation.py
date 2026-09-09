@@ -31,8 +31,10 @@ class SchemaCatalogTests(unittest.TestCase):
                 "conformance-claims.schema.json",
                 "conformance-corpus.schema.json",
                 "conformance-observation.schema.json",
+                "conformance-observation.v2.schema.json",
                 "conformance-pilot-config.schema.json",
                 "conformance-run.schema.json",
+                "conformance-run.v2.schema.json",
             ),
         )
         with self.assertRaises(RecordError):

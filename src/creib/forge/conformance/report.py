@@ -43,8 +43,8 @@ HUMAN_READINGS: Mapping[str, str] = {
     "VALUE_NOT_IN_SPAN": "The value does not appear inside the words the model cited for it.",
     "CONTROL_ACCEPTED": "The oracle accepted a deliberately corrupted output; the check is vacuous for that corruption.",
     "CONTROL_REJECTED": "The oracle rejected the uncorrupted reference output; the oracle or the reference is wrong.",
-    "DEPENDENCE_CHANGED": "Removing the declared load-bearing sentence changed the output; the dependence is recorded, not judged.",
-    "DEPENDENCE_UNCHANGED": "Removing the declared load-bearing sentence changed nothing for this case.",
+    "DEPENDENCE_CHANGED": "Removing the declared load-bearing sentence, or one unit of the document, changed the output; the dependence is recorded, not judged.",
+    "DEPENDENCE_UNCHANGED": "Removing the declared load-bearing sentence, or one unit of the document, changed nothing for this case.",
     "FORMAT_NOT_ENFORCED": "A structural violation occurred although a format schema was sent; server-side enforcement cannot be assumed.",
 }
 

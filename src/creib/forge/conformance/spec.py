@@ -24,6 +24,7 @@ from jsonschema.exceptions import SchemaError
 
 from creib.errors import RecordError
 from .common import NON_INDUCTIVE_LIMIT
+from .units import UnitDependence, unit_dependence_from_dict
 from creib.strict_json import loads_strict
 
 from .common import (
@@ -76,7 +77,10 @@ class Endpoint:
     timeout_seconds: int
     temperature: int
     seed: int
-    think: bool | None
+    # A boolean, a level (low, medium, high) for the models that take one, or None to send nothing.
+    # What was sent is recorded in the run header and inside every request digest; what the model did
+    # with it is a separate fact the reply's thinking channel shows (L10 in docs/failure-modes.md).
+    think: bool | str | None
     auth: str = "bearer"
 
     def to_dict(self) -> dict[str, object]:
@@ -196,6 +200,63 @@ GROUNDING_MODES: tuple[str, ...] = ("none", "spans")
 #   date_range_completion  - accept "24 June 2025" when the document says "24 to 26 June 2025"
 SPAN_RELAXATIONS: tuple[str, ...] = ("case_insensitive", "date_range_completion")
 MAX_REPEATS = 10
+MAX_CYCLES = 5
+THINK_LEVELS: tuple[str, ...] = ("low", "medium", "high")
+
+
+def think_setting(value: Any, where: str) -> bool | str | None:
+    """A reasoning setting: None, a boolean, or one of the documented levels."""
+
+    if value is None or type(value) is bool:
+        return value
+    if type(value) is str and value in THINK_LEVELS:
+        return value
+    raise RecordError(f"{where} must be null, a boolean, or one of {list(THINK_LEVELS)}")
+CYCLE_CRITICISMS: tuple[str, ...] = ("none", "external")
+
+
+@dataclass(frozen=True)
+class Cycles:
+    """Configuration of the CYCLE family; ``count`` 0 (the default) leaves every plan unchanged.
+
+    A cycle shows the model its previous answer and asks it to check and correct it. With
+    criticism ``none`` nothing else is added (self-revision); with ``external`` the failed
+    schema and grounding checks of the previous answer are listed. The answer key is never
+    part of a criticism: a cycle that fed the oracle back would be measuring how well a
+    model copies a correction, not whether a further cycle helps.
+    """
+
+    count: int
+    criticism: tuple[str, ...]
+
+    @property
+    def active(self) -> bool:
+        return self.count > 0
+
+    def to_dict(self) -> dict[str, object]:
+        return {"count": self.count, "criticism": list(self.criticism)}
+
+
+def cycles_from_dict(raw: Any, where: str = "cycles") -> Cycles:
+    if raw is None:
+        return Cycles(count=0, criticism=())
+    record = object_value(raw, where)
+    count = integer(record["count"], f"{where}.count", minimum=0)
+    if count > MAX_CYCLES:
+        raise RecordError(f"{where}.count must be at most {MAX_CYCLES}")
+    criticism: list[str] = []
+    for index, item in enumerate(array_value(record.get("criticism", []), f"{where}.criticism")):
+        name = text(item, f"{where}.criticism[{index}]")
+        if name not in CYCLE_CRITICISMS:
+            raise RecordError(f"{where}.criticism[{index}] {name!r} is not a known criticism source; known: {list(CYCLE_CRITICISMS)}")
+        if name in criticism:
+            raise RecordError(f"{where}.criticism repeats {name!r}")
+        criticism.append(name)
+    if count > 0 and not criticism:
+        raise RecordError(f"{where}.count is {count} but no criticism source is named")
+    if count == 0 and criticism:
+        raise RecordError(f"{where}.criticism names a source but count is 0")
+    return Cycles(count=count, criticism=tuple(criticism))
 
 
 @dataclass(frozen=True)
@@ -328,6 +389,9 @@ class TaskSpec:
     refusal_phrases: tuple[str, ...]
     grounding: Grounding
     repeats: int
+    cycles: Cycles = Cycles(count=0, criticism=())
+    # UNIT_DEPENDENCE: off unless the pilot names heading levels; absent adds no variant and no bytes.
+    unit_dependence: UnitDependence = UnitDependence(levels=(), term_patterns=(), min_occurrences=1)
 
     @property
     def required_fields(self) -> tuple[str, ...]:
@@ -469,7 +533,7 @@ def endpoint_from_dict(raw: dict[str, Any]) -> Endpoint:
         timeout_seconds=integer(raw["timeout_seconds"], "endpoint.timeout_seconds", minimum=1),
         temperature=integer(options["temperature"], "endpoint.options.temperature"),
         seed=integer(options["seed"], "endpoint.options.seed"),
-        think=optional_boolean(raw["think"], "endpoint.think"),
+        think=think_setting(raw["think"], "endpoint.think"),
         auth=auth,
     )
 
@@ -667,6 +731,8 @@ def build_task_spec(
     repeats = integer(raw_config["repeats"], "repeats", minimum=0)
     if repeats > MAX_REPEATS:
         raise RecordError(f"repeats must be at most {MAX_REPEATS}")
+    cycles = cycles_from_dict(raw_config.get("cycles"))
+    unit_dependence = unit_dependence_from_dict(raw_config.get("unit_dependence"))
     refusal_phrases = unique_texts(raw_config["refusal_phrases"], "refusal_phrases")
     models = tuple(model_id(item, f"models[{index}]") for index, item in enumerate(raw_config["models"]))
     if len(models) != len(set(models)):
@@ -693,6 +759,8 @@ def build_task_spec(
         refusal_phrases=refusal_phrases,
         grounding=grounding,
         repeats=repeats,
+        cycles=cycles,
+        unit_dependence=unit_dependence,
     )
 
 

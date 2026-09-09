@@ -1,0 +1,87 @@
+{
+  "schema_version": "creib.conformance-pilot.config.v1",
+  "pilot_id": "SMF-CONFORMANCE-SEMANTICS-UNIT-DEPENDENCE-001",
+  "title": "Which parts of a semantics document a model's reading of its own consequences depends on",
+  "form_schema": "form.schema.json",
+  "instructions": "instructions.md",
+  "corpus": "corpus.json",
+  "models": [
+    "gpt-oss:20b",
+    "gemma4:31b",
+    "gpt-oss:120b",
+    "qwen3.5:397b",
+    "mistral-large-3:675b"
+  ],
+  "endpoint": {
+    "kind": "ollama-chat",
+    "base_url": "https://ollama.com",
+    "timeout_seconds": 600,
+    "options": {
+      "temperature": 0,
+      "seed": 7
+    },
+    "think": false
+  },
+  "charter": {
+    "purpose": "Find, with no key and no declared dependencies, which units of a semantics document a model's answer about one of the document's own argued consequences depends on: each headed unit is removed in turn with everything else present, and the reply is compared with the same model's reply on the full document. The units, the terms, and each unit's relation to the claim (its own argument, a definition that argument uses, or neither) are computed from the document by pattern.",
+    "output": "Per-model observation and run records in which every field is recorded and none is scored, plus the dependence table: removals by relation beside the repeat floor, and the model's own named dependencies beside what removal moved.",
+    "scope_in": [
+      "One markdown document of about seven hundred lines, read whole in every call.",
+      "Five probes, one per section carrying the document's own argument markup; the claim is the section heading.",
+      "Every headed unit at levels 2 and 3 removed once per probe; two repeats of every baseline."
+    ],
+    "scope_out": [
+      "Any answer key: no reply is judged right or wrong, and the run label is always the no-scored-output one.",
+      "Any claim that the document's argument is sound or that a model understands it; a moved reply criticises the model, the document as sent, and the choice of units and claim together.",
+      "Ranking models, scoring them, or declaring any model fit for use."
+    ]
+  },
+  "load_bearing": [],
+  "negations": [],
+  "twins": [],
+  "ambiguity": [],
+  "controls": [
+    {
+      "control_id": "C-EXTRA-CONFIDENCE",
+      "corruption": {
+        "kind": "extra_key",
+        "key": "confidence",
+        "value": "high"
+      }
+    },
+    {
+      "control_id": "C-CORRECT",
+      "corruption": {
+        "kind": "none"
+      }
+    }
+  ],
+  "refusal_phrases": [
+    "I cannot",
+    "I can't",
+    "I'm sorry",
+    "I am unable",
+    "as an AI",
+    "cannot assist"
+  ],
+  "grounding": {
+    "mode": "none",
+    "span_suffix": "_span",
+    "span_fields": [],
+    "value_in_span_fields": [],
+    "abstain_fields": []
+  },
+  "repeats": 2,
+  "unit_dependence": {
+    "levels": [
+      2,
+      3
+    ],
+    "term_patterns": [
+      "K-[A-Z]+",
+      "\\\\mathrm\\{([A-Za-z]+)\\}",
+      "\\b(UED|UU|UC|OCA)\\b"
+    ],
+    "min_occurrences": 2
+  }
+}

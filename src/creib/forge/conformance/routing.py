@@ -27,12 +27,15 @@ Table (trigger -> loci; family restrictions in brackets):
         [SUBSTRATE_SWAP]       -> CANDIDATE, SCOPE, TEST
         [BOUNDARY_SHIFT]       -> CANDIDATE, TEST, SCOPE
         [ROUND_TRIP]           -> CANDIDATE, AUXILIARY, TEST
+        [CYCLE]                -> CANDIDATE, AUXILIARY, TEST
     IDENTICAL_TO_BASELINE [NEGATION]        -> CANDIDATE, AUXILIARY, SCOPE
         (subsumes the field-level mismatch triggers of the same observation)
     CONTROL_ACCEPTED [NON_VACUITY]          -> TEST, AUXILIARY
     CONTROL_REJECTED [NON_VACUITY]          -> TEST
     DEPENDENCE_CHANGED [IMPORT_DEPENDENCY]  -> AUXILIARY, SCOPE
     DEPENDENCE_UNCHANGED [IMPORT_DEPENDENCY]-> AUXILIARY, TEST, SCOPE
+    DEPENDENCE_CHANGED [UNIT_DEPENDENCE]    -> AUXILIARY, TEST, SCOPE
+    DEPENDENCE_UNCHANGED [UNIT_DEPENDENCE]  -> AUXILIARY, TEST, SCOPE
     REPEAT_DIFFERS [REPEAT]                 -> AUXILIARY, CANDIDATE
     LENGTH_VIOLATION under active grounding -> adds AUXILIARY (the appended quotation
         instruction may have induced verbatim copying into a bounded value field)
@@ -147,6 +150,11 @@ _MISMATCH_FAMILY_LOCI: dict[Family, tuple[tuple[str, str], ...]] = {
         ("CANDIDATE", "The model's output is not stable under a re-rendering of its own output."),
         ("AUXILIARY", "The fixed prose rendering template may lose or distort information."),
         ("TEST", "The round-trip expectation is derived from the model's own output and is provisional."),
+    ),
+    Family.CYCLE: (
+        ("CANDIDATE", "After a further cycle at least one field still misses, or newly misses, the oracle."),
+        ("AUXILIARY", "The previous answer and the revision text the harness appends are part of the request and may steer the model."),
+        _TEST_ORACLE,
     ),
 }
 
@@ -295,6 +303,24 @@ ROUTING_TABLE: tuple[RoutingRule, ...] = (
         (Family.IMPORT_DEPENDENCY,),
     ),
     _rule(
+        "DEPENDENCE_CHANGED",
+        (
+            ("AUXILIARY", "The removed unit did work for this reply, or its removal moved the reply by position and length alone; which is a question about the document as sent."),
+            ("TEST", "The probe compares two replies with no key and has a floor: the same run's REPEAT family says how often an unchanged request moved, and a move inside that floor is not evidence about the unit."),
+            ("SCOPE", "Which units, which claim, and which relation a unit is given are scope decisions made from the document by pattern."),
+        ),
+        (Family.UNIT_DEPENDENCE,),
+    ),
+    _rule(
+        "DEPENDENCE_UNCHANGED",
+        (
+            ("AUXILIARY", "The removed unit had no observable effect on this reply; the document as sent may carry the same content elsewhere, or the reply may not rest on the document at all."),
+            ("TEST", "The probe records two replies and no key; that nothing moved says nothing about whether either reply is right."),
+            ("SCOPE", "This claim may not exercise the removed unit at all."),
+        ),
+        (Family.UNIT_DEPENDENCE,),
+    ),
+    _rule(
         "REPEAT_DIFFERS",
         (
             ("AUXILIARY", "The endpoint returned a different form for a byte-identical request under the fixed seed; every family that compares one call with another inherits this noise."),
@@ -379,6 +405,10 @@ def derive_triggers(variant: Variant, scoring: Scoring, *, format_sent: bool) ->
         else:
             triggers.append("DEPENDENCE_UNCHANGED")
         return tuple(triggers)
+    if scoring.refusal_phrase_present and scoring.response_verdict == "JSON_OBJECT":
+        # H36: a refusal phrase beside a recovered object is a refusal and a form; the object is
+        # scored and the refusal is still a criticism.
+        triggers.append("REFUSAL_SUSPECTED")
     field_triggers = list(scoring.verdict_kinds())
     if scoring.schema_valid is False and not any(t in _CRITICISM_FIELD_VERDICTS | _STRUCTURAL_FIELD_VERDICTS for t in field_triggers):
         field_triggers.append("SCHEMA_INVALID")

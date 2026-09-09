@@ -12,7 +12,8 @@ Targets:
   lint        compileall, shipped-code assert guard, whitespace check
   test        the complete unittest suite (offline; no model calls)
   pilots      validate and plan every pilot under forge/conformance/pilots
-  all         lint, test, pilots
+  cite        every record id cited in the documents names exactly one record
+  all         lint, test, pilots, cite
 
 Standard library only.
 """
@@ -23,12 +24,23 @@ import argparse
 import ast
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 PILOTS = ROOT / "forge" / "conformance" / "pilots"
+RUNS = ROOT / "forge" / "conformance" / "runs"
+ARCHIVED_INDEX = ROOT / "docs" / "archived-records.txt"
+CITING_FILES = ("README.md", "agent.md", "CLAUDE.md")
+CITING_TREES = ("docs",)
+# A record id is cited as its sixteen-hex-digit prefix in backticks; that prefix is the one a
+# record file's name carries.
+CITED_ID = re.compile(r"`([0-9a-f]{16})`")
+# A sentence that cites a record it says was never published carries this phrase; the checker
+# lists such citations instead of failing on them, so the reader sees them.
+UNCOMMITTED_MARKER = "not committed"
 
 
 def _env() -> dict[str, str]:
@@ -69,6 +81,88 @@ def whitespace_check() -> None:
         print("whitespace check skipped: not a git checkout")
         return
     _run(["git", "diff", "--check", "HEAD"])
+
+
+def _record_locations(root: Path) -> dict[str, list[str]]:
+    """Sixteen-hex prefix -> locations of the record files carrying it, in this tree and on the declared archive branches."""
+
+    locations: dict[str, list[str]] = {}
+    for path in sorted((root / "forge" / "conformance" / "runs").rglob("*.json")):
+        parts = path.name.split(".")
+        if len(parts) == 3 and parts[0] in ("observation", "run") and CITED_ID.fullmatch(f"`{parts[1]}`"):
+            locations.setdefault(parts[1], []).append(str(path.relative_to(root)))
+    index = root / ARCHIVED_INDEX.relative_to(ROOT)
+    if index.exists():
+        for lineno, line in enumerate(index.read_text(encoding="utf-8").splitlines(), 1):
+            if not line.strip() or line.startswith("#"):
+                continue
+            fields = line.split()
+            if len(fields) != 2:
+                raise SystemExit(f"{index.relative_to(root)}:{lineno}: expected '<branch> <path>', got {line!r}")
+            branch, recorded = fields
+            parts = Path(recorded).name.split(".")
+            if len(parts) != 3 or parts[0] not in ("observation", "run") or not CITED_ID.fullmatch(f"`{parts[1]}`"):
+                raise SystemExit(f"{index.relative_to(root)}:{lineno}: {recorded!r} is not a record file name")
+            locations.setdefault(parts[1], []).append(f"{branch}:{recorded}")
+    return locations
+
+
+def _citing_files(root: Path) -> list[Path]:
+    files = [root / name for name in CITING_FILES if (root / name).exists()]
+    for tree in CITING_TREES:
+        files.extend(sorted((root / tree).rglob("*.md")))
+    return files
+
+
+def cite_check(root: Path = ROOT) -> dict[str, object]:
+    """Resolve every cited record id; the result lists what resolved where, what a sentence declares uncommitted, and what fails."""
+
+    locations = _record_locations(root)
+    resolved_tree = 0
+    resolved_archive = 0
+    declared_uncommitted: list[str] = []
+    problems: list[str] = []
+    cited = 0
+    for path in _citing_files(root):
+        where = path.relative_to(root)
+        for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+            for prefix in CITED_ID.findall(line):
+                cited += 1
+                hits = locations.get(prefix, [])
+                if len(hits) == 1:
+                    if ":" in hits[0]:
+                        resolved_archive += 1
+                    else:
+                        resolved_tree += 1
+                elif not hits:
+                    if UNCOMMITTED_MARKER in line:
+                        declared_uncommitted.append(f"{where}:{lineno} `{prefix}`")
+                    else:
+                        problems.append(f"{where}:{lineno} `{prefix}` names no record in this tree or in {ARCHIVED_INDEX.relative_to(ROOT)}")
+                else:
+                    problems.append(f"{where}:{lineno} `{prefix}` names {len(hits)} records: {', '.join(hits)}")
+    return {
+        "cited": cited,
+        "resolved_in_tree": resolved_tree,
+        "resolved_in_archive": resolved_archive,
+        "declared_uncommitted": declared_uncommitted,
+        "problems": problems,
+    }
+
+
+def target_cite(args: argparse.Namespace) -> None:
+    result = cite_check(ROOT)
+    print(
+        f"citations: {result['cited']} record ids cited; {result['resolved_in_tree']} name one record in this tree, "
+        f"{result['resolved_in_archive']} one record listed in {ARCHIVED_INDEX.relative_to(ROOT)}"
+    )
+    for line in result["declared_uncommitted"]:
+        print(f"  declared not committed by its sentence: {line}")
+    if result["problems"]:
+        print("record citations that resolve to no record or to more than one:", file=sys.stderr)
+        for problem in result["problems"]:
+            print(f"  {problem}", file=sys.stderr)
+        raise SystemExit(1)
 
 
 def target_bootstrap(args: argparse.Namespace) -> None:
@@ -119,14 +213,15 @@ def target_all(args: argparse.Namespace) -> None:
     target_lint(args)
     target_test(args)
     target_pilots(args)
+    target_cite(args)
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("target", choices=["bootstrap", "lint", "test", "pilots", "all"])
+    parser.add_argument("target", choices=["bootstrap", "lint", "test", "pilots", "cite", "all"])
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args(argv)
-    {"bootstrap": target_bootstrap, "lint": target_lint, "test": target_test, "pilots": target_pilots, "all": target_all}[args.target](args)
+    {"bootstrap": target_bootstrap, "lint": target_lint, "test": target_test, "pilots": target_pilots, "cite": target_cite, "all": target_all}[args.target](args)
     return 0
 
 

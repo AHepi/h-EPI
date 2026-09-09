@@ -1,7 +1,8 @@
 """Execute a plan for one model and publish observation and run records.
 
 The runner orders baseline variants first, materialises ROUND_TRIP variants
-from the model's own baseline output, compares NEGATION and IMPORT_DEPENDENCY
+from the model's own baseline output, materialises each CYCLE variant from the
+observation of the step it follows, compares NEGATION and IMPORT_DEPENDENCY
 outputs with the baseline, and never calls a model for NON_VACUITY controls.
 It tallies verdicts and loci for human reading.  It does not compute a
 score, rank a model, or declare a run passed: the run status is always
@@ -11,24 +12,25 @@ score, rank a model, or declare a run passed: the run status is always
 from __future__ import annotations
 
 from collections import Counter
+import random
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
 from creib.errors import RecordError
 
-from .common import RUN_SCHEMA_VERSION, SCOPE_INCONCLUSIVE, SCOPE_REFUTED, SCOPE_UNREFUTED, rfc3339
+from .common import RUN_ORDERS, RUN_SCHEMA_VERSION, SCOPE_INCONCLUSIVE, SCOPE_REFUTED, SCOPE_UNREFUTED, canonical_text, rfc3339
 from .corpus import Corpus
 from .executor import ChatRequest, ChatResponse, ModelExecutor, executor_failure_response
-from .families import ExpectationKind, Family, Plan, Variant, materialize_round_trip
-from .oracle import GROUNDING_VERDICTS, RESPONSE_VERDICTS, FIELD_VERDICTS, prerequisite_unavailable, score
+from .families import ExpectationKind, Family, Plan, Variant, materialize_cycle, materialize_round_trip
+from .oracle import GROUNDING_VERDICTS, RESPONSE_VERDICTS, FIELD_VERDICTS, external_criticisms, prerequisite_unavailable, score
 from .prompt import build_chat_request
 from .records import EXECUTOR_KINDS, ObservationRecord, RunRecord, build_observation, build_run_record, compute_run_id, publish_record
 from .routing import route
 from .spec import TaskSpec
 
 
-_BASELINE_DEPENDENT = frozenset({Family.NEGATION, Family.IMPORT_DEPENDENCY, Family.ROUND_TRIP, Family.REPEAT})
+_BASELINE_DEPENDENT = frozenset({Family.NEGATION, Family.IMPORT_DEPENDENCY, Family.ROUND_TRIP, Family.REPEAT, Family.CYCLE, Family.UNIT_DEPENDENCE})
 
 
 @dataclass(frozen=True)
@@ -43,9 +45,28 @@ class RunResult:
         return any(observation.routing.live_loci for observation in self.observations)
 
 
-def select_variants(plan: Plan, *, families: Iterable[Family] | None = None, limit: int | None = None) -> tuple[Variant, ...]:
-    """Choose variants; baselines needed by comparison families are always added."""
+ORDERS: tuple[str, ...] = RUN_ORDERS
 
+
+def select_variants(plan: Plan, *, families: Iterable[Family] | None = None, limit: int | None = None, order: str = "family", seed: int | None = None) -> tuple[Variant, ...]:
+    """Choose variants; baselines needed by comparison families are always added.
+
+    ``order`` is the sending order. ``family`` sends every baseline first and then the other
+    families in plan order, so a drift in the endpoint during the run lands on whole families.
+    ``interleaved`` sends each case's baseline followed at once by that case's other variants,
+    so the requests a comparison pairs are close in time. ``shuffled`` is interleaved with the
+    cases in an order drawn from ``seed``, so that a drift in the endpoint does not land on the
+    cases in the order the corpus lists them; the seed is written to the run record. The records
+    are the same in every order, and the run record lists its observations in the order they
+    were made.
+    """
+
+    if order not in ORDERS:
+        raise RecordError(f"order must be one of {list(ORDERS)}")
+    if (order == "shuffled") != (seed is not None):
+        raise RecordError("a seed is given exactly when the order is shuffled")
+    if seed is not None and (type(seed) is not int or seed < 0):
+        raise RecordError("seed must be a non-negative integer")
     chosen_families = None if families is None else frozenset(families)
     selected = [variant for variant in plan.variants if chosen_families is None or variant.family in chosen_families]
     if limit is not None:
@@ -68,6 +89,15 @@ def select_variants(plan: Plan, *, families: Iterable[Family] | None = None, lim
     for variant in plan.variants:
         if variant.family is not Family.BASELINE and variant.variant_id in selected_ids:
             ordered.append(variant)
+    if order in ("interleaved", "shuffled"):
+        cases: list[str] = []
+        for variant in ordered:
+            if variant.base_case_id not in cases:
+                cases.append(variant.base_case_id)
+        if order == "shuffled":
+            random.Random(seed).shuffle(cases)
+        by_case = {case_id: [variant for variant in ordered if variant.base_case_id == case_id] for case_id in cases}
+        ordered = [variant for case_id in cases for variant in by_case[case_id]]
     return tuple(ordered)
 
 
@@ -96,6 +126,8 @@ def run_pilot(
     created_on: str,
     families: Iterable[Family] | None = None,
     limit: int | None = None,
+    order: str = "family",
+    seed: int | None = None,
 ) -> RunResult:
     if model not in spec.models:
         raise RecordError(f"model {model!r} is not declared in the pilot configuration")
@@ -109,7 +141,7 @@ def run_pilot(
     selected_families = tuple(sorted({variant.family.value for variant in plan.variants} if families is None else {family.value for family in families}))
     if not selected_families:
         raise RecordError("no families selected")
-    variants = select_variants(plan, families=families, limit=limit)
+    variants = select_variants(plan, families=families, limit=limit, order=order, seed=seed)
     header = {
         "schema_version": RUN_SCHEMA_VERSION,
         "pilot_id": spec.pilot_id,
@@ -121,21 +153,62 @@ def run_pilot(
         "created_on": created_on,
         "selected_families": list(selected_families),
         "variant_limit": limit,
+        "order": order,
+        "shuffle_seed": seed,
     }
     run_id = compute_run_id(header)
 
     observations: list[ObservationRecord] = []
     paths: list[Path] = []
     baseline_by_case: dict[str, ObservationRecord] = {}
+    # CYCLE: the observation each cycle follows, by (case, criticism source, cycle index).
+    cycle_by_step: dict[tuple[str, str, int], ObservationRecord] = {}
     for planned in variants:
         baseline = baseline_by_case.get(planned.base_case_id)
         baseline_output = None if baseline is None else baseline.scoring.parsed_output
+        # The observation this one is compared with and chained to: the baseline, or for a cycle
+        # the step it follows.
+        previous = baseline
         variant = planned
         request_digest: str | None = None
         response = None
         if not planned.model_call:
             scoring = score(planned, None)
             routing = route(planned, scoring, format_sent=False)
+        elif planned.family is Family.CYCLE:
+            index = planned.cycle_index or 0
+            source = planned.cycle_criticism or "none"
+            previous = baseline if index == 1 else cycle_by_step.get((planned.base_case_id, source, index - 1))
+            previous_output = None if previous is None else previous.scoring.parsed_output
+            if previous is None or previous_output is None:
+                detail = (
+                    "previous step missing" if previous is None
+                    else f"previous step response verdict {previous.scoring.response_verdict}"
+                )
+                scoring = prerequisite_unavailable(detail)
+                routing = route(planned, scoring, format_sent=True)
+            else:
+                criticisms = external_criticisms(previous.scoring, previous.variant) if source == "external" else ()
+                variant = materialize_cycle(planned, canonical_text(previous_output), criticisms)
+                request = build_chat_request(variant, model=model, endpoint=spec.endpoint)
+                try:
+                    response = _complete(executor, request)
+                except RecordError as exc:
+                    if executor_kind != "replay":
+                        raise
+                    # A re-score reads a cycle chain as far as the recorded replies go. A cycle's request
+                    # carries the previous step's output; when the re-score reads that output differently
+                    # from the recorded run, the request the step now makes was never sent and has no
+                    # recorded reply. The step, and every step after it, is PREREQUISITE_UNAVAILABLE, and
+                    # the record says why (H40). Outside a replay a missing reply still aborts the run.
+                    variant = planned
+                    response = None
+                    scoring = prerequisite_unavailable(f"no recorded reply for the request this step makes under the re-score; the previous step's re-scored output is not the output the recorded run showed the model: {exc}")
+                    routing = route(planned, scoring, format_sent=True)
+                else:
+                    request_digest = request.request_digest
+                    scoring = score(variant, response, refusal_phrases=spec.refusal_phrases, baseline_output=previous_output)
+                    routing = route(variant, scoring, format_sent=True)
         elif planned.expectation_kind is ExpectationKind.ROUND_TRIP:
             if baseline is None or baseline_output is None:
                 detail = "baseline observation missing" if baseline is None else f"baseline response verdict {baseline.scoring.response_verdict}"
@@ -172,13 +245,16 @@ def run_pilot(
             response=response,
             scoring=scoring,
             routing=routing,
-            baseline_observation_id=None if baseline is None or planned.family not in _BASELINE_DEPENDENT else baseline.observation_id,
+            baseline_observation_id=None if previous is None or planned.family not in _BASELINE_DEPENDENT else previous.observation_id,
             created_on=created_on,
+            replayed_from=getattr(executor, "last_source_id", None) if executor_kind == "replay" and response is not None else None,
         )
         paths.append(publish_record(observation, output_dir))
         observations.append(observation)
         if planned.family is Family.BASELINE:
             baseline_by_case[planned.base_case_id] = observation
+        if planned.family is Family.CYCLE and planned.cycle_index is not None:
+            cycle_by_step[(planned.base_case_id, planned.cycle_criticism or "none", planned.cycle_index)] = observation
 
     family_counter = Counter(observation.variant.family.value for observation in observations)
     response_counter = Counter(observation.scoring.response_verdict for observation in observations)
@@ -218,6 +294,8 @@ def run_pilot(
         created_on=created_on,
         selected_families=selected_families,
         variant_limit=limit,
+        order=order,
+        shuffle_seed=seed,
         observation_ids=tuple(observation.observation_id for observation in observations),
         family_counts=tuple((family.value, family_counter.get(family.value, 0)) for family in Family if family.value in family_counter),
         response_verdict_counts=tuple((verdict, response_counter[verdict]) for verdict in RESPONSE_VERDICTS if verdict in response_counter),

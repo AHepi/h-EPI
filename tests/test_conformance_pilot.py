@@ -113,8 +113,10 @@ class SchemaAndVocabularyTests(unittest.TestCase):
                 "conformance-claims.schema.json",
                 "conformance-corpus.schema.json",
                 "conformance-observation.schema.json",
+                "conformance-observation.v2.schema.json",
                 "conformance-pilot-config.schema.json",
                 "conformance-run.schema.json",
+                "conformance-run.v2.schema.json",
             ),
         )
         for name in catalog.schema_names:
@@ -222,6 +224,8 @@ class FamilyTests(unittest.TestCase):
                 "NON_VACUITY": 8,
                 "ROUND_TRIP": 9,
                 "REPEAT": 0,
+                "CYCLE": 0,
+                "UNIT_DEPENDENCE": 0,
             },
         )
         again = plan(load_pilot_config(PILOT).spec, load_corpus(_CONFIG.corpus_path, _CONFIG.spec))
@@ -530,8 +534,8 @@ class RecordVersionTests(unittest.TestCase):
             self.assertTrue(observation_path.exists())
             for path in (observation_path, out / f"run.{result.run_record.run_id[:16]}.json"):
                 record = load_strict(path)
-                self.assertTrue(str(record["schema_version"]).endswith(".v2"))
-                record["schema_version"] = str(record["schema_version"]).replace(".v2", ".v1")
+                self.assertTrue(str(record["schema_version"]).endswith(".v3"))
+                record["schema_version"] = str(record["schema_version"]).replace(".v3", ".v1")
                 old = out / ("old-" + path.name)
                 old.write_bytes(canonical_bytes(record) + b"\n")
                 loader = load_observation if path.name.startswith("observation.") else load_run
@@ -684,6 +688,50 @@ class CLITests(unittest.TestCase):
             self.assertEqual(report["overall_status"], "UNRESOLVED")
             self.assertEqual(report["epistemic_limit"], NON_INDUCTIVE_LIMIT)
             self.assertGreater(report["observations_with_live_loci"], 0)
+
+
+class RelationalPredicateTests(unittest.TestCase):
+    """``internal_count`` relates a reply to itself, never to the key (H29 in docs/failure-modes.md)."""
+
+    CONDITION = {"internal_count": {"field": "usable_count", "of": ["label_a1", "label_a2", "label_a3"], "value": "in"}}
+
+    def _observation(self, output):
+        import dataclasses
+        from creib.forge.conformance import claims as claims_module
+        base = load_observation(sorted((ROOT / "forge" / "conformance" / "runs" / "leave-request").glob("observation.*.json"))[0])
+        scoring = dataclasses.replace(base.scoring, parsed_output=output)
+        return dataclasses.replace(base, scoring=scoring), claims_module
+
+    def _holds(self, output) -> bool:
+        observation, claims_module = self._observation(output)
+        return claims_module.compile_condition(self.CONDITION, "c")(observation, claims_module.Context([observation]))
+
+    def test_four_synthetic_outputs(self) -> None:
+        right_labels = {"label_a1": "in", "label_a2": "in", "label_a3": "out"}
+        wrong_labels = {"label_a1": "in", "label_a2": "out", "label_a3": "out"}
+        # the key is irrelevant to the predicate: only the reply's own consistency is read
+        self.assertTrue(self._holds({**right_labels, "usable_count": 2}), "correct labels, consistent count")
+        self.assertTrue(self._holds({**wrong_labels, "usable_count": 1}), "wrong labels, consistent count")
+        self.assertFalse(self._holds({**right_labels, "usable_count": 1}), "correct labels, inconsistent count")
+        self.assertFalse(self._holds({**wrong_labels, "usable_count": 2}), "wrong labels, inconsistent count")
+
+    def test_malformed_replies_do_not_satisfy_and_are_not_counterexamples_by_default(self) -> None:
+        from creib.errors import RecordError
+        self.assertFalse(self._holds({"label_a1": "in", "label_a2": "in", "usable_count": 2}), "a label is missing")
+        self.assertFalse(self._holds({"label_a1": "in", "label_a2": "in", "label_a3": "out"}), "the count is missing")
+        self.assertFalse(self._holds({"label_a1": "in", "label_a2": "in", "label_a3": "out", "usable_count": "2"}), "the count is not an integer")
+        self.assertFalse(self._holds({"label_a1": "in", "label_a2": "in", "label_a3": "out", "usable_count": True}), "a boolean is not a count")
+        observation, claims_module = self._observation({})
+        for bad in (
+            {"internal_count": {"field": "n", "of": [], "value": "in"}},
+            {"internal_count": {"field": "n", "of": ["n"], "value": "in"}},
+            {"internal_count": {"field": "n", "of": ["a", "a"], "value": "in"}},
+            {"internal_count": {"field": "n", "of": ["a"], "value": None}},
+        ):
+            with self.assertRaises(RecordError):
+                claims_module.compile_condition(bad, "c")
+        fields, _ = claims_module.condition_footprint(self.CONDITION)
+        self.assertEqual(fields, frozenset({"usable_count", "label_a1", "label_a2", "label_a3"}))
 
 
 if __name__ == "__main__":
@@ -1304,6 +1352,369 @@ class ClaimsTests(unittest.TestCase):
             self.assertTrue(text.rstrip().endswith(NON_INDUCTIVE_LIMIT))
 
 
+class SupportFamiliesTests(unittest.TestCase):
+    """A reading's support may name the families it applies to; a rival variant's explicit rule is not the baseline reading (H24)."""
+
+    def test_families_restrict_which_observations_rest_on_a_reading(self) -> None:
+        from creib.forge.conformance.appraisal import Appraisal, load_appraisal
+        from creib.forge.conformance.claims import evaluate_claims, load_claims
+        pilot = ROOT / "forge" / "conformance" / "pilots" / "explanatory-distinctions"
+        observations = load_observation_directory(ROOT / "forge" / "conformance" / "runs" / "explanatory-distinctions")
+        appraisal = Appraisal.build(load_appraisal(pilot / "appraisal.json"))
+        rivals = [o for o in observations if o.variant.family is Family.RIVAL_SUBSTITUTION and o.variant.base_case_id == "D-02"]
+        baselines = [o for o in observations if o.variant.family is Family.BASELINE and o.variant.base_case_id == "D-02"]
+        self.assertTrue(rivals and baselines)
+        for o in rivals:
+            self.assertEqual(appraisal.readings_of(o, frozenset({"originative_contribution"}), frozenset()), ())
+        criticised = [o for o in baselines if any(v.field == "originative_contribution" and v.verdict == "MISMATCH" for v in o.scoring.field_verdicts)]
+        self.assertTrue(criticised)
+        self.assertIn("R-D02-RECONSTRUCTION-ORIGINATIVE", appraisal.readings_of(criticised[0], frozenset({"originative_contribution"}), frozenset()))
+        results = {r.claim.claim_id: r for r in evaluate_claims(load_claims(pilot / "claims.json"), observations, appraisal)}
+        self.assertEqual(results["DIS-13"].status, "REFUTED", "the rival rule states the expected answer; nothing about it is contested")
+        self.assertEqual(results["DIS-13"].refuting_contested, 0)
+        with tempfile.TemporaryDirectory() as directory:
+            raw = json.loads((pilot / "appraisal.json").read_text(encoding="utf-8"))
+            raw["arguments"][0]["supports"]["families"] = ["NOT_A_FAMILY"]
+            path = Path(directory) / "appraisal.json"; path.write_text(json.dumps(raw), encoding="utf-8")
+            with self.assertRaisesRegex(RecordError, "not a family"):
+                load_appraisal(path)
+
+
+class GeneratedCorpusTests(unittest.TestCase):
+    """The generated corpora are reproducible from their generators, so their answer keys come from code, not memory."""
+
+    def test_generators_reproduce_the_committed_corpora(self) -> None:
+        for script in ("gen_appraisal_labelling_corpus.py", "gen_explanatory_distinctions_corpus.py", "gen_signed_derivations_corpus.py"):
+            completed = subprocess.run(
+                [sys.executable, str(ROOT / "tools" / script)],
+                capture_output=True, text=True, cwd=str(ROOT), env={**os.environ, "PYTHONPATH": str(ROOT / "src")},
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            self.assertIn("unchanged", completed.stdout, script)
+
+    def test_derivation_keys_rest_only_on_visible_premises(self) -> None:
+        """H28: a key derived from a premise the document does not state keyed the model on what it could not see."""
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("gen_signed", ROOT / "tools" / "gen_signed_derivations_corpus.py")
+        gen = importlib.util.module_from_spec(spec); spec.loader.exec_module(gen)
+        negated = ("not", ("some", "P"))
+        cases = {f"P({m})": ("negative",) for m in gen.M3}
+        # the first renderer omitted the premise for a quantifier under a negation; the repaired one states it
+        self.assertNotIn("complete", gen.prose("X", negated, cases, gen.M3, True, [], "root"))
+        self.assertIn("asserts that this list is complete", gen.prose("X", negated, cases, gen.M3, True, [], "recursive"))
+        self.assertIn("Range R asserted complete | yes", gen.table("X", negated, cases, gen.M3, True, [], "recursive"))
+        # under either renderer the key follows the premise as rendered, so a premise the model cannot see never keys it
+        for mode in gen.RENDER_MODES:
+            for case_id, formula, leaf_cases, members, complete, searches, held_fixed, opts in gen.dossiers():
+                with self.subTest(mode=mode, case=case_id):
+                    asserted = gen.build(case_id, formula, leaf_cases, members, True, searches, held_fixed, render_mode=mode, **opts)
+                    denied = gen.build(case_id, formula, leaf_cases, members, False, searches, held_fixed, render_mode=mode, **opts)
+                    if asserted["expected"] != denied["expected"]:
+                        self.assertNotEqual(asserted["renderings"], denied["renderings"], "a key difference with no visible difference")
+        root = gen.build("DER-11", negated, cases, gen.M3, True, [], "t", render_mode="root")
+        self.assertEqual({o["field"]: o["value"] for o in root["expected"]}["positive_blocked_by"], "range_not_complete")
+        fixed = gen.build("DER-11", negated, cases, gen.M3, True, [], "t", render_mode="recursive")
+        self.assertEqual({o["field"]: o["value"] for o in fixed["expected"]}["positive_derivable"], "yes")
+        # the visible-key pilot carries the first corpus's documents exactly, so the recorded replies replay against it
+        first = load_corpus(ROOT / "forge" / "conformance" / "pilots" / "signed-derivations-visible-key" / "corpus.json", load_pilot_config(ROOT / "forge" / "conformance" / "pilots" / "signed-derivations-visible-key" / "pilot.json").spec)
+        regenerated = gen.corpus("root", "SIGNED-DERIVATIONS-VISIBLE-KEY-001")
+        self.assertEqual([c.renderings for c in first.cases], [c["renderings"] for c in regenerated["cases"]])
+
+    def test_labelling_keys_are_the_harness_labels(self) -> None:
+        from creib.forge.conformance.appraisal import Argument, appraise
+        config = load_pilot_config(ROOT / "forge" / "conformance" / "pilots" / "appraisal-labelling" / "pilot.json")
+        corpus = load_corpus(config.corpus_path, config.spec)
+        checked = 0
+        for case in corpus.cases:
+            expected = {oracle.field: oracle for oracle in case.expected}
+            arguments = []
+            for line in case.renderings["table"].splitlines():
+                cells = [cell.strip() for cell in line.split("|")]
+                if len(cells) == 4 and cells[0][:2] in {"A1", "A2", "A3", "A4", "A5", "A6"}:
+                    aid = cells[0][:2]
+                    essential = tuple(x for x in cells[2].split(", ") if x != "-")
+                    attacks = tuple(x for x in cells[3].split(", ") if x != "-")
+                    arguments.append(Argument(argument_id=aid, statement=aid, kind="other", supports=None, essential=essential, attacks=attacks, readiness=cells[1], readiness_reason="t", register=None))
+            self.assertEqual(len(arguments), 6, case.case_id)
+            labels = appraise(tuple(arguments))
+            for aid in ("A1", "A2", "A3", "A4", "A5", "A6"):
+                self.assertEqual(expected[f"label_{aid.lower()}"].value, labels.of(aid), f"{case.case_id} {aid}")
+            self.assertEqual(expected["usable_count"].value, len(labels.inside), case.case_id)
+            checked += 1
+        self.assertEqual(checked, 18)
+
+    def test_a_rival_reading_fixes_the_other_fields_its_rule_moves(self) -> None:
+        config = load_pilot_config(ROOT / "forge" / "conformance" / "pilots" / "appraisal-labelling" / "pilot.json")
+        corpus = load_corpus(config.corpus_path, config.spec)
+        planned = plan(config.spec, corpus)
+        rivals = {(v.base_case_id, v.rival_label): v for v in planned.variants if v.family is Family.RIVAL_SUBSTITUTION}
+        as_ready = {o.field: o.value for o in rivals[("LAB-03", "unknown_as_ready")].expected}
+        never_ready = {o.field: o.value for o in rivals[("LAB-03", "unknown_never_ready")].expected}
+        self.assertEqual((as_ready["label_a4"], as_ready["label_a3"], as_ready["usable_count"]), ("in", "out", 1), "the unknown attacker becomes ready and its target goes out")
+        self.assertEqual((never_ready["label_a4"], never_ready["label_a3"], never_ready["usable_count"]), ("undecided", "undecided", 0), "the baseline key stands")
+        raw = json.loads(config.corpus_path.read_text(encoding="utf-8"))
+        case = next(c for c in raw["cases"] if c["case_id"] == "LAB-03")
+        bad = json.loads(json.dumps(raw))
+        bad_case = next(c for c in bad["cases"] if c["case_id"] == "LAB-03")
+        bad_case["rival_expected"][0]["also"].append(dict(case["rival_expected"][0]["oracle"]))
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "corpus.json"
+            path.write_text(json.dumps(bad), encoding="utf-8")
+            with self.assertRaisesRegex(RecordError, "ambiguity's own field"):
+                load_corpus(path, config.spec)
+
+
+class SignedDerivationRulesTests(unittest.TestCase):
+    """The derivation checker behind the signed-derivations keys: hand-worked dossiers and monotonicity."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("gen_signed", ROOT / "tools" / "gen_signed_derivations_corpus.py")
+        cls.gen = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.gen)
+
+    def test_hand_worked_dossiers(self) -> None:
+        g = self.gen; A = g.A; M = ["m1", "m2", "m3"]
+        self.assertEqual(g.derive(("all", "P"), {"P(m1)": g.POS, "P(m2)": g.POS, "P(m3)": g.POS}, M, False), (False, False), "no universal from finitely many positives")
+        self.assertEqual(g.derive(("all", "P"), {"P(m1)": g.POS, "P(m2)": g.POS, "P(m3)": g.POS}, M, True), (True, False))
+        self.assertEqual(g.derive(("all", "P"), {"P(m1)": g.NEG}, M, False), (False, True), "one counterexample refutes")
+        self.assertEqual(g.derive(("some", "P"), {"P(m1)": g.NEG, "P(m2)": g.NEG, "P(m3)": g.NEG}, M, False), (False, False))
+        self.assertEqual(g.derive(("some", "P"), {"P(m1)": g.NEG, "P(m2)": g.NEG, "P(m3)": g.NEG}, M, True), (False, True))
+        self.assertEqual(g.derive(("and", A("p"), A("q")), {"p": g.POS}, [], True, searches=("q",)), (False, False), "a failed search is not a case")
+        self.assertEqual(g.derive(("and", A("p"), A("q")), {"p": g.POS}, [], True, searches=("q",), search_counts=True), (False, True))
+        self.assertEqual(g.derive(("not", A("p")), {"p": g.NEG}, [], True), (True, False))
+        self.assertEqual(g.derive(("not", ("all", "P")), {"P(m2)": g.NEG}, M, False), (True, False))
+        self.assertEqual(g.derive(("or", A("p"), A("q")), {"p": g.NEG, "q": g.NEG}, [], True), (False, True))
+        both = {"p": g.BOTH, "q": g.POS}
+        self.assertEqual(g.derive(("and", A("p"), A("q")), both, [], True), (True, True))
+        self.assertEqual(g.derive(("and", A("p"), A("q")), both, [], True, clean=True), (False, False), "no derivation free of the contested leaf")
+        self.assertEqual(g.blocked_by(("all", "P"), {"P(m1)": g.POS, "P(m2)": g.POS, "P(m3)": g.POS}, M, False, "positive"), "range_not_complete")
+        self.assertEqual(g.blocked_by(("all", "P"), {"P(m1)": g.POS, "P(m2)": g.NEG}, M, False, "positive"), "missing_leaf_case")
+        self.assertEqual(g.blocked_by(("all", "P"), {"P(m1)": g.POS}, M, True, "positive"), "missing_leaf_case")
+
+    def test_adding_cases_or_completeness_never_removes_a_derivation(self) -> None:
+        import itertools, random
+        g = self.gen; A = g.A; M = ["m1", "m2", "m3"]
+        rng = random.Random(7)
+        shapes = [("and", A("p"), A("q")), ("or", A("p"), A("q")), ("not", ("and", A("p"), A("q"))), ("all", "P"), ("some", "P"), ("all", ("or", "P", "Q")), ("not", ("all", "P"))]
+        for _ in range(300):
+            formula = rng.choice(shapes)
+            names = g.leaves_of(formula, M)
+            cases = {n: rng.choice([g.POS, g.NEG, g.NONE, g.BOTH]) for n in names}
+            complete = rng.choice([True, False])
+            before = g.derive(formula, cases, M, complete)
+            richer = {n: tuple(set(cases[n]) | set(rng.choice([g.POS, g.NEG, g.NONE]))) for n in names}
+            after = g.derive(formula, richer, M, complete or rng.choice([True, False]))
+            self.assertTrue(all(b <= a for b, a in zip(before, after)), (formula, cases, richer))
+            # a clean derivation is a derivation
+            clean = g.derive(formula, cases, M, complete, clean=True)
+            self.assertTrue(all(c <= b for c, b in zip(clean, before)))
+
+
+class FailClosedGuardTests(unittest.TestCase):
+    """Refusal sites the deletion sweep found the suite never reached (H26): the constitution's own guards."""
+
+    LEAVE = ROOT / "forge" / "conformance" / "runs" / "leave-request"
+
+    def _run_dict(self):
+        from creib.forge.conformance.records import _load_canonical
+        path = sorted(self.LEAVE.glob("run.*.json"))[0]
+        return path, _load_canonical(path)
+
+    def test_a_run_record_cannot_promote(self) -> None:
+        import dataclasses
+        from creib.errors import PolicyViolation
+        from creib.forge.conformance.records import run_from_dict
+        path, record = self._run_dict()
+        loaded = load_run(path)
+        # In code: the record type refuses to be built with any promoting value.
+        for key, value, kind in (
+            ("overall_status", "PASSED", PolicyViolation),
+            ("route", "DONE", PolicyViolation),
+            ("epistemic_limit", "Enough passes confirm the model.", PolicyViolation),
+            ("scope_label", "CONFIRMED", PolicyViolation),
+            ("executor_kind", "oracle", RecordError),
+        ):
+            with self.assertRaises(kind, msg=key):
+                dataclasses.replace(loaded, **{key: value})
+        # On disk: the schema refuses the same values before the type is built.
+        for key, value in (("overall_status", "PASSED"), ("route", "DONE")):
+            tampered = json.loads(json.dumps(record)); tampered[key] = value
+            with self.assertRaises(RecordError, msg=key):
+                run_from_dict(tampered)
+
+    def test_a_run_record_is_tamper_evident(self) -> None:
+        from creib.forge.conformance.records import run_from_dict
+        _, record = self._run_dict()
+        header = json.loads(json.dumps(record)); header["model"] = header["model"] + "x"
+        with self.assertRaisesRegex(RecordError, "run_id does not replay"):
+            run_from_dict(header)
+        body = json.loads(json.dumps(record)); body["observations_with_live_loci"] = int(body["observations_with_live_loci"]) + 1
+        with self.assertRaisesRegex(RecordError, "content_digest does not replay"):
+            run_from_dict(body)
+
+    def test_a_record_file_must_be_canonical_bytes(self) -> None:
+        path, record = self._run_dict()
+        with tempfile.TemporaryDirectory() as directory:
+            pretty = Path(directory) / path.name
+            pretty.write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(RecordError, "not canonical"):
+                load_run(pretty)
+
+    def test_an_observation_must_carry_a_digest_exactly_when_it_carries_a_response_and_a_canonical_parse(self) -> None:
+        import dataclasses
+        from creib.forge.conformance.records import build_observation, observation_from_dict
+        loaded = next(o for o in load_observation_directory(self.LEAVE) if o.response is not None)
+        fields = {f.name: getattr(loaded, f.name) for f in dataclasses.fields(loaded) if f.name != "observation_id"}
+        # A record whose id replays but whose digest is missing reaches the presence guard, not the id guard.
+        no_digest = build_observation(**{**fields, "request_digest": None})
+        with self.assertRaisesRegex(RecordError, "request digest exactly when"):
+            observation_from_dict(no_digest.to_dict())
+        # The scoring parser checks the canonical text before the id is rebuilt, so a dict tamper reaches it.
+        uncanonical = loaded.to_dict()
+        uncanonical["scoring"]["parsed_output_canonical"] = " " + str(uncanonical["scoring"]["parsed_output_canonical"])
+        with self.assertRaisesRegex(RecordError, "not canonical"):
+            observation_from_dict(uncanonical)
+
+    def test_routing_records_keep_the_route_and_the_vocabularies(self) -> None:
+        from creib.errors import PolicyViolation
+        from creib.forge.conformance.routing import routing_from_dict
+        good = {"live_loci": [{"locus": "CANDIDATE", "reason": "x"}, {"locus": "TEST", "reason": "y"}], "route": "AWAITING_HUMAN_TRIAGE", "triggers": ["MISMATCH"], "unrefuted_for_variant": False, "format_enforced_by_server": None}
+        routing_from_dict(good)
+        with self.assertRaises(PolicyViolation):
+            routing_from_dict({**good, "route": "RESOLVED"})
+        with self.assertRaisesRegex(RecordError, "not a known locus"):
+            routing_from_dict({**good, "live_loci": [{"locus": "MODEL", "reason": "x"}]})
+        with self.assertRaisesRegex(RecordError, "unknown trigger"):
+            routing_from_dict({**good, "triggers": ["WRONG"]})
+
+    def test_a_model_call_never_routes_to_a_single_locus_and_every_trigger_has_a_rule(self) -> None:
+        from unittest import mock
+        from creib.errors import PolicyViolation
+        from creib.forge.conformance import routing as routing_module
+        variant = _variant(Family.BASELINE, "ORD-001")
+        scoring = score(variant, response_from_content(json.dumps({**_correct_output("ORD-001"), "site": "elsewhere"})), refusal_phrases=_CONFIG.spec.refusal_phrases)
+        self.assertIn("MISMATCH", [v.verdict for v in scoring.field_verdicts])
+
+        class OneLocus:
+            loci = (("CANDIDATE", "only the model"),)
+            def applies(self, trigger, family):
+                return trigger == "MISMATCH"
+
+        with mock.patch.object(routing_module, "ROUTING_TABLE", (OneLocus(),)):
+            with self.assertRaisesRegex(PolicyViolation, "single locus"):
+                routing_module.route(variant, scoring, format_sent=False)
+        with mock.patch.object(routing_module, "ROUTING_TABLE", ()):
+            with self.assertRaisesRegex(RecordError, "no rule for trigger"):
+                routing_module.route(variant, scoring, format_sent=False)
+
+    def test_reports_and_comparisons_refuse_an_observation_from_another_run(self) -> None:
+        from creib.forge.conformance.compare import compare_runs
+        observations = load_observation_directory(self.LEAVE)
+        runs = sorted((load_run(p) for p in self.LEAVE.glob("run.*.json")), key=lambda r: (r.model, r.created_on))
+        first = runs[0]
+        foreign = next(o for o in observations if o.run_id != first.run_id)
+        import dataclasses
+        by_id = {o.observation_id: o for o in observations}
+        by_id[first.observation_ids[0]] = dataclasses.replace(foreign, observation_id=first.observation_ids[0])
+        with self.assertRaisesRegex(RecordError, "belongs to a different run"):
+            build_report([first], list(by_id.values()))
+        other = next(r for r in runs if r.model == first.model and r.run_id != first.run_id)
+        with self.assertRaisesRegex(RecordError, "belongs to a different run"):
+            compare_runs(first, other, list(by_id.values()))
+
+    def test_run_pilot_refuses_an_undeclared_model_no_families_and_a_bad_limit(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            common = dict(spec=_CONFIG.spec, corpus=_CORPUS, plan=_PLAN, executor=_fake(), executor_kind="fake", output_dir=Path(directory), created_on=CREATED_ON)
+            with self.assertRaisesRegex(RecordError, "not declared"):
+                run_pilot(model="nobody:1b", families=(Family.BASELINE,), **common)
+            with self.assertRaisesRegex(RecordError, "no families"):
+                run_pilot(model="gpt-oss:20b", families=(), **common)
+            with self.assertRaisesRegex(RecordError, "limit must be"):
+                run_pilot(model="gpt-oss:20b", families=(Family.BASELINE,), limit=0, **common)
+
+
+class CompareTests(unittest.TestCase):
+    """Two runs of one model are paired request by request; identity never consults the oracle and nothing is ranked."""
+
+    LEAVE = ROOT / "forge" / "conformance" / "runs" / "leave-request"
+
+    def _runs(self, model):
+        runs = sorted((load_run(path) for path in self.LEAVE.glob("run.*.json") if load_run(path).model == model), key=lambda r: r.created_on)
+        self.assertEqual(len(runs), 2, model)
+        return runs
+
+    def test_shared_requests_are_paired_and_accounted_for(self) -> None:
+        from creib.forge.conformance.compare import compare_runs, render_compare_markdown
+        observations = load_observation_directory(self.LEAVE)
+        earlier, later = self._runs("gpt-oss:120b")
+        comparison = compare_runs(earlier, later, observations)
+        self.assertEqual(comparison["left"]["run_id"], earlier.run_id)
+        self.assertEqual(comparison["shared_requests"], 2, "the later run repeated the two baseline requests only")
+        self.assertEqual(comparison["only_left"], 4)
+        self.assertEqual(comparison["only_right"], 0)
+        self.assertEqual(comparison["identical"] + comparison["differing"] + comparison["not_comparable"], comparison["shared_requests"])
+        self.assertEqual(sum(r["shared"] for r in comparison["by_family"]), comparison["shared_requests"])
+        self.assertEqual({r["family"] for r in comparison["by_family"]}, {"BASELINE"})
+        self.assertEqual(sum(e["fields"] != [] for e in comparison["examples"]), comparison["differing"])
+        self.assertEqual(comparison["left"]["repeat_floor"]["repeats"], 0, "no repeats were configured for that run")
+        # symmetry of the pairing: swapping the runs swaps the sides and nothing else
+        swapped = compare_runs(later, earlier, observations)
+        self.assertEqual((swapped["shared_requests"], swapped["identical"], swapped["differing"]), (comparison["shared_requests"], comparison["identical"], comparison["differing"]))
+        self.assertEqual(swapped["only_left"], comparison["only_right"])
+        text = render_compare_markdown(comparison)
+        self.assertTrue(text.rstrip().endswith(NON_INDUCTIVE_LIMIT))
+        import re
+        for word in ("score", "scores", "best", "worst", "accuracy", "ranking"):
+            self.assertIsNone(re.search(rf"\b{word}\b", text.lower()), word)
+        self.assertIn("a difference is drift, not a wrong answer", text)
+
+    def test_field_differences_and_verdict_moves_are_counted_by_field(self) -> None:
+        from creib.forge.conformance.compare import compare_runs
+        observations = load_observation_directory(self.LEAVE)
+        for model in ("nemotron-3-nano:30b", "deepseek-v4-flash:0731"):
+            earlier, later = self._runs(model)
+            comparison = compare_runs(earlier, later, observations)
+            self.assertEqual(comparison["shared_requests"], 2)
+            counted = sum(r["count"] for r in comparison["differing_fields"])
+            listed = sum(len(e["fields"]) for e in comparison["examples"])
+            self.assertEqual(counted, listed, "every differing field of every differing pair is counted once")
+            for move in comparison["field_verdict_moves"]:
+                self.assertNotEqual(move["left"], move["right"])
+            if comparison["differing"] == 0:
+                self.assertEqual(comparison["differing_fields"], [])
+
+    def test_different_models_and_the_same_run_are_refused(self) -> None:
+        from creib.forge.conformance.compare import compare_runs
+        observations = load_observation_directory(self.LEAVE)
+        gpt = self._runs("gpt-oss:120b")[0]
+        nemotron = self._runs("nemotron-3-nano:30b")[0]
+        with self.assertRaisesRegex(RecordError, "different models"):
+            compare_runs(gpt, nemotron, observations)
+        with self.assertRaisesRegex(RecordError, "two different runs"):
+            compare_runs(gpt, gpt, observations)
+        with self.assertRaisesRegex(RecordError, "was not supplied"):
+            compare_runs(gpt, self._runs("gpt-oss:120b")[1], [])
+
+    def test_cli_compare_runs_and_writes_markdown(self) -> None:
+        earlier, later = self._runs("gpt-oss:120b")
+        paths = {load_run(p).run_id: p for p in self.LEAVE.glob("run.*.json")}
+        with tempfile.TemporaryDirectory() as directory:
+            markdown = Path(directory) / "compare.md"
+            completed = subprocess.run(
+                [sys.executable, str(TOOL), "compare", "--run", str(paths[earlier.run_id]), "--run", str(paths[later.run_id]), "--observations-dir", str(self.LEAVE), "--markdown", str(markdown)],
+                capture_output=True, text=True, env={**os.environ, "PYTHONPATH": str(ROOT / "src")},
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            emitted = json.loads(completed.stdout.strip().splitlines()[-1])
+            self.assertEqual(emitted["shared_requests"], 2)
+            self.assertIn("epistemic_limit", emitted)
+            self.assertTrue(markdown.exists())
+            one = subprocess.run([sys.executable, str(TOOL), "compare", "--run", str(paths[earlier.run_id]), "--observations-dir", str(self.LEAVE)], capture_output=True, text=True, env={**os.environ, "PYTHONPATH": str(ROOT / "src")})
+            self.assertNotEqual(one.returncode, 0)
+
+
 class AppraisalTests(unittest.TestCase):
     """Readings a refutation rests on are labelled in, out, or undecided; refutations become usable, contested, or defeated."""
 
@@ -1451,7 +1862,8 @@ class HardPilotTests(unittest.TestCase):
         self.assertEqual(counts["NON_VACUITY"], 12)
         self.assertEqual(counts["RIVAL_SUBSTITUTION"], 6)
         self.assertEqual(counts["REPEAT"], 18)
-        self.assertEqual(sum(1 for v in self.plan.variants if v.model_call), 135)
+        self.assertEqual(counts["CYCLE"], 54, "nine ordinary cases, two criticism sources, three cycles each")
+        self.assertEqual(sum(1 for v in self.plan.variants if v.model_call), 189)
 
     def test_model_free_controls_are_scored_against_the_bound_form_not_the_prompt_schema(self) -> None:
         # Regression: with grounding on, the prompt schema requires companion span keys; reference

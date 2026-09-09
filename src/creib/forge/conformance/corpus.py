@@ -81,12 +81,26 @@ class Oracle:
 
 @dataclass(frozen=True)
 class RivalExpectation:
+    """What the answer key expects once one rival rule is appended.
+
+    ``oracle`` is the reading of the ambiguity's own field.  ``also`` carries the readings of
+    any other fields the same rule fixes, because a rule that settles one reading can settle
+    others with it (a day-first rule fixes the departure date and the night count; a rule on
+    unknown readiness moves every label that depended on it).  Without ``also`` those fields
+    would be scored against the baseline key under the rival rule, and a correct answer would
+    be a mismatch of the key's own making.
+    """
+
     field: str
     label: str
     oracle: Oracle
+    also: tuple[Oracle, ...] = ()
 
     def to_dict(self) -> dict[str, object]:
-        return {"field": self.field, "label": self.label, "oracle": self.oracle.to_dict()}
+        record: dict[str, object] = {"field": self.field, "label": self.label, "oracle": self.oracle.to_dict()}
+        if self.also:
+            record["also"] = [oracle.to_dict() for oracle in self.also]
+        return record
 
 
 @dataclass(frozen=True)
@@ -202,6 +216,10 @@ def parse_oracle(
         if not values:
             raise RecordError(f"{where}.values must not be empty")
     json_type = str(properties[field]["type"]) if field in properties else "string"
+    if json_type == "array" and kind not in ("unknown", "absent"):
+        # An array field carries no scalar key; it is recorded, compared with other replies, and
+        # checked against its own schema, never judged against a listed value.
+        raise RecordError(f"{where} array field {field!r} admits only the unknown or absent oracle")
     if kind == "exact":
         if value is None or values is not None or pattern is not None:
             raise RecordError(f"{where} exact oracle needs value only")
@@ -312,7 +330,13 @@ def _parse_case(raw: Any, where: str, spec: TaskSpec) -> Case:
         oracle = parse_oracle(rival["oracle"], f"{rival_where}.oracle", spec.form_schema["properties"])
         if oracle.field != field:
             raise RecordError(f"{rival_where} oracle field must be {field!r}")
-        rivals.append(RivalExpectation(field=field, label=label, oracle=oracle))
+        also: list[Oracle] = []
+        for extra_index, extra in enumerate(array_value(rival.get("also", []), f"{rival_where}.also")):
+            extra_oracle = parse_oracle(extra, f"{rival_where}.also[{extra_index}]", spec.form_schema["properties"])
+            if extra_oracle.field == field or extra_oracle.field in {o.field for o in also}:
+                raise RecordError(f"{rival_where}.also repeats a field or names the ambiguity's own field {extra_oracle.field!r}")
+            also.append(extra_oracle)
+        rivals.append(RivalExpectation(field=field, label=label, oracle=oracle, also=tuple(also)))
     if len({(rival.field, rival.label) for rival in rivals}) != len(rivals):
         raise RecordError(f"{where}.rival_expected repeats a (field, label) pair")
 

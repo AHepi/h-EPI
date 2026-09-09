@@ -28,14 +28,20 @@ from .executor import (
 from .families import (
     FAMILY_GENERATORS,
     TEST_FAMILIES,
+    Criticism,
     ExpectationKind,
     Family,
     Plan,
     Variant,
+    materialize_cycle,
     materialize_round_trip,
     plan,
     render_round_trip_document,
 )
+from .cycles import render_cycles_markdown, summarise_cycles
+from .dependence import render_dependence_markdown, summarise_dependence
+from .controls import render_controls_markdown, summarise_controls
+from .units import UnitDependence, relate_units, remove_unit, split_units, unit_dependence_from_dict
 from .oracle import FieldVerdict, Scoring, score
 from .prompt import build_chat_request
 from .records import (
@@ -46,6 +52,7 @@ from .records import (
     load_run,
     publish_record,
 )
+from .compare import compare_runs, render_compare_markdown
 from .report import build_report, render_markdown
 from .appraisal import Appraisal, Argument, appraise, load_appraisal
 from .claims import Claim, ClaimResult, evaluate_claims, load_claims, render_claims_markdown
@@ -99,6 +106,21 @@ __all__ = [
     "load_run",
     "publish_record",
     "build_report",
+    "compare_runs",
+    "render_compare_markdown",
+    "Criticism",
+    "materialize_cycle",
+    "render_cycles_markdown",
+    "render_dependence_markdown",
+    "render_controls_markdown",
+    "summarise_controls",
+    "summarise_dependence",
+    "UnitDependence",
+    "relate_units",
+    "remove_unit",
+    "split_units",
+    "unit_dependence_from_dict",
+    "summarise_cycles",
     "render_markdown",
     "ROUTING_TABLE",
     "LiveLocus",

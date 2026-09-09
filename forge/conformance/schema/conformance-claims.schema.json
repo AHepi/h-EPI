@@ -201,6 +201,104 @@
             }
           }
         },
+        "field_value": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "field",
+            "values"
+          ],
+          "properties": {
+            "field": {
+              "type": "string"
+            },
+            "values": {
+              "type": "array",
+              "minItems": 1
+            }
+          },
+          "description": "The model's value for the field is one of the listed values, compared as canonical JSON; false when the field is absent."
+        },
+        "field_contains": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "field",
+            "values"
+          ],
+          "properties": {
+            "field": {
+              "type": "string"
+            },
+            "values": {
+              "type": "array",
+              "minItems": 1
+            }
+          },
+          "description": "The model's array-valued field holds at least one of the listed items, compared as canonical JSON; false when the field is absent or not an array."
+        },
+        "value_changed": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "field"
+          ],
+          "properties": {
+            "field": {
+              "type": "string"
+            }
+          },
+          "description": "The field's value or presence differs from the observation this one is compared with (its baseline, or the step a cycle follows); false when either reply did not parse."
+        },
+        "transport_error": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": ["timeout", "disconnected", "http_status", "other"]
+              }
+            },
+            "status": {
+              "type": "integer",
+              "minimum": 100
+            },
+            "any_attempt": {
+              "type": "boolean"
+            }
+          },
+          "description": "The recorded transport error is of one of the named kinds, read from the error text the executor wrote: the client's read timeout, the remote end closing the connection, an HTTP status (optionally a particular one), or other. The final attempt alone unless any_attempt is true."
+        },
+        "unit": {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "relation": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "enum": ["self", "declared", "other"]
+              }
+            },
+            "removed": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "UNIT_DEPENDENCE only: the removed unit's relation to the claim (self, declared, other) or its id, as the plan computed them from the document."
+        },
         "key_present": {
           "type": "object",
           "additionalProperties": false,
@@ -226,6 +324,192 @@
         "baseline": {
           "$ref": "#/$defs/condition"
         },
+         "previous": {
+          "$ref": "#/$defs/condition"
+         },
+         "cycle": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+           "index": {
+            "type": [
+             "integer",
+             "null"
+            ],
+            "minimum": 1
+           },
+           "criticism": {
+            "enum": [
+             "none",
+             "external",
+             null
+            ]
+           },
+           "criticised": {
+            "type": [
+             "boolean",
+             "null"
+            ]
+           }
+          },
+          "description": "The observation is a CYCLE variant with the given cycle index, criticism source, and whether any field was criticised; each attribute is optional."
+         },
+         "verdict_move": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+           "from",
+           "to"
+          ],
+          "properties": {
+           "field": {
+            "type": [
+             "string",
+             "null"
+            ]
+           },
+           "from": {
+            "anyOf": [
+             {
+              "type": "string"
+             },
+             {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+               "type": "string"
+              }
+             }
+            ]
+           },
+           "to": {
+            "anyOf": [
+             {
+              "type": "string"
+             },
+             {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+               "type": "string"
+              }
+             }
+            ]
+           },
+           "criticised": {
+            "type": [
+             "boolean",
+             "null"
+            ]
+           }
+          },
+          "description": "Some field (or the named one) had a verdict in `from` on the step this observation follows and a verdict in `to` here; `miss` stands for every criticising field verdict; `criticised` restricts to fields the cycle's criticism named (true) or did not (false)."
+         },
+           "endpoint": {
+            "type": "object",
+            "additionalProperties": false,
+            "minProperties": 1,
+            "properties": {
+             "think": {
+              "anyOf": [
+               {
+                "type": [
+                 "boolean",
+                 "null"
+                ]
+               },
+               {
+                "enum": [
+                 "low",
+                 "medium",
+                 "high"
+                ]
+               }
+              ]
+             },
+             "timeout_seconds": {
+              "type": "integer",
+              "minimum": 1
+             }
+            },
+            "description": "A setting of the run the observation belongs to, read from its run record (the reasoning setting actually sent, the call timeout); false when the run record was not supplied."
+           },
+          "internal_count": {
+           "type": "object",
+           "additionalProperties": false,
+           "required": [
+            "field",
+            "of",
+            "value"
+           ],
+           "properties": {
+            "field": {
+             "type": "string"
+            },
+            "of": {
+             "type": "array",
+             "minItems": 1,
+             "items": {
+              "type": "string"
+             }
+            },
+            "value": {
+             "type": [
+              "string",
+              "integer",
+              "boolean"
+             ]
+            }
+           },
+           "description": "A relation inside one reply: the integer in `field` equals the number of `of` fields whose value is `value`. False when a named field is absent or the count is not an integer; it never consults the answer key."
+          },
+         "criticised_field": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+           "changed": {
+            "type": [
+             "boolean",
+             "null"
+            ]
+           },
+           "verdict": {
+            "anyOf": [
+             {
+              "type": "string"
+             },
+             {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+               "type": "string"
+              }
+             },
+             {
+              "type": "null"
+             }
+            ]
+           },
+           "grounding_verdict": {
+            "anyOf": [
+             {
+              "type": "string"
+             },
+             {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+               "type": "string"
+              }
+             },
+             {
+              "type": "null"
+             }
+            ]
+           }
+          },
+          "description": "Some field the cycle's criticism named satisfies every given condition: its value (or its companion span) changed or did not, its field verdict here is one of `verdict`, its grounding verdict here is one of `grounding_verdict`."
+         },
         "output_tokens": {
           "type": "object",
           "additionalProperties": false,

@@ -18,6 +18,8 @@
     "created_on",
     "selected_families",
     "variant_limit",
+    "order",
+    "shuffle_seed",
     "observation_ids",
     "family_counts",
     "response_verdict_counts",
@@ -35,7 +37,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": "creib.conformance-pilot.run.v2"
+      "const": "creib.conformance-pilot.run.v3"
     },
     "run_id": {
       "$ref": "#/$defs/hex_digest"
@@ -89,6 +91,18 @@
         "null"
       ],
       "minimum": 1
+    },
+    "order": {
+      "type": "string",
+      "enum": ["family", "interleaved", "shuffled"],
+      "description": "v3: the sending order of this run: every baseline first, each case's baseline followed by its variants, or the cases in an order drawn from shuffle_seed."
+    },
+    "shuffle_seed": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "description": "v3: the seed the shuffled order was drawn from; null for the other orders."
     },
     "observation_ids": {
       "type": "array",
@@ -291,7 +305,9 @@
         "IMPORT_DEPENDENCY",
         "NON_VACUITY",
         "ROUND_TRIP",
-        "REPEAT"
+        "REPEAT",
+        "CYCLE",
+        "UNIT_DEPENDENCE"
       ]
     },
     "binding": {
@@ -355,10 +371,22 @@
           }
         },
         "think": {
-          "type": [
-            "boolean",
-            "null"
-          ]
+          "anyOf": [
+            {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            {
+              "enum": [
+                "low",
+                "medium",
+                "high"
+              ]
+            }
+          ],
+          "description": "The reasoning setting sent with every request: a boolean, or a level for the models that take one (gpt-oss ignores a boolean, L10). A run record carries the setting actually sent, which a run-time override may have changed from the pilot's."
         },
         "auth": {
           "description": "bearer: Authorization from OLLAMA_API_KEY (default when absent); none: no key, for a local Ollama.",

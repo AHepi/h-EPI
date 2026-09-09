@@ -8,10 +8,12 @@
 python3.12 tools/check.py bootstrap     # once: .venv with the hash-locked dependencies
 source .venv/bin/activate
 export PYTHONPATH=src
-python tools/check.py all               # lint, offline suite, every pilot validated and planned; no model is called
+python tools/check.py all               # lint, offline suite, every pilot validated and planned, every cited record id resolved; no model is called
 ```
 
 For a hosted Ollama, export `OLLAMA_API_KEY` in the shell that runs `run`; it is read at call time and never written to a file, a record, a log, or an error message. For a local Ollama, set `"auth": "none"` and `"base_url": "http://localhost:11434"` in the pilot's endpoint and export nothing. In a Claude Code web session the SessionStart hook does the bootstrap and the exports.
+
+The suite checks that every guard fails closed on the inputs the tests send; `python tools/refusal_sweep.py --jobs 4 --report sweep.json` checks, over about an hour, which `raise` statements the suite would not miss if they were deleted, and lists the rest. Run it when you add or change a guard. A listed site is one whose deletion the suite did not detect: unreached, or reached with the effect masked by a later guard or looked at by no assertion; which of these, and whether the check is dead code, is found by writing the test (H26 and H27 in `docs/failure-modes.md`).
 
 Before any live run, know that it costs money and produces records that get committed. Use `--limit N` and a scratch `--output-dir` while developing, `--family BASELINE` for plain fills, and `--dry-run` to exercise the whole path with a canned executor and no network.
 
@@ -65,7 +67,8 @@ Give the corpus an answer key and switch the surfaces on, then run the full batt
 6. **Controls.** `swap_fields`, `drop_required`, `extra_key`, and `none` on cases with a reference output. They are mutation tests of your oracle and cost no calls.
 7. **Repeats.** `"repeats": 2` sends every baseline request twice more and records `REPEAT_DIFFERS` when the form values differ. Any comparison family inherits this floor; measure it in the same run.
 8. **Grounding.** `"mode": "spans"` with `span_fields`, `value_in_span_fields`, `abstain_fields`, and `span_relaxations` (`case_insensitive`, `date_range_completion`). A relaxation that accepted a span is named in the verdict.
-9. **Boundary and distractor cases.** Put the hard material in the documents: a correction mid-sentence, a transit city, a colleague copied in, a rate to multiply, a date fixed by a weekday, a document that is silent on a field the form has. T27 in `docs/small-models.md` says which probes discriminated across eighteen models and which sat at the floor.
+9. **Cycles.** `"cycles": {"count": 3, "criticism": ["none", "external"]}` chains three further calls after each baseline, per source: the model sees its previous answer and is asked to check and correct it, alone or with the schema and grounding checks that answer failed. The key is never shown. Read the result with `cycles` beside the repeat floor (Use 10).
+10. **Boundary and distractor cases.** Put the hard material in the documents: a correction mid-sentence, a transit city, a colleague copied in, a rate to multiply, a date fixed by a weekday, a document that is silent on a field the form has. T27 in `docs/small-models.md` says which probes discriminated across eighteen models and which sat at the floor.
 
 Then, per model:
 
@@ -86,11 +89,18 @@ Run each model into the same output directory with its own `--created-on`, then 
 
 ## Use 4: catch drift and regressions
 
-The request digest is a function of the prompt, the schema, the options, and the model name, so the same pilot re-run later sends byte-identical requests. Run again with a new `--created-on` and compare fills per request digest; `fills --run <run record>` restricts to one run. Differences on identical requests are either the endpoint's noise floor (see the repeat counts of both runs) or a change in the model or endpoint. Do not compare across an edit to `pilot.json` without checking the plan id: an edited configuration is a new plan even when no variant changed.
+The request digest is a function of the prompt, the schema, the options, and the model name, so the same pilot re-run later sends byte-identical requests. Run again with a new `--created-on`, then pair the two runs:
+
+```sh
+python tools/run_conformance_pilot.py compare --run forge/conformance/runs/my-form/run.<earlier>.json --run forge/conformance/runs/my-form/run.<later>.json \
+    --observations-dir forge/conformance/runs/my-form --markdown my-form-drift.md
+```
+
+The output pairs every shared request, repeat by repeat, and gives identical, differing, and not-comparable counts, the fields that differed with counts, the verdict moves per field (`MISMATCH` to `MATCH` and back), and each run's own repeat floor. Read the differences against that floor: a model whose repeats differ half the time within one run will differ across runs for the same reason. A request that only one run made is counted and not paired; round trips are the usual case, since their document is the model's own earlier answer. Both runs must be of the same model. Do not compare across an edit to `pilot.json` without checking the plan id: an edited configuration is a new plan even when no variant changed, and the command prints both plan ids.
 
 ## Use 5: measure the noise floor
 
-Set `repeats` to 2 or more. The run summary and the report state how many repeats were identical to the baseline and how many differed, per case. A model whose repeats never differ can be run with `0`; one whose repeats differ half the time cannot support any single-observation claim, and every comparison family's findings for it must be read against that count.
+Set `repeats` to 2 or more. The run summary and the report state how many repeats were identical to the baseline and how many differed, per case. A model whose repeats never differ can be run with `0`; one whose repeats differ half the time cannot support any single-observation claim, and every comparison family's findings for it must be read against that count. `claims` places each refutation against that floor by machine: whether the refuting condition also held on every other repeat of the same run and case (`all`), on some (`some`), on none (`none`), or whether there was no repeat to compare with (`absent`), in `refuting_by_floor` and on each example. The class describes the records and withdraws nothing. When a case's position in the run should not be its position in the corpus, run with `--order shuffled --seed <n>`; the order and the seed are in the run record.
 
 ## Use 6: audit citations
 
@@ -102,14 +112,14 @@ python tools/run_conformance_pilot.py evidence --observations-dir forge/conforma
 
 ## Use 7: test a general claim about models
 
-Write the claim as a conjecture in the pilot's `claims.json` **before** the run whose records will test it, and commit it with the pilot change; a conjecture written after the records is a description of them, and the document that reports it must say so. Each claim has a kind (`never` or `always`), a scope (families, cases, models, whether a model was called), and a condition over one observation: a trigger, a locus, a response verdict, a field verdict, a grounding verdict, the change-against-baseline flag, a null value, a present key, the thinking channel, a recovery, a token count, or `all_of`, `any_of`, `not`, and `baseline` (the same condition on the baseline observation of the same run and case). Anything outside that vocabulary fails closed.
+Write the claim as a conjecture in the pilot's `claims.json` **before** the run whose records will test it, and commit it with the pilot change; a conjecture written after the records is a description of them, and the document that reports it must say so. Each claim has a kind (`never` or `always`), a scope (families, cases, models, whether a model was called), and a condition over one observation: a trigger, a locus, a response verdict, a field verdict, a grounding verdict, the change-against-baseline flag, a null value, a present key, a field's value (`field_value`, arrays included), whether a field's value moved against the compared observation (`value_changed`), the thinking channel, a recovery, a token count, the kind of transport error (`transport_error`: timeout, disconnected, http_status with an optional status, other), a run's setting (`endpoint`), a cycle's index or criticism, a verdict move, a criticised field, a count inside one reply, the removed unit's relation (`unit`), or `all_of`, `any_of`, `not`, `baseline` and `previous` (the same condition on the observation this one is compared with). Anything outside that vocabulary fails closed.
 
 ```sh
 python tools/run_conformance_pilot.py claims --claims forge/conformance/pilots/my-form/claims.json \
     --observations-dir forge/conformance/runs/my-form --markdown my-form-claims.md
 ```
 
-Each claim comes out `REFUTED` (with the refuting models, the survivors, and example ids), `UNREFUTED_FOR_DECLARED_SCOPE`, or `NOT_TESTED`. For an unrefuted claim, read the liveness line: if the refuting condition held on no supplied record inside or outside the scope, the check has not been shown able to fail and the survival is a fact about what the models did, not a test the harness passed. Cite claim ids and observation ids in anything you write.
+Each claim comes out `REFUTED` (with the refuting models, the survivors, and example ids), `UNREFUTED_FOR_DECLARED_SCOPE`, or `NOT_TESTED`. For an unrefuted claim, read the liveness line: if the refuting condition held on no supplied record inside or outside the scope, the check has not been shown able to fail and the survival is a fact about what the models did, not a test the harness passed. Cite claim ids and observation ids in anything you write, with each refutation's floor class (Use 5). Never supply a run and its re-score together: `claims` refuses an observation supplied beside the reply it was replayed from (`replayed_from`), and refuses one observation supplied twice. When a re-score should stand in for one run of a directory that holds several, leave that run out with `--without-run <run id or prefix>`; the summary lists what was left out.
 
 ## Use 8: record what a refutation rests on
 
@@ -130,14 +140,57 @@ python tools/run_conformance_pilot.py run --pilot forge/conformance/pilots/my-fo
     --replay-dir forge/conformance/runs/my-form --output-dir /tmp/my-form-rescore --created-on "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
-The replay executor pairs each request with the reply that same request received in the recorded run, repeat by repeat, and makes no network call. The result is a new run with new observation ids; the original records stand. Decide deliberately where re-scored records go: a re-scored run committed beside its original counts that model twice in every table.
+The replay executor pairs each request with the reply that same request received in the recorded run, repeat by repeat, and makes no network call. The result is a new run with new observation ids, each naming in `replayed_from` the observation whose reply it re-scored; the original records stand. Decide deliberately where re-scored records go: a re-scored run committed beside its original counts that model twice in every table that works from run records, and `claims` refuses the pair.
+
+## Use 10: ask whether a further cycle helps
+
+Switch on `cycles` and `repeats` in the same pilot, run `--family BASELINE --family REPEAT --family CYCLE`, and table the result:
+
+```sh
+python tools/run_conformance_pilot.py cycles --observations-dir forge/conformance/runs/my-form --markdown cycles.md
+```
+
+One row per model, criticism source, and cycle index says how many cycles returned the same form as the step before, how many differed, and how the key's verdict per field moved between the two records; the `repeat` row of the same model is the floor, the same moves with nothing asked to change. A cycle count that does not clear that floor has shown nothing, and one that does has shown a difference on these cases, not an improvement in general: the harness never says a later answer is better, only which fields moved which way. Write what a move would refute as conjectures before the run (`cycle`, `previous`, `verdict_move`, `criticised_field` are the predicates; the travel-claim pilot's CYC-01 to CYC-14 are an example) and let `claims` say what survived. The criticism a cycle is shown is drawn from the form schema and the document only; if you want the model to see the key's verdicts you are measuring how well it copies a correction, and the harness will not build that plan.
+
+## Use 11: treat the reasoning setting as a factor
+
+For a model that takes a level, run the same plan at each level and compare:
+
+```sh
+for level in low medium high; do
+  python tools/run_conformance_pilot.py run --pilot forge/conformance/pilots/my-form/pilot.json --model gpt-oss:120b \
+      --family BASELINE --family REPEAT --think "$level" --timeout-seconds 600 --order interleaved \
+      --output-dir forge/conformance/runs/my-form-reasoning --created-on "$(date -u +%Y-%m-%dT%H:%M:00Z)"
+done
+python tools/run_conformance_pilot.py compare --run <low run> --run <high run> --observations-dir forge/conformance/runs/my-form-reasoning
+```
+
+The plan is the same at every level; each run record's `endpoint` says what was sent, and `compare` pairs the requests by case and repeat (their digests differ, since the setting is inside the request, so use `--run` pairs from the same plan and read the pairing by case). A claim scopes on the setting with the `endpoint` predicate, read from the run record, so write the conjectures about levels before the runs as with any other. The travel-claim pilot's THK-01 to THK-08 are an example. Do not read a boolean `think` as an off switch: the models that take a level ignore it (L10), and the records show the channel whatever was sent.
+
+## Use 12: find what a model's reading of a document depends on, with no key
+
+For a document with headings, let the harness find the units and the terms itself. Write `pilot.json` with a `unit_dependence` block (heading levels, term patterns) and a two-field form with an array of terms, generate the probes, and run baselines, repeats, and removals together:
+
+```sh
+python tools/gen_unit_dependence_corpus.py --document my-document.md --pilot-dir forge/conformance/pilots/my-document --corpus-id MY-DOCUMENT-CORPUS-001
+python tools/run_conformance_pilot.py run --pilot forge/conformance/pilots/my-document/pilot.json --model gpt-oss:120b \
+    --family BASELINE --family REPEAT --family UNIT_DEPENDENCE --order interleaved \
+    --output-dir forge/conformance/runs/my-document --created-on "$(date -u +%Y-%m-%dT%H:%M:00Z)"
+python tools/run_conformance_pilot.py dependence --observations-dir forge/conformance/runs/my-document --markdown dependence.md
+```
+
+Every section carrying the document's own argument markup becomes a probe whose claim is its heading; every headed unit is removed once per probe with everything else present; the reply is compared with the same model's baseline reply and with nothing else. The table says, per relation (the document's own argument for the claim, a definition that argument uses, anything else), how many removals moved the form and which fields, beside the repeat floor, and sets the model's own named dependencies beside what removal moved. The unit table the generator prints is model-free and is the first thing to read. A run of this family is always labelled as having no scored output, which is what it is; the conjectures in `claims.json` (`unit`, `value_changed`, `field_value`) are where a move becomes a refutation, and they are written before the run as with any other. The pilot `semantics-unit-dependence` is an example, and `docs/document-dependence.md` reads its run.
+
+A removal that moved nothing is read by the controls: generate them from the same document with `tools/gen_unit_controls_corpus.py --source-pilot <the unit-dependence pilot>`, run baselines and repeats, and table them with `controls --pilot <controls pilot> --observations-dir …`. The claim alone, the argument alone, the argument with its definitions, every other carrier of a term removed as a block, the vocabulary renamed, and the claim negated each sit beside the full-document reply; `semantics-unit-controls` is the example.
 
 ## Reading the output
 
 - **Run labels.** `UNREFUTED_FOR_DECLARED_SCOPE` is the strongest: every judged field matched and nothing more. `REFUTED_CASES_PRESENT` means the model is a live suspect on at least one observation; it does not mean the model failed the battery. `INCONCLUSIVE_NO_SCORED_OUTPUT` means some field went unjudged or a call did not complete, which is the normal label for a plain fill with no key.
 - **Live loci.** Every failure after a model call names a set from CANDIDATE (the model), AUXILIARY (prompt, executor, format plumbing), TEST (the oracle), SCOPE (the task as framed). A set is never a single locus; the routing is in `routing.py` and each report translates every trigger in prose.
-- **Triggers.** Response-level: `TRANSPORT_ERROR`, `EMPTY_RESPONSE`, `TRUNCATED`, `INVALID_JSON`, `NOT_AN_OBJECT`, `REFUSAL_SUSPECTED`, `PREREQUISITE_UNAVAILABLE`. Field-level: `MISMATCH`, `MISSING_REQUIRED`, `EXTRA_FIELD`, `TYPE_VIOLATION`, `PATTERN_VIOLATION`, `ENUM_VIOLATION`, `LENGTH_VIOLATION`, `UNEXPECTED_PRESENT`, `SCHEMA_INVALID`. Family-level: `IDENTICAL_TO_BASELINE`, `REPEAT_DIFFERS`, `DEPENDENCE_CHANGED`, `DEPENDENCE_UNCHANGED`, `CONTROL_ACCEPTED`, `CONTROL_REJECTED`, `FORMAT_NOT_ENFORCED`. Grounding: `SPAN_MISSING`, `SPAN_NOT_IN_DOCUMENT`, `VALUE_NOT_IN_SPAN`.
+- **Triggers.** Response-level: `TRANSPORT_ERROR`, `EMPTY_RESPONSE`, `TRUNCATED`, `INVALID_JSON`, `NOT_AN_OBJECT`, `REFUSAL_SUSPECTED`, `PREREQUISITE_UNAVAILABLE`. Field-level: `MISMATCH`, `MISSING_REQUIRED`, `EXTRA_FIELD`, `TYPE_VIOLATION`, `PATTERN_VIOLATION`, `ENUM_VIOLATION`, `LENGTH_VIOLATION`, `UNEXPECTED_PRESENT`, `SCHEMA_INVALID`. Family-level: `IDENTICAL_TO_BASELINE`, `REPEAT_DIFFERS`, `DEPENDENCE_CHANGED`, `DEPENDENCE_UNCHANGED` (a removed instruction sentence or, for UNIT_DEPENDENCE, a removed unit of the document), `CONTROL_ACCEPTED`, `CONTROL_REJECTED`, `FORMAT_NOT_ENFORCED`. Grounding: `SPAN_MISSING`, `SPAN_NOT_IN_DOCUMENT`, `VALUE_NOT_IN_SPAN`.
+- **Timing and transport.** From record version 3 every attempt carries `started_at` and `elapsed_ms`, measured by the client around the call, and a failed attempt carries `transport_kind`: `timeout` (the client's timeout fired), `disconnected` (the remote end closed the connection), `http_status`, or `other`. A version 2 record has none of these and says nothing about how long a call took; the exception text it carries is what H34 was read from.
 - **Exit codes.** `run` exits 1 when any observation carries live loci. That means look, not failed.
+- **What a survival is a survival of.** `docs/kernel.md` lists, check by check, the smallest change each verdict moves under and a change it does not, every row held by `tests/test_kernel.py`. Read a clean run against it: a value that fits the pattern, a quotation of the wrong sentence that occurs, a reply wrong in exactly the way its baseline was wrong, and a refusal phrased outside the list all pass.
 - **Interrupted runs.** A killed run leaves its observations and no run record. They are valid on their own but `report` will not see them; delete them or keep them as orphans, and rerun with a new `--created-on`.
 
 ## Writing it up
@@ -148,7 +201,7 @@ The replay executor pairs each request with the reply that same request received
 
 ## Publishing
 
-Work on a branch (`claude/*`, `codex/*`, or a human-chosen name); never commit on or push to `main`. Before every commit run `python tools/check.py all`, stage explicit paths (never `.venv`, key material, or documents you are not licensed to share), run `git diff --cached --check`, and confirm no key is in the diff (`git grep -l Bearer -- forge/conformance/runs` must print nothing). Push with `git push -u origin HEAD`; never force, never `HEAD:main`, never rebase, reset, or amend published history. Publication is a pull request and merging is a human action. The `h-epi-safe-publish` skill walks through the same steps.
+Work on a branch (`claude/*`, `codex/*`, or a human-chosen name); never commit on or push to `main`. Before every commit run `python tools/check.py all` (lint, the offline suite, every pilot planned, and `cite`, which resolves every record id the documents cite), stage explicit paths (never `.venv`, key material, or documents you are not licensed to share), run `git diff --cached --check`, and confirm no key is in the diff (`git grep -l Bearer -- forge/conformance/runs` must print nothing). Push with `git push -u origin HEAD`; never force, never `HEAD:main`, never rebase, reset, or amend published history. Publication is a pull request and merging is a human action. The `h-epi-safe-publish` skill walks through the same steps.
 
 ## What not to expect
 

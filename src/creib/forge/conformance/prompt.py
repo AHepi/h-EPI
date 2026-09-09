@@ -14,6 +14,8 @@ from typing import Any
 
 from creib.errors import RecordError
 
+from creib.strict_json import loads_strict
+
 from .executor import ChatRequest
 from .families import Variant
 from .spec import Endpoint
@@ -63,10 +65,47 @@ def render_schema_for_prompt(form_schema: dict[str, Any], field_order: tuple[str
     return json.dumps(ordered_form_schema(form_schema, field_order), ensure_ascii=False, indent=2, allow_nan=False)
 
 
+CYCLE_REVISION_SENTENCE = (
+    "Check the previous answer against the instructions, the form schema, and the case document. "
+    "Correct any error and return the complete form again as a single JSON object and no other text; "
+    "return the same value for any field that needs no change."
+)
+
+
+def render_previous_answer(variant: Variant) -> str:
+    """The previous answer as shown in a cycle: declared fields in prompt order, then any other key sorted."""
+
+    if variant.cycle_previous_output is None:
+        raise RecordError(f"variant {variant.variant_id} is a cycle with no previous answer; materialise it first")
+    previous = loads_strict(variant.cycle_previous_output)
+    if not isinstance(previous, dict):
+        raise RecordError("a cycle's previous answer must be a JSON object")
+    order = [key for key in variant.prompt_field_order if key in previous]
+    order += sorted(key for key in previous if key not in order)
+    return json.dumps({key: previous[key] for key in order}, ensure_ascii=False, indent=2, allow_nan=False)
+
+
+def render_cycle_section(variant: Variant) -> str:
+    """The text a CYCLE variant appends after the document; deterministic from the variant alone."""
+
+    parts = ["\n## Previous answer\n\nYour previous answer to this task was:\n\n```json\n" + render_previous_answer(variant) + "\n```\n"]
+    if variant.cycle_criticism == "external":
+        criticisms = variant.cycle_criticisms or ()
+        if criticisms:
+            lines = ["\n## Checks on the previous answer\n\nThe following automatic checks failed on the previous answer:\n"]
+            for item in criticisms:
+                lines.append(f"- `{item.field}`: {item.verdict}" + (f" ({item.detail})" if item.detail else ""))
+            parts.append("\n".join(lines) + "\n")
+        else:
+            parts.append("\n## Checks on the previous answer\n\nNo automatic check failed on the previous answer.\n")
+    parts.append("\n## Revision\n\n" + CYCLE_REVISION_SENTENCE + "\n")
+    return "".join(parts)
+
+
 def build_user_prompt(variant: Variant) -> str:
     if variant.input_document is None:
         raise RecordError(f"variant {variant.variant_id} has no document; materialise it first")
-    return (
+    prompt = (
         "## Instructions\n\n"
         + variant.prompt_instructions()
         + "\n## Form schema (JSON Schema draft 2020-12)\n\n"
@@ -76,6 +115,9 @@ def build_user_prompt(variant: Variant) -> str:
         + ("\n" if not variant.input_document.endswith("\n") else "")
         + "DOCUMENT>>>\n"
     )
+    if variant.cycle_index is not None:
+        prompt += render_cycle_section(variant)
+    return prompt
 
 
 def build_chat_request(variant: Variant, *, model: str, endpoint: Endpoint) -> ChatRequest:
@@ -87,4 +129,5 @@ def build_chat_request(variant: Variant, *, model: str, endpoint: Endpoint) -> C
         options={"temperature": endpoint.temperature, "seed": endpoint.seed},
         think=endpoint.think,
         repeat_index=variant.repeat_index,
+        variant_id=variant.variant_id,
     )

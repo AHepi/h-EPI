@@ -1,0 +1,115 @@
+{
+  "schema_version": "creib.conformance-pilot.config.v1",
+  "pilot_id": "SMF-CONFORMANCE-APPRAISAL-LABELLING-001",
+  "title": "Labelling an appraisal dossier under the stated least-fixed-point policy",
+  "form_schema": "form.schema.json",
+  "instructions": "instructions.md",
+  "corpus": "corpus.json",
+  "models": [
+    "gpt-oss:20b",
+    "gemma4:31b",
+    "gpt-oss:120b",
+    "qwen3.5:397b",
+    "mistral-large-3:675b"
+  ],
+  "endpoint": {
+    "kind": "ollama-chat",
+    "base_url": "https://ollama.com",
+    "timeout_seconds": 300,
+    "options": {
+      "temperature": 0,
+      "seed": 7
+    },
+    "think": false
+  },
+  "charter": {
+    "purpose": "Expose where a model, given the two rules of the labelling policy and a dossier of six arguments, produces labels other than the policy's least fixed point, and route each failure to the loci that could be at fault.",
+    "output": "Per-model observation and run records with plural verdicts and live loci, plus an unranked report for human triage.",
+    "scope_in": [
+      "Dossiers of exactly six arguments with readiness PASS, FAIL, or UNKNOWN, essential dependencies, attacks, and attached cases, rendered as prose or as a table.",
+      "The nine declared fields of the labelling form.",
+      "Every answer key computed by the harness's own labelling code, whose least-fixed-point property is checked by the offline suite."
+    ],
+    "scope_out": [
+      "Any claim that a model understands argumentation, appraisal, or the semantics the policy was taken from.",
+      "Ranking models, scoring them, or declaring any model fit for use.",
+      "Dossiers with a different number of arguments, cyclic self-support, or policies other than the one stated."
+    ]
+  },
+  "load_bearing": [
+    "S4",
+    "S5"
+  ],
+  "negations": [],
+  "twins": [
+    [
+      "label_a1",
+      "label_a2"
+    ]
+  ],
+  "ambiguity": [
+    {
+      "field": "usable_count",
+      "question": "Does an argument whose readiness is UNKNOWN count as ready?",
+      "rivals": [
+        {
+          "label": "unknown_as_ready",
+          "instruction": "Treat an argument whose readiness is UNKNOWN as if its readiness were PASS."
+        },
+        {
+          "label": "unknown_never_ready",
+          "instruction": "An argument whose readiness is UNKNOWN is never in, whatever depends on it or attacks it."
+        }
+      ]
+    }
+  ],
+  "controls": [
+    {
+      "control_id": "C-SWAP-A1-A2",
+      "corruption": {
+        "kind": "swap_fields",
+        "fields": [
+          "label_a1",
+          "label_a2"
+        ]
+      }
+    },
+    {
+      "control_id": "C-DROP-COUNT",
+      "corruption": {
+        "kind": "drop_required",
+        "field": "usable_count"
+      }
+    },
+    {
+      "control_id": "C-EXTRA-POLICY",
+      "corruption": {
+        "kind": "extra_key",
+        "key": "policy",
+        "value": "DA-1"
+      }
+    },
+    {
+      "control_id": "C-CORRECT",
+      "corruption": {
+        "kind": "none"
+      }
+    }
+  ],
+  "refusal_phrases": [
+    "I cannot",
+    "I can't",
+    "I'm sorry",
+    "I am unable",
+    "as an AI",
+    "cannot assist"
+  ],
+  "repeats": 2,
+  "grounding": {
+    "mode": "none",
+    "span_suffix": "_span",
+    "span_fields": [],
+    "value_in_span_fields": [],
+    "abstain_fields": []
+  }
+}

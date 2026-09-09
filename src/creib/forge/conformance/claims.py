@@ -12,27 +12,33 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Mapping
+from typing import Any, Callable, Iterable, Mapping
 
+from creib.canonical import canonical_bytes
 from creib.errors import RecordError
-from creib.strict_json import load_strict
+from creib.strict_json import loads_strict
 
 from .common import (
     LOCUS_VALUES,
     NON_INDUCTIVE_LIMIT,
     array_value,
     boolean,
+    decode_utf8,
     identifier,
     object_value,
     optional_boolean,
     optional_text,
     text,
     validate_instance,
+    integer,
 )
 from .families import Family
+from .spec import CYCLE_CRITICISMS, THINK_LEVELS
+from .units import UNIT_RELATIONS
+from .executor import TRANSPORT_ERROR_KINDS, transport_error_kind
 from .oracle import FIELD_VERDICTS, GROUNDING_VERDICTS, RESPONSE_VERDICTS
 from .appraisal import Appraisal
-from .records import ObservationRecord
+from .records import ObservationRecord, RunRecord
 from .routing import TRIGGERS
 
 CLAIMS_SCHEMA_NAME = "conformance-claims.schema.json"
@@ -90,6 +96,19 @@ class Claim:
         }
 
 
+def _grounding_set(raw: Any, where: str) -> frozenset[str]:
+    items = [raw] if isinstance(raw, str) else list(array_value(raw, where))
+    if not items:
+        raise RecordError(f"{where} must name at least one grounding verdict")
+    verdicts = []
+    for index, item in enumerate(items):
+        verdict = text(item, f"{where}[{index}]")
+        if verdict not in GROUNDING_VERDICTS:
+            raise RecordError(f"{where}[{index}] {verdict!r} is not a known grounding verdict")
+        verdicts.append(verdict)
+    return frozenset(verdicts)
+
+
 def _plain(value: Any) -> Any:
     if isinstance(value, Mapping):
         return {str(k): _plain(v) for k, v in value.items()}
@@ -103,16 +122,50 @@ def _plain(value: Any) -> Any:
 # --------------------------------------------------------------------------
 
 class Context:
-    """The other observations a predicate may refer to: here, the baseline of the same run and case."""
+    """The other records a predicate may refer to: the baseline of the same run and case, the step an observation follows, and the run it belongs to."""
 
-    def __init__(self, observations: list[ObservationRecord]) -> None:
+    def __init__(self, observations: list[ObservationRecord], runs: Iterable[RunRecord] = ()) -> None:
         self._baselines: dict[tuple[str, str], ObservationRecord] = {}
+        self._by_id: dict[str, ObservationRecord] = {}
+        self._repeats: dict[tuple[str, str], list[ObservationRecord]] = {}
+        self._runs: dict[str, RunRecord] = {run.run_id: run for run in runs}
         for observation in observations:
+            if observation.observation_id in self._by_id:
+                raise RecordError(f"observation {observation.observation_id} was supplied twice; one reply is counted once")
+            self._by_id[observation.observation_id] = observation
             if observation.variant.family is Family.BASELINE:
                 self._baselines[(observation.run_id, observation.variant.base_case_id)] = observation
+            if observation.variant.family is Family.REPEAT:
+                self._repeats.setdefault((observation.run_id, observation.variant.base_case_id), []).append(observation)
+        for observation in observations:
+            source = observation.replayed_from
+            if source is not None and source in self._by_id:
+                raise RecordError(
+                    f"observation {observation.observation_id} is a replay of {source}, which is also supplied; "
+                    "a reply and its replay are one reply and are not counted together: supply one run or the other"
+                )
+
+    def run_of(self, observation: ObservationRecord) -> RunRecord | None:
+        """The run record an observation belongs to, when the run records were supplied."""
+
+        return self._runs.get(observation.run_id)
 
     def baseline_of(self, observation: ObservationRecord) -> ObservationRecord | None:
         return self._baselines.get((observation.run_id, observation.variant.base_case_id))
+
+    def repeats_of(self, observation: ObservationRecord) -> tuple[ObservationRecord, ...]:
+        """The REPEAT observations of the same run and case, the observation itself excepted: its repeat floor."""
+
+        return tuple(r for r in self._repeats.get((observation.run_id, observation.variant.base_case_id), ()) if r.observation_id != observation.observation_id)
+
+    def previous_of(self, observation: ObservationRecord) -> ObservationRecord | None:
+        """The observation this one was compared with: the record it names, else the baseline of its run and case."""
+
+        if observation.baseline_observation_id is not None:
+            named = self._by_id.get(observation.baseline_observation_id)
+            if named is not None:
+                return named
+        return self.baseline_of(observation)
 
 
 Predicate = Callable[[ObservationRecord, Context], bool]
@@ -120,6 +173,46 @@ Predicate = Callable[[ObservationRecord, Context], bool]
 
 def _output(observation: ObservationRecord) -> Mapping[str, Any]:
     return observation.scoring.parsed_output or {}
+
+
+_MISS_VERDICTS: tuple[str, ...] = tuple(v for v in FIELD_VERDICTS if v not in ("MATCH", "NOT_SCORED"))
+
+
+def _verdict_set(raw: Any, where: str) -> frozenset[str]:
+    """A field verdict, a list of them, or the shorthand ``miss`` for every criticising verdict."""
+
+    if raw == "miss":
+        return frozenset(_MISS_VERDICTS)
+    items = [raw] if isinstance(raw, str) else list(array_value(raw, where))
+    if not items:
+        raise RecordError(f"{where} must name at least one verdict")
+    verdicts = []
+    for index, item in enumerate(items):
+        verdict = text(item, f"{where}[{index}]")
+        if verdict not in FIELD_VERDICTS:
+            raise RecordError(f"{where}[{index}] {verdict!r} is not a known field verdict")
+        verdicts.append(verdict)
+    return frozenset(verdicts)
+
+
+def _field_verdicts_by_name(observation: ObservationRecord) -> dict[str, str]:
+    return {item.field: item.verdict for item in observation.scoring.field_verdicts}
+
+
+def _value_changed(field: str, observation: ObservationRecord, previous: ObservationRecord) -> bool:
+    """Whether a key's value or presence differs between an observation and the step it follows.
+
+    A field's companion span key, where grounding is active, counts as part of the field: a
+    criticism of a span is repaired by changing the span.
+    """
+
+    keys = [field]
+    variant = observation.variant
+    if variant.grounding is not None and variant.grounding.active and field in variant.active_span_fields:
+        keys.append(variant.span_key(field))
+    now = _output(observation)
+    before = _output(previous)
+    return any((key in now) != (key in before) or now.get(key) != before.get(key) for key in keys)
 
 
 def compile_condition(raw: Any, where: str = "condition") -> Predicate:
@@ -153,6 +246,248 @@ def compile_condition(raw: Any, where: str = "condition") -> Predicate:
             return base is not None and inner(base, c)
 
         return on_baseline
+    if key == "previous":
+        # The nested condition is evaluated on the step this observation follows (for a cycle, the
+        # previous cycle or the baseline; for any other comparison family, the baseline); false
+        # when that record was not supplied.
+        inner = compile_condition(value, f"{where}.previous")
+
+        def on_previous(o: ObservationRecord, c: Context) -> bool:
+            before = c.previous_of(o)
+            return before is not None and inner(before, c)
+
+        return on_previous
+    if key == "cycle":
+        spec = object_value(value, f"{where}.cycle")
+        index = spec.get("index")
+        if index is not None and (type(index) is not int or index < 1):
+            raise RecordError(f"{where}.cycle.index must be a positive integer or null")
+        criticism = optional_text(spec.get("criticism"), f"{where}.cycle.criticism")
+        if criticism is not None and criticism not in CYCLE_CRITICISMS:
+            raise RecordError(f"{where}.cycle.criticism {criticism!r} is not a known criticism source")
+        criticised = optional_boolean(spec.get("criticised"), f"{where}.cycle.criticised")
+
+        def is_cycle(o: ObservationRecord, c: Context) -> bool:
+            v = o.variant
+            if v.family is not Family.CYCLE or v.cycle_index is None:
+                return False
+            if index is not None and v.cycle_index != index:
+                return False
+            if criticism is not None and v.cycle_criticism != criticism:
+                return False
+            if criticised is not None and bool(v.criticised_fields) is not criticised:
+                return False
+            return True
+
+        return is_cycle
+    if key == "verdict_move":
+        spec = object_value(value, f"{where}.verdict_move")
+        field = optional_text(spec.get("field"), f"{where}.verdict_move.field")
+        source = _verdict_set(spec["from"], f"{where}.verdict_move.from")
+        target = _verdict_set(spec["to"], f"{where}.verdict_move.to")
+        criticised = optional_boolean(spec.get("criticised"), f"{where}.verdict_move.criticised")
+
+        def verdict_move(o: ObservationRecord, c: Context) -> bool:
+            before = c.previous_of(o)
+            if before is None or before.scoring.parsed_output is None or o.scoring.parsed_output is None:
+                return False
+            earlier = _field_verdicts_by_name(before)
+            later = _field_verdicts_by_name(o)
+            named = set(o.variant.criticised_fields)
+            for name in sorted(set(earlier) | set(later)):
+                if field is not None and name != field:
+                    continue
+                if criticised is not None and (name in named) is not criticised:
+                    continue
+                if earlier.get(name, "NOT_SCORED") in source and later.get(name, "NOT_SCORED") in target:
+                    return True
+            return False
+
+        return verdict_move
+    if key == "criticised_field":
+        spec = object_value(value, f"{where}.criticised_field")
+        changed = optional_boolean(spec.get("changed"), f"{where}.criticised_field.changed")
+        verdicts = None if spec.get("verdict") is None else _verdict_set(spec["verdict"], f"{where}.criticised_field.verdict")
+        grounding = None if spec.get("grounding_verdict") is None else _grounding_set(spec["grounding_verdict"], f"{where}.criticised_field.grounding_verdict")
+        if changed is None and verdicts is None and grounding is None:
+            raise RecordError(f"{where}.criticised_field needs changed, verdict, or grounding_verdict")
+
+        def criticised_field(o: ObservationRecord, c: Context) -> bool:
+            names = o.variant.criticised_fields
+            if not names or o.scoring.parsed_output is None:
+                return False
+            before = c.previous_of(o)
+            later = _field_verdicts_by_name(o)
+            grounded = {item.field: item.verdict for item in o.scoring.grounding_verdicts}
+            for name in names:
+                if changed is not None:
+                    if before is None or before.scoring.parsed_output is None:
+                        continue
+                    if _value_changed(name, o, before) is not changed:
+                        continue
+                if verdicts is not None and later.get(name, "NOT_SCORED") not in verdicts:
+                    continue
+                if grounding is not None and grounded.get(name) not in grounding:
+                    continue
+                return True
+            return False
+
+        return criticised_field
+    if key == "endpoint":
+        # A setting of the run the observation belongs to, read from its run record: the reasoning
+        # setting actually sent (a run-time override is recorded there, not in the pilot) or the
+        # call timeout. False when the run record was not supplied.
+        spec = object_value(value, f"{where}.endpoint")
+        if not spec:
+            raise RecordError(f"{where}.endpoint needs think or timeout_seconds")
+        want_think = spec.get("think", "unset")
+        if want_think != "unset" and want_think is not None and type(want_think) is not bool and want_think not in THINK_LEVELS:
+            raise RecordError(f"{where}.endpoint.think must be null, a boolean, or one of {list(THINK_LEVELS)}")
+        want_timeout = spec.get("timeout_seconds")
+        if want_timeout is not None and (type(want_timeout) is not int or want_timeout < 1):
+            raise RecordError(f"{where}.endpoint.timeout_seconds must be a positive integer")
+
+        def endpoint(o: ObservationRecord, c: Context) -> bool:
+            run = c.run_of(o)
+            if run is None:
+                return False
+            if want_think != "unset" and run.endpoint.think != want_think:
+                return False
+            if want_timeout is not None and run.endpoint.timeout_seconds != want_timeout:
+                return False
+            return True
+
+        return endpoint
+    if key == "internal_count":
+        # A relation inside one reply, never a comparison with the key: the integer in ``field``
+        # equals the number of ``of`` fields whose value is ``value``. False, not a counterexample
+        # by default, when any named field is absent or the count is not an integer; a claim that
+        # wants those cases counted says so with key_present and field_verdict guards of its own.
+        spec = object_value(value, f"{where}.internal_count")
+        field = text(spec["field"], f"{where}.internal_count.field")
+        of = tuple(text(item, f"{where}.internal_count.of[{i}]") for i, item in enumerate(array_value(spec["of"], f"{where}.internal_count.of")))
+        if not of:
+            raise RecordError(f"{where}.internal_count.of must name at least one field")
+        if field in of or len(set(of)) != len(of):
+            raise RecordError(f"{where}.internal_count.of must not repeat a field or name the count field")
+        counted = spec["value"]
+        if type(counted) not in (str, int, bool) or counted is None:
+            raise RecordError(f"{where}.internal_count.value must be a string, integer, or boolean")
+
+        def internal_count(o: ObservationRecord, c: Context) -> bool:
+            output = _output(o)
+            if field not in output or any(name not in output for name in of):
+                return False
+            count = output[field]
+            if type(count) is not int:
+                return False
+            return count == sum(1 for name in of if type(output[name]) is type(counted) and output[name] == counted)
+
+        return internal_count
+    if key == "unit":
+        # UNIT_DEPENDENCE only: which unit of the document was removed, by id or by its relation
+        # to the claim (self, declared, other) as the plan computed it from the document.
+        spec = object_value(value, f"{where}.unit")
+        relations = None
+        if spec.get("relation") is not None:
+            relations = frozenset(text(item, f"{where}.unit.relation[{i}]") for i, item in enumerate(array_value(spec["relation"], f"{where}.unit.relation")))
+            unknown = sorted(relations - set(UNIT_RELATIONS))
+            if unknown:
+                raise RecordError(f"{where}.unit.relation names unknown relations {unknown}; known: {list(UNIT_RELATIONS)}")
+        removed = None
+        if spec.get("removed") is not None:
+            removed = frozenset(text(item, f"{where}.unit.removed[{i}]") for i, item in enumerate(array_value(spec["removed"], f"{where}.unit.removed")))
+        if relations is None and removed is None:
+            raise RecordError(f"{where}.unit must name a relation or a removed unit")
+
+        def unit(o: ObservationRecord, c: Context) -> bool:
+            variant = o.variant
+            if variant.removed_unit_id is None:
+                return False
+            if relations is not None and variant.removed_unit_relation not in relations:
+                return False
+            if removed is not None and variant.removed_unit_id not in removed:
+                return False
+            return True
+
+        return unit
+    if key == "field_value":
+        # The value the model returned for a field is one of the listed values, compared as
+        # canonical JSON so that lists and objects can be named as well as scalars. False, not a
+        # counterexample by default, when the field is absent or the reply did not parse.
+        spec = object_value(value, f"{where}.field_value")
+        field = text(spec["field"], f"{where}.field_value.field")
+        listed = array_value(spec["values"], f"{where}.field_value.values")
+        if not listed:
+            raise RecordError(f"{where}.field_value.values must list at least one value")
+        wanted = frozenset(canonical_bytes(_plain(item)) for item in listed)
+
+        def field_value(o: ObservationRecord, c: Context) -> bool:
+            output = _output(o)
+            return field in output and canonical_bytes(_plain(output[field])) in wanted
+
+        return field_value
+    if key == "field_contains":
+        # An array field of the reply holds at least one of the listed items, compared as canonical
+        # JSON. False, not a counterexample by default, when the field is absent or not an array.
+        spec = object_value(value, f"{where}.field_contains")
+        field = text(spec["field"], f"{where}.field_contains.field")
+        listed = array_value(spec["values"], f"{where}.field_contains.values")
+        if not listed:
+            raise RecordError(f"{where}.field_contains.values must list at least one value")
+        wanted = frozenset(canonical_bytes(_plain(item)) for item in listed)
+
+        def field_contains(o: ObservationRecord, c: Context) -> bool:
+            output = _output(o)
+            items = output.get(field)
+            if not isinstance(items, list):
+                return False
+            return any(canonical_bytes(_plain(item)) in wanted for item in items)
+
+        return field_contains
+    if key == "value_changed":
+        # The field's value or presence differs from the observation this one is compared with
+        # (the baseline, or for a cycle the step it follows). False, not a counterexample by
+        # default, when either reply did not parse or there is nothing to compare with.
+        field = text(object_value(value, f"{where}.value_changed")["field"], f"{where}.value_changed.field")
+
+        def value_changed(o: ObservationRecord, c: Context) -> bool:
+            previous = c.previous_of(o)
+            if previous is None or o.scoring.parsed_output is None or previous.scoring.parsed_output is None:
+                return False
+            return _value_changed(field, o, previous)
+
+        return value_changed
+    if key == "transport_error":
+        # The kind of transport failure the record carries, read from the recorded error text:
+        # the client's own read timeout, the remote end closing the connection without a
+        # response, an HTTP status (optionally a particular one), or anything else. The final
+        # attempt by default; with any_attempt the retried attempts count too.
+        spec = object_value(value, f"{where}.transport_error")
+        kinds = frozenset(text(item, f"{where}.transport_error.kind[{i}]") for i, item in enumerate(array_value(spec["kind"], f"{where}.transport_error.kind")))
+        unknown = sorted(kinds - set(TRANSPORT_ERROR_KINDS))
+        if unknown:
+            raise RecordError(f"{where}.transport_error.kind names unknown kinds {unknown}; known: {list(TRANSPORT_ERROR_KINDS)}")
+        if not kinds:
+            raise RecordError(f"{where}.transport_error.kind must name at least one kind")
+        status = None if spec.get("status") is None else integer(spec["status"], f"{where}.transport_error.status", minimum=100)
+        if status is not None and kinds != frozenset({"http_status"}):
+            raise RecordError(f"{where}.transport_error.status applies to the http_status kind alone")
+        any_attempt = optional_boolean(spec.get("any_attempt"), f"{where}.transport_error.any_attempt") or False
+
+        def transport_error(o: ObservationRecord, c: Context) -> bool:
+            if o.response is None:
+                return False
+            attempts = [o.response] + (list(o.response.prior_attempts) if any_attempt else [])
+            for attempt in attempts:
+                if attempt.transport_error is None:
+                    continue
+                kind, code = transport_error_kind(attempt.transport_error)
+                if kind in kinds and (status is None or code == status):
+                    return True
+            return False
+
+        return transport_error
     if key == "trigger":
         trigger = text(value, f"{where}.trigger")
         if trigger not in TRIGGERS:
@@ -264,8 +599,20 @@ def condition_footprint(raw: Any) -> tuple[frozenset[str] | None, frozenset[str]
         if key in ("all_of", "any_of"):
             for item in value:
                 walk(item)
-        elif key in ("not", "baseline"):
+        elif key in ("not", "baseline", "previous"):
             walk(value)
+        elif key == "verdict_move":
+            field = object_value(value, "verdict_move").get("field")
+            if field is None:
+                any_field = True
+            else:
+                fields.add(str(field))
+        elif key == "criticised_field":
+            any_field = True
+        elif key == "internal_count":
+            spec = object_value(value, "internal_count")
+            fields.add(str(spec["field"]))
+            fields.update(str(item) for item in spec["of"])
         elif key == "trigger":
             triggers.add(str(value))
         elif key == "field_verdict":
@@ -280,6 +627,8 @@ def condition_footprint(raw: Any) -> tuple[frozenset[str] | None, frozenset[str]
                 triggers.add(verdict)
         elif key == "value_null":
             fields.add(str(object_value(value, "value_null")["field"]))
+        elif key in ("field_value", "field_contains", "value_changed"):
+            fields.add(str(object_value(value, key)["field"]))
     walk(raw)
     return (None if any_field else frozenset(fields)), frozenset(triggers)
 
@@ -341,10 +690,13 @@ def claims_from_dict(raw: Any) -> tuple[Claim, ...]:
 def load_claims(path: Path) -> tuple[Claim, ...]:
     if not isinstance(path, Path):
         raise TypeError("path must be pathlib.Path")
+    # Read the bytes here rather than through load_strict, which turns an OSError into a
+    # RecordError of its own; a handler for OSError around it never ran (H27).
     try:
-        raw = load_strict(path)
+        raw_bytes = path.read_bytes()
     except OSError as exc:
         raise RecordError(f"cannot read claims {path}: {exc}") from exc
+    raw = loads_strict(decode_utf8(raw_bytes, str(path)))
     return claims_from_dict(raw)
 
 
@@ -374,6 +726,18 @@ class ClaimResult:
     # satisfy the refuting predicate. A survival whose predicate held nowhere, in or out of
     # scope, has not been shown to be a survival of anything the records could have said.
     witnesses_outside_scope: int = 0
+    # Each refuting observation against the repeat floor of its own run and case: the REPEAT
+    # observations of that case other than itself. ``floor_all`` counts refutations whose
+    # condition also held on every repeat, ``floor_some`` on some, ``floor_none`` on none, and
+    # ``floor_absent`` those with no repeat to compare with. For a condition that compares a
+    # reply with the baseline, ``floor_all`` says the repeats moved too, so the refutation is not
+    # distinguished from the floor; for a condition about a reply's own content it says the
+    # condition recurred on every identical request. Neither is a score.
+    floor_all: int = 0
+    floor_some: int = 0
+    floor_none: int = 0
+    floor_absent: int = 0
+    example_floors: tuple[str, ...] = ()
 
     @property
     def shown_able_to_fail(self) -> bool:
@@ -395,27 +759,36 @@ class ClaimResult:
             "readings": list(self.readings),
             "witnesses_outside_scope": self.witnesses_outside_scope,
             "shown_able_to_fail": self.shown_able_to_fail,
+            "refuting_by_floor": {"all": self.floor_all, "some": self.floor_some, "none": self.floor_none, "absent": self.floor_absent},
             "per_model": [{"model": m, "tested": t, "refuting": r} for m, t, r in self.per_model],
-            "examples": [{"observation_id": i, "model": m, "case_id": c, "family": f} for i, m, c, f in self.examples],
+            "examples": [
+                {"observation_id": i, "model": m, "case_id": c, "family": f, "floor": floor}
+                for (i, m, c, f), floor in zip(self.examples, self.example_floors, strict=True)
+            ],
             "note": self.claim.note,
             "epistemic_limit": NON_INDUCTIVE_LIMIT,
         }
 
 
-def evaluate_claim(claim: Claim, observations: list[ObservationRecord], context: Context | None = None, appraisal: Appraisal | None = None) -> ClaimResult:
+def evaluate_claim(claim: Claim, observations: list[ObservationRecord], context: Context | None = None, appraisal: Appraisal | None = None, runs: Iterable[RunRecord] = ()) -> ClaimResult:
     predicate = compile_condition(claim.condition)
     if context is None:
-        context = Context(observations)
+        context = Context(observations, runs)
     fields, triggers = condition_footprint(claim.condition)
     tested: dict[str, int] = {}
     refuting: dict[str, int] = {}
     standing = {"usable": 0, "contested": 0, "defeated": 0}
+    floor = {"all": 0, "some": 0, "none": 0, "absent": 0}
     readings: set[str] = set()
     examples: list[tuple[str, str, str, str]] = []
+    example_floors: list[str] = []
     witnesses = 0
+    refutes_by_id: dict[str, bool] = {}
     for observation in observations:
         holds = predicate(observation, context)
-        refutes = holds if claim.kind == "never" else not holds
+        refutes_by_id[observation.observation_id] = holds if claim.kind == "never" else not holds
+    for observation in observations:
+        refutes = refutes_by_id[observation.observation_id]
         if not claim.scope.admits(observation):
             if refutes:
                 witnesses += 1
@@ -428,8 +801,11 @@ def evaluate_claim(claim: Claim, observations: list[ObservationRecord], context:
             else:
                 standing[appraisal.standing_of(observation, fields, triggers)] += 1
                 readings.update(appraisal.readings_of(observation, fields, triggers))
+            floor_class = _floor_class(observation, context, refutes_by_id)
+            floor[floor_class] += 1
             if len(examples) < _MAX_EXAMPLES:
                 examples.append((observation.observation_id, observation.model, observation.variant.base_case_id, observation.variant.family.value))
+                example_floors.append(floor_class)
     total = sum(tested.values())
     if total == 0:
         status = "NOT_TESTED"
@@ -454,11 +830,67 @@ def evaluate_claim(claim: Claim, observations: list[ObservationRecord], context:
         refuting_defeated=standing["defeated"],
         readings=tuple(sorted(readings)),
         witnesses_outside_scope=witnesses,
+        floor_all=floor["all"],
+        floor_some=floor["some"],
+        floor_none=floor["none"],
+        floor_absent=floor["absent"],
+        example_floors=tuple(example_floors),
     )
 
 
-def evaluate_claims(claims: tuple[Claim, ...], observations: list[ObservationRecord], appraisal: Appraisal | None = None) -> tuple[ClaimResult, ...]:
-    context = Context(observations)
+FLOOR_CLASSES: tuple[str, ...] = ("all", "some", "none", "absent")
+
+
+def _floor_class(observation: ObservationRecord, context: Context, refutes_by_id: Mapping[str, bool]) -> str:
+    """Where a refuting observation stands against the repeat floor of its run and case.
+
+    ``absent``: no REPEAT observation of the same run and case was supplied. Otherwise the
+    class says on how many of those repeats the refuting condition also held: ``all``,
+    ``some``, or ``none``. The baseline is the reply the repeats are compared with and is not
+    itself a member of the floor.
+    """
+
+    repeats = context.repeats_of(observation)
+    if not repeats:
+        return "absent"
+    held = sum(1 for repeat in repeats if refutes_by_id.get(repeat.observation_id, False))
+    if held == 0:
+        return "none"
+    if held == len(repeats):
+        return "all"
+    return "some"
+
+
+def without_runs(observations: list[ObservationRecord], runs: Iterable[RunRecord], prefixes: Iterable[str]) -> tuple[list[ObservationRecord], list[RunRecord], tuple[str, ...]]:
+    """Leave out the named runs, each given as a run id or a prefix of one that names exactly one supplied run.
+
+    For a run whose re-score is supplied in another directory: the re-score stands in for the run,
+    and the two are never counted together. The excluded run ids are returned so that the output
+    can say what was left out. A prefix that names no supplied run, or more than one, is refused.
+    """
+
+    runs = list(runs)
+    wanted = list(prefixes)
+    if not wanted:
+        return list(observations), runs, ()
+    supplied = {run.run_id for run in runs} | {observation.run_id for observation in observations}
+    excluded: set[str] = set()
+    for prefix in wanted:
+        if not isinstance(prefix, str) or not prefix:
+            raise RecordError("without_runs takes run ids or non-empty prefixes")
+        matches = {run_id for run_id in supplied if run_id.startswith(prefix)}
+        if len(matches) != 1:
+            raise RecordError(f"--without-run {prefix!r} names {len(matches)} of the supplied runs; it must name exactly one")
+        excluded |= matches
+    return (
+        [observation for observation in observations if observation.run_id not in excluded],
+        [run for run in runs if run.run_id not in excluded],
+        tuple(sorted(excluded)),
+    )
+
+
+def evaluate_claims(claims: tuple[Claim, ...], observations: list[ObservationRecord], appraisal: Appraisal | None = None, runs: Iterable[RunRecord] = ()) -> tuple[ClaimResult, ...]:
+    context = Context(observations, runs)
     return tuple(evaluate_claim(claim, observations, context, appraisal) for claim in claims)
 
 
@@ -468,7 +900,7 @@ def _plural(count: int, noun: str) -> str:
 
 def render_claims_markdown(results: tuple[ClaimResult, ...]) -> str:
     parts = ["# Conjectures tested against the records", ""]
-    parts.append("A `never` claim is refuted by one observation where its condition holds; an `always` claim by one where it does not. `UNREFUTED_FOR_DECLARED_SCOPE` means no supplied record refuted the claim, or every refutation rests on a reading of the key that the appraisal labels out; it is not a proof. `REFUTED_ON_CONTESTED_READING` means every refutation rests on a reading that is under criticism and undecided. An unrefuted claim also says whether its refuting condition held on any supplied record outside the declared scope: a condition that never held anywhere has not been shown able to fail. Counts are of observations, not of quality, and imply no ranking.")
+    parts.append("A `never` claim is refuted by one observation where its condition holds; an `always` claim by one where it does not. `UNREFUTED_FOR_DECLARED_SCOPE` means no supplied record refuted the claim, or every refutation rests on a reading of the key that the appraisal labels out; it is not a proof. `REFUTED_ON_CONTESTED_READING` means every refutation rests on a reading that is under criticism and undecided. An unrefuted claim also says whether its refuting condition held on any supplied record outside the declared scope: a condition that never held anywhere has not been shown able to fail. Each refutation is also placed against the repeat floor of its own run and case, the REPEAT observations of that case other than itself: whether the refuting condition held on every one of them, on some, on none, or whether there was none to compare with. For a condition that compares a reply with the baseline, holding on every repeat means the repeats moved too and the refutation is not distinguished from the floor; for a condition about a reply's own content it means the condition recurred on every identical request. Counts are of observations, not of quality, and imply no ranking.")
     parts.append("")
     for result in results:
         parts.append(f"## {result.claim.claim_id}: {result.status}")
@@ -481,7 +913,11 @@ def render_claims_markdown(results: tuple[ClaimResult, ...]) -> str:
             parts.append("- not refuted by: " + (", ".join(m for m in result.models_tested if m not in result.refuting_models) or "-"))
             if result.readings:
                 parts.append(f"- standing under the appraisal: {result.refuting_usable} usable, {result.refuting_contested} on a contested reading, {result.refuting_defeated} on a defeated reading; readings involved: {', '.join(result.readings)}")
-            parts.append("- examples: " + "; ".join(f"`{i[:16]}` ({m}, {c}, {f})" for i, m, c, f in result.examples))
+            parts.append(
+                f"- against the repeat floor of the same run and case: the refuting condition also held on every repeat for {result.floor_all}, "
+                f"on some repeats for {result.floor_some}, on no repeat for {result.floor_none}; {result.floor_absent} had no repeat to compare with"
+            )
+            parts.append("- examples: " + "; ".join(f"`{i[:16]}` ({m}, {c}, {f}; floor: {floor})" for (i, m, c, f), floor in zip(result.examples, result.example_floors, strict=True)))
         elif result.status != "NOT_TESTED":
             if result.shown_able_to_fail:
                 parts.append(f"- the refuting condition held on {_plural(result.witnesses_outside_scope, 'supplied observation')} outside the declared scope, so the check has been shown able to fail")
@@ -503,6 +939,7 @@ __all__ = [
     "Claim",
     "ClaimResult",
     "Context",
+    "FLOOR_CLASSES",
     "Scope",
     "claims_from_dict",
     "compile_condition",
@@ -510,4 +947,5 @@ __all__ = [
     "evaluate_claims",
     "load_claims",
     "render_claims_markdown",
+    "without_runs",
 ]

@@ -34,8 +34,16 @@ RUN_SCHEMA_NAME = "conformance-run.schema.json"
 
 CONFIG_SCHEMA_VERSION = "creib.conformance-pilot.config.v1"
 CORPUS_SCHEMA_VERSION = "creib.conformance-pilot.corpus.v1"
-OBSERVATION_SCHEMA_VERSION = "creib.conformance-pilot.observation.v2"
-RUN_SCHEMA_VERSION = "creib.conformance-pilot.run.v2"
+# v3 adds per-attempt timing and transport kind, the refusal flag, replay provenance, and the run's
+# sending order. v2 records stay as they are: the frozen v2 schemas keep validating them, their ids
+# replay under the v2 domains, and the v3 keys are absent from them.
+OBSERVATION_SCHEMA_VERSION = "creib.conformance-pilot.observation.v3"
+RUN_SCHEMA_VERSION = "creib.conformance-pilot.run.v3"
+OBSERVATION_SCHEMA_VERSION_V2 = "creib.conformance-pilot.observation.v2"
+RUN_SCHEMA_VERSION_V2 = "creib.conformance-pilot.run.v2"
+OBSERVATION_SCHEMA_NAME_V2 = "conformance-observation.v2.schema.json"
+RUN_ORDERS: tuple[str, ...] = ("family", "interleaved", "shuffled")
+RUN_SCHEMA_NAME_V2 = "conformance-run.v2.schema.json"
 
 OBSERVATION_SCHEMA_ID = "https://ahepi.example/smf/0.5/conformance-observation.schema.json"
 

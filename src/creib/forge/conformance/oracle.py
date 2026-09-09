@@ -39,7 +39,7 @@ from .common import (
 )
 from .corpus import Oracle
 from .executor import ChatResponse
-from .families import ExpectationKind, Variant
+from .families import ORACLE_FREE_FIELD_VERDICTS, ORACLE_FREE_GROUNDING_VERDICTS, Criticism, ExpectationKind, Variant
 
 
 RESPONSE_VERDICTS: tuple[str, ...] = (
@@ -65,7 +65,7 @@ FIELD_VERDICTS: tuple[str, ...] = (
     "UNEXPECTED_PRESENT",
     "NOT_SCORED",
 )
-_JSON_TYPES: Mapping[str, type] = {"string": str, "boolean": bool, "integer": int}
+_JSON_TYPES: Mapping[str, type] = {"string": str, "boolean": bool, "integer": int, "array": list}
 GROUNDING_VERDICTS: tuple[str, ...] = ("GROUNDED", "SPAN_MISSING", "SPAN_NOT_IN_DOCUMENT", "VALUE_NOT_IN_SPAN", "ABSTAINED")
 GROUNDING_CRITICISMS: tuple[str, ...] = ("SPAN_MISSING", "SPAN_NOT_IN_DOCUMENT", "VALUE_NOT_IN_SPAN")
 _FENCE = re.compile(r"```(?:json|JSON)?\s*(.*?)```", re.DOTALL)
@@ -121,9 +121,11 @@ class Scoring:
     field_verdicts: tuple[FieldVerdict, ...]
     changed_vs_baseline: bool | None
     grounding_verdicts: tuple[GroundingVerdict, ...] = ()
+    # v3, written when true: a refusal phrase occurred in the text whether or not an object was recovered.
+    refusal_phrase_present: bool = False
 
     def to_dict(self) -> dict[str, object]:
-        return {
+        record: dict[str, object] = {
             "response_verdict": self.response_verdict,
             "response_detail": self.response_detail,
             "recovered_from_prose": self.recovered_from_prose,
@@ -134,6 +136,9 @@ class Scoring:
             "changed_vs_baseline": self.changed_vs_baseline,
             "grounding_verdicts": [verdict.to_dict() for verdict in self.grounding_verdicts],
         }
+        if self.refusal_phrase_present:
+            record["refusal_phrase_present"] = True
+        return record
 
     def grounding_kinds(self) -> tuple[str, ...]:
         """Distinct grounding criticisms (never GROUNDED or ABSTAINED), in field order."""
@@ -212,44 +217,56 @@ def scoring_from_dict(raw: Any, where: str = "scoring") -> Scoring:
         field_verdicts=tuple(verdicts),
         changed_vs_baseline=optional_boolean(record["changed_vs_baseline"], f"{where}.changed_vs_baseline"),
         grounding_verdicts=tuple(grounding),
+        refusal_phrase_present=boolean(record.get("refusal_phrase_present", False), f"{where}.refusal_phrase_present"),
     )
 
 
 def recover_json_object(content: str) -> Any:
-    """Project import: extract a JSON object from fences or surrounding prose."""
+    """Project import: extract a JSON object from fences or surrounding prose.
 
-    candidates: list[str] = [match.group(1) for match in _FENCE.finditer(content)]
-    # Every balanced object in the text is a candidate, not only the span from
-    # the first "{" to the last "}": reasoning prose before or after the answer
-    # frequently contains stray braces. Among the candidates that parse as
-    # strict objects, the one with the most keys is taken; ties go to the last,
-    # because models place their final answer last.
+    Every top-level balanced object in the text is a candidate, not only the span from the
+    first ``{`` to the last ``}``: reasoning prose before or after the answer frequently
+    contains stray braces, and an object nested inside another is not a candidate of its own.
+    The object scored is the last one inside a code fence when any fence holds one, else the
+    last top-level object in the text, because a model places its final answer last and marks
+    it: a reply that quotes its previous answer and then gives a corrected one is scored on the
+    correction. Until 9 September 2026 the object with the most keys was taken, ties to the
+    last, and nine cycle replies that dropped a criticised key were scored on the draft that
+    still carried it (``docs/failure-modes.md``, H40). A candidate that parses as strict JSON,
+    or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float,
+    for instance) is passed over, so a final answer refused for a float loses to an earlier
+    draft that parsed (``docs/kernel.md``, P-06).
+    """
+
     decoder = json.JSONDecoder()
+    fenced: list[str] = []
+    for match in _FENCE.finditer(content):
+        fenced.append(match.group(1))
+    top_level: list[str] = []
+    cursor = 0
     for index, character in enumerate(content):
-        if character != "{":
+        if character != "{" or index < cursor:
             continue
         try:
             _value, end = decoder.raw_decode(content, index)
         except (ValueError, RecursionError):
             continue
-        candidates.append(content[index:end])
-    best: dict[str, Any] | None = None
-    best_duplicates: tuple[str, ...] = ()
-    for candidate in candidates:
-        duplicates: tuple[str, ...] = ()
-        try:
-            value = loads_strict(candidate.strip())
-        except (RecordError, ValueError, RecursionError):
-            # Strict JSON refuses duplicate keys. A reply that is otherwise one well-formed object with a
-            # repeated key is still scoreable: take the last value for each key, and say which keys repeated.
-            parsed = _loads_last_wins(candidate.strip())
-            if parsed is None:
-                continue
-            value, duplicates = parsed
-        if type(value) is dict and (best is None or len(value) >= len(best)):
-            best, best_duplicates = value, duplicates
-    if best is not None:
-        return best, best_duplicates
+        top_level.append(content[index:end])
+        cursor = end
+    for pool in (fenced, top_level):
+        for candidate in reversed(pool):
+            duplicates: tuple[str, ...] = ()
+            try:
+                value = loads_strict(candidate.strip())
+            except (RecordError, ValueError, RecursionError):
+                # Strict JSON refuses duplicate keys. A reply that is otherwise one well-formed object with a
+                # repeated key is still scoreable: take the last value for each key, and say which keys repeated.
+                parsed = _loads_last_wins(candidate.strip())
+                if parsed is None:
+                    continue
+                value, duplicates = parsed
+            if type(value) is dict:
+                return value, duplicates
     raise RecordError("no JSON object could be recovered from the response")
 
 
@@ -296,8 +313,23 @@ def _plain_quotes(text: str) -> str:
     return text.translate(_TYPOGRAPHIC_QUOTES)
 
 
+def refusal_phrase_in(content: str, refusal_phrases: tuple[str, ...]) -> str | None:
+    """The first refusal phrase the text contains, typographic quotes read as straight ones, or None."""
+
+    lowered = _plain_quotes(content).lower()
+    for phrase in refusal_phrases:
+        if _plain_quotes(phrase).lower() in lowered:
+            return phrase
+    return None
+
+
 def parse_content(content: str, refusal_phrases: tuple[str, ...]) -> tuple[Any, str, str | None, bool]:
-    """Return (parsed, response_verdict, detail, recovered_from_prose)."""
+    """Return (parsed, response_verdict, detail, recovered_from_prose).
+
+    The refusal heuristic decides the verdict only when no object can be recovered; whether a
+    phrase occurred at all is a separate fact, :func:`refusal_phrase_in`, recorded beside a
+    recovered object (H36: a refusal followed by a form is a refusal and a form).
+    """
 
     try:
         return loads_strict(content), "JSON_OBJECT", None, False
@@ -305,10 +337,9 @@ def parse_content(content: str, refusal_phrases: tuple[str, ...]) -> tuple[Any, 
         try:
             recovered, duplicates = recover_json_object(content)
         except RecordError:
-            lowered = _plain_quotes(content).lower()
-            for phrase in refusal_phrases:
-                if _plain_quotes(phrase).lower() in lowered:
-                    return None, "REFUSAL_SUSPECTED", f"matched refusal phrase {phrase!r}; heuristic", False
+            phrase = refusal_phrase_in(content, refusal_phrases)
+            if phrase is not None:
+                return None, "REFUSAL_SUSPECTED", f"matched refusal phrase {phrase!r}; heuristic", False
             return None, "INVALID_JSON", str(strict_error), False
         if duplicates:
             detail = (
@@ -325,6 +356,25 @@ def _constraint_verdict(value: Any, property_schema: Mapping[str, Any]) -> tuple
     expected_type = _JSON_TYPES.get(str(json_type))
     if expected_type is None or type(value) is not expected_type:
         return "TYPE_VIOLATION", f"expected JSON type {json_type}"
+    if type(value) is list:
+        # The form profile admits arrays of strings only, optionally from a closed list, optionally
+        # unique and bounded in length; each constraint reports under the verdict it most resembles.
+        items = property_schema.get("items") or {}
+        if any(type(item) is not str for item in value):
+            return "TYPE_VIOLATION", "expected every item to be a string"
+        allowed = items.get("enum")
+        if allowed is not None:
+            outside = [item for item in value if item not in allowed]
+            if outside:
+                return "ENUM_VIOLATION", f"items not in the closed list: {outside!r}"
+        if property_schema.get("uniqueItems") and len(set(value)) != len(value):
+            return "LENGTH_VIOLATION", "repeated item where uniqueItems is required"
+        maximum = property_schema.get("maxItems")
+        if maximum is not None and len(value) > maximum:
+            return "LENGTH_VIOLATION", f"{len(value)} items exceeds maxItems {maximum}"
+        minimum = property_schema.get("minItems")
+        if minimum is not None and len(value) < minimum:
+            return "LENGTH_VIOLATION", f"{len(value)} items below minItems {minimum}"
     if type(value) is str:
         pattern = property_schema.get("pattern")
         if pattern is not None and re.search(pattern, value) is None:
@@ -422,8 +472,9 @@ def _grounding_verdict(variant: Variant, field: str, value: Any, output: Mapping
     matched = _span_occurs(span, document, relaxations)
     if matched is None:
         return GroundingVerdict(field, "SPAN_NOT_IN_DOCUMENT", span, "the cited text does not occur verbatim in the document (whitespace-normalised)" + (f"; relaxations tried: {list(relaxations)}" if relaxations else ""))
-    if field in variant.active_value_in_span_fields and str(value).casefold() not in span.casefold():
-        return GroundingVerdict(field, "VALUE_NOT_IN_SPAN", span, "the value does not occur inside the cited span (case-insensitive)")
+    if field in variant.active_value_in_span_fields and _normalise_whitespace(str(value)).casefold() not in _normalise_whitespace(span).casefold():
+        # Whitespace is normalised on both sides, as the occurrence check normalises it (H41).
+        return GroundingVerdict(field, "VALUE_NOT_IN_SPAN", span, "the value does not occur inside the cited span (case-insensitive, whitespace-normalised)")
     return GroundingVerdict(field, "GROUNDED", span, None if matched == "verbatim" else f"accepted by the configured relaxation {matched!r}, not verbatim")
 
 
@@ -535,10 +586,11 @@ def score(
     if response.done_reason == "length":
         return Scoring("TRUNCATED", "done_reason is length", False, None, None, None, (), None)
     parsed, verdict, detail, recovered = parse_content(response.content, refusal_phrases)
+    present = refusal_phrase_in(response.content, refusal_phrases) is not None
     if verdict != "JSON_OBJECT":
-        return Scoring(verdict, detail, False, None, None, None, (), None)
+        return Scoring(verdict, detail, False, None, None, None, (), None, (), present)
     if type(parsed) is not dict:
-        return Scoring("NOT_AN_OBJECT", f"parsed JSON is {type(parsed).__name__}", recovered, None, None, None, (), None)
+        return Scoring("NOT_AN_OBJECT", f"parsed JSON is {type(parsed).__name__}", recovered, None, None, None, (), None, (), present)
     schema_valid, verdicts, grounding = score_output(variant, parsed)
     return Scoring(
         response_verdict="JSON_OBJECT",
@@ -550,6 +602,7 @@ def score(
         field_verdicts=verdicts,
         changed_vs_baseline=_changed(parsed, baseline_output, variant.field_order),
         grounding_verdicts=grounding,
+        refusal_phrase_present=present,
     )
 
 
@@ -557,3 +610,27 @@ def prerequisite_unavailable(detail: str) -> Scoring:
     """Scoring for a chained variant whose prerequisite output was unusable."""
 
     return Scoring("PREREQUISITE_UNAVAILABLE", detail, False, None, None, None, (), None)
+
+
+def external_criticisms(scoring: Scoring, variant: Variant) -> tuple[Criticism, ...]:
+    """The oracle-free criticisms of one scoring: what an external-criticism cycle may show the model.
+
+    Only verdicts the form schema or the document alone produce are taken (a missing required
+    key, an extra key, a type, pattern, enum, or length violation, a span that is missing, not
+    in the document, or does not contain its value). MISMATCH and UNEXPECTED_PRESENT come from
+    the answer key and are left out, so a cycle never learns which values the key disagrees with.
+    A grounding criticism names the field and says which companion key carried the span.
+    """
+
+    found: list[Criticism] = []
+    for item in scoring.field_verdicts:
+        if item.verdict in ORACLE_FREE_FIELD_VERDICTS:
+            found.append(Criticism(field=item.field, verdict=item.verdict, detail=item.detail))
+    for item in scoring.grounding_verdicts:
+        if item.verdict in ORACLE_FREE_GROUNDING_VERDICTS:
+            companion = variant.span_key(item.field) if variant.grounding is not None and variant.grounding.active else None
+            detail = item.detail
+            if companion is not None:
+                detail = f"companion key {companion}" + (f": {item.detail}" if item.detail else "")
+            found.append(Criticism(field=item.field, verdict=item.verdict, detail=detail))
+    return tuple(found)

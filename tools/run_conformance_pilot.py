@@ -64,6 +64,10 @@ def _parser() -> argparse.ArgumentParser:
         "Use it after correcting an oracle: the recorded replies are scored again and new records are written to --output-dir",
     )
     run.add_argument("--retries", type=int, default=0)
+    run.add_argument("--think", default=None, help="override the pilot endpoint's reasoning setting for this run: true, false, none, low, medium, or high; recorded in the run record's endpoint")
+    run.add_argument("--timeout-seconds", type=int, default=None, help="override the pilot endpoint's call timeout for this run; recorded in the run record's endpoint")
+    run.add_argument("--order", choices=["family", "interleaved", "shuffled"], default="family", help="sending order: every baseline first (family), each case's baseline followed by its other variants (interleaved), or interleaved with the cases in an order drawn from --seed (shuffled); recorded in the run record")
+    run.add_argument("--seed", type=int, default=None, help="the seed for --order shuffled; recorded in the run record")
 
     fills = subparsers.add_parser("fills", help="print the filled forms from recorded observations (what the model actually returned)")
     fills.add_argument("--observations-dir", type=Path, required=True)
@@ -74,6 +78,7 @@ def _parser() -> argparse.ArgumentParser:
     claims.add_argument("--observations-dir", type=Path, required=True, action="append", help="may be given more than once")
     claims.add_argument("--markdown", type=Path, help="also write a Markdown rendering here")
     claims.add_argument("--appraisal", type=Path, help="arguments about the readings refutations rest on; labelled in, out, or undecided, and refutations classed usable, contested, or defeated")
+    claims.add_argument("--without-run", action="append", default=[], metavar="RUN_ID", help="leave out this run's observations and run record (an id or a prefix naming exactly one supplied run), because a re-score of it is supplied in another directory; may be given more than once")
     evidence = subparsers.add_parser("evidence", help="list observation ids per model and criticism trigger, for the failure-mode register")
     evidence.add_argument("--observations-dir", type=Path, required=True)
     evidence.add_argument("--trigger", help="restrict to one trigger or grounding verdict")
@@ -81,6 +86,21 @@ def _parser() -> argparse.ArgumentParser:
     report.add_argument("--run", type=Path, action="append", required=True)
     report.add_argument("--observations-dir", type=Path, required=True)
     report.add_argument("--markdown", type=Path, default=None)
+    compare = subparsers.add_parser("compare", help="pair the requests two runs of one model share and report identical forms, differing fields, and verdict moves; drift, never a score")
+    compare.add_argument("--run", type=Path, action="append", required=True, help="exactly two run records")
+    compare.add_argument("--observations-dir", type=Path, required=True, action="append", help="the directories holding both runs' observations; may be given more than once")
+    compare.add_argument("--markdown", type=Path, default=None)
+    compare.add_argument("--pair-by", choices=["digest", "variant"], default="digest", help="digest pairs byte-identical requests; variant pairs the same planned variant and repeat across two runs of one plan whose requests differ by a run-time endpoint setting")
+    cycles = subparsers.add_parser("cycles", help="per run, criticism source, and cycle index: forms identical to or differing from the step before and the verdict moves between them, beside the run's own REPEAT floor; never a score")
+    cycles.add_argument("--observations-dir", type=Path, required=True, action="append", help="directories holding the runs and their observations; may be given more than once")
+    cycles.add_argument("--markdown", type=Path, default=None)
+    dependence = subparsers.add_parser("dependence", help="per run and relation (self, declared, other): unit removals whose form stayed as the baseline had it or moved, which fields moved, the repeat floor, and the model's own named dependencies beside what removal moved; never a score")
+    dependence.add_argument("--observations-dir", type=Path, required=True, action="append", help="directories holding the runs and their observations; may be given more than once")
+    dependence.add_argument("--markdown", type=Path, default=None)
+    controls = subparsers.add_parser("controls", help="per run and control kind: each control case's reply beside the same model's reply on the paired full-document case, the control's repeat floor, which vocabulary a reply to the renamed document named, and whether the verdict followed a negated claim; never a score")
+    controls.add_argument("--pilot", type=Path, required=True, help="the controls pilot, whose corpus pairs each control case with its full-document case")
+    controls.add_argument("--observations-dir", type=Path, required=True, action="append", help="directories holding the runs and their observations; may be given more than once")
+    controls.add_argument("--markdown", type=Path, default=None)
     return parser
 
 
@@ -162,6 +182,20 @@ def main(argv: Sequence[str] | None = None) -> int:
             config, corpus = _load(args.pilot)
             spec = config.spec
             built = build_plan(spec, corpus)
+            # Run-time endpoint overrides: the plan is unchanged (the endpoint is not part of any
+            # variant), and the run record's endpoint carries the values actually used.
+            if args.think is not None or args.timeout_seconds is not None:
+                import dataclasses
+                from creib.forge.conformance.spec import think_setting
+                endpoint = spec.endpoint
+                if args.think is not None:
+                    raw_think = {"true": True, "false": False, "none": None, "null": None}.get(args.think.lower(), args.think)
+                    endpoint = dataclasses.replace(endpoint, think=think_setting(raw_think, "--think"))
+                if args.timeout_seconds is not None:
+                    if args.timeout_seconds < 1 or args.timeout_seconds > 3600:
+                        raise RecordError("--timeout-seconds must be between 1 and 3600")
+                    endpoint = dataclasses.replace(endpoint, timeout_seconds=args.timeout_seconds)
+                spec = dataclasses.replace(spec, endpoint=endpoint)
             families = None if args.family is None else tuple(Family(name) for name in args.family)
             if args.dry_run and args.replay_dir is not None:
                 raise RecordError("--dry-run and --replay-dir are exclusive")
@@ -190,6 +224,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 created_on=args.created_on,
                 families=families,
                 limit=args.limit,
+                order=args.order,
+                seed=args.seed,
             )
             record = result.run_record
             _emit(
@@ -246,13 +282,17 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
         if args.command == "claims":
             from creib.forge.conformance.appraisal import Appraisal, load_appraisal
-            from creib.forge.conformance.claims import CLAIM_STATUSES, evaluate_claims, load_claims, render_claims_markdown
+            from creib.forge.conformance.claims import CLAIM_STATUSES, evaluate_claims, load_claims, render_claims_markdown, without_runs
+            from creib.forge.conformance.records import enumerate_record_directory
             loaded = load_claims(args.claims)
             observations = []
+            runs = []
             for directory in args.observations_dir:
                 observations.extend(load_observation_directory(directory))
+                runs.extend(load_run(path) for path in enumerate_record_directory(directory).run_paths)
+            observations, runs, excluded_runs = without_runs(observations, runs, args.without_run)
             appraisal = None if args.appraisal is None else Appraisal.build(load_appraisal(args.appraisal))
-            results = evaluate_claims(loaded, observations, appraisal)
+            results = evaluate_claims(loaded, observations, appraisal, runs=runs)
             for result in results:
                 _emit(result.to_dict())
             counts = {status: sum(1 for r in results if r.status == status) for status in CLAIM_STATUSES}
@@ -263,6 +303,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "models": sorted({o.model for o in observations}),
                 "status_counts": counts,
                 "unrefuted_not_shown_able_to_fail": unwitnessed,
+                "without_runs": list(excluded_runs),
                 "semantic_verdict": None,
             }
             if appraisal is not None:
@@ -292,6 +333,58 @@ def main(argv: Sequence[str] | None = None) -> int:
             if args.markdown is not None:
                 publish_no_clobber(args.markdown, render_markdown(report).encode("utf-8"))
             _emit(report)
+            return 0
+        if args.command == "compare":
+            from creib.forge.conformance.compare import compare_runs, render_compare_markdown
+            if len(args.run) != 2:
+                raise RecordError("compare needs exactly two --run records")
+            observations = []
+            for directory in args.observations_dir:
+                observations.extend(load_observation_directory(directory))
+            comparison = compare_runs(load_run(args.run[0]), load_run(args.run[1]), observations, pairing=args.pair_by)
+            if args.markdown is not None:
+                publish_no_clobber(args.markdown, render_compare_markdown(comparison).encode("utf-8"))
+            _emit(comparison)
+            return 0
+        if args.command == "controls":
+            from creib.forge.conformance.controls import render_controls_markdown, summarise_controls
+            from creib.forge.conformance.records import enumerate_record_directory
+            config, corpus = _load(args.pilot)
+            runs = []
+            observations = []
+            for directory in args.observations_dir:
+                runs.extend(load_run(path) for path in enumerate_record_directory(directory).run_paths)
+                observations.extend(load_observation_directory(directory))
+            summary = summarise_controls(corpus, runs, observations)
+            if args.markdown is not None:
+                publish_no_clobber(args.markdown, render_controls_markdown(summary).encode("utf-8"))
+            _emit(summary)
+            return 0
+        if args.command == "dependence":
+            from creib.forge.conformance.dependence import render_dependence_markdown, summarise_dependence
+            from creib.forge.conformance.records import enumerate_record_directory
+            runs = []
+            observations = []
+            for directory in args.observations_dir:
+                runs.extend(load_run(path) for path in enumerate_record_directory(directory).run_paths)
+                observations.extend(load_observation_directory(directory))
+            summary = summarise_dependence(runs, observations)
+            if args.markdown is not None:
+                publish_no_clobber(args.markdown, render_dependence_markdown(summary).encode("utf-8"))
+            _emit(summary)
+            return 0
+        if args.command == "cycles":
+            from creib.forge.conformance.cycles import render_cycles_markdown, summarise_cycles
+            from creib.forge.conformance.records import enumerate_record_directory
+            runs = []
+            observations = []
+            for directory in args.observations_dir:
+                runs.extend(load_run(path) for path in enumerate_record_directory(directory).run_paths)
+                observations.extend(load_observation_directory(directory))
+            summary = summarise_cycles(runs, observations)
+            if args.markdown is not None:
+                publish_no_clobber(args.markdown, render_cycles_markdown(summary).encode("utf-8"))
+            _emit(summary)
             return 0
         raise RecordError(f"unknown command {args.command!r}")
     except CREIBError as exc:
