@@ -379,6 +379,8 @@ Every check in the machine is invariant under some transformation of the reply: 
 
 The list is finite because the checks are, and it is the reason the harness never promotes: a survival of every check is a survival of exactly these checks, with these blind spots, on these records.
 
+The table above is prose. `docs/kernel.md` states the same limits as boundary points, each held by a test: for every check, one transformation the verdict moves under, as small as it can be made, beside one it does not, as close to the first as it can be brought, both asserted by `tests/test_kernel.py` from the catalogue in `tests/kernel_boundaries.py`. The document is generated from the catalogue and a test refuses drift, so the class of things a check cannot see is stated exactly where it has been tested and nowhere else. Three points there mark boundaries that are arguably defects (a containment check that does not normalise whitespace where the occurrence check does; a closed-list item found on a page by substring; a later, smaller object losing to an earlier, larger one); they are recorded as boundaries until a person decides.
+
 ## What this pilot does not establish
 
 - It does not establish that any model fills forms correctly in general. The corpus is fourteen short English documents.
