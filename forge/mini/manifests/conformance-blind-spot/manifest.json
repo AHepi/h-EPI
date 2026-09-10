@@ -1,0 +1,359 @@
+{
+  "schema_version": "creib.mini.manifest.v1",
+  "manifest_id": "mini.conformance-blind-spot.v1",
+  "problem": "The checks under test are the conformance harness's own: how it recovers a JSON object from a reply, whether it had to recover it from prose, its response verdict, and its refusal-phrase check. Name a rewrite of a reply under which one of those checks ought to change its answer, and it may not. Propose exactly one pair per artifact: a kernel id and a transform id taken from the registry shown in the evidence (the entries beginning 'kernel' and 'transform'), and an input. The input is an INSTANCE, never a description: either one bare strict JSON object with string values, written out, such as {\"claimant_name\": \"amara okoro\", \"total_days\": \"five\"}, or one short prose sentence, written out, such as I'm sorry, no. The executor runs the kernel on your input before and after the transform and records whether the answer moved. The catalogue entries in the evidence say which pairs are already written down, on which input, and whether each moved there; prefer a pair the catalogue does not list. In the body, say what you expect to happen and why. The commitments must be a STRING containing JSON of the form {\"kernel\": \"<id>\", \"transform\": \"<id>\", \"input\": \"<the instance>\"}; the string itself is the JSON, not an object.",
+  "cycles": {
+    "max_cycles": 2
+  },
+  "port_types": [
+    {
+      "port_type": "earlier_proposals",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.proposal.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies_and_commitments",
+        "header": "Proposals so far"
+      }
+    },
+    {
+      "port_type": "earlier_verdicts",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.verdict.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies_and_commitments",
+        "header": "Verdicts so far"
+      }
+    },
+    {
+      "port_type": "executions",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.execution.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies_and_commitments",
+        "header": "Executions"
+      }
+    },
+    {
+      "port_type": "criticisms",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.criticism.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies",
+        "header": "Criticisms"
+      }
+    }
+  ],
+  "kinds": [
+    {
+      "kind_id": "mini.proposal.v1",
+      "title": "Proposal",
+      "input_ports": [
+        {
+          "port_id": "problem",
+          "port_type": "problem"
+        },
+        {
+          "port_id": "earlier",
+          "port_type": "earlier_proposals",
+          "window": "all"
+        },
+        {
+          "port_id": "verdicts",
+          "port_type": "earlier_verdicts",
+          "window": "all"
+        },
+        {
+          "port_id": "catalogue",
+          "port_type": "evidence_legend",
+          "params": {
+            "tiers": [
+              "evidence"
+            ]
+          },
+          "window": "all"
+        }
+      ],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.proposal.v1"
+      },
+      "format": {
+        "commitments": {
+          "all_of": [
+            {
+              "check": "json_schema",
+              "schema": {
+                "type": "object",
+                "required": [
+                  "kernel",
+                  "transform",
+                  "input"
+                ],
+                "properties": {
+                  "kernel": {
+                    "type": "string",
+                    "pattern": "^conformance\\.kernel\\."
+                  },
+                  "transform": {
+                    "type": "string",
+                    "pattern": "^conformance\\.transform\\."
+                  },
+                  "input": {
+                    "type": "string",
+                    "pattern": "^(\\{[\\s\\S]*\\}|[A-Za-z][^{}]{2,160}[.!?])$"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "commitment_call": "single"
+    },
+    {
+      "kind_id": "mini.execution.v1",
+      "title": "Execution",
+      "input_ports": [
+        {
+          "port_id": "proposals",
+          "port_type": "earlier_proposals",
+          "window": "this_cycle"
+        }
+      ],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.execution.v1"
+      }
+    },
+    {
+      "kind_id": "mini.criticism.v1",
+      "title": "Criticism",
+      "input_ports": [
+        {
+          "port_id": "role",
+          "port_type": "evidence_legend",
+          "params": {
+            "tiers": [
+              "roles"
+            ]
+          },
+          "window": "all"
+        },
+        {
+          "port_id": "problem",
+          "port_type": "problem"
+        },
+        {
+          "port_id": "proposals",
+          "port_type": "earlier_proposals",
+          "window": "this_cycle"
+        },
+        {
+          "port_id": "executions",
+          "port_type": "executions",
+          "window": "this_cycle"
+        },
+        {
+          "port_id": "catalogue",
+          "port_type": "evidence_legend",
+          "params": {
+            "tiers": [
+              "evidence"
+            ]
+          },
+          "window": "all"
+        }
+      ],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.criticism.v1"
+      }
+    },
+    {
+      "kind_id": "mini.verdict.v1",
+      "title": "Verdict",
+      "input_ports": [
+        {
+          "port_id": "executions",
+          "port_type": "executions",
+          "window": "this_cycle"
+        },
+        {
+          "port_id": "criticisms",
+          "port_type": "criticisms",
+          "window": "this_cycle"
+        },
+        {
+          "port_id": "verdicts",
+          "port_type": "earlier_verdicts",
+          "window": "all"
+        },
+        {
+          "port_id": "catalogue",
+          "port_type": "evidence_legend",
+          "params": {
+            "tiers": [
+              "evidence"
+            ]
+          },
+          "window": "all"
+        }
+      ],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.verdict.v1"
+      },
+      "format": {
+        "commitments": {
+          "all_of": [
+            {
+              "check": "json_schema",
+              "schema": {
+                "type": "object",
+                "required": [
+                  "verdicts"
+                ],
+                "properties": {
+                  "verdicts": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "proposal",
+                        "executed",
+                        "catalogued",
+                        "standing"
+                      ],
+                      "properties": {
+                        "proposal": {
+                          "type": "string"
+                        },
+                        "kernel": {
+                          "type": "string"
+                        },
+                        "transform": {
+                          "type": "string"
+                        },
+                        "executed": {
+                          "type": "string"
+                        },
+                        "catalogued": {
+                          "type": "boolean"
+                        },
+                        "standing": {
+                          "enum": [
+                            "candidate point",
+                            "defect",
+                            "rejected"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stages": [
+    {
+      "stage_id": "propose-1",
+      "kind_id": "mini.proposal.v1",
+      "ports": [
+        "problem",
+        "earlier",
+        "verdicts",
+        "catalogue"
+      ]
+    },
+    {
+      "stage_id": "propose-2",
+      "kind_id": "mini.proposal.v1",
+      "ports": [
+        "problem",
+        "earlier",
+        "verdicts",
+        "catalogue"
+      ]
+    },
+    {
+      "stage_id": "propose-3",
+      "kind_id": "mini.proposal.v1",
+      "ports": [
+        "problem",
+        "earlier",
+        "verdicts",
+        "catalogue"
+      ]
+    },
+    {
+      "stage_id": "execute",
+      "kind_id": "mini.execution.v1",
+      "seat": "machine",
+      "ports": [
+        "proposals"
+      ]
+    },
+    {
+      "stage_id": "criticise",
+      "kind_id": "mini.criticism.v1",
+      "ports": [
+        "role",
+        "problem",
+        "proposals",
+        "executions",
+        "catalogue"
+      ]
+    },
+    {
+      "stage_id": "verdict",
+      "kind_id": "mini.verdict.v1",
+      "seat": "machine",
+      "ports": [
+        "executions",
+        "criticisms",
+        "verdicts",
+        "catalogue"
+      ]
+    },
+    {
+      "stage_id": "end",
+      "end": true
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "catalogue",
+      "path": "catalogue.json"
+    },
+    {
+      "source_id": "registry",
+      "path": "registry.txt"
+    },
+    {
+      "source_id": "critic-role",
+      "path": "critic-role.txt",
+      "tier": "roles"
+    }
+  ],
+  "tiers": [
+    {
+      "tier": "roles"
+    }
+  ]
+}

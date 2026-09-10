@@ -24,6 +24,7 @@ import sys
 
 from creib.errors import CREIBError
 from creib.strict_json import load_strict
+from creib.forge.mini import conformance_kernels  # noqa: F401  registers the conformance harness's checks as kernels
 from creib.forge.mini.executor import LiveResponder, ScriptedResponder
 from creib.forge.mini.compare import UNSUPPORTED, compare_roots
 from creib.forge.mini.common import MiniError, digest_bytes

@@ -1,0 +1,34 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+I expect the kernel `conformance.kernel.recovery` to move when the transform `conformance.transform.bare-after` is applied to a bare JSON object. According to the registry, this kernel returns "The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT". A bare JSON object is recovered as itself. However, applying `conformance.transform.bare-after` ("Put the word 'then' and a bare object {"later": 1} after the reply") introduces a second JSON object into the response. Depending on the harness's recovery logic (e.g., if it recovers the last object found or fails due to multiple objects), the recovered object will differ from the original single object, causing the kernel's answer to move.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.
+
+## The shape this answer must take
+`commitments` must be JSON fitting exactly this schema:
+{
+  "properties": {
+    "input": {
+      "type": "string"
+    },
+    "kernel": {
+      "type": "string"
+    },
+    "transform": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "kernel",
+    "transform",
+    "input"
+  ],
+  "type": "object"
+}

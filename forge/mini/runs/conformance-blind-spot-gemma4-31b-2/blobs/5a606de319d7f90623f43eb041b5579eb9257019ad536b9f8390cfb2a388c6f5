@@ -1,0 +1,37 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+I expect the kernel 'conformance.kernel.recovery' to move from the original JSON object to 'NO_OBJECT' (or a different object) when the input is a strict JSON object and the transform 'conformance.transform.upper-case' is applied. According to the registry, this kernel tracks the object the harness recovers as canonical JSON. Since JSON keys and string values are case-sensitive and the structural characters (like braces) are not affected by upper-casing, but the content is, transforming a valid JSON object to all capitals will likely result in an invalid JSON structure or a different object if the harness cannot parse the upper-cased keys/values as the original. The catalogue already shows that 'conformance.kernel.recovery' moves under 'conformance.transform.upper-case' for a specific input, confirming this behavior.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.
+
+## The shape this answer must take
+`commitments` must be JSON fitting exactly this schema:
+{
+  "properties": {
+    "input": {
+      "pattern": "^(\\{[\\s\\S]*\\}|[A-Za-z][^{}]{2,160}[.!?])$",
+      "type": "string"
+    },
+    "kernel": {
+      "pattern": "^conformance\\.kernel\\.",
+      "type": "string"
+    },
+    "transform": {
+      "pattern": "^conformance\\.transform\\.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "kernel",
+    "transform",
+    "input"
+  ],
+  "type": "object"
+}

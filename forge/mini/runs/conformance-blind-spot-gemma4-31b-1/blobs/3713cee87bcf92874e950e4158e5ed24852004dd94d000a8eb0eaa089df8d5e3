@@ -1,0 +1,34 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+I expect the kernel `conformance.kernel.recovered-from-prose` to move when the transform `conformance.transform.float-after` is applied to a bare JSON object. According to the registry, this kernel determines "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)". A bare JSON object is read as strict JSON (no). However, applying `conformance.transform.float-after` ("Put the word 'final' and an object holding a float, {"a": 1.5}, after the reply") introduces prose and a second object, meaning the reply is no longer strict JSON. This forces the harness to recover the object from prose (yes), causing the kernel's answer to move. This pair is listed in the catalogue as moving for a specific input, but I am proposing it for a generic bare JSON object.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.
+
+## The shape this answer must take
+`commitments` must be JSON fitting exactly this schema:
+{
+  "properties": {
+    "input": {
+      "type": "string"
+    },
+    "kernel": {
+      "type": "string"
+    },
+    "transform": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "kernel",
+    "transform",
+    "input"
+  ],
+  "type": "object"
+}

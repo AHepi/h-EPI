@@ -1,0 +1,15 @@
+# Execution
+
+## Proposals so far (proposals)
+[15532af5836e558a] (mini.proposal.v1)
+I expect the kernel `conformance.kernel.recovered-from-prose` to move (change its answer) when the transform `conformance.transform.prose-after` is applied to a bare JSON object. According to the registry, this kernel determines "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)". A bare JSON object is read as strict JSON (no), but adding a sentence after it via `conformance.transform.prose-after` ("Put the sentence 'That is the completed form.' on a line after the reply") makes the reply no longer strict JSON, forcing the harness to recover the object from prose (yes).
+commitments: {"input": "a bare JSON object", "kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.prose-after"}
+[b3729e4c486d2ba8] (mini.proposal.v1)
+I expect the kernel `conformance.kernel.recovery` to move when the transform `conformance.transform.upper-case` is applied to a bare JSON object. According to the registry, this kernel returns "The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT". A bare JSON object is recovered as itself. However, applying `conformance.transform.upper-case` ("Put the whole reply in capitals") will capitalize the keys and values of the JSON object, and more importantly, capitalize the structural delimiters if they were not already (though JSON delimiters are symbols, the string values and keys will change). Since JSON is case-sensitive for keys and string values, the recovered canonical JSON object will differ from the original, causing the kernel's answer to move.
+commitments: {"input": "a bare JSON object", "kernel": "conformance.kernel.recovery", "transform": "conformance.transform.upper-case"}
+[929f758bfb0d48b5] (mini.proposal.v1)
+I expect the kernel `conformance.kernel.recovered-from-prose` to move when the transform `conformance.transform.prose-before` is applied to a bare JSON object. According to the registry, this kernel determines "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)". A bare JSON object is read as strict JSON (no), but adding the sentence 'Here is the form:' before it via `conformance.transform.prose-before` makes the reply no longer strict JSON, forcing the harness to recover the object from prose (yes).
+commitments: {"input": "a bare JSON object", "kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.prose-before"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

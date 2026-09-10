@@ -1,0 +1,15 @@
+# Execution
+
+## Proposals so far (proposals)
+[aedfc67459cd985d] (mini.proposal.v1)
+I expect the kernel `conformance.kernel.recovered-from-prose` to move from 'no' to 'yes' when the input is a strict JSON object and the transform `conformance.transform.prose-after` is applied. According to the registry, this kernel tracks whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no). Adding a sentence after the JSON object makes the reply no longer a strict JSON document, forcing the harness to use its recovery logic to extract the object from the surrounding prose.
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.prose-after", "input": "{\"claimant_name\": \"amara okoro\", \"total_days\": \"five\"}"}
+[6d40d26faae48dbc] (mini.proposal.v1)
+I expect the kernel `conformance.kernel.recovery` to move from a JSON object to `NO_OBJECT` (or a different object) when the input is a strict JSON object and the transform `conformance.transform.upper-case` is applied. According to the registry, this kernel tracks the object the harness recovers as canonical JSON. Since JSON keys and string values are case-sensitive and the JSON specification requires lowercase for structural tokens (like `true`, `false`, `null`), converting a JSON object to upper-case will result in invalid JSON that the harness may fail to recover, or recover differently, thus moving the kernel's value.
+commitments: {"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.upper-case", "input": "{\"claimant_name\": \"amara okoro\", \"total_days\": \"five\"}"}
+[f959cb65a7a01b40] (mini.proposal.v1)
+I expect the kernel `conformance.kernel.recovered-from-prose` to move from 'no' to 'yes' when the input is a strict JSON object and the transform `conformance.transform.prose-after` is applied. According to the registry, this kernel tracks whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no). By adding a sentence after the JSON object, the reply is no longer a strict JSON document, which should trigger the harness's recovery logic.
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.prose-after", "input": "{\"claimant_name\": \"amara okoro\", \"total_days\": \"five\"}"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

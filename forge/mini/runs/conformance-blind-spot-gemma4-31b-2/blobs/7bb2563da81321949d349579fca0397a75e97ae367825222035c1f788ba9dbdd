@@ -1,0 +1,40 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+I expect the kernel 'conformance.kernel.recovered-from-prose' to move from 'no' to 'yes' when the input is a strict JSON object and the transform 'conformance.transform.prose-after' is applied. According to the registry, this kernel tracks whether the harness read the reply as strict JSON (no) or had to recover the object from prose or a fence (yes). By adding a sentence after the JSON object via 'conformance.transform.prose-after', the reply is no longer a strict JSON object, which should trigger the recovery logic.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.
+
+## The shape this answer must take
+`commitments` must be JSON fitting exactly this schema:
+{
+  "properties": {
+    "input": {
+      "pattern": "^(\\{[\\s\\S]*\\}|[A-Za-z][^{}]{2,160}[.!?])$",
+      "type": "string"
+    },
+    "kernel": {
+      "pattern": "^conformance\\.kernel\\.",
+      "type": "string"
+    },
+    "transform": {
+      "pattern": "^conformance\\.transform\\.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "kernel",
+    "transform",
+    "input"
+  ],
+  "type": "object"
+}
+
+## The last reply was refused, for these reasons
+commitments: it is not readable as JSON: invalid JSON: Expecting value: line 1 column 1 (char 0)
