@@ -1,0 +1,138 @@
+{
+  "ceiling": {
+    "completion_tokens": 12000,
+    "invocations": 8
+  },
+  "corpus": [
+    {
+      "consequence": "the occurrence check no longer folds a run of spaces inside the span",
+      "dimensions": [
+        "whitespace"
+      ],
+      "edit_digest": "6437279bf9bb7a03101873cef3f0d7d9d84e84a1f9f16b69cb846819fc8463d3",
+      "kernel": "span-occurs",
+      "mutation_id": "s1-whitespace-strip",
+      "stratum": "S1"
+    },
+    {
+      "consequence": "the phrase reported is the list's last match rather than its first",
+      "dimensions": [
+        "two phrases"
+      ],
+      "edit_digest": "6016609e9509c26bc070ecea28374f4629ac7fc00a43e30d3dd7d3d959ccefc1",
+      "kernel": "refusal-phrase",
+      "mutation_id": "s1-refusal-last-wins",
+      "stratum": "S1"
+    },
+    {
+      "consequence": "a typographic apostrophe is no longer folded, so a phrase written with one is missed",
+      "dimensions": [
+        "apostrophe"
+      ],
+      "edit_digest": "bd7fdefea89a1f57358eef9ee4c016616e64b83f88b2bcbe8930d7eb277fd639",
+      "kernel": "refusal-phrase",
+      "mutation_id": "s1-quotes-not-folded",
+      "stratum": "S1"
+    },
+    {
+      "consequence": "a fenced object is preferred only when the reply holds exactly one fence, so two fences fall through to the last top-level object",
+      "dimensions": [
+        "two fences",
+        "a bare object after them"
+      ],
+      "edit_digest": "40bd6cc12bc4a8c5c6cd6d3d747c0a4a40550358ae46029de895ac1358424f0c",
+      "kernel": "recovery",
+      "mutation_id": "s2-fence-single-only",
+      "stratum": "S2"
+    },
+    {
+      "consequence": "a repeated key is resolved last-wins only outside a fence, so a fenced object carrying one is passed over for whatever follows",
+      "dimensions": [
+        "inside a fence",
+        "a repeated key",
+        "an object after the fence"
+      ],
+      "edit_digest": "f103b7c0f14dadaf45e6c050c007dc995c5442b3e7613c5654fdd47728aefb2b",
+      "kernel": "recovery",
+      "mutation_id": "s2-duplicates-outside-fence-only",
+      "stratum": "S2"
+    },
+    {
+      "consequence": "the document is whitespace-normalised and the span is not, so only a span with irregular spacing fails",
+      "dimensions": [
+        "irregular span",
+        "regular document"
+      ],
+      "edit_digest": "fb98ebe98e107a7870b84076636e639f7293227510731a4c1b480e3cd7f3fa54",
+      "kernel": "span-occurs",
+      "mutation_id": "s2-span-normalised-one-side",
+      "stratum": "S2"
+    }
+  ],
+  "dispositions": [
+    "TRUE_DEFECT",
+    "TRUE_BOUNDARY",
+    "AMBIGUOUS_SPEC",
+    "INVALID_TEST",
+    "ALREADY_DOCUMENTED",
+    "FALSE_POSITIVE",
+    "NO_FINDING",
+    "OUT_OF_DOMAIN"
+  ],
+  "grid_cells": [
+    "fence[ A ]",
+    "fence[ A ] S",
+    "fence[ A ] B",
+    "fence[ A ] A",
+    "fence[ A ] fence[ B ]",
+    "fence[ S A ]",
+    "fence[ S A ] S",
+    "fence[ S A ] B",
+    "fence[ S A ] A",
+    "fence[ S A ] fence[ B ]",
+    "fence[ A S ]",
+    "fence[ A S ] S",
+    "fence[ A S ] B",
+    "fence[ A S ] A",
+    "fence[ A S ] fence[ B ]",
+    "fence[ A B ]",
+    "fence[ A B ] S",
+    "fence[ A B ] C",
+    "fence[ A B ] A",
+    "fence[ A B ] fence[ C ]"
+  ],
+  "grid_sha256": "fac1c76b0140fc77954f934e062fa8275b60f58fb2a05134456ef43e0afe0601",
+  "non_enumerable": {
+    "grounding": "the same, with the value's containment added",
+    "span-occurs": "whether a span stands in a given relation to a document is the question the kernel answers"
+  },
+  "packet_fields": [
+    "claim",
+    "expected",
+    "observed",
+    "reproducer",
+    "source_basis",
+    "execution_evidence",
+    "scope",
+    "uncertainty"
+  ],
+  "protocol": "mini-use-test-1",
+  "subject_closure": [
+    "_FENCE",
+    "_refuse_float",
+    "_refuse_constant",
+    "_loads_last_wins",
+    "recover_json_object",
+    "_TYPOGRAPHIC_QUOTES",
+    "_plain_quotes",
+    "refusal_phrase_in",
+    "parse_content",
+    "_normalise_whitespace",
+    "_RANGE_SEP",
+    "_RANGE_SHARED_MONTH",
+    "_RANGE_TWO_MONTHS",
+    "_date_range_completions",
+    "_span_occurs"
+  ],
+  "subject_sha256": "68ebfcce934d17938f3631fa4d7321991d1e44da0125fd0b7d42667d0a885885"
+}
