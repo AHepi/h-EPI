@@ -460,3 +460,36 @@ eleven more proposals in `r4-7`, all to the requirement that a JSON instance be
 written inside a JSON string inside a JSON reply. The machine now offers a
 kind's own optional fields for exactly this (`docs/mini/SPEC.md` §17, register
 M13), and round 5 is these grids written that way.
+
+## Round 5
+
+Pre-registered before its runs. Two things to settle: whether the escaping
+repair lets a large model run the shape that finds the control, and what a
+rules-reading seat does when it is given the pair rather than asked to build it.
+
+| Shape | Model | What it varies |
+|---|---|---|
+| `r5-1-skeletons-fields-mistral` | mistral-large-3:675b | the skeleton grid with the long fields carried by the kind, not nested in the commitments string |
+| `r5-2-skeletons-fields-qwen` | qwen3.5:397b | the same |
+| `r5-3-skeletons-fields-gemma` | gemma4:31b | the same |
+| `r5-4-grounding-pairs-given` | gemma4:31b | twenty grounding pairs written into the grid; the seat copies both texts and gives only the expectation |
+| `r5-5-verdict-pairs-given` | gemma4:31b | twenty-one recovery, prose-flag, verdict and refusal pairs, the same way |
+
+**How the given pairs were written, and what that does and does not test.** I
+wrote the forty-one pairs of `r5-4` and `r5-5` by hand, knowing the code, to
+span the space each family has — whitespace, case, punctuation, an empty or
+one-character span, a span occurring twice, a value that is the whole span or
+absent from it; a repeated key, a float, a literal, an array, nesting, an
+unclosed object, prose either side, a fence, a refusal phrase, an object twice.
+I did not evaluate any of them before writing them down, and the answers are not
+in this file. So the discovery that remains is real but narrower than the grid
+shapes': the space is mine, the machine computes, the seat predicts from the
+rule alone, and every disagreement is a candidate a person reads. What these two
+shapes test is the reading, with the construction taken away entirely — the
+limit of the division of labour the fourth round's records argued for.
+
+For `r5-1` to `r5-3` the criterion is the round-4 one, and the control's cell
+`fence[ S A ] B` is reached in cycle 3 of seven. What is new is only the form:
+if the escaping repair works, mistral should lose few calls rather than most,
+and its record beside `r4-1`, `r4-6` and `r4-7` is the measure of the repair.
+Records under `forge/mini/runs/experiments/round-5/`.
