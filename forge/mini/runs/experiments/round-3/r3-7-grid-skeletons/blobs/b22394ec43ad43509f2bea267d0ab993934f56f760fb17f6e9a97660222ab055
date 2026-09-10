@@ -1,0 +1,18 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Proposal 4c971cabf6d9fb5b failed because the proposer misread the rule regarding what constitutes 'strict JSON'. The proposer expected that removing a sentence from inside a code fence would change `recovered-from-prose` from 'yes' to 'no', assuming that a JSON object inside a fence is not 'strict JSON'. However, the code in `parse_content` (line 84) first attempts `loads_strict(content)`. In the rewritten input ```\n{"a": 1}\n```, the content is not a strict JSON object because it is wrapped in Markdown code fences. Therefore, it always falls through to `recover_json_object`, which sets `recovered_from_prose` to `True` (line 103). 
+
+The rule states that `recovered-from-prose` is 'no' if the harness could "read it as strict JSON" [a70c2e9bc362b532]. In the source, `parse_content` only returns `False` for `recovered_from_prose` if `loads_strict(content)` succeeds (line 85). Since Markdown fences are not valid JSON, any input containing them will result in `recovered_from_prose` being 'yes', regardless of whether the content inside the fence is a clean JSON object.
+
+This failure matters because it reveals a misunderstanding of the boundary between the raw reply and the recovered object. A proposer should next try to test the transition from a fenced object to a bare object (without fences), as that is the only way to move `recovered-from-prose` to 'no'.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

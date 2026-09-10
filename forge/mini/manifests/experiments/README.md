@@ -258,3 +258,54 @@ instantiation of "what the fence holds" did not. One more addendum,
 after it), with the same seat, the same seven cycles and the same model. If
 the proposer builds that cell as written and writes the rule's expectation,
 the machine's answer on it is the control.
+
+**r3-7 read.** Seven cycles, twenty-one proposals, every cell built as
+written, none dropped, six candidates. Four are the control and its class: the
+cell `fence[ S A ] B` (cycle 3) is the pre-registered control exactly, scored
+on the bare `{"b": 2}` where the docstring says the fenced `{"a": 1}`; `fence[
+A B ] C`, `fence[ A B ] A` and `fence[ A B ] fence[ C ]` (cycles 6 and 7) show
+the same thing for a fence holding two objects. The proposer wrote the
+docstring's expectation each time and the machine's answer differed each time.
+The other two candidates are P-01's row read wrongly (the prose flag is set by
+a fence too). The criterion is met on its first clause's neighbour (a pair
+whose outcome differs from a fair reading of the docstring, on the control) and
+the control was found without being named.
+
+## What the three rounds show
+
+Seventeen runs, five models, seven shapes and their mutations. What the
+records say, in order of what it cost to learn:
+
+1. **The expectation has to come from the rule, not the code.** Every run
+   whose proposer read the code (round 1, D) either confirmed the code or
+   misread it. The control is a place where the rule and the code part, and
+   only a reader of the rule can write the expectation the code fails.
+2. **The proposer must not choose the input's shape.** Left to choose, it
+   chooses shapes the rule and the code agree on (C, r3-2, r3-5: thirty-three
+   proposals in the control's neighbourhood, none on it). Enumerated by
+   machine and handed one cell in a notation, it built the control's cell and
+   wrote the rule's expectation (r3-7). The machine chooses what to test; the
+   model instantiates and reads; the machine executes; a person reads the
+   disagreement. That division is the finding about the method.
+3. **A written row can be refuted by an input of its class.** S3 refuted five
+   catalogue rows on qwen3.5:397b, one of them substantive (P-09); the same
+   shape on gemma4:31b repeated one triple and dropped the rest. The model is a
+   factor in whether a shape produces anything, and the record says which.
+4. **Two readings beside each other separate a misreading from a point.** B's
+   readings classed its five candidates; one was a point (R-03), the rest two
+   readers missing one clause. The class "both failed" is not "the code does
+   what nobody wrote"; a person still reads.
+5. **Repeats at temperature zero are not repeats.** A's two runs shared two
+   pairs of nine and found the same point (G-09) by different pairs.
+
+What was found: one defect the tree carries (`docs/failure-modes.md` H43),
+three rows the kernel table lacked (P-09, R-03, G-09), five catalogue rows that
+overclaimed. What was not found: anything about the grounding matcher beyond
+its case folding, anything about the refusal list beyond the scan's reach, and
+nothing at all by any shape that let the proposer read the code and choose its
+own input. The angle does not need a rethink; it needed the choice of what to
+test taken away from the model.
+
+The run `e-replies-as-written` of round 2 on nemotron-3-nano:30b had not ended
+when this was written and its record is not committed; the README says so
+rather than waiting.

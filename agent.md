@@ -216,7 +216,7 @@ python tools/run_mini.py replay --root forge/mini/runs/<root>
 python tools/run_mini.py compare --root <one> --root <another>   # refuses --score
 ```
 
-A manifest may declare `endpoint` in exactly the shape a pilot's endpoint has; absent, the shipped default applies. For a local Ollama set `"auth": "none"` and no key is needed. Read a run from its record: the first event carries the endpoint actually sent to, every artifact says which seat made it and how many calls it took, and the last verdict artifact of a blind-spot run is the deliverable a person turns into boundary points. `docs/mini/SPEC.md` is the reference and `docs/mini/FAILURE_MODES.md` the register.
+The experiments under `forge/mini/manifests/experiments/` are run the same way (`live --manifest forge/mini/manifests/experiments/round-3/r3-7-grid-skeletons/manifest.json --model gemma4:31b --output-dir …`), and their README is the pre-registration to extend before a new round and the reading to extend after. A manifest may declare `endpoint` in exactly the shape a pilot's endpoint has; absent, the shipped default applies. For a local Ollama set `"auth": "none"` and no key is needed. Read a run from its record: the first event carries the endpoint actually sent to, every artifact says which seat made it and how many calls it took, and the last verdict artifact of a blind-spot run is the deliverable a person turns into boundary points. `docs/mini/SPEC.md` is the reference and `docs/mini/FAILURE_MODES.md` the register.
 
 ## What not to expect
 

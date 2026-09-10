@@ -393,3 +393,37 @@ As R36: the gate green at every commit, the branch pushed, `DELIVERY.md`'s table
 extended, `SPEC.md` rewritten from the code.
 
 Amendment 4's interpretations are numbered from **D1** in `DESIGN.md`.
+
+## Amendment 5 — the experiments (10 September 2026)
+
+> "Time to run experiments. 5 concurrently. Each a different shape. Keep
+> mutating until you get something that works. But don't just do random
+> mutations. Figure out what might be wrong first." Then: "3 rounds of 5
+> concurrent. If you're still not seeing results, this whole angle might
+> need a rethink." And: "It's ok it waste tokens. It's the data from
+> variations that I'm after."
+
+**R41 — Figure out what might be wrong first.** Read as a written diagnosis
+before any run, and a criterion for "works" decided before the runs and not
+moved after: `forge/mini/manifests/experiments/README.md`, which also names the
+positive control the tree carries.
+
+**R42 — Five concurrent, each a different shape, three rounds.** Read as five
+manifests per round, each a different wiring of kinds, ports and instructions,
+run at once on the models the operator has named, with the round's shapes
+committed before its records exist and read after.
+
+**R43 — Keep mutating until something works, not at random.** Read as: each
+round's shapes are written from the previous round's records, and the README
+says which record moved which shape. Two addenda after round 3 were the two
+mutations the third round's records called for.
+
+**R44 — The data from variations.** Read as: every run's record is committed
+whatever it found, the dropped and the duplicate included, and the reading of
+each names what it found and what it did not.
+
+**R45 — The standing obligations.** As R36 and R40. What a run found in the
+harness goes to the harness's own register and kernel table by a person's
+reading, cited to the record.
+
+Amendment 5's interpretations are numbered from **D10** in `DESIGN.md`.

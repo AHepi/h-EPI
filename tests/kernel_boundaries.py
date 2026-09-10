@@ -510,6 +510,9 @@ def _parse_points() -> list[Boundary]:
                  lambda: (_response(ord_v, '{"total_days": 5}')[0], _response(ord_v, '{"total_days": 5.0}')[0], _response(ord_v, '{\n  "total_days": 5\n}')[0])),
         Boundary("An array reply", "P-05", "one stray character before the array: `[{…}]` is `NOT_AN_OBJECT`, `x [{…}]` recovers the object inside", "how many objects the array holds",
                  lambda: (_response(ord_v, '[{"a": 1}]')[0], _response(ord_v, 'x [{"a": 1}]')[0], _response(ord_v, '[{"a": 1}, {"b": 2}]')[0])),
+        Boundary("JSON literals under a change of case", "P-09", "upper case on a reply that holds a literal (`\"injury_reported\": TRUE` is `INVALID_JSON`)", "upper case on a reply whose values are all strings",
+                 lambda: (_response(ord_v, body), _response(ord_v, body.upper()), _response(ord_v, json.dumps({k: v for k, v in _ord_output().items() if isinstance(v, str)}).upper())),
+                 "found by mini (`forge/mini/runs/experiments/round-1/s3-refute-invariances/`, cycle 2): a catalogue row said the response verdict does not move under upper case, written on a reply of strings"),
     ]
 
 
@@ -524,6 +527,9 @@ def _refusal_points() -> list[Boundary]:
         Boundary("Refusal beside a form", "R-02", "a listed phrase in prose around a recovered object (`I cannot stress how clear this is:`), which raises `REFUSAL_SUSPECTED`", "prose without a listed phrase around the same object",
                  lambda: (_triggers(ord_v, body, phrases=phrases), _triggers(ord_v, "I cannot stress how clear this document is:\n" + body, phrases=phrases), _triggers(ord_v, "Happy to help:\n" + body, phrases=phrases)),
                  "the check fires on a non-refusal that contains a listed phrase; the flag is a criticism to read, not a verdict"),
+        Boundary("Refusal phrase inside a value", "R-03", "a listed phrase inside a string value of the form itself (`\"summary\": \"I cannot say how Tom hurt his wrist\"`), which raises `REFUSAL_SUSPECTED` as prose around the object does", "the same value in words the list does not hold (`Nobody could say how`)",
+                 lambda: (_triggers(ord_v, body, phrases=phrases), _triggers(ord_v, json.dumps({**_ord_output(), "summary": "I cannot say how Tom hurt his wrist"}), phrases=phrases), _triggers(ord_v, json.dumps({**_ord_output(), "summary": "Nobody could say how Tom hurt his wrist"}), phrases=phrases)),
+                 "the scan reads the whole reply and cannot see whether the phrase is the model's or the form's; found by mini (`forge/mini/runs/experiments/round-2/b-two-readers/`, cycle 2), where a reader of the rules expected the phrase inside a value not to count"),
     ]
 
 
@@ -557,6 +563,9 @@ def _span_points() -> list[Boundary]:
         Boundary("Value in span: whitespace", "G-08", "one letter less in the quotation (`Maya Pate`, which occurs, and no longer contains the value)", "a line break or a run of spaces inside the quoted name (`Maya \n Patel`)",
                  lambda: (_grounding(lr, out(), "employee_name"), _grounding(lr, out(employee_name_span="Maya Pate"), "employee_name"), _grounding(lr, out(employee_name_span="Maya \n Patel"), "employee_name")),
                  "H41: until 9 September the containment check did not normalise whitespace where the occurrence check did; no committed record carries a VALUE_NOT_IN_SPAN verdict"),
+        Boundary("Value in span: case", "G-09", "one letter of the value (`Maya Patek`, no longer contained)", "the case of the value (`MAYA PATEL`): containment folds case where the occurrence check (G-04) does not",
+                 lambda: (_grounding(lr, out(), "employee_name"), _grounding(lr, out(employee_name="Maya Patek"), "employee_name"), _grounding(lr, out(employee_name="MAYA PATEL"), "employee_name")),
+                 "found by mini (`forge/mini/runs/experiments/round-2/a-rules-first-1/` and `-2/`, cycle 3 of each): a reader of the rules expected case to matter; the verdict's own reason string says it does not, and no row did"),
         Boundary("Value in span: fields not configured", "G-07", "a quotation absent from the document (`sick leave`)", "a value the quotation does not support, on a field outside `value_in_span_fields` (`sick` quoted from `annual leave`)",
                  lambda: (_grounding(lr, out(), "leave_type"), _grounding(lr, out(leave_type_span="sick leave"), "leave_type"), _grounding(lr, out(leave_type="sick"), "leave_type"))),
     ]

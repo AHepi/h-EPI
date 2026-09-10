@@ -1,0 +1,11 @@
+```json
+{
+ "body": "Proposal 3b13a35179079499 failed because the proposer misread the rule regarding what constitutes 'strict JSON'. The proposer expected that removing a sentence from inside a code fence would change `recovered-from-prose` from 'yes' to 'no', claiming that the resulting fence would be 'read as strict JSON'.\n\nHowever, the code shows that `parse_content` only returns `recovered_from_prose=False` if the *entire* content of the reply parses as strict JSON (line 85: `return loads_strict(content), \"JSON_OBJECT\", None, False`). If the JSON object is wrapped in a code fence, `loads_strict(content)` will fail because the fence markers (```) are not valid JSON. The harness then calls `recover_json_object`, which identifies the object within the fence, and `parse_content` subsequently returns `True` for `recovered_from_prose` (line 98: `return recovered, \"JSON_OBJECT\", detail, True`).\n\nThe rule as written in [4adba2f4da302fee] says the kernel records whether the harness had to recover the object from \"prose or a fence (yes) or read it as strict JSON (no)\". The proposer failed to realize that a fence, even if it contains only a JSON object, is not 'strict JSON'—it is a fence containing JSON.\n\nThis failure matters because it reveals a misunderstanding of the boundary between strict JSON and recovered JSON. A proposer should next try to move the JSON object out of the fence entirely to achieve a 'no' verdict for `recovered-from-prose`.",
+ "citations": [
+  {
+   "block": "4adba2f4da302fee",
+   "quote": "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)."
+  }
+ ]
+}
+```

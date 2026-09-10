@@ -383,3 +383,72 @@ record shows is that the loop runs end to end against the harness's own
 functions, that its verdict now reads a catalogue as the harness reads a kernel
 point, and that a live model can be walked through it without a hand-written
 reply.
+
+## The experiments: seventeen runs, three rounds and two addenda
+
+`forge/mini/manifests/experiments/README.md` pre-registers the diagnosis, the
+positive control, the criterion and each round's shapes before its runs, and
+reads each round after; the records are under `forge/mini/runs/experiments/`.
+The entries below are what those runs corrected in mini. What they found in the
+harness is in `docs/failure-modes.md` H43 and in `docs/kernel.md` P-09, R-03 and
+G-09.
+
+## M11 — A kernel's "cannot read this" was counted as a move
+
+**Seen on** `runs/experiments/round-1/s4-grounding-pairs/` (cycle 3, a line
+break written into a document string, read as a move to `UNREADABLE_INPUT` and
+then as a candidate point) and `round-1/s5-registry-feedback/` (cycle 1, a
+reply that was not a grounding input, unchanged at `UNREADABLE_INPUT` on both
+sides and a candidate for the unchanged column). **Status: FIXED** (`SPEC.md`
+§22).
+
+A kernel now declares the verdict it gives when it cannot read its input, and
+an execution on which either side is that verdict is `unrunnable`. The line
+break was the proposer's meaning and is now read as such: a control character
+inside a JSON string is admitted by the grounding kernels' reader, strict first,
+and nothing else is loosened.
+
+## M12 — The proposer instantiated a described cell the wrong way round
+
+**Seen on** `runs/experiments/round-3/r3-6-grid-enumerated/`, cycle 3: the
+machine handed the proposer the cell "a sentence then an object / a different
+bare object", meaning a fence holding a sentence and an object, and the
+proposer wrote the sentence before the fence. Twenty cells, twenty-one
+proposals, none of them the reply the cell described. **Status: FIXED** by
+notation, not code: `r3-7-grid-skeletons` writes each cell as `fence[ S A ] B`
+with a legend, and the same seat, model and cycles then built every cell as
+written (`runs/experiments/round-3/r3-7-grid-skeletons/`). A cell described in
+words is an instruction; a cell written in a notation is a shape.
+
+## M13 — A commitments string the model could not escape, repeated at temperature zero
+
+**Seen on** `runs/experiments/round-3/r3-1-invariances-readable/`, cycle 3:
+three proposer stages each produced a commitments string that was not readable
+as JSON (an unescaped quote at character 119), each twice, and all three were
+dropped; and on `round-3/r3-4-sensitivities/`, where five of eight proposals
+were dropped for a fenced input the kind's pattern refused. **Status: OPEN.**
+
+The first is M9's neighbour: a JSON instance inside a JSON string inside a JSON
+reply is three levels of escaping, and a model that gets it wrong once at
+temperature zero gets it wrong on the retry. The second is a template's pattern
+written for one shape (a bare object or one sentence) refusing the input the
+mirror shape needed. Neither is a defect against a requirement; both cost a
+run its proposals, and the records say so.
+
+## What the seventeen runs show, and do not
+
+The control pre-registered in the README (a fence holding a sentence beside its
+object, and a bare object after it, scored on the bare object against the
+docstring) was found on the seventeenth run, by a proposer shown the docstring
+and not the code, handed the control's cell in a notation, writing the
+docstring's expectation, with the machine's answer differing: `r3-7`, events 80
+and 146, and again at 168 on two more cells of the same class. Sixteen runs did
+not find it: a proposer that reads the code expects what the code does; a
+proposer asked for a disagreement confirms invariances instead; a proposer
+that picks its own cell picks the easy ones; a proposer handed a cell in words
+builds a different reply. Three smaller points the kernel table lacked were
+found earlier and are now rows (P-09, R-03, G-09), and five catalogue rows were
+shown to overclaim their class (`round-1/s3-refute-invariances/`). None of this
+is a survey of what the harness's checks are blind to, and the loop mints
+nothing: every standing above was read by a person before it became a row or
+a register entry, as the template says it must be.

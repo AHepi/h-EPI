@@ -351,3 +351,14 @@ larger, that a repeat would return the same text, or that any artifact is any
 good. Nothing here was compared with what the same model produces without the
 harness, and neither run carries such an arm. Two models on one manifest behaved
 oppositely on the same field; five calls cannot say which is typical.
+
+## The experiments (Amendment 5)
+
+Seventeen live runs under `forge/mini/runs/experiments/`, in three rounds of
+five and two addenda, each round pre-registered in
+`forge/mini/manifests/experiments/README.md` before its records and read after.
+What they corrected in mini is `FAILURE_MODES.md` M11 to M13; what they found in
+the harness is `docs/failure-modes.md` H43 and `docs/kernel.md` P-09, R-03 and
+G-09; `SPEC.md` §22 is the machinery, written from the code. The run
+`e-replies-as-written` of round 2 had not ended when this was written and is
+not in the tree.

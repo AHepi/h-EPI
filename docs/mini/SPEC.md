@@ -555,6 +555,72 @@ kind, the commitments call's included, since it is the kind's own words and not
 evidence or another artifact; the blind default of §14 is untouched. Absent,
 nothing is shown and no header key is written; present, it moves the identity.
 
+### 22. Pairs, two readings, the rules seat, and a grid enumerated by machine (R41 to R45)
+
+**Module** `blindspot.py`, `conformance_kernels.py`. **Manifests**
+`forge/mini/manifests/experiments/`. **Runs** `forge/mini/runs/experiments/`.
+**Tests** `test_pairs.py`.
+
+A **pair proposal** (any kind whose id starts `mini.pair-proposal.`) commits
+`{"kernel", "input", "rewritten", "expect", "rewrite"}`: the proposer writes the
+rewrite itself, so no transform registry stands between it and the check, and
+says what the check's answer ought to do (`moves`, `unchanged`). The machine
+**pair executor** (`mini.pair-execution.v1`) runs the kernel on both texts and
+commits `before`, `after`, `executed` and `as_expected`; a pair the run already
+executed is `duplicate` and not run again (M10), and a rewrite equal to its
+input, an unknown kernel or an expectation outside the two words is
+`unrunnable`. The verdict's standing for a pair (`standing_for_pair`):
+
+| executed | expectation | standing | column |
+|---|---|---|---|
+| moved | unchanged | `candidate point` | moves |
+| unchanged | moves | `candidate point` | unchanged |
+| either | agrees | `rejected` | — |
+| unrunnable, unreadable, duplicate | anything | `rejected` | — |
+
+Nothing is a defect on the proposer's word: a pair has no catalogue row to
+refute, and a disagreement between a reader and the machine is a candidate a
+person reads.
+
+A **prediction** (any kind whose id starts `mini.pair-prediction.`) is a second
+reading of one pair by a seat that read something else: it commits
+`{"proposal": <the proposal id's first sixteen characters>, "expect"}`. The
+verdict pairs it with the execution and names the **reading** (`reading_for`):
+both held; expectation failed and prediction held; expectation held and
+prediction failed; both failed; no prediction; prediction unreadable. The
+standing stays the proposer's expectation against the machine; a reading is a
+name for how two readers fared and mints nothing. The records show that "both
+failed" is as often two readers missing the same clause as the code doing what
+nobody wrote.
+
+A **kernel** may declare `unreadable`, the verdict it gives when it cannot read
+its input at all; an execution on which either side is that verdict is
+`unrunnable`, not a move (M11). The grounding kernels
+(`conformance.kernel.span-occurs`, `conformance.kernel.grounding`) read one JSON
+object with `value`, `span` and `document` and declare `UNREADABLE_INPUT`; a
+control character a proposer wrote into a string is read as the line break that
+was meant (`loads_strict(..., control_characters=True)`, strict first).
+
+Two machine seats put the checks in front of a proposer as artifacts, whole,
+where the legend would show 160 characters: `mini.kernel-source.v1` emits the
+harness functions' source and `mini.kernel-rules.v1` their signatures and
+docstrings and not one line of code, each with its sha256 in the commitments.
+A proposer that reads the rules and not the code writes the rule's expectation,
+which is the only reading that can part from the code without misreading it.
+
+A **grid** is a source (`grid`, one cell per paragraph) enumerated by machine:
+`mini.next-cell.v1` names the cell named least often so far in any artifact's
+`cell` commitment, its own earlier outputs included, and ties go to the grid's
+order. A port window is counted in cycles, so a proposer that must see one cell
+and not its neighbours' draws a numbered kind of its own
+(`mini.next-cell.1.v1` to `.3.v1`, the same seat). The proposer instantiates the
+cell it is given and writes the rule's expectation; which cells get covered is
+not its choice. `NextCellTests` holds the walk.
+
+`forge/mini/manifests/experiments/README.md` is the pre-registration and the
+reading of the seventeen runs that used these, in order, with what each shape
+found and did not; `FAILURE_MODES.md` carries what they corrected.
+
 ---
 
 ## Part three: decisions, and what is genuinely still unbuilt

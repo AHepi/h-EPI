@@ -891,3 +891,37 @@ The record shape and the event vocabulary; the two-call default; the permission
 layer, which still mints no standing; attention and the host's stops; `compare`,
 which still ranks nothing. No conformance code changed: mini imports the
 harness's reader and executor and calls them as they are.
+
+## 34. The expectation is read from the rule, and the machine chooses the cell (R41, R43)
+
+**D10.** A blind-spot proposer that reads the code predicts the code and can
+disagree with it only by misreading. The control pre-registered for the
+experiments is a place where the docstring and the code part, and only a
+reader of the docstring can write the expectation the code fails. So a seat
+emits the rules without the code (`mini.kernel-rules.v1`, `SPEC.md` §22), a pair
+proposal carries the proposer's own rewrite and the rule's expectation, and a
+prediction from a reader of the code stands beside it with the machine between
+them. Nothing in this changes what a verdict is: a disagreement is a candidate a
+person reads, never a defect on a reader's word.
+
+**D11.** Sixteen runs in which the proposer chose the input's shape chose shapes
+the rule and the code agree on; the seventeenth, in which a machine seat
+enumerated a grid and handed the proposer one cell in a notation, built the
+control's cell and found it. The division that worked: the machine chooses
+what to test, the model instantiates it and reads the rule, the machine
+executes, a person reads the disagreement. The grid is a source, so it is
+evidence a critic can cite, and the seat that walks it is registered by kind
+like any other machine seat; a proposer's port sees one cell because it draws
+a numbered kind of its own, a port window being counted in cycles.
+
+**D12.** A kernel that cannot read its input says so in a verdict of its own,
+and an execution on either side of which that verdict stands is `unrunnable`
+(M11). This is the only loosening the experiments made, and it loosens a
+reading of the record, not a check.
+
+## 35. What Amendment 5 does not change
+
+The permission layer, the record, the attention default, the two-call shape,
+the standing rule for catalogued rows (§31), the endpoint (§29). No shape
+promotes anything; the rows that entered `docs/kernel.md` did so by a person's
+reading of a record, cited, as the template said they must.

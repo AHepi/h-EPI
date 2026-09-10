@@ -1,0 +1,15 @@
+# Execution
+
+## Proposals so far (proposals)
+[c4adfd06d042c123] (mini.pair-proposal.grid-1.v1)
+For the cell `fence[ A ]`, I will test the `conformance.kernel.recovered-from-prose` kernel. The input consists of a single JSON object inside a code fence. According to the rules, the harness reads this as strict JSON if it is in a fence, meaning `recovered-from-prose` should be 'no'. If I remove the code fence, the object remains as a top-level object in the text, which the rule says is a candidate for recovery from prose. Therefore, the recovered object stays the same, but the `recovered-from-prose` verdict moves from 'no' to 'yes'.
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "input": "```\n{\"a\": 1}\n```", "rewritten": "{\"a\": 1}", "expect": "moves", "rewrite": "I removed the code fence surrounding the JSON object.", "cell": "fence[ A ]"}
+[1142c82dc9bc9cab] (mini.pair-proposal.grid-2.v1)
+For the cell `fence[ A ] S`, I will test the `conformance.kernel.recovery` kernel. The input consists of a JSON object `A` inside a code fence, followed by a sentence `S`. According to the rules, the object scored is the last one inside a code fence when any fence holds one. In the input, the only object in a fence is `A`, so `A` is scored. If I remove the code fence, the text contains only one top-level object `A` (and a sentence `S`), so the rule says the last top-level object in the text is scored, which is still `A`. Therefore, the recovered object stays the same.
+commitments: {"kernel": "conformance.kernel.recovery", "input": "```\n{\"a\": 1}\n```\nHere is the result:", "rewritten": "{\"a\": 1}\nHere is the result:", "expect": "unchanged", "rewrite": "I removed the code fence surrounding the JSON object.", "cell": "fence[ A ] S"}
+[8db4911dd5e274da] (mini.pair-proposal.grid-3.v1)
+For the cell `fence[ A ] B`, I will test the `conformance.kernel.recovery` kernel. The input consists of a JSON object `A` inside a code fence, followed by a JSON object `B` in the prose. According to the rules, "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". Since there is a code fence containing `A`, the rule says `A` is scored. If I remove the code fence, the text contains two top-level objects, `A` and `B`. The rule then says the last top-level object in the text is scored, which is `B`. Therefore, the recovered object moves from `A` to `B`.
+commitments: {"kernel": "conformance.kernel.recovery", "input": "```\n{\"a\": 1}\n```\n{\"b\": 2}", "rewritten": "{\"a\": 1}\n{\"b\": 2}", "expect": "moves", "rewrite": "I removed the code fence surrounding the first JSON object.", "cell": "fence[ A ] B"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

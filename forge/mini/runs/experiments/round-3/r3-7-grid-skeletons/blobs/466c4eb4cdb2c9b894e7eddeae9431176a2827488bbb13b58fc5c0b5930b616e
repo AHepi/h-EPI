@@ -1,0 +1,12 @@
+```json
+{
+ "body": "For the cell `fence[ A B ] fence[ C ]`, I will test the `conformance.kernel.recovery` kernel. The input consists of two code fences: the first contains JSON objects `A` and `B`, and the second contains JSON object `C`. According to the rules, \"The object scored is the last one inside a code fence when any fence holds one\" [7a147bb8c4c1539c]. In this input, the last object inside a code fence is `C`, so `C` is scored. If I remove the second code fence, the text contains one code fence (holding `A` and `B`) and one top-level object in the prose (`C`). The rule still specifies that the object scored is the last one inside a code fence when any fence holds one, which is `B`. Therefore, the recovered object moves from `C` to `B`.",
+ "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"input\": \"```\\n{\\\"a\\\": 1}\\n{\\\"b\\\": 2}\\n```\\n```\\n{\\\"c\\\": 3}\\n```\", \"rewritten\": \"```\\n{\\\"a\\\": 1}\\n{\\\"b\\\": 2}\\n```\\n{\\\"c\\\": 3}\", \"expect\": \"moves\", \"rewrite\": \"I removed the code fence surrounding the third JSON object.\", \"cell\": \"fence[ A B ] fence[ C ]\"}",
+ "citations": [
+  {
+   "block": "7a147bb8c4c1539c",
+   "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text"
+  }
+ ]
+}
+```

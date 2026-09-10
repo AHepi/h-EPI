@@ -1,0 +1,12 @@
+```json
+{
+ "body": "For the cell `fence[ A S ] fence[ B ]`, I will test the `conformance.kernel.recovery` kernel. The input consists of two code fences: the first contains a JSON object `A` followed by a sentence `S`, and the second contains a JSON object `B`. According to the rules, \"The object scored is the last one inside a code fence when any fence holds one\" [f8b7dbf88099a402]. In this input, the last object inside a code fence is `B`, so `B` is scored. If I remove the second code fence, the text contains one code fence (holding `A` and `S`) and one top-level object in the prose (`B`). As established in the criticism [a63120c5ee083d42], a fence is only a candidate if its content parses as JSON. Since the first fence contains prose (`S`), it is not a valid candidate. The harness then falls back to the last top-level object in the text, which is `B`. Therefore, the recovered object stays the same.",
+ "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"input\": \"```\\n{\\\"a\\\": 1}\\nHere is the result:\\n```\\n```\\n{\\\"b\\\": 2}\\n```\", \"rewritten\": \"```\\n{\\\"a\\\": 1}\\nHere is the result:\\n```\\n{\\\"b\\\": 2}\", \"expect\": \"unchanged\", \"rewrite\": \"I removed the code fence surrounding the second JSON object.\", \"cell\": \"fence[ A S ] fence[ B ]\"}",
+ "citations": [
+  {
+   "block": "f8b7dbf88099a402",
+   "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text"
+  }
+ ]
+}
+```

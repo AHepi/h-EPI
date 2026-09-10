@@ -1,0 +1,13 @@
+Proposal ed0c3fc9ab02d643 failed because the proposer misread the rule regarding the priority of code fences. The proposer expected the recovered object to move from B to C after removing the fence, but the execution showed it remained C in both cases (before: `{"c":3}`, after: `{"c":3}`).
+
+The proposer's error was in the analysis of the 'before' state. They claimed that because a code fence exists, the rule says "the last object inside that fence, B, is scored" [cfb66510a6ca9655]. However, the code in `recover_json_object` (lines 35-43) first collects all fenced candidates and then all top-level candidates, but it iterates through these pools in a specific order. Crucially, the `parse_content` function (lines 75-77) first attempts a `loads_strict(content)`. In the 'before' input (```
+{"a": 1}
+{"b": 2}
+```
+{"c": 3}), the entire string is not a strict JSON object, so it falls through to `recover_json_object`. Inside `recover_json_object`, the code iterates through `fenced` then `top_level`. But the execution record shows that for the 'before' input, the result was already `{"c":3}`. This indicates that the harness's actual behavior for this specific input differs from the proposer's reading of the rule.
+
+Wait, looking closer at the execution [5e2e202a12f6c82c]: for proposal ed0c3fc9ab02d643, the 'before' result was `{"c":3}` and the 'after' result was `{"c":3}`. The rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text" [cfb66510a6ca9655]. In the 'before' input, there is a fence containing A and B. According to the rule, B should be scored. The machine scored C. This is a case where the rule as written and the code part company.
+
+In `recover_json_object` (lines 35-43), the code does: `for pool in (fenced, top_level): for candidate in reversed(pool):`. This means it checks all fenced objects (last to first) and then all top-level objects (last to first). If a fenced object is found, it returns immediately. The 'before' input has a fence. The last object in that fence is B. The code should have returned B. The fact that it returned C suggests that the `_FENCE` regex or the `recover_json_object` logic is not behaving as the rule describes, or the execution record is revealing a deeper discrepancy.
+
+This failure matters because it identifies a contradiction between the documented priority (fences first) and the actual execution. A proposer should next try to isolate why the fence is being ignored or why the top-level object C is taking precedence despite the presence of a fence.
