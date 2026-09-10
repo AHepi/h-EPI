@@ -1,0 +1,71 @@
+# Proposal
+
+## The problem (problem)
+For each of this prototype's own checks, name a rewrite of an input under which the check's verdict ought to move. Propose a kernel, a transform, and an input. The executor will run it; the catalogue says which pairs anyone has written down already. A pair that moves and is not catalogued is a boundary nobody has recorded; a pair the catalogue says moves and that does not move is a defect in the catalogue.
+
+## Proposals so far (earlier)
+[ac1042606b813c15] (mini.proposal.v1)
+A proposal here is a triple: a kernel (one of the prototype's own checks), a transform (a rewrite), and an input stated as it stands before the rewrite. The executor applies the transform and re-runs the kernel; the pair moves iff the verdict differs before and after. Whether a moving pair is already recorded in the catalogue, and whether any catalogue-claimed motion fails to reproduce, are judgements I cannot make for the reason below, so I state expected motions and leave classification to the run.
+
+Limitation, stated up front. The one catalogue block I can see (c82a3c8063d2d61a) arrives truncated: I can read its identity and the first words of its note, but not the pair list or the move flags. Two consequences. First, I claim novelty for nothing — any of my pairs may already be written down. Second, I cannot nominate a defect case (a pair the catalogue says moves that does not move), because I cannot read what the catalogue says moves; covering that direction needs the full catalogue text first.
+
+Since the prototype's own check list is likewise not visible to me, I aim at the two check shapes a mini kernel-boundaries prototype most plausibly contains: an exact-match checker and a structural parser checker. If the real checks differ, these triples should be re-aimed rather than run as-is.
+
+Triple 1. Kernel: equals-'hello' — accept iff the input is exactly the characters h,e,l,l,o. Transform: trim — strip leading and trailing whitespace. Input: ' hello ' (space-prefixed and space-suffixed). Expected motion: reject → accept. The kernel is byte-strict; the transform removes the only difference. If the run shows no motion, either the transform is not trimming or the kernel is not exact-match, and the run should say which.
+
+Triple 2. Kernel: equals-'hello' (same kernel). Transform: lowercase (ASCII case folding). Input: 'HELLO'. Expected motion: reject → accept. Same kernel as Triple 1 with an independent rewrite: if both move, the kernel's boundary is sensitive to two separate rewrites; if only one moves, the run itself identifies which rewrite the kernel tolerates.
+
+Triple 3. Kernel: json-number — accept iff the whole input parses as a JSON number. Transform: prepend '-'. Input: '1'. Expected motion: accept → reject, since '--1' is not a JSON number. This probes the direction the first two triples do not: a rewrite that breaks an accepting input rather than repairing a rejecting one.
+
+Triple 4. Kernel: json-number (same kernel). Transform: append 'e'. Input: '1'. Expected motion: accept → reject ('1e' has an exponent marker with no exponent). Same kernel and same input as Triple 3 with a different transform, both expected to move the same way — a cheap consistency check; if one moves and the other does not, the difference lies in the transform implementations, not the kernel.
+
+Not claimed here: that any of these pairs is absent from the catalogue; that any catalogue entry is defective. Priority if only one triple is run: Triple 1 — the smallest complete demonstration of kernel, transform, input, and a stated expected motion the run can confirm or refute.
+commitments: {"kernel": "equals-'hello' — accept iff the input is exactly the characters h,e,l,l,o (byte-strict exact match)", "transform": "trim — strip leading and trailing whitespace; expected motion: reject → accept; if the run shows no motion, it must report which failed — the transform is not trimming or the kernel is not exact-match", "input": "' hello ' (space-prefixed and space-suffixed)"}
+[bc4b975d80aefe10] (mini.proposal.v1)
+One triple, filling the cell the earlier proposal (ac1042606b813c15) leaves empty: a repair-direction rewrite on the parser kernel. Its two json-number triples move only in the breaking direction ('1' → '--1' and '1' → '1e'); if only those run, the record shows the number kernel's boundary from one side. This triple supplies the other side, on the same kernel, so the results compose into one boundary picture.
+
+Triple 5. Kernel: json-number — accept iff the whole input parses as a JSON number (the same kernel as the earlier Triples 3 and 4). Transform: append '0'. Input: '1e'. Expected motion: reject → accept.
+
+Why the motion is expected. '1e' is not a JSON number under any plausible implementation: an exponent marker with no exponent digits. JSON.parse throws on it; a strict number grammar rejects it. Appending '0' yields '1e0', a valid JSON number under both readings — the grammar allows an exponent of zero, and the leading-zero rule constrains the integer part, not the exponent. Unlike a trim probe on this kernel (input ' 1 ' would move only under a strict-grammar kernel and stand still under JSON.parse, which tolerates surrounding whitespace), this pair's motion does not depend on which implementation the prototype uses; that is why I propose it rather than the trim probe.
+
+What the run distinguishes. If the pair moves, the record gains a two-sided crossing on one rewrite family: '1' —append 'e'→ '1e' (earlier Triple 4, accept → reject), then '1e' —append '0'→ '1e0' (this triple, reject → accept). The endpoints '1' and '1e0' both accept while the intermediate '1e' rejects, so the accepting set is not interval-like under append rewrites; this pair is the second crossing of that path. If the pair does not move, the report should say which of three faults holds: (a) the transform did not append — checkable against earlier Triple 4, which uses the same transform family; (b) the kernel already accepts '1e', so it is not a whole-input parse but something laxer, such as a contains-a-number check ('1e' contains the number '1'); (c) the kernel rejects '1e0', so it is stricter than the JSON number grammar. Each refutation points at a different component, so the pair is diagnostic even in refutation.
+
+Standing limitations, unchanged from the earlier proposal. The one catalogue block visible to me (c82a3c8063d2d61a) is truncated: its note begins 'Kernel and transform pairs already written down, and whether the kernel's verdict is known to move under th…' and the pair list and move flags lie beyond the cut. So I claim novelty for nothing — this pair may already be recorded — and I nominate no defect case, since I cannot read what the catalogue says moves. Classification is left to the run against the full catalogue text.
+
+Remaining cell after this run: the breaking direction on the exact-match kernel (e.g. 'hello' with one appended character, expected accept → reject, distinguishing exact-match from a prefix or contains reading). I leave it for a later proposal rather than dilute this one.
+commitments: {"kernel": "json-number", "transform": "append '0'", "input": "1e"}
+
+## Verdicts so far (verdicts)
+(nothing yet)
+
+## Evidence (catalogue)
+To ground a claim in one of these, name its id in this artifact's citations; a quote must reproduce the block's own words.
+[c82a3c8063d2d61a] (catalogue, evidence) { "catalogue": "mini.kernel-boundaries.v1", "note": "Kernel and transform pairs already written down, and whether the kernel's verdict is known to move under th…
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+
+To ground a claim, add a citation naming a block and quoting its own words, like this:
+  "citations": [{"block": "c82a3c8063d2d61a", "quote": "<words copied from that block>"}]
+
+## The shape this answer must take
+`commitments` must be JSON fitting exactly this schema:
+{
+  "properties": {
+    "input": {
+      "type": "string"
+    },
+    "kernel": {
+      "type": "string"
+    },
+    "transform": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "kernel",
+    "transform",
+    "input"
+  ],
+  "type": "object"
+}

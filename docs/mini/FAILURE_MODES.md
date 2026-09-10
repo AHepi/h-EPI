@@ -18,6 +18,7 @@ cannot happen. Two runs of two calls each cannot show what models generally do.
 | `forge/mini/runs/default-gpt-oss-120b/` | gpt-oss:120b | `forge/mini/manifests/default/manifest.json` | 2 |
 | `forge/mini/runs/default-glm-5.3-flash/` | glm-5.3-flash | the same | 3 |
 | `forge/mini/runs/default-glm-5.3-flash-after-h1/` | glm-5.3-flash | the same | 3 |
+| `forge/mini/runs/blind-spot-glm-5.3-flash/` | glm-5.3-flash | `forge/mini/manifests/blind-spot/` | 24 |
 
 The third root is the same plan and the same model sent again after H1 below was
 fixed. It is not a repeat measurement of anything: it exists because the fix
@@ -178,3 +179,97 @@ kept turned out not to be malformed at all — it was correct JSON in a markdown
 fence. With H1 open, that would have stayed on the record as "not readable as
 JSON" and nobody would have known why. This is the whole argument for keeping a
 refused reply, made once, by the record, at the first opportunity.
+
+
+---
+
+## The blind-spot template's first live run
+
+`forge/mini/runs/blind-spot-glm-5.3-flash/`, three cycles, glm-5.3-flash as the
+proposers and critic, machine seats for the executor and the verdict. Fifty
+events. Eight proposals, three executions, three criticisms, three verdicts, and
+**no candidate point and no defect**: every execution came out `unrunnable`.
+
+The run is committed because it is a true record of what happened. What it shows
+is three defects of mine and nothing about which of this prototype's checks are
+blind.
+
+## M5 — The proposer is asked for registered ids and shown no registry
+
+**Seen on** every proposal of the run; first execution at event 14
+(`0955d330f7e1b550`), last verdict at event 48 (`562f12b3d21952ee`).
+**Status: OPEN.**
+
+The proposal kind asks for a kernel id, a transform id and an input. The model
+returned names like `equals-hello`, `json-number`, `append 'x'`, `lowercase`,
+`trim` and `uppercase`. None of these is registered. The executor could run
+nothing, and the last verdict reads:
+
+    equals-hello under lowercase unrunnable, not catalogued -> rejected
+    equals-hello under uppercase unrunnable, not catalogued -> rejected
+    equals-hello under trim      unrunnable, not catalogued -> rejected
+
+**Where the blame lies.** With the manifest, and it is mine. The brief a proposer
+is shown contains **no registered id at all** — checked directly against the
+stored request bytes: neither `mini.kernel.` nor `mini.transform.` appears
+anywhere in it. The template asks a model to name things from a registry it never
+shows it. The names the model invented are reasonable guesses at what such a
+registry might contain, which is the best anyone could do given the brief.
+
+**What this does not show.** Anything about whether the model could propose good
+boundary candidates. It was never given the vocabulary to propose one in.
+
+## M6 — A JSON source cuts to a single block, and the legend hides its content
+
+**Seen at** event 1 (`9a6c7ad784dab925`), which batches the catalogue into
+**one** block. **Status: OPEN, and it is the sharp edge of a decision.**
+
+The catalogue was supplied as a source precisely so a proposer could see which
+pairs are already written down. Evidence is cut at blank lines (a decision, not a
+gap — `SPEC.md` Part three). A JSON document has no blank lines, so the whole
+catalogue became one block, and the legend renders a block as its first 160
+characters. Those characters are the file's `catalogue` and `note` keys. The
+points never appeared.
+
+So M5 has a mechanism, and it is not that the manifest forgot to supply the
+registry — it supplied it and the rendering swallowed it. The blank-line rule and
+the legend excerpt are each defensible alone; together they make a structured
+source invisible.
+
+**Two roads, neither taken.** Cut a JSON source by its top-level items rather
+than by blank lines, which reopens a settled decision. Or give the template a
+port that renders the registry directly, and leave evidence cutting alone. The
+second is smaller and does not disturb a decision the operator has made.
+
+## M7 — A string field whose rendered format demands JSON
+
+**Seen at** events 8 (`447d7dd781dd51a9`) and 26 (`9e0af2e9ba78127b`); six
+commitments-phase failures across the run, one submission dropped.
+**Status: OPEN.**
+
+A submission's `commitments` is a string (assumption A3). The proposal kind's
+commitments format is a JSON-schema fragment, so the rendered instruction says
+*"must be JSON fitting exactly this schema"*. The model obliged, and returned:
+
+    {"commitments": {"kernel": "equals-'hello'", "transform": "append 'x'", "input": "hello"}}
+
+— an object where a string was required, refused as `MINI_SUBMISSION_FIELD_TYPE`.
+Once, at event 24, it dropped the wrapper entirely and returned the triple as the
+whole reply, refused as `MINI_SUBMISSION_MISSING_FIELD`.
+
+**Where the blame lies.** With the rendering, and it is mine. A field that holds
+a JSON string is described to the seat as though it held JSON. The accurate
+instruction is that it must be a *string containing* JSON fitting the schema.
+Whether the template should instead admit object-valued commitments is a change
+to what an artifact is, and is the operator's to decide, not mine.
+
+## What this run corrects in this register
+
+**M4's fix was real but not sufficient, and my retraction of the earlier reading
+was itself too broad.** The audit found that the live request contradicted the
+phase it was sent for, and it did; that is fixed. I then said the earlier
+commitments-phase failures were explained by it. This run shows a **second**
+contradiction underneath the first — M7 — which the fix did not touch, and the
+failures continued at the same rate. The honest position is that there were two
+contradictions, both mine, one fixed and one open, and that nothing yet shows the
+two-call shape itself to be the difficulty.
