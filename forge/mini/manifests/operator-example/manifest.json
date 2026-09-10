@@ -1,0 +1,114 @@
+{
+  "schema_version": "creib.mini.manifest.v1",
+  "manifest_id": "mini.operator-example.v1",
+  "problem": "The order the operator wrote out: two conjecturers, a new kind, a critic, the new kind again, then the end.",
+  "port_types": [
+    {
+      "port_type": "criticisms",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.criticism.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies",
+        "header": "Criticisms so far"
+      }
+    },
+    {
+      "port_type": "everything_generated",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.conjecture.v1",
+          "mini.criticism.v1",
+          "example.note.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies_and_commitments",
+        "header": "Everything generated so far"
+      }
+    }
+  ],
+  "kinds": [
+    "../kinds/mini.conjecture.v1.json",
+    "../kinds/mini.criticism.v1.json",
+    {
+      "kind_id": "example.note.v1",
+      "title": "Note",
+      "input_ports": [
+        {
+          "port_id": "problem",
+          "port_type": "problem"
+        },
+        {
+          "port_id": "generated",
+          "port_type": "everything_generated"
+        },
+        {
+          "port_id": "criticisms",
+          "port_type": "criticisms"
+        }
+      ],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "example.note.v1"
+      }
+    },
+    "../kinds/mini.verdict.v1.json"
+  ],
+  "stages": [
+    {
+      "stage_id": "conjecture-1",
+      "kind_id": "mini.conjecture.v1",
+      "ports": [
+        "problem"
+      ]
+    },
+    {
+      "stage_id": "conjecture-2",
+      "kind_id": "mini.conjecture.v1",
+      "ports": [
+        "problem",
+        "prior"
+      ]
+    },
+    {
+      "stage_id": "note-1",
+      "kind_id": "example.note.v1",
+      "ports": [
+        "problem",
+        "generated"
+      ]
+    },
+    {
+      "stage_id": "criticism",
+      "kind_id": "mini.criticism.v1",
+      "ports": [
+        "problem",
+        "conjectures"
+      ]
+    },
+    {
+      "stage_id": "note-2",
+      "kind_id": "example.note.v1",
+      "ports": [
+        "criticisms"
+      ]
+    },
+    {
+      "stage_id": "verdict",
+      "kind_id": "mini.verdict.v1",
+      "ports": [
+        "this_cycle",
+        "criticisms",
+        "verdicts",
+        "evidence"
+      ]
+    },
+    {
+      "stage_id": "end",
+      "end": true
+    }
+  ]
+}
