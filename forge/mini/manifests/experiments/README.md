@@ -309,3 +309,47 @@ test taken away from the model.
 The run `e-replies-as-written` of round 2 on nemotron-3-nano:30b had not ended
 when this was written and its record is not committed; the README says so
 rather than waiting.
+
+## Round 4
+
+Pre-registered before its runs. Two questions the third round leaves open: was
+the control found by the method or by the model, and does the method carry to
+the checks it has never been pointed at.
+
+| Shape | Model | What it varies |
+|---|---|---|
+| `r4-1-skeletons-mistral` | mistral-large-3:675b | `r3-7` unchanged: the same twenty cells, notation, seat and cycles |
+| `r4-2-skeletons-qwen` | qwen3.5:397b | `r3-7` unchanged, on the other large model |
+| `r4-3-refusal-grid` | gemma4:31b | sixteen places a listed refusal phrase can stand; the rewrite replaces the phrase with words the list does not hold |
+| `r4-4-grounding-grid` | gemma4:31b | five span-to-document relations by four value-to-span relations; the rewrite removes the cell's named differences |
+| `r4-5-verdict-grid` | gemma4:31b | seven object shapes by three surroundings; the rewrite replaces the object with a well-formed one |
+
+Each grid is enumerated by `mini.next-cell.v1` as `r3-7`'s was, and every
+proposer is shown the rules and not the code. Cycles are set so that every cell
+is named at least once (six or seven cycles of three).
+
+**What I expect, written down before the runs, by someone who has read the
+code.** This is a prediction to be scored against the records, not a finding.
+
+- The replications reach the control's cell (`fence[ S A ] B`) in cycle 3. If
+  either model builds the cell as written and writes the docstring's
+  expectation, the disagreement is the same one; if a model builds a different
+  reply, that is the instantiation failure M12 again on a larger model.
+- In the refusal grid I expect the phrase to be seen wherever it stands, a
+  key or a string value of the form included, because the scan reads the whole
+  reply. Two cells should part from a plain reading of the rule: a phrase
+  broken by a line break, which the scan does not normalise and so does not
+  see, and a reply holding two listed phrases where the one standing later in
+  the text is earlier in the list, since the answer is the list's first match
+  and not the text's.
+- In the grounding grid I expect the four span relations the table already
+  covers to behave as G-01 and G-04 say, and nothing new; the value-case cell
+  is G-09, added this week from round 2.
+- In the verdict grid I expect one cell the table lacks: a bare object with a
+  repeated key and no prose or fence around it is not read by the strict
+  parser, is recovered, and is reported as recovered from prose, although
+  there is no prose. P-01 states the flag moves under prose or a fence and
+  says nothing about a repeated key.
+
+The criterion for "works" is the one pre-registered above and unchanged.
+Records under `forge/mini/runs/experiments/round-4/`.

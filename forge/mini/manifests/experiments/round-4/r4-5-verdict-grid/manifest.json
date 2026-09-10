@@ -1,0 +1,793 @@
+{
+  "schema_version": "creib.mini.manifest.v1",
+  "manifest_id": "mini.experiment.r4.verdict-grid",
+  "problem": "The checks under test are the conformance harness's own functions. Most seats are shown only their documented rules, not their code: how the harness recovers a JSON object from a reply, whether it had to recover it from prose, its response verdict, its refusal-phrase check, and its grounding matcher. The question: is there an input and a rewrite of it on which the rule, read as written, says one thing and the check, run by machine, does another? The executor runs the check on both texts and records what its answer did; nothing here decides anything, the record shows where a reading and the machine parted.",
+  "cycles": {
+    "max_cycles": 7
+  },
+  "port_types": [
+    {
+      "port_type": "kernel_rules",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.kernel-rules.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies",
+        "header": "The documented rules of the checks"
+      }
+    },
+    {
+      "port_type": "kernel_source",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.kernel-source.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies",
+        "header": "The source of the checks"
+      }
+    },
+    {
+      "port_type": "pair_proposals",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.pair-proposal.grid-1.v1",
+          "mini.pair-proposal.grid-2.v1",
+          "mini.pair-proposal.grid-3.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies_and_commitments",
+        "header": "Proposals so far"
+      }
+    },
+    {
+      "port_type": "pair_executions",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.pair-execution.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies_and_commitments",
+        "header": "Executions"
+      }
+    },
+    {
+      "port_type": "criticisms",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.criticism.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies",
+        "header": "Criticisms"
+      }
+    },
+    {
+      "port_type": "earlier_verdicts",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.verdict.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies_and_commitments",
+        "header": "Verdicts so far"
+      }
+    },
+    {
+      "port_type": "one_mini.pair-proposal.grid.v1",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.pair-proposal.grid.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies_and_commitments",
+        "header": "The proposal"
+      }
+    },
+    {
+      "port_type": "cell_1",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.next-cell.1.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies",
+        "header": "The cell to cover"
+      }
+    },
+    {
+      "port_type": "cell_2",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.next-cell.2.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies",
+        "header": "The cell to cover"
+      }
+    },
+    {
+      "port_type": "cell_3",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.next-cell.3.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies",
+        "header": "The cell to cover"
+      }
+    }
+  ],
+  "kinds": [
+    {
+      "kind_id": "mini.kernel-rules.v1",
+      "title": "Rules",
+      "input_ports": [],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.kernel-rules.v1"
+      }
+    },
+    {
+      "kind_id": "mini.kernel-source.v1",
+      "title": "Source",
+      "input_ports": [],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.kernel-source.v1"
+      }
+    },
+    {
+      "kind_id": "mini.pair-execution.v1",
+      "title": "Execution",
+      "input_ports": [
+        {
+          "port_id": "proposals",
+          "port_type": "pair_proposals",
+          "window": "this_cycle"
+        }
+      ],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.pair-execution.v1"
+      }
+    },
+    {
+      "kind_id": "mini.criticism.v1",
+      "title": "Criticism",
+      "input_ports": [
+        {
+          "port_id": "problem",
+          "port_type": "problem",
+          "window": "all"
+        },
+        {
+          "port_id": "rules",
+          "port_type": "kernel_rules",
+          "window": "this_cycle"
+        },
+        {
+          "port_id": "source",
+          "port_type": "kernel_source",
+          "window": "this_cycle"
+        },
+        {
+          "port_id": "proposals",
+          "port_type": "pair_proposals",
+          "window": "this_cycle"
+        },
+        {
+          "port_id": "executions",
+          "port_type": "pair_executions",
+          "window": "this_cycle"
+        },
+        {
+          "port_id": "catalogue",
+          "port_type": "evidence_legend",
+          "window": "all",
+          "params": {
+            "tiers": [
+              "evidence"
+            ]
+          }
+        }
+      ],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.criticism.v1"
+      },
+      "instruction": "Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id."
+    },
+    {
+      "kind_id": "mini.verdict.v1",
+      "title": "Verdict",
+      "input_ports": [
+        {
+          "port_id": "executions",
+          "port_type": "pair_executions",
+          "window": "this_cycle"
+        },
+        {
+          "port_id": "criticisms",
+          "port_type": "criticisms",
+          "window": "this_cycle"
+        },
+        {
+          "port_id": "verdicts",
+          "port_type": "earlier_verdicts",
+          "window": "all"
+        },
+        {
+          "port_id": "catalogue",
+          "port_type": "evidence_legend",
+          "window": "all",
+          "params": {
+            "tiers": [
+              "evidence"
+            ]
+          }
+        }
+      ],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.verdict.v1"
+      },
+      "format": {
+        "commitments": {
+          "all_of": [
+            {
+              "check": "json_schema",
+              "schema": {
+                "type": "object",
+                "required": [
+                  "verdicts"
+                ],
+                "properties": {
+                  "verdicts": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "proposal",
+                        "executed",
+                        "catalogued",
+                        "standing"
+                      ],
+                      "properties": {
+                        "proposal": {
+                          "type": "string"
+                        },
+                        "kernel": {
+                          "type": "string"
+                        },
+                        "transform": {
+                          "type": "string"
+                        },
+                        "executed": {
+                          "type": "string"
+                        },
+                        "expected": {
+                          "type": "string"
+                        },
+                        "catalogued": {
+                          "type": "boolean"
+                        },
+                        "same_input": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        },
+                        "standing": {
+                          "enum": [
+                            "candidate point",
+                            "defect",
+                            "rejected"
+                          ]
+                        },
+                        "column": {
+                          "enum": [
+                            "moves",
+                            "unchanged",
+                            null
+                          ]
+                        },
+                        "predicted": {
+                          "enum": [
+                            "moves",
+                            "unchanged",
+                            "?",
+                            null
+                          ]
+                        },
+                        "reading": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "kind_id": "mini.next-cell.1.v1",
+      "title": "Next cell",
+      "input_ports": [],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.next-cell.1.v1"
+      }
+    },
+    {
+      "kind_id": "mini.pair-proposal.grid-1.v1",
+      "title": "Proposal: a grid cell",
+      "input_ports": [
+        {
+          "port_id": "problem",
+          "port_type": "problem",
+          "window": "all"
+        },
+        {
+          "port_id": "rules",
+          "port_type": "kernel_rules",
+          "window": "this_cycle"
+        },
+        {
+          "port_id": "earlier",
+          "port_type": "pair_proposals",
+          "window": "all"
+        },
+        {
+          "port_id": "verdicts",
+          "port_type": "earlier_verdicts",
+          "window": "all"
+        },
+        {
+          "port_id": "criticisms",
+          "port_type": "criticisms",
+          "window": "previous_cycle"
+        },
+        {
+          "port_id": "executions",
+          "port_type": "pair_executions",
+          "window": "all"
+        },
+        {
+          "port_id": "catalogue",
+          "port_type": "evidence_legend",
+          "window": "all",
+          "params": {
+            "tiers": [
+              "evidence"
+            ]
+          }
+        },
+        {
+          "port_id": "cell",
+          "port_type": "cell_1",
+          "window": "this_cycle"
+        }
+      ],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.pair-proposal.grid-1.v1"
+      },
+      "instruction": "You are shown the documented rules of the checks, not their code, and ONE cell of a grid under 'The cell to cover'. The cell names what the reply's object is and what surrounds it. Build the input exactly from the cell: the object as named, written out in full and small, with what the cell says around it (a code fence is a line of three backticks before and after). The rewritten text is the same reply with the object replaced by the well-formed object {\"z\": 0}, everything around it unchanged character for character. Say what the rule, read as written, says the check's answer ought to do: move ('moves') if the object's shape changes the answer, stay ('unchanged') if it does not. Your expectation comes from the rule's words alone: name in the body the words you read it from, and say which answer the rule gives before and after. Your kernel is one of conformance.kernel.response-verdict, conformance.kernel.recovery, conformance.kernel.recovered-from-prose. The commitments are a STRING whose content is JSON of the form {\"kernel\": \"<id>\", \"input\": \"<the input text>\", \"rewritten\": \"<your rewritten text>\", \"expect\": \"moves\" or \"unchanged\", \"rewrite\": \"<one sentence naming what you changed>\", \"cell\": \"<the cell exactly as named>\"}. The input and the rewritten text are instances written out in full, never descriptions. Do not repeat a pair shown among the earlier proposals.",
+      "format": {
+        "commitments": {
+          "all_of": [
+            {
+              "check": "json_schema",
+              "schema": {
+                "type": "object",
+                "required": [
+                  "kernel",
+                  "input",
+                  "rewritten",
+                  "expect",
+                  "rewrite",
+                  "cell"
+                ],
+                "properties": {
+                  "kernel": {
+                    "type": "string",
+                    "pattern": "^conformance\\.kernel\\.(recovery|recovered-from-prose|response-verdict)$"
+                  },
+                  "input": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "rewritten": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "expect": {
+                    "enum": [
+                      "moves",
+                      "unchanged"
+                    ]
+                  },
+                  "rewrite": {
+                    "type": "string",
+                    "minLength": 3
+                  },
+                  "cell": {
+                    "type": "string",
+                    "minLength": 3
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "commitment_call": "single"
+    },
+    {
+      "kind_id": "mini.next-cell.2.v1",
+      "title": "Next cell",
+      "input_ports": [],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.next-cell.2.v1"
+      }
+    },
+    {
+      "kind_id": "mini.pair-proposal.grid-2.v1",
+      "title": "Proposal: a grid cell",
+      "input_ports": [
+        {
+          "port_id": "problem",
+          "port_type": "problem",
+          "window": "all"
+        },
+        {
+          "port_id": "rules",
+          "port_type": "kernel_rules",
+          "window": "this_cycle"
+        },
+        {
+          "port_id": "earlier",
+          "port_type": "pair_proposals",
+          "window": "all"
+        },
+        {
+          "port_id": "verdicts",
+          "port_type": "earlier_verdicts",
+          "window": "all"
+        },
+        {
+          "port_id": "criticisms",
+          "port_type": "criticisms",
+          "window": "previous_cycle"
+        },
+        {
+          "port_id": "executions",
+          "port_type": "pair_executions",
+          "window": "all"
+        },
+        {
+          "port_id": "catalogue",
+          "port_type": "evidence_legend",
+          "window": "all",
+          "params": {
+            "tiers": [
+              "evidence"
+            ]
+          }
+        },
+        {
+          "port_id": "cell",
+          "port_type": "cell_2",
+          "window": "this_cycle"
+        }
+      ],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.pair-proposal.grid-2.v1"
+      },
+      "instruction": "You are shown the documented rules of the checks, not their code, and ONE cell of a grid under 'The cell to cover'. The cell names what the reply's object is and what surrounds it. Build the input exactly from the cell: the object as named, written out in full and small, with what the cell says around it (a code fence is a line of three backticks before and after). The rewritten text is the same reply with the object replaced by the well-formed object {\"z\": 0}, everything around it unchanged character for character. Say what the rule, read as written, says the check's answer ought to do: move ('moves') if the object's shape changes the answer, stay ('unchanged') if it does not. Your expectation comes from the rule's words alone: name in the body the words you read it from, and say which answer the rule gives before and after. Your kernel is one of conformance.kernel.response-verdict, conformance.kernel.recovery, conformance.kernel.recovered-from-prose. The commitments are a STRING whose content is JSON of the form {\"kernel\": \"<id>\", \"input\": \"<the input text>\", \"rewritten\": \"<your rewritten text>\", \"expect\": \"moves\" or \"unchanged\", \"rewrite\": \"<one sentence naming what you changed>\", \"cell\": \"<the cell exactly as named>\"}. The input and the rewritten text are instances written out in full, never descriptions. Do not repeat a pair shown among the earlier proposals.",
+      "format": {
+        "commitments": {
+          "all_of": [
+            {
+              "check": "json_schema",
+              "schema": {
+                "type": "object",
+                "required": [
+                  "kernel",
+                  "input",
+                  "rewritten",
+                  "expect",
+                  "rewrite",
+                  "cell"
+                ],
+                "properties": {
+                  "kernel": {
+                    "type": "string",
+                    "pattern": "^conformance\\.kernel\\.(recovery|recovered-from-prose|response-verdict)$"
+                  },
+                  "input": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "rewritten": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "expect": {
+                    "enum": [
+                      "moves",
+                      "unchanged"
+                    ]
+                  },
+                  "rewrite": {
+                    "type": "string",
+                    "minLength": 3
+                  },
+                  "cell": {
+                    "type": "string",
+                    "minLength": 3
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "commitment_call": "single"
+    },
+    {
+      "kind_id": "mini.next-cell.3.v1",
+      "title": "Next cell",
+      "input_ports": [],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.next-cell.3.v1"
+      }
+    },
+    {
+      "kind_id": "mini.pair-proposal.grid-3.v1",
+      "title": "Proposal: a grid cell",
+      "input_ports": [
+        {
+          "port_id": "problem",
+          "port_type": "problem",
+          "window": "all"
+        },
+        {
+          "port_id": "rules",
+          "port_type": "kernel_rules",
+          "window": "this_cycle"
+        },
+        {
+          "port_id": "earlier",
+          "port_type": "pair_proposals",
+          "window": "all"
+        },
+        {
+          "port_id": "verdicts",
+          "port_type": "earlier_verdicts",
+          "window": "all"
+        },
+        {
+          "port_id": "criticisms",
+          "port_type": "criticisms",
+          "window": "previous_cycle"
+        },
+        {
+          "port_id": "executions",
+          "port_type": "pair_executions",
+          "window": "all"
+        },
+        {
+          "port_id": "catalogue",
+          "port_type": "evidence_legend",
+          "window": "all",
+          "params": {
+            "tiers": [
+              "evidence"
+            ]
+          }
+        },
+        {
+          "port_id": "cell",
+          "port_type": "cell_3",
+          "window": "this_cycle"
+        }
+      ],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.pair-proposal.grid-3.v1"
+      },
+      "instruction": "You are shown the documented rules of the checks, not their code, and ONE cell of a grid under 'The cell to cover'. The cell names what the reply's object is and what surrounds it. Build the input exactly from the cell: the object as named, written out in full and small, with what the cell says around it (a code fence is a line of three backticks before and after). The rewritten text is the same reply with the object replaced by the well-formed object {\"z\": 0}, everything around it unchanged character for character. Say what the rule, read as written, says the check's answer ought to do: move ('moves') if the object's shape changes the answer, stay ('unchanged') if it does not. Your expectation comes from the rule's words alone: name in the body the words you read it from, and say which answer the rule gives before and after. Your kernel is one of conformance.kernel.response-verdict, conformance.kernel.recovery, conformance.kernel.recovered-from-prose. The commitments are a STRING whose content is JSON of the form {\"kernel\": \"<id>\", \"input\": \"<the input text>\", \"rewritten\": \"<your rewritten text>\", \"expect\": \"moves\" or \"unchanged\", \"rewrite\": \"<one sentence naming what you changed>\", \"cell\": \"<the cell exactly as named>\"}. The input and the rewritten text are instances written out in full, never descriptions. Do not repeat a pair shown among the earlier proposals.",
+      "format": {
+        "commitments": {
+          "all_of": [
+            {
+              "check": "json_schema",
+              "schema": {
+                "type": "object",
+                "required": [
+                  "kernel",
+                  "input",
+                  "rewritten",
+                  "expect",
+                  "rewrite",
+                  "cell"
+                ],
+                "properties": {
+                  "kernel": {
+                    "type": "string",
+                    "pattern": "^conformance\\.kernel\\.(recovery|recovered-from-prose|response-verdict)$"
+                  },
+                  "input": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "rewritten": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "expect": {
+                    "enum": [
+                      "moves",
+                      "unchanged"
+                    ]
+                  },
+                  "rewrite": {
+                    "type": "string",
+                    "minLength": 3
+                  },
+                  "cell": {
+                    "type": "string",
+                    "minLength": 3
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "commitment_call": "single"
+    }
+  ],
+  "stages": [
+    {
+      "stage_id": "rules",
+      "kind_id": "mini.kernel-rules.v1",
+      "seat": "machine",
+      "ports": []
+    },
+    {
+      "stage_id": "source",
+      "kind_id": "mini.kernel-source.v1",
+      "seat": "machine",
+      "ports": []
+    },
+    {
+      "stage_id": "cell-1",
+      "kind_id": "mini.next-cell.1.v1",
+      "seat": "machine",
+      "ports": []
+    },
+    {
+      "stage_id": "propose-1",
+      "kind_id": "mini.pair-proposal.grid-1.v1",
+      "ports": [
+        "problem",
+        "rules",
+        "earlier",
+        "verdicts",
+        "criticisms",
+        "executions",
+        "catalogue",
+        "cell"
+      ]
+    },
+    {
+      "stage_id": "cell-2",
+      "kind_id": "mini.next-cell.2.v1",
+      "seat": "machine",
+      "ports": []
+    },
+    {
+      "stage_id": "propose-2",
+      "kind_id": "mini.pair-proposal.grid-2.v1",
+      "ports": [
+        "problem",
+        "rules",
+        "earlier",
+        "verdicts",
+        "criticisms",
+        "executions",
+        "catalogue",
+        "cell"
+      ]
+    },
+    {
+      "stage_id": "cell-3",
+      "kind_id": "mini.next-cell.3.v1",
+      "seat": "machine",
+      "ports": []
+    },
+    {
+      "stage_id": "propose-3",
+      "kind_id": "mini.pair-proposal.grid-3.v1",
+      "ports": [
+        "problem",
+        "rules",
+        "earlier",
+        "verdicts",
+        "criticisms",
+        "executions",
+        "catalogue",
+        "cell"
+      ]
+    },
+    {
+      "stage_id": "execute",
+      "kind_id": "mini.pair-execution.v1",
+      "seat": "machine",
+      "ports": [
+        "proposals"
+      ]
+    },
+    {
+      "stage_id": "criticise",
+      "kind_id": "mini.criticism.v1",
+      "ports": [
+        "problem",
+        "rules",
+        "source",
+        "proposals",
+        "executions",
+        "catalogue"
+      ]
+    },
+    {
+      "stage_id": "verdict",
+      "kind_id": "mini.verdict.v1",
+      "seat": "machine",
+      "ports": [
+        "executions",
+        "criticisms",
+        "verdicts",
+        "catalogue"
+      ]
+    },
+    {
+      "stage_id": "end",
+      "end": true
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "catalogue",
+      "path": "catalogue.json"
+    },
+    {
+      "source_id": "registry",
+      "path": "registry.txt"
+    },
+    {
+      "source_id": "grid",
+      "path": "grid.txt"
+    }
+  ]
+}
