@@ -56,9 +56,12 @@ USE_TEST_ID = "mini-use-test-1"
 #: both, so an arm difference could be read as an information difference; version 4 shows the
 #: source to the proposer and the critic of arms C, D and E, keeps arm C-rules at the old
 #: reading so the code's absence is measured on its own, and reserves each send's cost before
-#: it is made instead of counting it afterwards. Every break is recorded in
-#: ``docs/mini/USE_TEST.md``.
-METHOD_VERSION = 4
+#: it is made instead of counting it afterwards. Version 4 then ran with the reasoning setting
+#: off, because no cap small enough to walk twenty cells could hold this model's reasoning, and
+#: the strongest arm lost its reproducer rather than its diagnosis (M17, and block 2's own
+#: result); version 5 raises the per-call allowance until reasoning fits and turns it on. Every
+#: break is recorded in ``docs/mini/USE_TEST.md``.
+METHOD_VERSION = 5
 
 #: The harness functions a subject is built around. Everything they reach is copied with them:
 #: the closure is computed from the source rather than listed, so a subject cannot go stale

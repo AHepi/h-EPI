@@ -269,7 +269,7 @@ class ArmTests(MiniTestCase):
         os.environ[usetest.SUBJECT_ENV] = str(subject)
         try:
             manifest = usetest.arm_manifest(usetest.ARM_C, "i1", cycles=2, max_calls=2)
-            self.assertEqual(usetest.METHOD_VERSION, 4, "a changed method starts a new block")
+            self.assertEqual(usetest.METHOD_VERSION, 5, "a changed method starts a new block")
             # The machine hands out the grid's first cell, so a conforming proposal builds that
             # one; a proposal that builds another cell is not conforming however good it is.
             conforming = submission(
