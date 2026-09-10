@@ -1,0 +1,377 @@
+{
+  "calls": [
+    {
+      "completion_tokens": 124,
+      "detail": "",
+      "elapsed_s": 2,
+      "fenced": true,
+      "index": 0,
+      "ok": true,
+      "prompt_tokens": 1113
+    },
+    {
+      "completion_tokens": 119,
+      "detail": "",
+      "elapsed_s": 2,
+      "fenced": true,
+      "index": 1,
+      "ok": true,
+      "prompt_tokens": 1173
+    },
+    {
+      "completion_tokens": 137,
+      "detail": "",
+      "elapsed_s": 2,
+      "fenced": true,
+      "index": 2,
+      "ok": true,
+      "prompt_tokens": 1214
+    },
+    {
+      "completion_tokens": 273,
+      "detail": "",
+      "elapsed_s": 3,
+      "fenced": true,
+      "index": 3,
+      "ok": true,
+      "prompt_tokens": 1279
+    },
+    {
+      "completion_tokens": 263,
+      "detail": "",
+      "elapsed_s": 3,
+      "fenced": true,
+      "index": 4,
+      "ok": true,
+      "prompt_tokens": 1413
+    },
+    {
+      "completion_tokens": 176,
+      "detail": "",
+      "elapsed_s": 2,
+      "fenced": true,
+      "index": 5,
+      "ok": true,
+      "prompt_tokens": 1561
+    },
+    {
+      "completion_tokens": 193,
+      "detail": "",
+      "elapsed_s": 2,
+      "fenced": true,
+      "index": 6,
+      "ok": true,
+      "prompt_tokens": 1650
+    },
+    {
+      "completion_tokens": 309,
+      "detail": "",
+      "elapsed_s": 4,
+      "fenced": true,
+      "index": 7,
+      "ok": true,
+      "prompt_tokens": 1755
+    },
+    {
+      "completion_tokens": 277,
+      "detail": "",
+      "elapsed_s": 3,
+      "fenced": true,
+      "index": 8,
+      "ok": true,
+      "prompt_tokens": 1896
+    },
+    {
+      "completion_tokens": 249,
+      "detail": "",
+      "elapsed_s": 3,
+      "fenced": true,
+      "index": 9,
+      "ok": true,
+      "prompt_tokens": 1981
+    },
+    {
+      "completion_tokens": 176,
+      "detail": "",
+      "elapsed_s": 2,
+      "fenced": true,
+      "index": 10,
+      "ok": true,
+      "prompt_tokens": 2082
+    },
+    {
+      "completion_tokens": 165,
+      "detail": "",
+      "elapsed_s": 3,
+      "fenced": true,
+      "index": 11,
+      "ok": true,
+      "prompt_tokens": 2082
+    }
+  ],
+  "condition": {
+    "arm": "R",
+    "condition_id": "ollama.com/mistral-large-3:675b/arm-R/think-off/nogrid",
+    "endpoint": {
+      "max_tokens": null,
+      "model": "mistral-large-3:675b",
+      "path": "ollama.com",
+      "quantisation": "unknown, may be quantised",
+      "think": false,
+      "timeout_seconds": 900
+    },
+    "grid_cells": [],
+    "proposals_requested": 12
+  },
+  "executions": [
+    {
+      "after": "I can't",
+      "before": "NONE",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "I'm here to help with your questions! Let me know what you need.",
+      "kernel": "refusal-phrase",
+      "reading": "The first refusal phrase the text contains, typographic quotes read as straight ones, or None. The refusal phrase list is written with straight apostrophes; a model that writes \"I’m sorry\" is refusing all the same.",
+      "rewritten": "I’m sorry, but I can't assist with that request. Let me know if there's anything else!"
+    },
+    {
+      "after": "I am unable",
+      "before": "NONE",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "Sure, I can help with that. What do you need?",
+      "kernel": "refusal-phrase",
+      "reading": "The first refusal phrase the text contains, typographic quotes read as straight ones, or None. The refusal phrase list is written with straight apostrophes; a model that writes \"I’m sorry\" is refusing all the same.",
+      "rewritten": "I am unable to provide the information you're looking for, but I can assist with other questions."
+    },
+    {
+      "after": "yes",
+      "before": "yes",
+      "contradicted": true,
+      "detail": "",
+      "executed": "unchanged",
+      "expect": "moves",
+      "input": "Here is the answer you requested:\n```json\n{\n  \"key\": \"value\"\n}\n```\nI hope this helps!",
+      "kernel": "recovered-from-prose",
+      "reading": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it",
+      "rewritten": "Here is the answer you requested:\n{\n  \"key\": \"value\"\n}\nI hope this helps!"
+    },
+    {
+      "after": "{\"key1\":\"old_value\",\"key2\":\"value\"}",
+      "before": "{\"key1\":\"new_value\"}",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "Here is a draft answer:\n```json\n{\n  \"key1\": \"old_value\",\n  \"key2\": \"value\"\n}\n```\nBut the corrected version is:\n```json\n{\n  \"key1\": \"new_value\"\n}\n```",
+      "kernel": "recovery",
+      "reading": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it... A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over, so a final answer refused for a float loses to an earlier draft that parsed (``docs/kernel.md``, P-06).",
+      "rewritten": "Here is a draft answer:\n```json\n{\n  \"key1\": \"old_value\",\n  \"key2\": \"value\"\n}\n```\nBut the corrected version is:\n```json\n{\n  \"key1\": 42.0\n}\n```"
+    },
+    {
+      "after": "{\"key1\":\"value1\",\"key2\":{\"nested\":\"old\"}}",
+      "before": "{\"key1\":\"value1\",\"key2\":{\"nested\":\"new\"}}",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "Here is the initial answer:\n```json\n{\n  \"key1\": \"value1\",\n  \"key2\": {\"nested\": \"old\"}\n}\n```\nAnd here is the final answer:\n```json\n{\n  \"key1\": \"value1\",\n  \"key2\": {\"nested\": \"new\"}\n}\n```",
+      "kernel": "recovery",
+      "reading": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction.",
+      "rewritten": "Here is the initial answer:\n```json\n{\n  \"key1\": \"value1\",\n  \"key2\": {\"nested\": \"old\"}\n}\n```\nAnd here is the final answer:\n{\n  \"key1\": \"value1\",\n  \"key2\": {\"nested\": \"new\"}\n}"
+    },
+    {
+      "after": "JSON_OBJECT",
+      "before": "JSON_OBJECT",
+      "contradicted": true,
+      "detail": "",
+      "executed": "unchanged",
+      "expect": "moves",
+      "input": "I'm sorry, but I can't help with that. However, here is the answer you requested:\n```json\n{\n  \"key\": \"value\"\n}\n```",
+      "kernel": "response-verdict",
+      "reading": "The refusal heuristic decides the verdict only when no object can be recovered; whether a phrase occurred at all is a separate fact, :func:`refusal_phrase_in`, recorded beside a recovered object (H36: a refusal followed by a form is a refusal and a form).",
+      "rewritten": "Here is the answer you requested:\n```json\n{\n  \"key\": \"value\"\n}\n```\nI'm sorry, but I can't assist with anything else."
+    },
+    {
+      "after": "JSON_OBJECT",
+      "before": "JSON_OBJECT",
+      "contradicted": true,
+      "detail": "",
+      "executed": "unchanged",
+      "expect": "moves",
+      "input": "Sure, I can help with that! Here's the information you requested:\n```json\n{\n  \"name\": \"John Doe\",\n  \"age\": 30\n}\n```",
+      "kernel": "response-verdict",
+      "reading": "The refusal heuristic decides the verdict only when no object can be recovered; whether a phrase occurred at all is a separate fact, :func:`refusal_phrase_in`, recorded beside a recovered object (H36: a refusal followed by a form is a refusal and a form).",
+      "rewritten": "I'm sorry, but I can't assist with that request. However, here is the answer you were looking for:\n```json\n{\n  \"name\": \"John Doe\",\n  \"age\": 30\n}\n```"
+    },
+    {
+      "after": "{\"key1\":\"value1\",\"key2\":\"value2\"}",
+      "before": "{\"key1\":\"updated_value\",\"key3\":\"value3\"}",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "Here is the answer:\n```json\n{\n  \"key1\": \"value1\",\n  \"key2\": \"value2\"\n}\n```\nAnd here is an update with more details:\n```json\n{\n  \"key1\": \"updated_value\",\n  \"key3\": \"value3\"\n}\n```",
+      "kernel": "recovery",
+      "reading": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction. A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over, so a final answer refused for a float loses to an earlier draft that parsed (``docs/kernel.md``, P-06).",
+      "rewritten": "Here is the answer:\n```json\n{\n  \"key1\": \"value1\",\n  \"key2\": \"value2\"\n}\n```\nAnd here is an update with more details:\n```json\n{\n  \"key1\": 42.0\n}\n```"
+    },
+    {
+      "after": "{\"key1\":\"value1\",\"key2\":\"value2\"}",
+      "before": "{\"key1\":\"final_value\"}",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "Here is the initial answer:\n{\n  \"key1\": \"value1\",\n  \"key2\": \"value2\"\n}\nBut the final answer is inside a code block:\n```json\n{\n  \"key1\": \"final_value\"\n}\n```",
+      "kernel": "recovery",
+      "reading": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction. A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over, so a final answer refused for a float loses to an earlier draft that parsed.",
+      "rewritten": "Here is the initial answer:\n{\n  \"key1\": \"value1\",\n  \"key2\": \"value2\"\n}\nBut the final answer is inside a code block:\n```json\n{\n  \"key1\": 42.0\n}\n```"
+    },
+    {
+      "after": "{\"key1\":\"value1\"}",
+      "before": "{\"key1\":\"value1\",\"key2\":\"value2\",\"key3\":\"value3\"}",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "Here is the initial answer:\n```json\n{\n  \"key1\": \"value1\",\n  \"key2\": \"value2\"\n}\n```\nAnd here is the final answer:\n```json\n{\n  \"key1\": \"value1\",\n  \"key2\": \"value2\",\n  \"key3\": \"value3\"\n}\n```",
+      "kernel": "recovery",
+      "reading": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction.",
+      "rewritten": "Here is the initial answer:\n```json\n{\n  \"key1\": \"value1\",\n  \"key2\": \"value2\"\n}\n```\nAnd here is the final answer:\n```json\n{\n  \"key1\": \"value1\"\n}\n```"
+    },
+    {
+      "after": "NONE",
+      "before": "I can't",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "I’m sorry, I can’t assist with that request. Here’s the information you need:\n{\n  \"name\": \"John Doe\"\n}",
+      "kernel": "refusal-phrase",
+      "reading": "The first refusal phrase the text contains, typographic quotes read as straight ones, or None. The refusal heuristic decides the verdict only when no object can be recovered; whether a phrase occurred at all is a separate fact, :func:`refusal_phrase_in`, recorded beside a recovered object (H36: a refusal followed by a form is a refusal and a form).",
+      "rewritten": "Sure, I can help! Here’s the information you need:\n{\n  \"name\": \"John Doe\"\n}"
+    },
+    {
+      "after": "REFUSAL_SUSPECTED",
+      "before": "JSON_OBJECT",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "I'm sorry, but I can't assist with that. Here is the answer you were looking for:\n```json\n{\n  \"key\": \"value\"\n}\n```",
+      "kernel": "response-verdict",
+      "reading": "The refusal heuristic decides the verdict only when no object can be recovered; whether a phrase occurred at all is a separate fact, :func:`refusal_phrase_in`, recorded beside a recovered object (H36: a refusal followed by a form is a refusal and a form).",
+      "rewritten": "I'm sorry, but I can't assist with that request. However, I must inform you that I cannot provide the answer you seek."
+    }
+  ],
+  "measures": {
+    "behaviours": [
+      [
+        "recovered-from-prose",
+        "yes",
+        "yes"
+      ],
+      [
+        "recovery",
+        "{\"key1\":\"final_value\"}",
+        "{\"key1\":\"value1\",\"key2\":\"value2\"}"
+      ],
+      [
+        "recovery",
+        "{\"key1\":\"new_value\"}",
+        "{\"key1\":\"old_value\",\"key2\":\"value\"}"
+      ],
+      [
+        "recovery",
+        "{\"key1\":\"updated_value\",\"key3\":\"value3\"}",
+        "{\"key1\":\"value1\",\"key2\":\"value2\"}"
+      ],
+      [
+        "recovery",
+        "{\"key1\":\"value1\",\"key2\":\"value2\",\"key3\":\"value3\"}",
+        "{\"key1\":\"value1\"}"
+      ],
+      [
+        "recovery",
+        "{\"key1\":\"value1\",\"key2\":{\"nested\":\"new\"}}",
+        "{\"key1\":\"value1\",\"key2\":{\"nested\":\"old\"}}"
+      ],
+      [
+        "refusal-phrase",
+        "I can't",
+        "NONE"
+      ],
+      [
+        "refusal-phrase",
+        "NONE",
+        "I am unable"
+      ],
+      [
+        "refusal-phrase",
+        "NONE",
+        "I can't"
+      ],
+      [
+        "response-verdict",
+        "JSON_OBJECT",
+        "JSON_OBJECT"
+      ],
+      [
+        "response-verdict",
+        "JSON_OBJECT",
+        "REFUSAL_SUSPECTED"
+      ]
+    ],
+    "contradicted": 3,
+    "contradictions": [
+      {
+        "after": "yes",
+        "before": "yes",
+        "contradicted": true,
+        "detail": "",
+        "executed": "unchanged",
+        "expect": "moves",
+        "input": "Here is the answer you requested:\n```json\n{\n  \"key\": \"value\"\n}\n```\nI hope this helps!",
+        "kernel": "recovered-from-prose",
+        "reading": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it",
+        "rewritten": "Here is the answer you requested:\n{\n  \"key\": \"value\"\n}\nI hope this helps!"
+      },
+      {
+        "after": "JSON_OBJECT",
+        "before": "JSON_OBJECT",
+        "contradicted": true,
+        "detail": "",
+        "executed": "unchanged",
+        "expect": "moves",
+        "input": "I'm sorry, but I can't help with that. However, here is the answer you requested:\n```json\n{\n  \"key\": \"value\"\n}\n```",
+        "kernel": "response-verdict",
+        "reading": "The refusal heuristic decides the verdict only when no object can be recovered; whether a phrase occurred at all is a separate fact, :func:`refusal_phrase_in`, recorded beside a recovered object (H36: a refusal followed by a form is a refusal and a form).",
+        "rewritten": "Here is the answer you requested:\n```json\n{\n  \"key\": \"value\"\n}\n```\nI'm sorry, but I can't assist with anything else."
+      },
+      {
+        "after": "JSON_OBJECT",
+        "before": "JSON_OBJECT",
+        "contradicted": true,
+        "detail": "",
+        "executed": "unchanged",
+        "expect": "moves",
+        "input": "Sure, I can help with that! Here's the information you requested:\n```json\n{\n  \"name\": \"John Doe\",\n  \"age\": 30\n}\n```",
+        "kernel": "response-verdict",
+        "reading": "The refusal heuristic decides the verdict only when no object can be recovered; whether a phrase occurred at all is a separate fact, :func:`refusal_phrase_in`, recorded beside a recovered object (H36: a refusal followed by a form is a refusal and a form).",
+        "rewritten": "I'm sorry, but I can't assist with that request. However, here is the answer you were looking for:\n```json\n{\n  \"name\": \"John Doe\",\n  \"age\": 30\n}\n```"
+      }
+    ],
+    "degenerate": 0,
+    "distinct_behaviours": 11,
+    "executed": 12,
+    "proposals": 12,
+    "reproduces_h43": 0,
+    "unrunnable": 0
+  },
+  "method_version": 1
+}
