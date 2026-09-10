@@ -363,3 +363,12 @@ code.** This is a prediction to be scored against the records, not a finding.
 
 The criterion for "works" is the one pre-registered above and unchanged.
 Records under `forge/mini/runs/experiments/round-4/`.
+
+**Round 4, addendum, pre-registered.** `r4-1-skeletons-mistral` lost
+forty-one of forty-two calls to one escaping failure and so tested nothing;
+the machine now reads a raw line break inside a reply's JSON as the line break
+meant and records that it did (`docs/mini/FAILURE_MODES.md` M13,
+`docs/mini/SPEC.md` §17). The same manifest, model, seat and cycles are run
+again under the fix as `r4-6-skeletons-mistral-after-m13`, so the replication
+question the round was asked to settle can be answered. Its first record stays
+in the tree as the evidence for M13.
