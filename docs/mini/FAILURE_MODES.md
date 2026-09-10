@@ -197,7 +197,7 @@ blind.
 ## M5 — The proposer is asked for registered ids and shown no registry
 
 **Seen on** every proposal of the run; first execution at event 14
-(`0955d330f7e1b550`), last verdict at event 48 (`562f12b3d21952ee`).
+(event id 0955d330f7e1b550), last verdict at event 48 (event id 562f12b3d21952ee).
 **Status: OPEN.**
 
 The proposal kind asks for a kernel id, a transform id and an input. The model
@@ -221,7 +221,7 @@ boundary candidates. It was never given the vocabulary to propose one in.
 
 ## M6 — A JSON source cuts to a single block, and the legend hides its content
 
-**Seen at** event 1 (`9a6c7ad784dab925`), which batches the catalogue into
+**Seen at** event 1 (event id 9a6c7ad784dab925), which batches the catalogue into
 **one** block. **Status: OPEN, and it is the sharp edge of a decision.**
 
 The catalogue was supplied as a source precisely so a proposer could see which
@@ -243,7 +243,7 @@ second is smaller and does not disturb a decision the operator has made.
 
 ## M7 — A string field whose rendered format demands JSON
 
-**Seen at** events 8 (`447d7dd781dd51a9`) and 26 (`9e0af2e9ba78127b`); six
+**Seen at** events 8 and 26 (event ids 447d7dd781dd51a9 and 9e0af2e9ba78127b); six
 commitments-phase failures across the run, one submission dropped.
 **Status: OPEN.**
 
@@ -273,3 +273,11 @@ contradiction underneath the first — M7 — which the fix did not touch, and t
 failures continued at the same rate. The honest position is that there were two
 contradictions, both mine, one fixed and one open, and that nothing yet shows the
 two-call shape itself to be the difficulty.
+
+---
+
+*A note on how event ids are written here.* The repository's citation check
+reads any backticked sixteen-hexadecimal run as a conformance record id and
+fails when it names no record. A mini event id is sixteen hexadecimal
+characters, so they are written plainly above rather than in backticks. That is
+a presentation constraint, not a claim about what they are.
