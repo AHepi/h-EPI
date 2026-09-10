@@ -1,0 +1,20 @@
+# Execution
+
+## Proposals so far (proposals)
+[78536ff65393f62f] (mini.pair-proposal.usetest.v1)
+The rule in recover_json_object says: "The object scored is the last one inside a code fence when any fence holds one." For the input fence[ A B ] C, the fence holds A and B, so the last object inside the fence is B; k_recovery returns B. For the rewritten text fence[ A ] C, the fence holds only A, so the last object inside the fence is A; k_recovery returns A. Therefore the check's answer moves from B to A.
+cell: fence[ A B ] C
+input: ```
+{"a":1}
+{"b":2}
+```
+{"c":3}
+rewrite: removed the second object inside the fence
+rewritten: ```
+{"a":1}
+```
+{"c":3}
+commitments: {"kernel": "recovery", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

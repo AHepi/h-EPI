@@ -1,0 +1,20 @@
+# Execution
+
+## Proposals so far (proposals)
+[915594aa7bcb8503] (mini.pair-proposal.usetest.v1)
+Rule read from recover_json_object: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' In both the input and the rewritten text, the code fence holds one object (A) and a sentence (S), so the rule says the scored object is the last one inside the fence, which is A. Therefore k_recovery should return the same canonical JSON for both texts: unchanged. The code instead returns A for the input and B for the rewritten text, moving.
+cell: fence[ A S ]
+input: ```
+{"a":1}
+Here is the result:
+```
+rewrite: add B after the fence
+rewritten: ```
+{"a":1}
+Here is the result:
+```
+{"b":2}
+commitments: {"kernel": "recovery", "expect": "unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

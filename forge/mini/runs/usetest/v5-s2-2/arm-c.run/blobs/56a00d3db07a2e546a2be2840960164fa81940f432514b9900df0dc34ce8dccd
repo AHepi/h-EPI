@@ -1,0 +1,13 @@
+# Execution
+
+## Proposals so far (proposals)
+[f1ed0302b4cba170] (mini.pair-proposal.usetest.v1)
+Rule read: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' For the original text, the fence holds A, so the last object inside a code fence is A; recovery should be A. For the rewritten text, the fence still holds A, so the last object inside a code fence is still A; recovery should be A. Therefore the rule says the check's answer ought to stay unchanged. The code, however, falls back to the last top-level object overall when the fenced candidate is not a single JSON object, so it moves to B.
+cell: fence[ A S ] S
+input: ```\n{\"a\": 1}\nHere is the result:\n```\nHere is the result:
+rewrite: add B after the fence
+rewritten: ```\n{\"a\": 1}\nHere is the result:\n```\nHere is the result:\n{\"b\": 2}
+commitments: {"kernel": "recovery", "expect": "unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

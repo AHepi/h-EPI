@@ -1,0 +1,127 @@
+# Proposal
+
+You are shown the documented rules of the checks under test, not their code, and ONE cell of a frozen grid under 'The cell to cover'. The notation: fence[ ... ] is a code fence, a line of three backticks before and after, holding one part per line in the order given; S is one plain sentence such as 'Here is the result:'; A, B and C are small JSON objects different from each other, such as {"a": 1}, {"b": 2}, {"c": 3}; anything after the closing bracket comes after the closing fence line, one part per line. Build the input exactly from the cell, each part on its own line and written out in full, and nothing added: a validator will check it against the cell before anything is run, and an input that is not the cell is thrown away. The rewritten text is the same reply with exactly ONE part added or removed, and it must itself be another cell of the same grammar — a fence must still hold at least one part, so a reply whose fence holds one object is changed by adding after the fence rather than by emptying it. Write real line breaks, never the two characters backslash and n.
+
+A worked example, on a cell that is NOT in the grid, so it gives nothing away. The cell "fence[ S ]" is built as exactly these three lines, where a line of three backticks is a real line of the text:
+```
+Here is the result:
+```
+and adding one part after the fence makes "fence[ S ] A":
+```
+Here is the result:
+```
+{"a": 1}
+
+The notation is never the input. Putting "fence[ S ]" in the input field, instead of the lines above, is the one mistake that throws a proposal away before anything is run.
+
+Say what the rule, read as written, says the check's answer ought to do between the two texts: move ('moves') or stay ('unchanged'), naming in the body the words of the rule you read it from and which answer the rule gives for each text. Your kernel is one of recovery, recovered-from-prose, response-verdict. The commitments are a STRING whose content is JSON of the form {"kernel": "<id>", "expect": "moves" or "unchanged"} and nothing else; this artifact carries "input", "rewritten", "rewrite" and "cell" as fields of its own, each a plain string, and the cell exactly as it was named.
+
+## The problem (problem)
+The checks under test read a model's reply and say what they found in it. You are shown their documented rules and never their code. The question is whether there is a reply, and a single edit of it, on which a check's answer does something the rule as written does not allow. A machine builds nothing and reads no rule: it validates that what you built is the shape you were given, runs the check on both texts, and records what came back. Nothing here decides that anything is a defect.
+
+## The documented rules of the checks (rules)
+[7a9604ca8250416e] (mini.usetest-rules.v1)
+REFUSAL_PHRASES = ['I cannot', "I can't", "I'm sorry", 'I am unable', 'as an AI', 'cannot assist']
+
+def _refuse_float(_text: str):
+    (no docstring)
+
+def _refuse_constant(_text: str):
+    (no docstring)
+
+def _loads_last_wins(candidate: str):
+    Parse JSON that strict parsing refused only because of repeated keys; last value wins.
+
+def recover_json_object(content: str):
+    Project import: extract a JSON object from fences or surrounding prose.
+
+    Every top-level balanced object in the text is a candidate, not only the span from the
+    first ``{`` to the last ``}``: reasoning prose before or after the answer frequently
+    contains stray braces, and an object nested inside another is not a candidate of its own.
+    The object scored is the last one inside a code fence when any fence holds one, else the
+    last top-level object in the text, because a model places its final answer last and marks
+    it: a reply that quotes its previous answer and then gives a corrected one is scored on the
+    correction. Until 9 September 2026 the object with the most keys was taken, ties to the
+    last, and nine cycle replies that dropped a criticised key were scored on the draft that
+    still carried it (``docs/failure-modes.md``, H40). A candidate that parses as strict JSON,
+    or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float,
+    for instance) is passed over, so a final answer refused for a float loses to an earlier
+    draft that parsed (``docs/kernel.md``, P-06).
+
+def _plain_quotes(text: str):
+    Fold typographic apostrophes and quotation marks to their ASCII forms.
+
+    The refusal phrase list is written with straight apostrophes; a model that writes
+    "I’m sorry" is refusing all the same, and the first live refusal in these
+    records was missed for exactly that reason (H22).
+
+def refusal_phrase_in(content: str, refusal_phrases: tuple[str, ...]):
+    The first refusal phrase the text contains, typographic quotes read as straight ones, or None.
+
+def parse_content(content: str, refusal_phrases: tuple[str, ...]):
+    Return (parsed, response_verdict, detail, recovered_from_prose).
+
+    The refusal heuristic decides the verdict only when no object can be recovered; whether a
+    phrase occurred at all is a separate fact, :func:`refusal_phrase_in`, recorded beside a
+    recovered object (H36: a refusal followed by a form is a refusal and a form).
+
+def _normalise_whitespace(value: str):
+    (no docstring)
+
+def _date_range_completions(document: str):
+    (no docstring)
+
+def _span_occurs(span: str, document: str, relaxations: tuple[str, ...]):
+    Return None when the span is not in the document, else how it was matched ("verbatim" or a relaxation).
+
+def k_recovery(text):
+    The object recovered from the reply, as canonical JSON text, or NO_OBJECT.
+
+def k_recovered_from_prose(text):
+    Whether the object had to be recovered from prose or a fence (yes) or read strictly (no).
+
+def k_response_verdict(text):
+    The response verdict for the reply.
+
+def k_refusal_phrase(text):
+    The first listed refusal phrase the reply contains, or NONE.
+
+def _fields(text):
+    (no docstring)
+
+def k_span_occurs(text):
+    Whether a cited span occurs in a document: the input is one JSON object {span, document}.
+
+def k_grounding(text):
+    The grounding verdict: the input is one JSON object {value, span, document}.
+
+## The cell to cover (cell)
+[7b49b0bf6a86ebcc] (mini.next-cell.1.v1)
+The cell to cover: fence[ A B ] C
+(17 of 20 cells named so far.)
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", "cell", each a string.
+
+## The shape this answer must take
+`commitments` must be a STRING whose content is JSON text fitting exactly this schema (the field itself is a string, not an object):
+{
+  "properties": {
+    "expect": {
+      "enum": [
+        "moves",
+        "unchanged"
+      ]
+    },
+    "kernel": {
+      "pattern": "^(recovery|recovered-from-prose|response-verdict)$",
+      "type": "string"
+    }
+  },
+  "required": [
+    "kernel",
+    "expect"
+  ],
+  "type": "object"
+}
