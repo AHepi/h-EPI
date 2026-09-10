@@ -86,7 +86,13 @@ def _commit(paths: Sequence[Path], message: str) -> None:
     pushed, because publication is a pull request and a human action.
     """
 
-    named = [str(path.relative_to(ROOT)) for path in paths]
+    named: list[str] = []
+    for path in paths:
+        resolved = (path if path.is_absolute() else ROOT / path).resolve()
+        try:
+            named.append(str(resolved.relative_to(ROOT)))
+        except ValueError as error:
+            raise MiniError("MINI_CAMPAIGN_COMMIT_REFUSED", f"{resolved} is outside this repository and is not committed here") from error
     subprocess.run(["git", "add", *named], cwd=str(ROOT), check=True)
     checked = subprocess.run(["git", "diff", "--cached", "--check"], cwd=str(ROOT), capture_output=True, text=True)
     if checked.returncode != 0:
