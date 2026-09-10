@@ -1,0 +1,357 @@
+{
+  "calls": [
+    {
+      "completion_tokens": 150,
+      "detail": "",
+      "elapsed_s": 4,
+      "fenced": false,
+      "index": 0,
+      "ok": true,
+      "prompt_tokens": 1108
+    },
+    {
+      "completion_tokens": 163,
+      "detail": "",
+      "elapsed_s": 1,
+      "fenced": false,
+      "index": 1,
+      "ok": true,
+      "prompt_tokens": 1146
+    },
+    {
+      "completion_tokens": 246,
+      "detail": "",
+      "elapsed_s": 1,
+      "fenced": false,
+      "index": 2,
+      "ok": true,
+      "prompt_tokens": 1175
+    },
+    {
+      "completion_tokens": 110,
+      "detail": "",
+      "elapsed_s": 1,
+      "fenced": false,
+      "index": 3,
+      "ok": true,
+      "prompt_tokens": 1205
+    },
+    {
+      "completion_tokens": 169,
+      "detail": "",
+      "elapsed_s": 1,
+      "fenced": false,
+      "index": 4,
+      "ok": true,
+      "prompt_tokens": 1231
+    },
+    {
+      "completion_tokens": 118,
+      "detail": "",
+      "elapsed_s": 1,
+      "fenced": false,
+      "index": 5,
+      "ok": true,
+      "prompt_tokens": 1279
+    },
+    {
+      "completion_tokens": 143,
+      "detail": "",
+      "elapsed_s": 1,
+      "fenced": false,
+      "index": 6,
+      "ok": true,
+      "prompt_tokens": 1314
+    },
+    {
+      "completion_tokens": 156,
+      "detail": "",
+      "elapsed_s": 1,
+      "fenced": false,
+      "index": 7,
+      "ok": true,
+      "prompt_tokens": 1349
+    },
+    {
+      "completion_tokens": 159,
+      "detail": "",
+      "elapsed_s": 1,
+      "fenced": false,
+      "index": 8,
+      "ok": true,
+      "prompt_tokens": 1384
+    },
+    {
+      "completion_tokens": 98,
+      "detail": "",
+      "elapsed_s": 1,
+      "fenced": false,
+      "index": 9,
+      "ok": true,
+      "prompt_tokens": 1395
+    },
+    {
+      "completion_tokens": 139,
+      "detail": "",
+      "elapsed_s": 1,
+      "fenced": false,
+      "index": 10,
+      "ok": true,
+      "prompt_tokens": 1388
+    },
+    {
+      "completion_tokens": 370,
+      "detail": "",
+      "elapsed_s": 1,
+      "fenced": false,
+      "index": 11,
+      "ok": true,
+      "prompt_tokens": 1386
+    }
+  ],
+  "condition": {
+    "arm": "R",
+    "condition_id": "ollama.com/deepseek-v4-pro:0813/arm-R/think-off/nogrid",
+    "endpoint": {
+      "max_tokens": null,
+      "model": "deepseek-v4-pro:0813",
+      "path": "ollama.com",
+      "quantisation": "unknown, may be quantised",
+      "think": false,
+      "timeout_seconds": 900
+    },
+    "grid_cells": [],
+    "proposals_requested": 12
+  },
+  "executions": [
+    {
+      "after": "I can't",
+      "before": "I cannot",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "I cannot help with that request.",
+      "kernel": "refusal-phrase",
+      "reading": "The rule says the refusal phrase list is written with straight apostrophes and typographic quotes are folded to ASCII forms before matching. The input contains 'I cannot' verbatim, so k_refusal_phrase returns 'I cannot'. The rewritten text contains 'I can’t' with a typographic apostrophe, which is folded to 'I can't', matching the listed phrase 'I can't'. Thus the answer differs: 'I cannot' vs 'I can't'.",
+      "rewritten": "I can’t help with that request."
+    },
+    {
+      "after": "{\"a\":1}",
+      "before": "{\"a\":1}",
+      "contradicted": true,
+      "detail": "",
+      "executed": "unchanged",
+      "expect": "moves",
+      "input": "Here is the answer: {\"a\": 1}",
+      "kernel": "recovery",
+      "reading": "recover_json_object: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' For the input, no fence holds one, so the last top-level object is {\"a\": 1}. For the rewritten, a fence holds one, so the object inside the fence is scored. k_recovery returns the recovered object as canonical JSON text, which is the same object in both cases, so the answer should be unchanged.",
+      "rewritten": "```json\n{\"a\": 1}\n```"
+    },
+    {
+      "after": "yes",
+      "before": "yes",
+      "contradicted": true,
+      "detail": "",
+      "executed": "unchanged",
+      "expect": "moves",
+      "input": "The result is {\"value\": 42}",
+      "kernel": "recovered-from-prose",
+      "reading": "k_recovered_from_prose: 'Whether the object had to be recovered from prose or a fence (yes) or read strictly (no).' The input has the object in prose, so the answer is 'yes'. The rewritten has the object inside a code fence, which is also not strict, so the answer is 'yes' as well. Wait, that would be unchanged. Let me reconsider: the rule says 'recovered from prose or a fence (yes) or read strictly (no)'. Both prose and fence are 'yes', so this pair would be unchanged. I need a pair that moves. Let me choose input as strict JSON and rewritten as prose. Input: '{\"value\": 42}' (strict JSON, no fence, no prose) -> answer 'no'. Rewritten: 'The result is {\"value\": 42}' -> answer 'yes'. That moves.",
+      "rewritten": "```json\n{\"value\": 42}\n```"
+    },
+    {
+      "after": "JSON_OBJECT",
+      "before": "REFUSAL_SUSPECTED",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "I cannot help with that request.",
+      "kernel": "response-verdict",
+      "reading": "parse_content: 'The refusal heuristic decides the verdict only when no object can be recovered'; input has no recoverable object and contains a refusal phrase, so verdict is refusal; rewritten has a recoverable object, so verdict is based on the object, not refusal.",
+      "rewritten": "Here is the answer: {\"value\": 42}"
+    },
+    {
+      "after": "{\"a\":1}",
+      "before": "{\"a\":2}",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "First attempt: {\"a\": 1}\nCorrected: {\"a\": 2}",
+      "kernel": "recovery",
+      "reading": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. In the input, no fence holds an object, so the last top-level object is {\"a\": 2}. In the rewritten text, a fence holds {\"a\": 1}, so the last object inside a code fence is {\"a\": 1}. The recovered object differs.",
+      "rewritten": "```json\n{\"a\": 1}\n```\nCorrected: {\"a\": 2}"
+    },
+    {
+      "after": "{\"a\":1,\"b\":2}",
+      "before": "{\"a\":1}",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "Here is the answer: {\"a\": 1}",
+      "kernel": "recovery",
+      "reading": "The object recovered from the reply, as canonical JSON text, or NO_OBJECT. The input recovers {\"a\": 1}; the rewritten recovers {\"a\": 1, \"b\": 2}, so the answer should differ.",
+      "rewritten": "Here is the answer: {\"a\": 1, \"b\": 2}"
+    },
+    {
+      "after": "{\"a\":1,\"b\":2}",
+      "before": "{\"a\":1}",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "Here is the answer: {\"a\": 1}",
+      "kernel": "recovery",
+      "reading": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. The input's last top-level object is {\"a\": 1}; the rewritten's is {\"a\": 1, \"b\": 2}. The recovered object is the canonical JSON text of that object, so the answer differs.",
+      "rewritten": "Here is the answer: {\"a\": 1, \"b\": 2}"
+    },
+    {
+      "after": "{\"a\":1,\"b\":2}",
+      "before": "{\"a\":1}",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "Here is the answer: {\"a\": 1}",
+      "kernel": "recovery",
+      "reading": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. The input has one top-level object {\"a\": 1}, so k_recovery returns that object as canonical JSON text. The rewritten text has one top-level object {\"a\": 1, \"b\": 2}, so k_recovery returns that different object. Therefore the answer should move.",
+      "rewritten": "Here is the answer: {\"a\": 1, \"b\": 2}"
+    },
+    {
+      "after": "{\"a\":1,\"b\":2}",
+      "before": "{\"a\":1}",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "Here is the answer: {\"a\": 1}",
+      "kernel": "recovery",
+      "reading": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. The input has one top-level object {\"a\": 1}, so k_recovery returns that object as canonical JSON text. The rewritten text has one top-level object {\"a\": 1, \"b\": 2}, so k_recovery returns that object. The objects differ, so the answer should move.",
+      "rewritten": "Here is the answer: {\"a\": 1, \"b\": 2}"
+    },
+    {
+      "after": "I can't",
+      "before": "I cannot",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "I cannot assist with that.",
+      "kernel": "refusal-phrase",
+      "reading": "The refusal phrase list includes 'I cannot' and \"I can't\". The first listed refusal phrase the reply contains is 'I cannot' for the input and \"I can't\" for the rewritten text, so the answer differs.",
+      "rewritten": "I can't assist with that."
+    },
+    {
+      "after": "{\"a\":2}",
+      "before": "{\"a\":1}",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "Here is the answer: {\"a\": 1}",
+      "kernel": "recovery",
+      "reading": "The object recovered from the reply, as canonical JSON text, or NO_OBJECT. The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. In the input the recovered object is {\"a\": 1}; in the rewritten text it is {\"a\": 2}, so the canonical JSON text differs.",
+      "rewritten": "Here is the answer: {\"a\": 2}"
+    },
+    {
+      "after": "yes",
+      "before": "yes",
+      "contradicted": true,
+      "detail": "",
+      "executed": "unchanged",
+      "expect": "moves",
+      "input": "Here is the answer: {\"a\": 1}",
+      "kernel": "recovered-from-prose",
+      "reading": "k_recovered_from_prose: 'Whether the object had to be recovered from prose or a fence (yes) or read strictly (no).' The first text has the object in prose, so the answer is 'yes'. The second text has the object inside a code fence, which is also recovered from prose or a fence, so the answer is also 'yes'. Wait, that would be unchanged. Let me reconsider: the rule says 'recovered from prose or a fence (yes) or read strictly (no)'. Both are recovered, so both are 'yes'. That would be unchanged, not moves. I need a pair where one is strict and the other is recovered. For example, input with a JSON object directly as the whole text (strict) vs. with surrounding prose (recovered). But the kernel is recovered-from-prose, so I need to build a pair that tests this specific check. The rule says 'yes' if recovered from prose or fence, 'no' if read strictly. So a pair where one text is strict JSON and the other has prose around it would move. But the input must be any reply text. Let me choose: input = '{\"a\": 1}' (strict JSON, no prose), rewritten = 'Here is the answer: {\"a\": 1}' (prose). Then the check should move from 'no' to 'yes'. That is informative because it tests whether the check distinguishes strict from recovered. I'll use that.",
+      "rewritten": "```json\n{\"a\": 1}\n```"
+    }
+  ],
+  "measures": {
+    "behaviours": [
+      [
+        "recovered-from-prose",
+        "yes",
+        "yes"
+      ],
+      [
+        "recovery",
+        "{\"a\":1}",
+        "{\"a\":1,\"b\":2}"
+      ],
+      [
+        "recovery",
+        "{\"a\":1}",
+        "{\"a\":1}"
+      ],
+      [
+        "recovery",
+        "{\"a\":1}",
+        "{\"a\":2}"
+      ],
+      [
+        "recovery",
+        "{\"a\":2}",
+        "{\"a\":1}"
+      ],
+      [
+        "refusal-phrase",
+        "I cannot",
+        "I can't"
+      ],
+      [
+        "response-verdict",
+        "REFUSAL_SUSPECTED",
+        "JSON_OBJECT"
+      ]
+    ],
+    "contradicted": 3,
+    "contradictions": [
+      {
+        "after": "{\"a\":1}",
+        "before": "{\"a\":1}",
+        "contradicted": true,
+        "detail": "",
+        "executed": "unchanged",
+        "expect": "moves",
+        "input": "Here is the answer: {\"a\": 1}",
+        "kernel": "recovery",
+        "reading": "recover_json_object: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' For the input, no fence holds one, so the last top-level object is {\"a\": 1}. For the rewritten, a fence holds one, so the object inside the fence is scored. k_recovery returns the recovered object as canonical JSON text, which is the same object in both cases, so the answer should be unchanged.",
+        "rewritten": "```json\n{\"a\": 1}\n```"
+      },
+      {
+        "after": "yes",
+        "before": "yes",
+        "contradicted": true,
+        "detail": "",
+        "executed": "unchanged",
+        "expect": "moves",
+        "input": "The result is {\"value\": 42}",
+        "kernel": "recovered-from-prose",
+        "reading": "k_recovered_from_prose: 'Whether the object had to be recovered from prose or a fence (yes) or read strictly (no).' The input has the object in prose, so the answer is 'yes'. The rewritten has the object inside a code fence, which is also not strict, so the answer is 'yes' as well. Wait, that would be unchanged. Let me reconsider: the rule says 'recovered from prose or a fence (yes) or read strictly (no)'. Both prose and fence are 'yes', so this pair would be unchanged. I need a pair that moves. Let me choose input as strict JSON and rewritten as prose. Input: '{\"value\": 42}' (strict JSON, no fence, no prose) -> answer 'no'. Rewritten: 'The result is {\"value\": 42}' -> answer 'yes'. That moves.",
+        "rewritten": "```json\n{\"value\": 42}\n```"
+      },
+      {
+        "after": "yes",
+        "before": "yes",
+        "contradicted": true,
+        "detail": "",
+        "executed": "unchanged",
+        "expect": "moves",
+        "input": "Here is the answer: {\"a\": 1}",
+        "kernel": "recovered-from-prose",
+        "reading": "k_recovered_from_prose: 'Whether the object had to be recovered from prose or a fence (yes) or read strictly (no).' The first text has the object in prose, so the answer is 'yes'. The second text has the object inside a code fence, which is also recovered from prose or a fence, so the answer is also 'yes'. Wait, that would be unchanged. Let me reconsider: the rule says 'recovered from prose or a fence (yes) or read strictly (no)'. Both are recovered, so both are 'yes'. That would be unchanged, not moves. I need a pair where one is strict and the other is recovered. For example, input with a JSON object directly as the whole text (strict) vs. with surrounding prose (recovered). But the kernel is recovered-from-prose, so I need to build a pair that tests this specific check. The rule says 'yes' if recovered from prose or fence, 'no' if read strictly. So a pair where one text is strict JSON and the other has prose around it would move. But the input must be any reply text. Let me choose: input = '{\"a\": 1}' (strict JSON, no prose), rewritten = 'Here is the answer: {\"a\": 1}' (prose). Then the check should move from 'no' to 'yes'. That is informative because it tests whether the check distinguishes strict from recovered. I'll use that.",
+        "rewritten": "```json\n{\"a\": 1}\n```"
+      }
+    ],
+    "degenerate": 0,
+    "distinct_behaviours": 7,
+    "executed": 12,
+    "proposals": 12,
+    "reproduces_h43": 0,
+    "unrunnable": 0
+  },
+  "method_version": 1
+}

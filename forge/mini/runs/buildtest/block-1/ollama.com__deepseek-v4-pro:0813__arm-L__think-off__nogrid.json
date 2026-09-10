@@ -1,0 +1,352 @@
+{
+  "calls": [
+    {
+      "completion_tokens": 215,
+      "detail": "",
+      "elapsed_s": 1,
+      "fenced": false,
+      "index": 0,
+      "ok": true,
+      "prompt_tokens": 3909
+    },
+    {
+      "completion_tokens": 170,
+      "detail": "",
+      "elapsed_s": 1,
+      "fenced": false,
+      "index": 1,
+      "ok": true,
+      "prompt_tokens": 3983
+    },
+    {
+      "completion_tokens": 195,
+      "detail": "",
+      "elapsed_s": 1,
+      "fenced": false,
+      "index": 2,
+      "ok": true,
+      "prompt_tokens": 4012
+    },
+    {
+      "completion_tokens": 155,
+      "detail": "",
+      "elapsed_s": 1,
+      "fenced": false,
+      "index": 3,
+      "ok": true,
+      "prompt_tokens": 4063
+    },
+    {
+      "completion_tokens": 159,
+      "detail": "",
+      "elapsed_s": 1,
+      "fenced": false,
+      "index": 4,
+      "ok": true,
+      "prompt_tokens": 4102
+    },
+    {
+      "completion_tokens": 212,
+      "detail": "",
+      "elapsed_s": 1,
+      "fenced": false,
+      "index": 5,
+      "ok": true,
+      "prompt_tokens": 4166
+    },
+    {
+      "completion_tokens": 158,
+      "detail": "",
+      "elapsed_s": 1,
+      "fenced": false,
+      "index": 6,
+      "ok": true,
+      "prompt_tokens": 4226
+    },
+    {
+      "completion_tokens": 175,
+      "detail": "",
+      "elapsed_s": 1,
+      "fenced": false,
+      "index": 7,
+      "ok": true,
+      "prompt_tokens": 4286
+    },
+    {
+      "completion_tokens": 158,
+      "detail": "",
+      "elapsed_s": 1,
+      "fenced": false,
+      "index": 8,
+      "ok": true,
+      "prompt_tokens": 4346
+    },
+    {
+      "completion_tokens": 151,
+      "detail": "",
+      "elapsed_s": 1,
+      "fenced": false,
+      "index": 9,
+      "ok": true,
+      "prompt_tokens": 4346
+    },
+    {
+      "completion_tokens": 133,
+      "detail": "",
+      "elapsed_s": 1,
+      "fenced": false,
+      "index": 10,
+      "ok": true,
+      "prompt_tokens": 4377
+    },
+    {
+      "completion_tokens": 195,
+      "detail": "",
+      "elapsed_s": 1,
+      "fenced": false,
+      "index": 11,
+      "ok": true,
+      "prompt_tokens": 4346
+    }
+  ],
+  "condition": {
+    "arm": "L",
+    "condition_id": "ollama.com/deepseek-v4-pro:0813/arm-L/think-off/nogrid",
+    "endpoint": {
+      "max_tokens": null,
+      "model": "deepseek-v4-pro:0813",
+      "path": "ollama.com",
+      "quantisation": "unknown, may be quantised",
+      "think": false,
+      "timeout_seconds": 900
+    },
+    "grid_cells": [],
+    "proposals_requested": 12
+  },
+  "executions": [
+    {
+      "after": "{\"a\":1,\"b\":2,\"c\":3}",
+      "before": "{\"a\":1,\"b\":2}",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "Here is the answer:\n```json\n{\"a\": 1, \"b\": 2}\n```",
+      "kernel": "recovery",
+      "reading": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. The input's fenced object is {\"a\": 1, \"b\": 2}; the rewritten's fenced object is {\"a\": 1, \"b\": 2, \"c\": 3}. k_recovery returns the object recovered from the reply, as canonical JSON text, so the answer should differ: {\"a\":1,\"b\":2} vs {\"a\":1,\"b\":2,\"c\":3}.",
+      "rewritten": "Here is the answer:\n```json\n{\"a\": 1, \"b\": 2, \"c\": 3}\n```"
+    },
+    {
+      "after": "I cannot",
+      "before": "I cannot",
+      "contradicted": true,
+      "detail": "",
+      "executed": "unchanged",
+      "expect": "moves",
+      "input": "I’m sorry, I cannot help with that.",
+      "kernel": "refusal-phrase",
+      "reading": "The rule says: 'The first refusal phrase the text contains, typographic quotes read as straight ones, or None.' The input contains the typographic apostrophe in 'I’m sorry', which is folded to a straight apostrophe by _plain_quotes, so the first listed refusal phrase is 'I'm sorry'. The rewritten text contains the straight apostrophe directly, so the first listed refusal phrase is also 'I'm sorry'. Both texts therefore yield the same answer, 'I'm sorry', so the rule says the answer should be unchanged.",
+      "rewritten": "I'm sorry, I cannot help with that."
+    },
+    {
+      "after": "yes",
+      "before": "yes",
+      "contradicted": true,
+      "detail": "",
+      "executed": "unchanged",
+      "expect": "moves",
+      "input": "Here is the answer:\n```json\n{\"a\": 1, \"b\": 2}\n```",
+      "kernel": "recovered-from-prose",
+      "reading": "k_recovered_from_prose returns 'yes' if parse_content(text, REFUSAL_PHRASES)[3] is True, else 'no'. parse_content first tries loads_strict(content); if that fails, it calls recover_json_object. In the input, the object is inside a code fence, so strict parsing fails and recovery succeeds, making recovered_from_prose 'yes'. In the rewritten text, the object is bare JSON, so loads_strict succeeds and recovered_from_prose is 'no'. The rule therefore says the answer should differ.",
+      "rewritten": "Here is the answer:\n{\"a\": 1, \"b\": 2}"
+    },
+    {
+      "after": "REFUSAL_SUSPECTED",
+      "before": "JSON_OBJECT",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "Here is the answer:\n```json\n{\"a\": 1, \"b\": 2}\n```",
+      "kernel": "response-verdict",
+      "reading": "The rule says the response verdict is JSON_OBJECT when an object can be recovered, and REFUSAL_SUSPECTED only when no object can be recovered and a refusal phrase is present. The input has a recoverable object, so the verdict is JSON_OBJECT. The rewritten text has no object and contains 'I cannot', so the verdict is REFUSAL_SUSPECTED. Therefore the answer should differ.",
+      "rewritten": "I cannot assist with that."
+    },
+    {
+      "after": "JSON_OBJECT",
+      "before": "JSON_OBJECT",
+      "contradicted": false,
+      "detail": "",
+      "executed": "unchanged",
+      "expect": "unchanged",
+      "input": "I cannot assist with that.\n```json\n{\"a\": 1, \"b\": 2}\n```",
+      "kernel": "response-verdict",
+      "reading": "The rule says: 'The refusal heuristic decides the verdict only when no object can be recovered; whether a phrase occurred at all is a separate fact'. In both texts an object can be recovered, so the verdict is JSON_OBJECT regardless of the refusal phrase. The object's contents differ, but the verdict does not.",
+      "rewritten": "I cannot assist with that.\n```json\n{\"a\": 1, \"b\": 2, \"c\": 3}\n```"
+    },
+    {
+      "after": "{\"a\":1,\"b\":2,\"c\":3}",
+      "before": "{\"a\":1,\"b\":2}",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "Here is the answer:\n```json\n{\"a\": 1, \"b\": 2}\n```",
+      "kernel": "recovery",
+      "reading": "The object recovered from the reply, as canonical JSON text, or NO_OBJECT. The object scored is the last one inside a code fence when any fence holds one. The input has {\"a\": 1, \"b\": 2} inside a fence, so recovery is {\"a\":1,\"b\":2}. The rewritten has {\"a\": 1, \"b\": 2, \"c\": 3} inside a fence, so recovery is {\"a\":1,\"b\":2,\"c\":3}. The rule says the answer should differ.",
+      "rewritten": "Here is the answer:\n```json\n{\"a\": 1, \"b\": 2, \"c\": 3}\n```"
+    },
+    {
+      "after": "{\"a\":1,\"b\":2,\"c\":3}",
+      "before": "{\"a\":1,\"b\":2}",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "Here is the answer:\n```json\n{\"a\": 1, \"b\": 2}\n```",
+      "kernel": "recovery",
+      "reading": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. The input has one fenced object with keys a and b; the rewritten has one fenced object with keys a, b, and c. The recovered object differs, so the answer should move.",
+      "rewritten": "Here is the answer:\n```json\n{\"a\": 1, \"b\": 2, \"c\": 3}\n```"
+    },
+    {
+      "after": "{\"a\":1,\"b\":2,\"c\":3}",
+      "before": "{\"a\":1,\"b\":2}",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "Here is the answer:\n```json\n{\"a\": 1, \"b\": 2}\n```",
+      "kernel": "recovery",
+      "reading": "The object recovered from the reply, as canonical JSON text, or NO_OBJECT. The object scored is the last one inside a code fence when any fence holds one. The input has {\"a\": 1, \"b\": 2}; the rewritten has {\"a\": 1, \"b\": 2, \"c\": 3}. The canonical JSON text differs, so the answer should move.",
+      "rewritten": "Here is the answer:\n```json\n{\"a\": 1, \"b\": 2, \"c\": 3}\n```"
+    },
+    {
+      "after": "{\"a\":1,\"b\":2,\"c\":3}",
+      "before": "{\"a\":1,\"b\":2}",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "Here is the answer:\n```json\n{\"a\": 1, \"b\": 2}\n```",
+      "kernel": "recovery",
+      "reading": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. The input has one fenced object with keys a and b; the rewritten has one fenced object with keys a, b, and c. The recovered object differs, so the answer should move.",
+      "rewritten": "Here is the answer:\n```json\n{\"a\": 1, \"b\": 2, \"c\": 3}\n```"
+    },
+    {
+      "after": "{\"a\":1,\"b\":2,\"c\":3}",
+      "before": "{\"a\":1,\"b\":2}",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "Here is the answer:\n```json\n{\"a\": 1, \"b\": 2}\n```",
+      "kernel": "recovery",
+      "reading": "The object recovered from the reply, as canonical JSON text, or NO_OBJECT. The input recovers {\"a\":1,\"b\":2}; the rewritten recovers {\"a\":1,\"b\":2,\"c\":3}. The rule says the answer should differ.",
+      "rewritten": "Here is the answer:\n```json\n{\"a\": 1, \"b\": 2, \"c\": 3}\n```"
+    },
+    {
+      "after": "I cannot",
+      "before": "I can't",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "I can't help with that.",
+      "kernel": "refusal-phrase",
+      "reading": "The refusal phrase list is ['I cannot', \"I can't\", \"I'm sorry\", 'I am unable', 'as an AI', 'cannot assist']. The first text contains \"I can't\", so k_refusal_phrase returns \"I can't\". The second text contains \"I cannot\", so k_refusal_phrase returns \"I cannot\". The rule says the answer should differ.",
+      "rewritten": "I cannot help with that."
+    },
+    {
+      "after": "yes",
+      "before": "yes",
+      "contradicted": true,
+      "detail": "",
+      "executed": "unchanged",
+      "expect": "moves",
+      "input": "Here is the answer:\n```json\n{\"a\": 1, \"b\": 2}\n```",
+      "kernel": "recovered-from-prose",
+      "reading": "k_recovered_from_prose returns 'yes' if parse_content(text, REFUSAL_PHRASES)[3] is True, else 'no'. parse_content first tries loads_strict(content); if that fails, it calls recover_json_object. In the input, the object is inside a code fence, so strict parsing fails and recovery succeeds, making recovered_from_prose True ('yes'). In the rewritten text, the object is not fenced but is the entire text, so loads_strict succeeds and recovered_from_prose is False ('no').",
+      "rewritten": "Here is the answer:\n{\"a\": 1, \"b\": 2}"
+    }
+  ],
+  "measures": {
+    "behaviours": [
+      [
+        "recovered-from-prose",
+        "yes",
+        "yes"
+      ],
+      [
+        "recovery",
+        "{\"a\":1,\"b\":2}",
+        "{\"a\":1,\"b\":2,\"c\":3}"
+      ],
+      [
+        "refusal-phrase",
+        "I can't",
+        "I cannot"
+      ],
+      [
+        "refusal-phrase",
+        "I cannot",
+        "I cannot"
+      ],
+      [
+        "response-verdict",
+        "JSON_OBJECT",
+        "JSON_OBJECT"
+      ],
+      [
+        "response-verdict",
+        "JSON_OBJECT",
+        "REFUSAL_SUSPECTED"
+      ]
+    ],
+    "contradicted": 3,
+    "contradictions": [
+      {
+        "after": "I cannot",
+        "before": "I cannot",
+        "contradicted": true,
+        "detail": "",
+        "executed": "unchanged",
+        "expect": "moves",
+        "input": "I’m sorry, I cannot help with that.",
+        "kernel": "refusal-phrase",
+        "reading": "The rule says: 'The first refusal phrase the text contains, typographic quotes read as straight ones, or None.' The input contains the typographic apostrophe in 'I’m sorry', which is folded to a straight apostrophe by _plain_quotes, so the first listed refusal phrase is 'I'm sorry'. The rewritten text contains the straight apostrophe directly, so the first listed refusal phrase is also 'I'm sorry'. Both texts therefore yield the same answer, 'I'm sorry', so the rule says the answer should be unchanged.",
+        "rewritten": "I'm sorry, I cannot help with that."
+      },
+      {
+        "after": "yes",
+        "before": "yes",
+        "contradicted": true,
+        "detail": "",
+        "executed": "unchanged",
+        "expect": "moves",
+        "input": "Here is the answer:\n```json\n{\"a\": 1, \"b\": 2}\n```",
+        "kernel": "recovered-from-prose",
+        "reading": "k_recovered_from_prose returns 'yes' if parse_content(text, REFUSAL_PHRASES)[3] is True, else 'no'. parse_content first tries loads_strict(content); if that fails, it calls recover_json_object. In the input, the object is inside a code fence, so strict parsing fails and recovery succeeds, making recovered_from_prose 'yes'. In the rewritten text, the object is bare JSON, so loads_strict succeeds and recovered_from_prose is 'no'. The rule therefore says the answer should differ.",
+        "rewritten": "Here is the answer:\n{\"a\": 1, \"b\": 2}"
+      },
+      {
+        "after": "yes",
+        "before": "yes",
+        "contradicted": true,
+        "detail": "",
+        "executed": "unchanged",
+        "expect": "moves",
+        "input": "Here is the answer:\n```json\n{\"a\": 1, \"b\": 2}\n```",
+        "kernel": "recovered-from-prose",
+        "reading": "k_recovered_from_prose returns 'yes' if parse_content(text, REFUSAL_PHRASES)[3] is True, else 'no'. parse_content first tries loads_strict(content); if that fails, it calls recover_json_object. In the input, the object is inside a code fence, so strict parsing fails and recovery succeeds, making recovered_from_prose True ('yes'). In the rewritten text, the object is not fenced but is the entire text, so loads_strict succeeds and recovered_from_prose is False ('no').",
+        "rewritten": "Here is the answer:\n{\"a\": 1, \"b\": 2}"
+      }
+    ],
+    "degenerate": 0,
+    "distinct_behaviours": 6,
+    "executed": 12,
+    "proposals": 12,
+    "reproduces_h43": 0,
+    "unrunnable": 0
+  },
+  "method_version": 1
+}

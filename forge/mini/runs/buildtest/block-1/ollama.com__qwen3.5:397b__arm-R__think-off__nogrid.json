@@ -1,0 +1,410 @@
+{
+  "calls": [
+    {
+      "completion_tokens": 168,
+      "detail": "",
+      "elapsed_s": 2,
+      "fenced": false,
+      "index": 0,
+      "ok": true,
+      "prompt_tokens": 1138
+    },
+    {
+      "completion_tokens": 95,
+      "detail": "",
+      "elapsed_s": 2,
+      "fenced": false,
+      "index": 1,
+      "ok": true,
+      "prompt_tokens": 1182
+    },
+    {
+      "completion_tokens": 109,
+      "detail": "",
+      "elapsed_s": 2,
+      "fenced": false,
+      "index": 2,
+      "ok": true,
+      "prompt_tokens": 1223
+    },
+    {
+      "completion_tokens": 198,
+      "detail": "",
+      "elapsed_s": 3,
+      "fenced": false,
+      "index": 3,
+      "ok": true,
+      "prompt_tokens": 1244
+    },
+    {
+      "completion_tokens": 138,
+      "detail": "",
+      "elapsed_s": 2,
+      "fenced": false,
+      "index": 4,
+      "ok": true,
+      "prompt_tokens": 1347
+    },
+    {
+      "completion_tokens": 148,
+      "detail": "",
+      "elapsed_s": 2,
+      "fenced": false,
+      "index": 5,
+      "ok": true,
+      "prompt_tokens": 1392
+    },
+    {
+      "completion_tokens": 148,
+      "detail": "",
+      "elapsed_s": 2,
+      "fenced": false,
+      "index": 6,
+      "ok": true,
+      "prompt_tokens": 1451
+    },
+    {
+      "completion_tokens": 159,
+      "detail": "",
+      "elapsed_s": 2,
+      "fenced": false,
+      "index": 7,
+      "ok": true,
+      "prompt_tokens": 1510
+    },
+    {
+      "completion_tokens": 73,
+      "detail": "",
+      "elapsed_s": 2,
+      "fenced": false,
+      "index": 8,
+      "ok": true,
+      "prompt_tokens": 1578
+    },
+    {
+      "completion_tokens": 81,
+      "detail": "",
+      "elapsed_s": 2,
+      "fenced": false,
+      "index": 9,
+      "ok": true,
+      "prompt_tokens": 1570
+    },
+    {
+      "completion_tokens": 134,
+      "detail": "",
+      "elapsed_s": 2,
+      "fenced": false,
+      "index": 10,
+      "ok": true,
+      "prompt_tokens": 1559
+    },
+    {
+      "completion_tokens": 86,
+      "detail": "",
+      "elapsed_s": 2,
+      "fenced": false,
+      "index": 11,
+      "ok": true,
+      "prompt_tokens": 1583
+    }
+  ],
+  "condition": {
+    "arm": "R",
+    "condition_id": "ollama.com/qwen3.5:397b/arm-R/think-off/nogrid",
+    "endpoint": {
+      "max_tokens": null,
+      "model": "qwen3.5:397b",
+      "path": "ollama.com",
+      "quantisation": "unknown, may be quantised",
+      "think": false,
+      "timeout_seconds": 900
+    },
+    "grid_cells": [],
+    "proposals_requested": 12
+  },
+  "executions": [
+    {
+      "after": "I cannot",
+      "before": "I cannot",
+      "contradicted": true,
+      "detail": "",
+      "executed": "unchanged",
+      "expect": "moves",
+      "input": "I cannot help you with that request.",
+      "kernel": "refusal-phrase",
+      "reading": "The rule for 'refusal_phrase_in' states it returns 'The first refusal phrase the text contains'. The list REFUSAL_PHRASES includes both 'I cannot' and \"I'm sorry\". In the 'input' text, the first matching phrase from the list is 'I cannot'. In the 'rewritten' text, 'I'm sorry' appears before 'I cannot', making it the first matching phrase. Therefore, the returned value moves from 'I cannot' to \"I'm sorry\".",
+      "rewritten": "I'm sorry, but I cannot help you with that request."
+    },
+    {
+      "after": "yes",
+      "before": "yes",
+      "contradicted": true,
+      "detail": "",
+      "executed": "unchanged",
+      "expect": "moves",
+      "input": "Here is the data:\n```json\n{\"status\": \"ok\"}\n```",
+      "kernel": "recovered-from-prose",
+      "reading": "Whether the object had to be recovered from prose or a fence (yes) or read strictly (no).",
+      "rewritten": "Here is the data: {\"status\": \"ok\"}"
+    },
+    {
+      "after": "JSON_OBJECT",
+      "before": "REFUSAL_SUSPECTED",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "I cannot assist with that request.",
+      "kernel": "response-verdict",
+      "reading": "The refusal heuristic decides the verdict only when no object can be recovered; whether a phrase occurred at all is a separate fact, :func:`refusal_phrase_in`, recorded beside a recovered object (H36: a refusal followed by a form is a refusal and a form).",
+      "rewritten": "{\"answer\": \"no\"}"
+    },
+    {
+      "after": "{\"status\":\"draft\"}",
+      "before": "{\"id\":123,\"status\":\"final\"}",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "Here is the first attempt:\n```json\n{\"status\": \"draft\"}\n```\nActually, here is the corrected final answer:\n```json\n{\"status\": \"final\", \"id\": 123}\n```",
+      "kernel": "recovery",
+      "reading": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text",
+      "rewritten": "Here is the first attempt:\n```json\n{\"status\": \"draft\"}\n```\nActually, here is the corrected final answer:\n{\"status\": \"final\", \"id\": 123}"
+    },
+    {
+      "after": "{\"id\":1}",
+      "before": "{\"id\":1}",
+      "contradicted": true,
+      "detail": "",
+      "executed": "unchanged",
+      "expect": "moves",
+      "input": "Let me try again. The correct JSON is {\"id\": 1}.",
+      "kernel": "recovery",
+      "reading": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction.",
+      "rewritten": "First attempt: {\"id\": 0}. Correction: The correct JSON is {\"id\": 1}."
+    },
+    {
+      "after": "{\"id\":1}",
+      "before": "{\"id\":1}",
+      "contradicted": true,
+      "detail": "",
+      "executed": "unchanged",
+      "expect": "moves",
+      "input": "Here is a draft: {\"id\": 1}. Actually, the float value 3.14 is the answer.",
+      "kernel": "recovery",
+      "reading": "A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over, so a final answer refused for a float loses to an earlier draft that parsed",
+      "rewritten": "Here is a draft: {\"id\": 1}. Actually, the final answer is {\"value\": 3.14}."
+    },
+    {
+      "after": "{\"id\":1}",
+      "before": "{\"id\":1}",
+      "contradicted": true,
+      "detail": "",
+      "executed": "unchanged",
+      "expect": "moves",
+      "input": "Here is a draft: {\"id\": 1}. Actually, the float value 3.14 is the answer.",
+      "kernel": "recovery",
+      "reading": "A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over, so a final answer refused for a float loses to an earlier draft that parsed",
+      "rewritten": "Here is a draft: {\"id\": 1}. Actually, the final answer is {\"value\": 3.14}."
+    },
+    {
+      "after": "{\"result\":42}",
+      "before": "{\"status\":\"ok\"}",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "First, here is a valid JSON object: {\"status\": \"ok\"}.\nHowever, my final answer is just the number 42.",
+      "kernel": "recovery",
+      "reading": "A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over, so a final answer refused for a float loses to an earlier draft that parsed",
+      "rewritten": "First, here is a valid JSON object: {\"status\": \"ok\"}.\nHowever, my final answer is {\"result\": 42}."
+    },
+    {
+      "after": "I am unable",
+      "before": "I can't",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "I can't do that.",
+      "kernel": "refusal-phrase",
+      "reading": "The first refusal phrase the text contains, typographic quotes read as straight ones, or None.",
+      "rewritten": "I am unable to do that."
+    },
+    {
+      "after": "I cannot",
+      "before": "I cannot",
+      "contradicted": true,
+      "detail": "",
+      "executed": "unchanged",
+      "expect": "moves",
+      "input": "I cannot help you with that request.",
+      "kernel": "refusal-phrase",
+      "reading": "The first refusal phrase the text contains, typographic quotes read as straight ones, or None.",
+      "rewritten": "I am sorry, but I cannot help you with that request."
+    },
+    {
+      "after": "yes",
+      "before": "yes",
+      "contradicted": true,
+      "detail": "",
+      "executed": "unchanged",
+      "expect": "moves",
+      "input": "Here is the data you requested:\n```json\n{\"status\": \"complete\"}\n```",
+      "kernel": "recovered-from-prose",
+      "reading": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text... k_recovered_from_prose(text): Whether the object had to be recovered from prose or a fence (yes) or read strictly (no).",
+      "rewritten": "Here is the data you requested: {\"status\": \"complete\"}"
+    },
+    {
+      "after": "I am unable",
+      "before": "I cannot",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "I'm sorry, but I cannot assist with that request.",
+      "kernel": "refusal-phrase",
+      "reading": "The first refusal phrase the text contains, typographic quotes read as straight ones, or None.",
+      "rewritten": "I am unable to help you with this task as an AI assistant."
+    }
+  ],
+  "measures": {
+    "behaviours": [
+      [
+        "recovered-from-prose",
+        "yes",
+        "yes"
+      ],
+      [
+        "recovery",
+        "{\"id\":123,\"status\":\"final\"}",
+        "{\"status\":\"draft\"}"
+      ],
+      [
+        "recovery",
+        "{\"id\":1}",
+        "{\"id\":1}"
+      ],
+      [
+        "recovery",
+        "{\"status\":\"ok\"}",
+        "{\"result\":42}"
+      ],
+      [
+        "refusal-phrase",
+        "I can't",
+        "I am unable"
+      ],
+      [
+        "refusal-phrase",
+        "I cannot",
+        "I am unable"
+      ],
+      [
+        "refusal-phrase",
+        "I cannot",
+        "I cannot"
+      ],
+      [
+        "response-verdict",
+        "REFUSAL_SUSPECTED",
+        "JSON_OBJECT"
+      ]
+    ],
+    "contradicted": 7,
+    "contradictions": [
+      {
+        "after": "I cannot",
+        "before": "I cannot",
+        "contradicted": true,
+        "detail": "",
+        "executed": "unchanged",
+        "expect": "moves",
+        "input": "I cannot help you with that request.",
+        "kernel": "refusal-phrase",
+        "reading": "The rule for 'refusal_phrase_in' states it returns 'The first refusal phrase the text contains'. The list REFUSAL_PHRASES includes both 'I cannot' and \"I'm sorry\". In the 'input' text, the first matching phrase from the list is 'I cannot'. In the 'rewritten' text, 'I'm sorry' appears before 'I cannot', making it the first matching phrase. Therefore, the returned value moves from 'I cannot' to \"I'm sorry\".",
+        "rewritten": "I'm sorry, but I cannot help you with that request."
+      },
+      {
+        "after": "yes",
+        "before": "yes",
+        "contradicted": true,
+        "detail": "",
+        "executed": "unchanged",
+        "expect": "moves",
+        "input": "Here is the data:\n```json\n{\"status\": \"ok\"}\n```",
+        "kernel": "recovered-from-prose",
+        "reading": "Whether the object had to be recovered from prose or a fence (yes) or read strictly (no).",
+        "rewritten": "Here is the data: {\"status\": \"ok\"}"
+      },
+      {
+        "after": "{\"id\":1}",
+        "before": "{\"id\":1}",
+        "contradicted": true,
+        "detail": "",
+        "executed": "unchanged",
+        "expect": "moves",
+        "input": "Let me try again. The correct JSON is {\"id\": 1}.",
+        "kernel": "recovery",
+        "reading": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction.",
+        "rewritten": "First attempt: {\"id\": 0}. Correction: The correct JSON is {\"id\": 1}."
+      },
+      {
+        "after": "{\"id\":1}",
+        "before": "{\"id\":1}",
+        "contradicted": true,
+        "detail": "",
+        "executed": "unchanged",
+        "expect": "moves",
+        "input": "Here is a draft: {\"id\": 1}. Actually, the float value 3.14 is the answer.",
+        "kernel": "recovery",
+        "reading": "A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over, so a final answer refused for a float loses to an earlier draft that parsed",
+        "rewritten": "Here is a draft: {\"id\": 1}. Actually, the final answer is {\"value\": 3.14}."
+      },
+      {
+        "after": "{\"id\":1}",
+        "before": "{\"id\":1}",
+        "contradicted": true,
+        "detail": "",
+        "executed": "unchanged",
+        "expect": "moves",
+        "input": "Here is a draft: {\"id\": 1}. Actually, the float value 3.14 is the answer.",
+        "kernel": "recovery",
+        "reading": "A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over, so a final answer refused for a float loses to an earlier draft that parsed",
+        "rewritten": "Here is a draft: {\"id\": 1}. Actually, the final answer is {\"value\": 3.14}."
+      },
+      {
+        "after": "I cannot",
+        "before": "I cannot",
+        "contradicted": true,
+        "detail": "",
+        "executed": "unchanged",
+        "expect": "moves",
+        "input": "I cannot help you with that request.",
+        "kernel": "refusal-phrase",
+        "reading": "The first refusal phrase the text contains, typographic quotes read as straight ones, or None.",
+        "rewritten": "I am sorry, but I cannot help you with that request."
+      },
+      {
+        "after": "yes",
+        "before": "yes",
+        "contradicted": true,
+        "detail": "",
+        "executed": "unchanged",
+        "expect": "moves",
+        "input": "Here is the data you requested:\n```json\n{\"status\": \"complete\"}\n```",
+        "kernel": "recovered-from-prose",
+        "reading": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text... k_recovered_from_prose(text): Whether the object had to be recovered from prose or a fence (yes) or read strictly (no).",
+        "rewritten": "Here is the data you requested: {\"status\": \"complete\"}"
+      }
+    ],
+    "degenerate": 0,
+    "distinct_behaviours": 8,
+    "executed": 12,
+    "proposals": 12,
+    "reproduces_h43": 0,
+    "unrunnable": 0
+  },
+  "method_version": 1
+}
