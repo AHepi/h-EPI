@@ -1,0 +1,18 @@
+# Execution
+
+## Proposals so far (proposals)
+[8e1a8debc7d73366] (mini.pair-proposal.usetest.v1)
+Under the documented rule, `recover_json_object` scores "the last one inside a code fence when any fence holds one", and "a candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable". For the input `fence[ A ] B`, the fence holds A, which has repeated keys but is scoreable via last-wins, so the rule's recovered object is A resolved last-wins ({"a":2}). For the rewritten `fence[ A ]`, the fence still holds A, so the rule again scores A. Therefore the rule says the recovery kernel is unchanged. The code instead returns B for the input because its fenced pool skips duplicate-key candidates and then takes the last top-level object, and returns NO_OBJECT for the rewritten because there is no top-level object.
+cell: fence[ A ] B
+input: ```
+{"a":1,"a":2}
+```
+{"b":2}
+rewrite: remove B after the fence
+rewritten: ```
+{"a":1,"a":2}
+```
+commitments: {"kernel":"recovery","expect":"unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

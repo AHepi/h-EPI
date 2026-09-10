@@ -1,0 +1,20 @@
+# Execution
+
+## Proposals so far (proposals)
+[32efd18efa4072c0] (mini.pair-proposal.usetest.v1)
+For the recovery kernel, the documented rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." In the original text, the fence holds one object, A, so the recovery answer is A. In the rewritten text, the fence holds two objects, A and B, so the condition "when any fence holds one" is not met; the rule then takes the last top-level object in the text, which is B. Therefore the recovery answer moves from A to B.
+cell: fence[ A ] S
+input: ```
+{"a": 1}
+```
+Here is the result:
+rewrite: added B inside the fence after A
+rewritten: ```
+{"a": 1}
+{"b": 2}
+```
+Here is the result:
+commitments: {"kernel": "recovery", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

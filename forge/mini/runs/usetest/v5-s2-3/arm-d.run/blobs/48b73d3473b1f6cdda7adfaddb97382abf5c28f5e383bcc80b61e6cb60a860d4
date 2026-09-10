@@ -1,0 +1,21 @@
+{
+  "body": "Expectation held: the recovery answer moved, and the execution recorded as_expected true. But the proposal's specific prediction failed: it said the rewritten answer would be C, while the execution's after is {\"b\":2}. The commitment only said 'moves', so the mismatch was not caught. No inputs were thrown away; the pair was validated and executed as given. The failure is a rule-code mismatch, not a misread. The rule says \"The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction.\" The code's fenced pool stores each fence's entire content as one candidate via fenced.append(match.group(1)) and then tries loads_strict(candidate.strip()) on that whole string. When a fence contains two objects, that whole string is not one JSON object, so it is passed over, and the code falls through to the top-level pool, where the last top-level object is B. Thus the code does not score the last object inside the fence; it scores the last fenced block whose entire content is a single object. Next, build a pair with a fence containing multiple objects and a later top-level object outside, and commit to the specific recovered object being the last object inside the fence (C), not merely 'moves'; this will expose the mismatch.",
+  "citations": [
+    {
+      "block": "89d90822c95bf087",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction."
+    },
+    {
+      "block": "a84d5d4d0af15997",
+      "quote": "fenced.append(match.group(1))"
+    },
+    {
+      "block": "a84d5d4d0af15997",
+      "quote": "value = loads_strict(candidate.strip())"
+    },
+    {
+      "block": "610c52a64f2e4e56",
+      "quote": "\"after\": \"{\\\"b\\\":2}\""
+    }
+  ]
+}

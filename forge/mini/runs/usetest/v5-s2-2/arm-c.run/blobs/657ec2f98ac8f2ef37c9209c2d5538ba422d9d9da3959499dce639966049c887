@@ -1,0 +1,8 @@
+{
+  "body": "Under the documented rule, the object scored is the last one inside a code fence when any fence holds one, and a candidate that parses as strict JSON or as JSON with repeated keys resolved last-wins is scoreable. For the input, the last fenced object is B ({\"b\": 2, \"b\": 3}), which is scoreable by last-wins, so recovery should be B. For the rewritten text, the last fenced object is still B, so recovery should still be B. Therefore the rule says the answer is unchanged. The code instead moves from B to A because its fenced pool does not apply last-wins to fenced candidates and falls back to the earlier valid A.",
+  "commitments": "{\"kernel\": \"recovery\", \"expect\": \"unchanged\"}",
+  "input": "```\n{\"a\": 1}\nHere is the result:\n```\n```\n{\"b\": 2, \"b\": 3}\n```",
+  "rewritten": "```\n{\"a\": 1}\n```\n```\n{\"b\": 2, \"b\": 3}\n```",
+  "rewrite": "removed S",
+  "cell": "fence[ A S ] fence[ B ]"
+}

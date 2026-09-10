@@ -1,0 +1,20 @@
+# Execution
+
+## Proposals so far (proposals)
+[bbf0f9ec4ea4a3c6] (mini.pair-proposal.usetest.v1)
+The rule for k_recovery says: "The object recovered from the reply, as canonical JSON text, or NO_OBJECT." For the input, the text is a code fence containing a sentence and an object. The object is inside a code fence, so recover_json_object scores the last object inside a code fence, which is {"a": 1}. Thus k_recovery returns that object. For the rewritten text, the object part is removed, leaving a fence with only a sentence and no object. There is no object inside a fence and no top-level object, so k_recovery returns NO_OBJECT. Therefore the answer moves.
+cell: fence[ S A ]
+input: ```
+Here is the result:
+{"a": 1}
+```
+rewrite: ```
+Here is the result:
+```
+rewritten: ```
+Here is the result:
+```
+commitments: {"kernel": "recovery", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

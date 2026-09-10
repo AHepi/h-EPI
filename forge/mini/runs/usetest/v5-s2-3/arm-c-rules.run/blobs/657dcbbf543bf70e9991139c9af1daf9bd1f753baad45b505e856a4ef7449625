@@ -1,0 +1,20 @@
+# Execution
+
+## Proposals so far (proposals)
+[9e2494f5d7353c36] (mini.pair-proposal.usetest.v1)
+Rule read: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." For the original text fence[ A ] A, the fence holds one object A, so the scored object is A. For the rewritten text fence[ A ] A B, the fence still holds one object A, and B is after the fence, so the rule still says the scored object is A. Therefore the rule says k_recovery should be unchanged. I expect the check to move to B because it may incorrectly pick the last top-level object.
+cell: fence[ A ] A
+input: ```
+{"a": 1}
+```
+{"a": 1}
+rewrite: added {"b": 2} after the fence
+rewritten: ```
+{"a": 1}
+```
+{"a": 1}
+{"b": 2}
+commitments: {"kernel": "recovery", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

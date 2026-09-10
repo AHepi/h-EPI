@@ -1,0 +1,8 @@
+{
+  "body": "Under the documented rule, `recover_json_object` scores \"the last one inside a code fence when any fence holds one\", and \"a candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable\". For the input `fence[ A ] S`, the only fenced object is A, strict JSON, so the rule's recovered object is A ({\"a\":1}). For the rewritten `fence[ A ] S fence[ B ]`, the last fenced object is B, which has repeated keys but is scoreable via last-wins, so the rule's recovered object is B resolved last-wins ({\"b\":2}). Therefore the rule says the recovery kernel moves. The code instead returns A for both texts because its fenced pool skips duplicate-key candidates and returns the earlier fenced object.",
+  "commitments": "{\"kernel\":\"recovery\",\"expect\":\"moves\"}",
+  "input": "```\n{\"a\":1}\n```\nHere is the result:",
+  "rewritten": "```\n{\"a\":1}\n```\nHere is the result:\n```\n{\"b\":1,\"b\":2}\n```",
+  "rewrite": "add fence[ B ] after S",
+  "cell": "fence[ A ] S"
+}

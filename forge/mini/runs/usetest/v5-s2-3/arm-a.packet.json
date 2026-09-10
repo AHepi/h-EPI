@@ -1,0 +1,41 @@
+{
+  "arm": "A",
+  "ceiling_breached": false,
+  "cost": {
+    "completion_tokens": 5289,
+    "completion_tokens_allowed": 1312000,
+    "completion_tokens_per_call": 32000,
+    "invocations": 1,
+    "invocations_allowed": 41,
+    "machine_executions": 0,
+    "prompt_tokens": 3858,
+    "refusals": [],
+    "wall_ms": 24835
+  },
+  "endpoint": {
+    "base_url": "https://ollama.com",
+    "kind": "ollama-chat",
+    "options": {
+      "seed": 7,
+      "temperature": 0
+    },
+    "think": true,
+    "timeout_seconds": 900
+  },
+  "instance": "v5-s2-3",
+  "leaks": [],
+  "method_version": 5,
+  "model": "deepseek-v4-pro:0813",
+  "packet": {
+    "claim": "refusal_phrase_in returns the first phrase in the supplied refusal_phrases list that appears anywhere, not the first refusal phrase that occurs in the text.",
+    "execution_evidence": "none: no executable oracle",
+    "expected": "For content containing multiple refusal phrases, it should return the one whose occurrence starts earliest in the text, after typographic quotes are folded and case is ignored.",
+    "observed": "It iterates over refusal_phrases in list order and returns the first list item found anywhere, so a later-occurring phrase can be returned before an earlier one.",
+    "reproducer": "content = \"I can't do that. I cannot help.\"; refusal_phrases = ('I cannot', \"I can't\", \"I'm sorry\", 'I am unable', 'as an AI', 'cannot assist')",
+    "scope": "Any text containing at least two different refusal phrases where the earlier occurrence is later in the refusal_phrases list order.",
+    "source_basis": "The first refusal phrase the text contains, typographic quotes read as straight ones, or None.",
+    "uncertainty": "The k_refusal_phrase docstring says 'first listed refusal phrase', which could be read as list order, but refusal_phrase_in's own docstring says the first phrase the text contains."
+  },
+  "protocol": "mini-use-test-1",
+  "stopped_on": null
+}

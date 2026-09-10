@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown the documented rules and the complete source of the checks. Read this cycle's executions beside the proposals: say which expectations held, which failed, which inputs the validator threw away and why, and for each failure whether the proposer misread the rule or the rule as written and the code part company — quote the rule's words and name the line of code. Say what a proposer should build next. Cite nothing you were not shown.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Expectation held: recovery moved from {"a":1} to {"b":2}, as recorded. No inputs were thrown away; the validator accepted the pair, echoed the cell, and executed it. This does not demonstrate a defect. The rule says "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." The code's `recover_json_object` builds `fenced` from `_FENCE` matches and then iterates `for pool in (fenced, top_level): for candidate in reversed(pool):` returning the first dict. In the rewritten text the single fenced candidate is the whole two-object string `{"a": 1}\n{"b": 2}`, which fails strict parsing, so the code falls through to `top_level` and returns the last top-level object, B. Under the rule's 'holds one' as at-least-one, the last object inside the fence is also B; under an exactly-one reading, the fallback is B. The proposer's premise that the condition is not met is a misreading if 'holds one' means 'contains an object', but even accepting it, the answer is the same, so no rule/code divergence is shown. Next, build a pair where a fence contains two objects and a third top-level object follows the fence: the rule's fenced-object reading would select the second fenced object, but the code's fenced candidate fails and the top-level fallback returns the following object.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

@@ -1,0 +1,24 @@
+# Execution
+
+## Proposals so far (proposals)
+[05dec432387e3c31] (mini.pair-proposal.usetest.v1)
+The rule says: 'The refusal heuristic decides the verdict only when no object can be recovered'. In the input, the last object inside a code fence is {"b": 2}, so an object is recovered and the response verdict is not decided by the refusal heuristic. In the rewritten text, the same object is still recovered (the added 'I cannot' is outside any fence and does not change the last fenced object), so the rule says the response verdict must stay unchanged. If the check moves, that would be contrary to the rule.
+cell: fence[ A ] fence[ B ]
+input: ```
+{"a": 1}
+```
+```
+{"b": 2}
+```
+rewrite: add 'I cannot' after the second fence
+rewritten: ```
+{"a": 1}
+```
+```
+{"b": 2}
+```
+I cannot
+commitments: {"kernel": "response-verdict", "expect": "unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

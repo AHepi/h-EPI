@@ -1,0 +1,42 @@
+[
+  {
+    "phase": "tests",
+    "reply": "{\n  \"tests\": [\n    {\n      \"kernel\": \"refusal-phrase\",\n      \"input\": \"I'm sorry I cannot do that\",\n      \"expected\": \"I'm sorry\"\n    },\n    {\n      \"kernel\": \"response-verdict\",\n      \"input\": \"[1,2]\",\n      \"expected\": \"INVALID_JSON\"\n    },\n    {\n      \"kernel\": \"recovery\",\n      \"input\": \"```\\n{\\\"a\\\":1}\\n```\\n{\\\"b\\\":2}\",\n      \"expected\": \"{\\\"a\\\":1}\"\n    },\n    {\n      \"kernel\": \"span-occurs\",\n      \"input\": \"not json\",\n      \"expected\": \"UNREADABLE_INPUT\"\n    },\n    {\n      \"kernel\": \"recovery\",\n      \"input\": \"[{\\\"a\\\":1}, {\\\"b\\\":2}]\",\n      \"expected\": \"NO_OBJECT\"\n    }\n  ]\n}",
+    "results": [
+      {
+        "kernel": "refusal-phrase",
+        "input": "I'm sorry I cannot do that",
+        "expected": "I'm sorry",
+        "answer": "I cannot"
+      },
+      {
+        "kernel": "response-verdict",
+        "input": "[1,2]",
+        "expected": "INVALID_JSON",
+        "answer": "JSON_OBJECT"
+      },
+      {
+        "kernel": "recovery",
+        "input": "```\n{\"a\":1}\n```\n{\"b\":2}",
+        "expected": "{\"a\":1}",
+        "answer": "{\"a\":1}"
+      },
+      {
+        "kernel": "span-occurs",
+        "input": "not json",
+        "expected": "UNREADABLE_INPUT",
+        "answer": "UNREADABLE_INPUT"
+      },
+      {
+        "kernel": "recovery",
+        "input": "[{\"a\":1}, {\"b\":2}]",
+        "expected": "NO_OBJECT",
+        "answer": "{\"b\":2}"
+      }
+    ]
+  },
+  {
+    "phase": "report",
+    "reply": "{\n  \"claim\": \"recover_json_object treats JSON objects nested inside arrays as top-level candidates, so an array of objects yields the last object instead of NO_OBJECT.\",\n  \"expected\": \"NO_OBJECT for an input that is a JSON array containing objects, because no top-level object exists.\",\n  \"observed\": \"k_recovery returns the canonical JSON of the last object in the array, e.g. {\\\"b\\\":2}.\",\n  \"reproducer\": \"[{\\\"a\\\":1}, {\\\"b\\\":2}]\",\n  \"source_basis\": \"Every top-level balanced object in the text is a candidate... an object nested inside another is not a candidate of its own.\",\n  \"execution_evidence\": \"kernel recovery on input [{\\\"a\\\":1}, {\\\"b\\\":2}] answered {\\\"b\\\":2} while expected NO_OBJECT.\",\n  \"scope\": \"Any reply whose text is a JSON array containing one or more objects (or any non-object container with object elements).\",\n  \"uncertainty\": \"\"\n}"
+  }
+]
