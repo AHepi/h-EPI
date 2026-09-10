@@ -86,22 +86,38 @@ cell would have to decide it in advance. Mini's arms may not claim systematic co
 and two of the six mutations live there deliberately, which is what makes the decision rule
 (`O`, `G`, `R`, `C`) testable rather than assumed.
 
-## The five arms, at one ceiling
+## The arms, at one ceiling
 
-Eight model invocations and twelve thousand completion tokens per arm per instance, counted by
-the harness rather than asked for in a prompt.
+The ceiling is counted by the harness rather than asked for in a prompt, and from method version
+4 it is **reserved before each send**: a call and its completion allowance are taken out of the
+budget first, the send whose reservation will not fit is never made, and the per-call figure is
+also the request's own cap, so no reply can be larger than what was reserved for it. Block 1 ran
+at eight invocations and twelve thousand completion tokens, counted after the fact; block 2 runs
+at forty-one invocations, one hundred and sixty-four thousand completion tokens, and four
+thousand per call, which is what walking the whole grid costs the most expensive arm.
 
-| Arm | What it is given | What it costs per cycle |
-|---|---|---|
-| A | rules and full source, no execution, one candidate | one call |
-| B | rules, full source, and up to six machine-run tests per round, with the answers | one call a round |
-| C | rules only, one machine-assigned cell at a time, machine execution with validation | one call |
-| D | C plus a critic and the run's own history fed back | two calls |
-| E | D with attention on | two calls |
+| Arm | What it is given | Source | What it costs per cycle |
+|---|---|---|---|
+| A | rules and full source, no execution, one candidate | yes | one call |
+| B | rules, full source, and up to six machine-run tests per round, with the answers | yes | one call a round |
+| C | one machine-assigned cell at a time, machine execution with validation | **yes** | one call |
+| C-rules | arm C with the source withheld, and nothing else changed | **no** | one call |
+| D | C plus a critic and the run's own history fed back | **yes** | two calls |
+| E | D with attention on | **yes** | two calls |
 
-The consequence is pre-registered and is not an accident: at a common ceiling the core walks
-seven cells and the full loop about three, because the critic costs a call each cycle. Every arm
-ends in one further call that writes the neutral packet, so the packet is not free for anyone.
+**Information parity, and why arm C-rules exists.** Through version 3 arm A was shown the
+subject's source and every mini arm was shown only its documented rules, so a difference between
+them had two readings at once: the loop is worse than a reading, or the loop was reading less.
+Version 4 gives the proposer and the critic of C, D and E the same source arm A gets, through a
+machine seat, and keeps the old brief as its own arm. C against C-rules says what withholding the
+code costs, with the loop, the grid, the model and the ceiling held fixed. C against A says what
+the loop costs with the information held fixed. Neither pair settles anything alone.
+
+At a common ceiling the core walks twice as many cells as the full loop, because the critic costs
+a call each cycle. That is pre-registered and is not an accident. Every arm ends in one further
+call that writes the neutral packet, so the packet is not free for anyone, and arm B's rounds are
+bounded by the ceiling rather than by a constant — a constant is not a shared ceiling at any
+ceiling above four calls.
 
 ## Adjudication
 

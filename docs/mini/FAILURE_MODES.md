@@ -529,6 +529,57 @@ plainly to write real line breaks, not the two characters, is the remedy, and
 the record shows the failure either way because the executor stores the text it
 ran.
 
+## M17 — A reasoning model's whole allowance spent before any answer began
+
+**Seen on** six probes on scratch instances before MINI-USE-TEST-1 block 2, on
+`deepseek-v4-pro:0813`. With the reasoning setting on and a per-call cap of 2,000
+completion tokens, every reply was cut off inside its reasoning: three refused
+replies reading `MINI_SUBMISSION_NOT_JSON`, no proposals, and the run stopped on
+its own reservation. Raising the cap to 8,000 did not help: the model spent about
+6,000 tokens a call and still returned nothing parseable, 24,195 completion tokens
+for zero proposals. With reasoning off, replies parse at about 250 tokens a call.
+**Status: OPEN**, and a property of the pairing rather than of either part.
+
+A per-call cap and a reasoning setting are not independent. A cap chosen so a
+ceiling can be walked bounds the answer *and* the reasoning, and a model that
+reasons at length inside that budget returns a truncated prefix that is not the
+shape anything asked for — so the run pays full price for every call and records
+nothing. The cap is not wrong and the reasoning is not wrong; declaring both
+without measuring the model between them is. The remedy used was to measure
+first and to write the measurement into the block's pre-registration, so the
+setting is a stated cost rather than an assumption.
+
+## M18 — The notation handed to a seat written back as the text
+
+**Seen on** four probes on scratch instances before block 2. Handed the cell
+`fence[ A ]` and told to build the input from it, the proposer put the four
+characters `fence[ A ]` in the input field. Every proposal was
+`INVALID_INSTANTIATION` before anything ran, and the arm's packet then reported
+the *validator* as the defect — a false positive about the harness, produced by
+a machinery fault, at full price. **Status: CLOSED** by a worked example.
+
+The instruction said to build the input from the cell and never showed a cell
+built. A description of a rendering is not a rendering, and M8 is the same
+failure one level up: a seat asked for an instance gives a description of one.
+The remedy is an example of a shape that is **not in the grid** — here
+`fence[ S ]` and `fence[ S ] A` — so the seat is shown what building means
+without being shown an answer. Notation-copying stopped at once: nought of three
+proposals executed became two of six and three of six.
+
+## M19 — The rewrite leaves the grammar the input satisfied
+
+**Seen on** the same probes, after M18 was closed: of six proposals, two to
+three built a valid input and a rewritten text that is no cell of the grammar,
+so the pair could not be run. **Status: OPEN**, and narrower than M18.
+
+A pair is two texts, and validating one of them is half a validation. The
+instruction says the rewrite must itself be a cell and says why a fence holding
+one object is changed by adding rather than by emptying, and models still leave
+the grammar — most often by removing the part that was the fence's only content.
+The record shows it either way, since the executor stores both texts and names
+which one failed. It is left open and measured rather than patched inside a
+registered block.
+
 ## What the thirty runs show, and do not
 
 The control pre-registered in the README (a fence holding a sentence beside its

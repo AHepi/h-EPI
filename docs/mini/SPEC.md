@@ -247,13 +247,39 @@ rebuilds it from the log alone and its digest equals what the run reported.
 **Tests** `test_cycles.py`.
 
 The stage list is the body of **one cycle**. The end stage ends the cycle. Three
-things end the run, checked before each cycle and never inside one:
+things end the run between cycles, and two more end it before a send:
 
-| stop | declared | reason recorded |
-|---|---|---|
-| cycle cap | `cycles.max_cycles` (default 1) | `cycle_cap` |
-| budget cap | `cycles.max_calls` | `budget_cap` |
-| a registered condition | `cycles.stop_condition` (default `mini.stop.never`) | `stop_condition:<id>` |
+| stop | declared | reason recorded | read |
+|---|---|---|---|
+| cycle cap | `cycles.max_cycles` (default 1) | `cycle_cap` | between cycles |
+| budget cap | `cycles.max_calls` | `budget_cap` | between cycles |
+| a registered condition | `cycles.stop_condition` (default `mini.stop.never`) | `stop_condition:<id>` | between cycles |
+| a call that will not fit | `cycles.max_calls` | `call_budget_spent` | **before each send** |
+| an allowance that will not fit | `cycles.max_completion_tokens` | `completion_budget_spent` | **before each send** |
+
+**The reservation.** A budget read only between cycles is a budget about the
+schedule, not about the run: a cycle that starts under it finishes over it, and a
+single reply far larger than anything expected is paid for before anything counts
+it. So a call and its completion allowance are taken out of the budget *before*
+the send, the send whose reservation will not fit is never made, a
+`BUDGET_REFUSED` event names the ceiling it would have crossed and what was
+already spent, and the run stops there. A retry is a send and reserves like one.
+A machine seat calls no model and reserves nothing.
+
+`cycles.max_completion_tokens` and `cycles.completion_tokens_per_call` are
+declared together or not at all: a total with no per-call allowance cannot be
+reserved before a send, and an allowance with no total bounds nothing
+(`MINI_CYCLES_INVALID`). The per-call figure is also what the request carries as
+its own cap, so no reply can be larger than what was reserved for it; a plan that
+declares a reservation and a responder that does not enforce it is refused before
+the first send (`MINI_COMPLETION_CAP_UNENFORCED`). Both keys are absent by
+default and are written to no compiled manifest that does not declare them, so a
+manifest compiled before they existed keeps the digest it had.
+
+`RUN_ENDED` and `RunOutcome` carry the sends made and the completion tokens
+returned, refused replies included. `tokens_by_kind` counts only accepted
+replies, so a run that paid for replies it turned away cannot say so from that
+alone.
 
 A stop condition declares the signals it reads and is handed a view of exactly
 those; a function that could take the record is refused at registration
@@ -640,6 +666,30 @@ not its choice. `NextCellTests` holds the walk.
 `forge/mini/manifests/experiments/README.md` is the pre-registration and the
 reading of the thirty runs that used these, in order, with what each shape
 found and did not; `FAILURE_MODES.md` carries what they corrected.
+
+### 22a. The use-test seats, and information parity (block 2)
+
+**Module** `usetest.py`. **Command** `tools/mini_usetest.py`. **Tests**
+`test_usetest.py`.
+
+MINI-USE-TEST-1 puts mini against arms that are not mini on the same hidden
+condition. Three machine seats serve it: `mini.usetest-rules.v1` emits the
+subject's signatures and docstrings and no code, `mini.usetest-source.v1` emits
+its complete source, and `mini.usetest-execution.v1` validates each pair against
+the cell that was assigned to it and runs both texts against the subject.
+
+The source seat exists because of a confound, not a feature. Arm A — one model
+reading the subject — is shown the rules and the code. Until method version 4
+every mini arm was shown the rules and no code, so any difference between them
+could be read as an information difference rather than a difference between a
+loop and a reading. Arms C, D and E now declare the source seat and feed it to
+the proposer and to the critic; arm **C-rules** is arm C with that seat removed
+and nothing else changed. C against C-rules says what withholding the code
+costs; C against A says what the loop costs with the information held fixed.
+
+`arm_manifest` takes the reservation of §7 and writes it into the arm's
+`cycles`, so every arm of a block runs under one ceiling that is enforced before
+each send rather than counted after it.
 
 ### 23. Reading a run, and running a campaign (R46)
 
