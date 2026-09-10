@@ -233,24 +233,28 @@ def registry_text(prefix: str = "") -> str:
     return "\n\n".join(lines) + "\n"
 
 
-def _proposal_of(context: MachineContext, record: Mapping[str, Any]) -> dict[str, Any] | None:
-    """The commitments of one artifact, read as the format layer read them.
+def proposal_fields(commitments: str, extra: Mapping[str, Any] | None = None) -> dict[str, Any] | None:
+    """What one artifact committed: its commitments JSON, with the kind's own fields over it.
 
-    A raw line break a model wrote inside the string is admitted here as it is there
-    (`formats.loads_admitting_control`); a seat that refused what the format accepted would
-    mark its own run's proposals unreadable, which is what mini register M13 records.
+    A raw line break a model wrote inside the string is admitted here as the format layer
+    admits it (`formats.loads_admitting_control`); a seat that refused what the format accepted
+    would mark its own run's proposals unreadable, which is what mini register M13 records. A
+    kind may carry the long fields as its own optional fields instead of nesting them in the
+    commitments string, where they would need a second level of escaping (M13); they are read
+    here as if they had been written there, and they win where both are present.
     """
 
     try:
-        parsed, _recovered = loads_admitting_control(context.commitments(record))
+        parsed, _recovered = loads_admitting_control(commitments)
     except RecordError:
         parsed = {}
     fields = dict(parsed) if type(parsed) is dict else {}
-    # A kind may carry the long fields as its own optional fields instead of nesting them in
-    # the commitments string, where they would need a second level of escaping (M13). They are
-    # read here as if they had been written there, and they win where both are present.
-    fields.update({name: value for name, value in dict(record.get("extra") or {}).items() if type(value) is str})
+    fields.update({name: value for name, value in dict(extra or {}).items() if type(value) is str})
     return fields or None
+
+
+def _proposal_of(context: MachineContext, record: Mapping[str, Any]) -> dict[str, Any] | None:
+    return proposal_fields(context.commitments(record), record.get("extra"))
 
 
 # --- the machine seats ---
