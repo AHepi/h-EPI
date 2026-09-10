@@ -227,6 +227,50 @@ class _PredictingResponder:
         return Reply(text=text, prompt_tokens=1, completion_tokens=1)
 
 
+class NextCellTests(MiniTestCase):
+    """The grid is enumerated by machine: each next-cell seat names the cell named least often."""
+
+    def test_the_seat_walks_the_grid_and_starts_again_from_the_least_named(self) -> None:
+        from creib.forge.mini.blindspot import NEXT_CELL_KINDS
+
+        first, second = NEXT_CELL_KINDS[:2]
+        manifest = _pair_manifest(cycles=2)
+        manifest["sources"] = [{"source_id": "grid", "text": "object alone / nothing\n\nsentence then an object / a different bare object\n\nobject alone / a sentence\n"}]
+        for kind_id in (first, second):
+            manifest["port_types"].append({"port_type": "cell_" + kind_id, "draws_from": {"artifact_kinds": [kind_id]}, "render": {"rule": "list_bodies", "header": "Grid"}})
+            manifest["kinds"].append({"kind_id": kind_id, "title": "Next cell", "input_ports": [], "output_port": {"port_id": "out", "produces_kind": kind_id}})
+        proposal = next(k for k in manifest["kinds"] if k["kind_id"] == "mini.pair-proposal.recovery.v1")
+        proposal["input_ports"].append({"port_id": "cell", "port_type": "cell_" + first, "window": "this_cycle"})
+        second_proposal = json.loads(json.dumps(proposal))
+        second_proposal["kind_id"] = second_proposal["output_port"]["produces_kind"] = "mini.pair-proposal.recovery-2.v1"
+        second_proposal["input_ports"][-1] = {"port_id": "cell", "port_type": "cell_" + second, "window": "this_cycle"}
+        manifest["kinds"].append(second_proposal)
+        next(t for t in manifest["port_types"] if t["port_type"] == "pair_proposals")["draws_from"]["artifact_kinds"].append("mini.pair-proposal.recovery-2.v1")
+        stages = manifest["stages"]
+        propose = next(s for s in stages if s["stage_id"] == "propose")
+        propose["ports"] = propose["ports"] + ["cell"]
+        stages[1:2] = [{"stage_id": "cell-1", "kind_id": first, "seat": "machine", "ports": []}, dict(propose), {"stage_id": "cell-2", "kind_id": second, "seat": "machine", "ports": []}, dict(propose, stage_id="propose-2", kind_id="mini.pair-proposal.recovery-2.v1")]
+
+        def naming(cell: str) -> str:
+            return submission("a body", json.dumps({"kernel": kernels.KERNEL_RECOVERY, "input": OBJECT, "rewritten": OBJECT + cell, "expect": "moves", "rewrite": "test", "cell": cell}))
+
+        script = {"propose": [naming("object alone / nothing"), naming("object alone / nothing")], "propose-2": [naming("sentence then an object / a different bare object"), naming("object alone / a sentence")]}
+        plan, outcome = self.run_manifest(manifest, script)
+        state = replay(outcome.root / "log.jsonl", plan.genesis)
+        blobs = BlobStore(outcome.root / "blobs")
+        named = [json.loads(blobs.get(r["commitments_ref"]).decode("utf-8"))["cell"] for r in state.artifacts.values() if r["kind_id"] in (first, second)]
+        self.assertEqual(
+            named,
+            ["object alone / nothing", "sentence then an object / a different bare object", "object alone / a sentence", "object alone / a sentence"],
+            "cycle 1 names the first two; cycle 2 names the third, never named, and then again the one named once (by the seat) over those named twice or thrice",
+        )
+        from creib.forge.mini.runner import render_brief
+
+        brief, _ = render_brief(plan, state, blobs, plan.stage("propose-2"), 2)
+        self.assertIn("The cell to cover: object alone / a sentence", brief)
+        self.assertEqual(brief.count("The cell to cover:"), 1, "a proposer's port draws its own stage's cell kind, so it sees one cell")
+
+
 class TransformDuplicateTests(MiniTestCase):
     def test_a_repeated_triple_is_named_and_not_re_run(self) -> None:
         from pathlib import Path

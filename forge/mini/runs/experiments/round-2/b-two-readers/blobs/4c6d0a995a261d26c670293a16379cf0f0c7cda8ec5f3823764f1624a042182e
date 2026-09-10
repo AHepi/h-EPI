@@ -1,0 +1,16 @@
+```json
+{
+  "body": "Testing the `conformance.kernel.grounding` rule's handling of the `VALUE_NOT_IN_SPAN` verdict when the value is a substring of the span but not an exact match due to partial or overlapping text. The rule states: 'The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked.' The input contains a value that is a substring of the span but not explicitly demarcated (e.g., 'amara' in 'amara okoro'), while the rewritten version adjusts the span to exactly match the value. The rule's wording implies that the value must appear *verbatim* in the span, so the check's answer should move from `VALUE_NOT_IN_SPAN` to `GROUNDED`. This tests whether the rule's 'value-in-span checked' requires exact containment or allows partial matches.",
+  "commitments": "{\"kernel\": \"conformance.kernel.grounding\", \"input\": \"{\\\"value\\\": \\\"amara\\\", \\\"span\\\": \\\"amara okoro\\\", \\\"document\\\": \\\"The claimant is amara okoro.\\\"}\", \"rewritten\": \"{\\\"value\\\": \\\"amara\\\", \\\"span\\\": \\\"amara\\\", \\\"document\\\": \\\"The claimant is amara okoro.\\\"}\", \"expect\": \"moves\", \"rewrite\": \"Adjusted the span to exactly match the value to test whether the check requires exact containment for the 'value-in-span' check.\"}",
+  "citations": [
+    {
+      "block": "638a6360b40e8b8a",
+      "quote": "\"points\": [{\"kernel\": \"conformance.kernel.recovery\", \"transform\": \"conformance.transform.fence\", \"moves\": false, \"input\": \"{\\\"claimant_name\\\": \\\"amara okoro\\\",…\""
+    },
+    {
+      "block": "6ab8417a77f3b613",
+      "quote": "kernel conformance.kernel.grounding: The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked: the input is one JSON object {\\\"value\\\", \\\"span\\\", \\\"document\\\"}; GROUNDED, SPAN_MISSING, SPAN_NOT_IN_DOCUMENT or VALUE_NOT_IN_SPAN."
+    }
+  ]
+}
+```

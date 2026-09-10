@@ -1,0 +1,7 @@
+Three new properties where code behavior diverges from documented rules:
+
+1. **recovery**: The rules state 'the last one inside a code fence when any fence holds one, else the last top-level object'. However, the code checks ALL fenced blocks BEFORE any top-level objects regardless of position. A fenced JSON appearing early in content beats a top-level JSON appearing later - the 'last' rule applies within each pool, not across pools.
+
+2. **recovery** (duplicate handling): The `_loads_last_wins` function returns None when JSON parses successfully WITHOUT duplicate keys, even though the docstring suggests it handles 'JSON that strict parsing refused'. It only activates for duplicate-key cases, not as a general lenient parser.
+
+3. **grounding**: The rules state 'no relaxation' for the grounding verdict. However, while span-in-document uses verbatim matching (no relaxation), the value-in-span check uses `.casefold()` for case-insensitive comparison. A value matching the span with different casing still returns GROUNDED - a relaxation not documented.

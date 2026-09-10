@@ -1,0 +1,20 @@
+```json
+{
+  "body": "I propose an input for the pair (conformance.kernel.response-verdict, conformance.transform.refusal-prose-before) where the kernel's answer does NOT move under the transform. The transform adds a refusal phrase in prose before a valid JSON object, but the harness should still return the verdict `JSON_OBJECT` (not `REFUSAL_SUSPECTED`) because the refusal phrase is ignored when an object is successfully recovered. The source explicitly states that the refusal heuristic only decides the verdict when *no object can be recovered*, and the refusal phrase's presence is recorded separately (H36). Thus, the verdict should remain `JSON_OBJECT` even if a refusal phrase is present, as long as an object is recovered.\n\nThe input is a valid JSON object preceded by a refusal phrase in prose. The harness's `parse_content` function will recover the object and return `JSON_OBJECT`, ignoring the refusal phrase for the verdict (though it may still be recorded as a separate fact). This contradicts the catalogue's claim that the verdict moves (`\"moves\": false` in [8bfbf8b9bdcd2a4c] is incorrect; it should be `true` if the verdict were to change, but it does not).",
+  "commitments": "{\"kernel\": \"conformance.kernel.response-verdict\", \"transform\": \"conformance.transform.refusal-prose-before\", \"input\": \"I cannot assist with that request. {\\\"claimant_name\\\": \\\"amara okoro\\\"}\"}",
+  "citations": [
+    {
+      "block": "51a2da55fab63214",
+      "quote": "\"The refusal heuristic decides the verdict only when no object can be recovered; whether a phrase occurred at all is a separate fact, :func:`refusal_phrase_in`, recorded beside a recovered object (H36: a refusal followed by a form is a refusal and a form).\""
+    },
+    {
+      "block": "8bfbf8b9bdcd2a4c",
+      "quote": \"{\"points\": [{\"kernel\": \"conformance.kernel.response-verdict\", \"transform\": \"conformance.transform.refusal-prose-before\", \"moves\": false, \"input\": \"{\\\"claimant_name\\\": \\\"amara okoro\\\"}\"}]}\""
+    },
+    {
+      "block": "0b6b91481d36c386",
+      "quote": "\"transform conformance.transform.refusal-prose-before: Put the sentence 'I cannot stress how clear this document is:' before the reply; it holds a listed refusal phrase.\""
+    }
+  ]
+}
+```

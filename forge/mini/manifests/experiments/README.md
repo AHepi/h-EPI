@@ -204,3 +204,45 @@ Records under `forge/mini/runs/experiments/round-3/`. The criterion is
 unchanged. The control is found if a verdict on a pair or triple of the
 control's shape (a fence holding a sentence and an object, a different bare
 object after it) shows the bare object scored.
+
+### Round 3, read so far, and one addendum
+
+Written when r3-1, r3-2, r3-3, r3-4 and r3-5 had ended and E of round 2 was
+still in its second cycle on nemotron-3-nano:30b.
+
+- **r3-1** (S3's shape on gemma4:31b): six proposals, five of them the same
+  triple, three dropped for a commitments string the model could not escape.
+  S3's five defects did not replicate on this model; what S3 found is the
+  shape on qwen3.5:397b, and the model is a factor.
+- **r3-2** (the grid with two dimensions, four cycles): twelve cells named,
+  eleven run, one duplicate, all rejected. The proposer chose "nothing" or "a
+  sentence" as the part after the fence nine times in twelve and never put a
+  different bare object after a fence that held a sentence: the control's cell
+  was again not reached, now one choice short in twelve.
+- **r3-3** (two readers on gemma4:31b, four cycles): twelve pairs, ten with
+  both readings held. The one candidate is P-01's row (a leading newline does
+  not set the prose flag). The one "expectation held, prediction failed" is the
+  code's reader wrong about a phrase inside a string value.
+- **r3-4** (the mirror of S3 on mistral-large-3:675b): three proposals in
+  three cycles, five dropped for a fenced input the pattern refused. Two
+  candidates, both the transform applied at its own fixed point (a bare object
+  after a reply that already ends in one; upper case on upper case): the
+  trivial way to refute a row that says the pair moves.
+- **r3-5** (replies as written on gemma4:31b, four cycles): twelve replies
+  with headings, hedges and corrected drafts, eleven run, all rejected. Three
+  in cycle 4 put a fenced object before a bare "final note" object, the
+  control's shape but for the sentence inside the fence, and the rule and the
+  code agree there.
+- **D** (claimed properties, qwen3.5:397b): nine properties claimed from the
+  code, nine pairs written from the rules to refute them, nine survived. Two
+  of the claims name the value-case point A found ("casefold provides
+  undocumented case-insensitive relaxation").
+
+The grid's proposer picks its own cell and picks the easy ones. The addendum
+takes the choice away: `r3-6-grid-enumerated` lists the twenty cells as a
+source and a machine seat (`mini.next-cell.v1`, one numbered kind per proposer
+stage) names the cell named least often so far; the proposer instantiates the
+cell it is given. Seven cycles of three, gemma4:31b, so every cell is named
+at least once. This is the one shape whose dimensions were chosen knowing the
+control; what it tests is whether a rule-reading proposer, handed the control's
+cell, writes the rule's expectation and whether the machine then disagrees.

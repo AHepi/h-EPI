@@ -1,0 +1,18 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. Read this cycle's executions beside the proposals: say which expectations held, which failed, and why, reading the source; say which failures matter, which are trivial, and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+All three proposals succeeded: each execution recorded 'moved' where the catalogue claimed 'moves: false'. Proposal 9369482518ef89b0 correctly identified that catalogue row [55dd56154fb39a87] tested only valid JSON input, missing the case where invalid prose gains a recoverable object after the fence-then-bare-after transform adds a bare object. Proposal d25d96cd184191b0 similarly exposed that row [1c84027e761c6f99] did not test invalid prose that becomes recoverable when draft-before prepends a valid object. Proposal 35892a741887f406 found that row [9c839bd675122bb9] missed how upper-case breaks JSON boolean literals, changing the verdict from JSON_OBJECT to INVALID_JSON.
+
+These failures matter: they reveal the catalogue tested narrow input classes (valid JSON only, or inputs lacking case-sensitive literals) rather than probing boundary conditions where transforms actually change recoverability or validity. The recovery kernel's documented behavior [36691b98b1a95cad] explicitly searches for top-level objects in prose when strict parsing fails, so transforms that add objects to invalid prose should move it—the catalogue's 'moves: false' claims were incomplete, not wrong for their tested inputs.
+
+A proposer should next target: (1) transforms combined with invalid inputs that become valid after transformation, (2) case or whitespace transforms on inputs containing JSON literals or significant whitespace, and (3) refusal-phrase detection under transforms that alter quote typography or case, since the kernel normalizes typographic quotes [36691b98b1a95cad] but the catalogue row [6e346a638ffdff8b] claims no movement under typographic-quotes.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

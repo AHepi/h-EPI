@@ -1,0 +1,19 @@
+```json
+{
+ "body": "All three proposals in this cycle were successful, with the machine's behavior aligning perfectly with the documented rules. \n\nProposal cd0aeccc7f2e4016 correctly identified that wrapping a JSON object in a code fence triggers a 'yes' for `recovered-from-prose`, as the rule explicitly groups fences with prose: \"Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)\" [a70c2e9bc362b532].\n\nProposal 47ae52ddfadca9d3 correctly tested the priority of object recovery over the refusal heuristic. The rule for `parse_content` states: \"The refusal heuristic decides the verdict only when no object can be recovered\" [934eac6cd189abce]. The execution confirmed that adding a valid JSON object moved the verdict from `REFUSAL_SUSPECTED` to `JSON_OBJECT` despite the presence of a refusal phrase.\n\nProposal 3fa907c0824d943a correctly targeted the 'value-in-span' check of the grounding kernel. The rule specifies the verdict is given with \"value-in-span checked\" [934eac6cd189abce]. The execution confirmed that when the value was not in the span, the result was `VALUE_NOT_IN_SPAN`, and moving the value to match the span resulted in `GROUNDED`.\n\nSince no failures occurred, there are no misreadings or discrepancies to report. Proposers should continue to seek edge cases in the recovery logic, such as the interaction between multiple candidates (fenced vs. top-level) or the specific behavior of the 'last-wins' duplicate key resolution mentioned in the rules [934eac6cd189abce].",
+ "citations": [
+  {
+   "block": "a70c2e9bc362b532",
+   "quote": "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)."
+  },
+  {
+   "block": "934eac6cd189abce",
+   "quote": "The refusal heuristic decides the verdict only when no object can be recovered"
+  },
+  {
+   "block": "934eac6cd189abce",
+   "quote": "The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked"
+  }
+ ]
+}
+```

@@ -1,0 +1,9 @@
+All three expectations in this cycle held. 
+
+Proposal 2c1ef8fa3f88a47b correctly predicted that changing the value to a non-matching number would move the verdict to `VALUE_NOT_IN_SPAN`. This is consistent with the source code's case-insensitive check: `if _normalise_whitespace(fields["value"]).casefold() not in _normalise_whitespace(fields["span"]).casefold(): return "VALUE_NOT_IN_SPAN"` [84f95499664c266b].
+
+Proposal 2b1b16c25f8c197e correctly predicted that adding an extra space in the document would leave the verdict `GROUNDED`. This is because `_span_occurs` uses `_normalise_whitespace`, which is defined as `" ".join(value.split())` [84f95499664c266b], effectively collapsing contiguous whitespace.
+
+Proposal 2e44fbe69723ceb7 correctly predicted that replacing a space with a hyphen in the document would move the verdict to `SPAN_NOT_IN_DOCUMENT`. As the proposer noted, `split()` does not treat hyphens as whitespace [84f95499664c266b], so the normalized span "five days" fails to match "five-days".
+
+These failures (in the sense of the grounding check failing) are material as they define the boundaries of the harness's normalization logic. A proposer should next explore the `date_range_completion` relaxation in `_span_occurs` [84f95499664c266b] to see if it behaves as expected when enabled, or test the `recover_json_object` logic regarding the "last top-level object" rule [84f95499664c266b].

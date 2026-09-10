@@ -1,0 +1,7 @@
+Three properties found where code behavior diverges from documented rules:
+
+1. **recovered-from-prose**: The rules state this indicates whether recovery was from 'prose or a fence (yes) or read it as strict JSON (no)'. However, the code returns True for BOTH fence and prose recovery - there is no distinction. A fence-recovered object and a prose-recovered object both yield 'yes'.
+
+2. **refusal-phrase**: The rules describe phrase matching but do not state that matching is case-insensitive. The code lowercases both content and phrases before matching, so 'I CANNOT' matches 'I cannot' - a sensitivity not documented.
+
+3. **span-occurs**: The rules state the return is 'verbatim or NOT_IN_DOCUMENT'. The code can additionally return 'case_insensitive' or 'date_range_completion' when those relaxations are enabled - outcomes the rules do not mention.

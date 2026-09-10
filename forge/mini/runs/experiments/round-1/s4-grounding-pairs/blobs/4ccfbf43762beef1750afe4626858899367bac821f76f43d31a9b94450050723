@@ -1,0 +1,6 @@
+```json
+{
+ "body": "I will test the `conformance.kernel.grounding` kernel by introducing a case difference between the `value` and the `span`. \n\nIn the input, the value \"Five\" is a case-insensitive match for the span \"five days\". According to the source code, the value-in-span check is performed using `.casefold()` on both the normalized value and the normalized span: `if _normalise_whitespace(fields[\"value\"]).casefold() not in _normalise_whitespace(fields[\"span\"]).casefold(): return \"VALUE_NOT_IN_SPAN\"`. Therefore, a careful reader (and the code) would consider this grounded. \n\nHowever, if I change the `value` to \"6\", it is no longer contained within the span \"five days\". This is a material change that should move the verdict from `GROUNDED` to `VALUE_NOT_IN_SPAN`.",
+ "commitments": "{\"kernel\": \"conformance.kernel.grounding\", \"input\": \"{\\\"value\\\": \\\"Five\\\", \\\"span\\\": \\\"five days\\\", \\\"document\\\": \\\"Amara was away for five days.\\\"}\", \"rewritten\": \"{\\\"value\\\": \\\"6\\\", \\\"span\\\": \\\"five days\\\", \\\"document\\\": \\\"Amara was away for five days.\\\"}\", \"expect\": \"moves\", \"rewrite\": \"I changed the value from a case-insensitive match of the span to a non-matching number.\"}"
+}
+```

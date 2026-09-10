@@ -1,0 +1,9 @@
+All three proposals in this cycle were executed as expected; no failures occurred. 
+
+Proposal b9fbd0e5b997f0ab correctly identified that the recovery kernel prioritizes the last object in a code fence over prose objects, regardless of their relative positions in the text. This aligns with the rule: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text" [329989b28a883155].
+
+Proposal a13801e8cf5f2ded correctly tested the refusal phrase priority. The rule specifies "The first listed refusal phrase the reply contains" [329989b28a883155], and the code implements this by iterating through the `REFUSAL_PHRASES` list and returning the first match found in the text (lines 114-116 of [10f155e3a8564119]), rather than the first phrase to appear chronologically in the string.
+
+Proposal 4c36a63946f74ffe correctly verified that `conformance.kernel.span-occurs` performs whitespace normalization. The rule states the check is "whitespace-normalised, no relaxation" [329989b28a883155], which is implemented via `_normalise_whitespace` (lines 131-132 of [10f155e3a8564119]).
+
+Since no failures were found, proposers should continue seeking edge cases where the documented rules might be ambiguous or where the implementation deviates from the prose description, such as the handling of repeated keys or the specific behavior of the refusal heuristic when objects are present.

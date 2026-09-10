@@ -1,0 +1,15 @@
+# Execution
+
+## Proposals so far (proposals)
+[9369482518ef89b0] (mini.proposal.v1)
+I challenge catalogue row [55dd56154fb39a87] which claims the recovery kernel does not move under fence-then-bare-after. The row's example is valid JSON, so recovery succeeds before the transform. My input is invalid JSON prose (`not json.`), a feature the example lacks. Before the transform, recovery finds no JSON object and returns NO_OBJECT. After the transform wraps the reply in a fence and adds {"later": 1} after it, the fenced content fails to parse, but the bare object after the fence is found as a top-level object and returned. The output changes from NO_OBJECT to {"later": 1}, refuting the "moves: false" claim.
+commitments: {"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fence-then-bare-after", "input": "not json."}
+[d25d96cd184191b0] (mini.proposal.v1)
+I challenge catalogue row [1c84027e761c6f99] which claims the recovery kernel does not move under draft-before. The row's example is valid JSON, so recovery succeeds both before and after the transform. My input is invalid JSON prose ('not json'), a feature the example lacks. Before the transform, recovery scans the content, finds no JSON object, and raises RecordError. After the draft-before transform adds '{"draft": 1} then ' before the reply, the content becomes '{"draft": 1} then not json'. Recovery now finds the top-level object {"draft": 1} and returns it. The output changes from error to a JSON object, refuting the 'moves: false' claim.
+commitments: {"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.draft-before", "input": "not json."}
+[35892a741887f406] (mini.proposal.v1)
+I challenge catalogue row [9c839bd675122bb9] which claims the response-verdict kernel does not move under upper-case. The row's example likely lacks JSON boolean literals. My input contains the JSON literal `true` as a value. The upper-case transform converts `true` to `TRUE`, which is not valid JSON (only lowercase `true`, `false`, `null` are valid literals). Before the transform, strict parsing succeeds and the verdict is JSON_OBJECT. After the transform, strict parsing fails on `TRUE`, recovery also fails (the decoder rejects `TRUE`), and no refusal phrase is present, so the verdict becomes INVALID_JSON. This refutes the 'moves: false' claim.
+commitments: {"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.upper-case", "input": "{\"claimant_name\": \"amara\", \"active\": true}"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

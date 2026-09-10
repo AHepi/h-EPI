@@ -1,0 +1,20 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. Read this cycle's executions beside the proposals: say which expectations held, which failed, and why, reading the source; say which failures matter, which are trivial, and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The cycle's executions show a mixed result: one success and two failures.
+
+1. **Refusal Phrase (952e77cf5ac19399): Success.** The expectation that the kernel would move from 'I cannot' to 'I am unable' held. This confirms that `refusal_phrase_in` correctly iterates through `REFUSAL_PHRASES` and returns the first match found in the text [84f95499664c266b].
+
+2. **Recovery (d32223ce42497782): Failure.** The proposer expected the result to move when wrapping two top-level objects into a list. However, the execution shows the result remained `{"b":2}` for both the input `{"a": 1} {"b": 2}` and the rewritten `[{"a": 1}, {"b": 2}]`. This failure is significant because it suggests the recovery kernel is not treating the list as a valid 'JSON object' for recovery. Reading the source, `recover_json_object` explicitly checks `if type(value) is dict` [84f95499664c266b]. Since a list is not a dict, the kernel likely skipped the rewritten list and fell back to the last top-level object it could find (which, in the case of the list, might have been the internal `{"b": 2}` if the decoder's `raw_decode` loop found it). A proposer should try a rewrite that results in a different dictionary, rather than a list.
+
+3. **Grounding (3a1aec8ebe68b82b): Failure.** The proposer expected the verdict to move to `VALUE_NOT_IN_SPAN` when changing the value to "Amara X". Instead, the verdict remained `SPAN_NOT_IN_DOCUMENT`. This is a trivial failure of the test setup, not the kernel. The input `{"value": "Amara", "span": "amara okoro", "document": "Amara Okoro was here."}` already failed the `_span_occurs` check because `_span_occurs` uses `_normalise_whitespace` but no case-insensitive relaxation by default [84f95499664c266b]. Since "amara okoro" (lowercase) is not in "Amara Okoro was here." (case-sensitive), the verdict was already `SPAN_NOT_IN_DOCUMENT`. Changing the value did not matter because the kernel fails at the span check first. A proposer should ensure the span is a verbatim match in the document before testing the value-in-span logic.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

@@ -1,0 +1,67 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id. A prediction beside each proposal says what a reader of the code expected; where the expectation from the rule and the prediction from the code disagree, and the machine sided with one, say which reading was wrong and why.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+### Analysis of Failed Expectation: `conformance.kernel.refusal-phrase` (Proposal `c979e8959f8887a6`)
+
+The proposal `c979e8959f8887a6` expected the check to **move** when a refusal phrase was moved from inside a code fence to prose outside it. However, the execution showed the check remained **unchanged**, with the refusal phrase detected in both cases (`"I cannot"`). This reveals a misalignment between the documented rule and the implementation, as well as a misreading of the rule by the proposer.
+
+#### Rule vs. Code Discrepancy
+The documented rule states:
+> "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE."
+
+The rule’s wording implies that refusal phrases are checked **across the entire reply**, regardless of context (e.g., inside or outside fences). However, the implementation in `refusal_phrase_in` (line 42 in `source`) does not exclude fenced content:
+```python
+def refusal_phrase_in(content: str, refusal_phrases: tuple[str, ...]) -> str | None:
+    lowered = _plain_quotes(content).lower()
+    for phrase in refusal_phrases:
+        if _plain_quotes(phrase).lower() in lowered:
+            return phrase
+    return None
+```
+
+The function scans the entire `content` string, including fenced regions, and returns the first refusal phrase found. This contradicts the proposer’s expectation that fences would exclude refusal phrases, but it aligns with the rule’s literal wording: "the reply contains" means *anywhere* in the reply.
+
+#### Why the Proposer’s Expectation Failed
+The proposer assumed that the refusal-phrase check would ignore content inside fences, likely because:
+1. The `recover_json_object` function prioritizes fenced JSON objects over prose (lines 15–30 in `source`).
+2. The proposer inferred that refusal phrases inside fences would be treated as part of a JSON object and thus excluded from refusal checks.
+
+However, the refusal-phrase check is **independent of JSON recovery**. The `parse_content` function (lines 35–50 in `source`) only uses the refusal heuristic (`refusal_phrase_in`) **if no JSON object can be recovered** (lines 40–42). In the input, a valid JSON object was recovered from the fence, so the refusal phrase inside it was irrelevant to the verdict. In the rewritten text, the refusal phrase was in prose, but the JSON object was also in prose, so the refusal heuristic was not triggered (the verdict remained `JSON_OBJECT`).
+
+#### What Matters and Next Steps
+The failure matters because:
+1. **Rule Ambiguity**: The rule does not specify whether refusal phrases inside fences should be ignored. The implementation treats them as valid, but the proposer’s expectation (and likely others’) assumed they would be excluded.
+2. **Inconsistent Behavior**: The refusal-phrase check is applied uniformly, but the JSON recovery logic prioritizes fenced content. This creates a tension: a refusal phrase inside a fence is detected but may not affect the verdict if a valid JSON object is recovered.
+
+**Next Steps for Proposers**:
+- **Clarify the Rule**: Propose a rewrite of the refusal-phrase rule to explicitly state whether fenced content should be excluded. For example:
+  > "The first listed refusal phrase the reply contains **outside of code fences**, typographic apostrophes read as straight, or NONE."
+- **Test Refusal Heuristic Isolation**: Design a proposal where the refusal phrase is the *only* content in the reply (no JSON object), to test whether the heuristic is applied uniformly. For example:
+  - Input: ````json
+{"note": "I cannot assist."}
+```
+  - Rewritten: `I cannot assist.`
+  - Expectation: The verdict should move from `JSON_OBJECT` to `REFUSAL_SUSPECTED`.
+- **Test Fenced Refusals with Invalid JSON**: Propose a case where a fence contains an invalid JSON object *and* a refusal phrase, to see if the refusal heuristic is triggered. For example:
+  - Input: ````json
+{"note": "I cannot", invalid_json}
+```
+  - Rewritten: `I cannot assist.`
+  - Expectation: The verdict should move from `INVALID_JSON` to `REFUSAL_SUSPECTED`.
+
+#### Citations
+The following evidence blocks support this analysis:
+- The rule’s wording on refusal phrases: "The first listed refusal phrase the reply contains" ([c8c80e388572359c]).
+- The implementation of `refusal_phrase_in`, which scans the entire content string ([cf9c712ede28e4b9], lines 42–50).
+- The `parse_content` function, which only applies the refusal heuristic if no JSON object is recovered ([cf9c712ede28e4b9], lines 40–42).
+- Evidence showing refusal phrases are detected regardless of context ([6e346a638ffdff8b], [478f1f02c67c06c4], [42f90dc7e6a15965]).
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

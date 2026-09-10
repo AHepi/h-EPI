@@ -1,0 +1,20 @@
+```json
+{
+  "body": "I propose an input for the pair (conformance.kernel.response-verdict, conformance.transform.refusal-prose-before) where the kernel's answer does NOT move under the transform. The transform adds a refusal phrase in prose before a valid JSON object, but the harness should still return `JSON_OBJECT` as the verdict because the refusal phrase is ignored when an object is successfully recovered. The source confirms that the refusal heuristic only decides the verdict when *no object can be recovered* ([51a2da55fab63214], `parse_content` function). However, the catalogue claims the kernel's answer moves (`\"moves\": false` in [8bfbf8b9bdcd2a4c]), implying the verdict should change to `REFUSAL_SUSPECTED`. This is incorrect: the harness should prioritize the recovered object and return `JSON_OBJECT`, even if a refusal phrase is present.\n\nThe input is a refusal phrase followed by a valid JSON object. The refusal phrase is not detected as a refusal because the harness only checks for refusal phrases when no object is recovered, which violates H36 in the source. The verdict should remain `JSON_OBJECT` because the object is recovered successfully, and the refusal phrase should be recorded separately (as stated in H36).",
+  "commitments": "{\"kernel\": \"conformance.kernel.response-verdict\", \"transform\": \"conformance.transform.refusal-prose-before\", \"input\": \"I cannot assist with this request. {\\\"claimant_name\\\": \\\"amara okoro\\\"}\"}",
+  "citations": [
+    {
+      "block": "51a2da55fab63214",
+      "quote": "\"The refusal heuristic decides the verdict only when no object can be recovered; whether a phrase occurred at all is a separate fact, :func:`refusal_phrase_in`, recorded beside a recovered object (H36: a refusal followed by a form is a refusal and a form).\""
+    },
+    {
+      "block": "8bfbf8b9bdcd2a4c",
+      "quote": \"{\"points\": [{\"kernel\": \"conformance.kernel.response-verdict\", \"transform\": \"conformance.transform.refusal-prose-before\", \"moves\": false, \"input\": \"{\\\"claimant_name\\\": \\\"amara okoro\\\"}\"}]}\""
+    },
+    {
+      "block": "0b6b91481d36c386",
+      "quote": "\"transform conformance.transform.refusal-prose-before: Put the sentence 'I cannot stress how clear this document is:' before the reply; it holds a listed refusal phrase.\""
+    }
+  ]
+}
+```

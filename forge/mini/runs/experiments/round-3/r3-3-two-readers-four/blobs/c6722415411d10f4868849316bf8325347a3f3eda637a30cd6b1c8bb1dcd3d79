@@ -1,0 +1,13 @@
+The kernel `conformance.kernel.recovered-from-prose` corresponds to the `recovered_from_prose` boolean returned by `parse_content`. 
+
+1. For the input `\n{"a": 1}`:
+   - `loads_strict(content)` is called. `json.loads` (which `loads_strict` wraps) ignores leading whitespace. Therefore, `loads_strict` succeeds.
+   - `parse_content` returns `(parsed, "JSON_OBJECT", None, False)`.
+   - The result is `False` (no).
+
+2. For the rewritten text `{"a": 1}`:
+   - `loads_strict(content)` is called and succeeds.
+   - `parse_content` returns `(parsed, "JSON_OBJECT", None, False)`.
+   - The result is `False` (no).
+
+In both cases, the strict parse succeeds because leading whitespace does not invalidate a JSON object in standard Python `json.loads`. Thus, the result is unchanged.

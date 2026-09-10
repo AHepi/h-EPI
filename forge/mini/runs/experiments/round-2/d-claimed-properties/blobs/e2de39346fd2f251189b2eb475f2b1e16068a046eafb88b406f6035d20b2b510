@@ -1,0 +1,22 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id. Each proposal tests a claimed property; say whether the property stands or fell, and whether a fallen property was a misreading of the code or a place where the code does what nobody wrote down.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+All three proposals executed as expected, but the property claims require scrutiny against the documented rules.
+
+**refusal-phrase (0fb6b25712b54496):** Execution shows 'unchanged'—both 'I'm sorry' and 'I'M SORRY' detected 'I cannot'. The property claim states 'The answer changes when refusal phrase letter casing is altered' but this is backwards: case-insensitive matching means the answer stays the SAME. The rule [329989b28a883155] says 'typographic apostrophes read as straight' but does not document case-insensitivity. The code [10f155e3a8564119] lowercases both content and phrases: `lowered = _plain_quotes(content).lower()`. This is undocumented behavior—the rule and code part company. The property stands (case-insensitivity exists) but the claim's wording is inverted.
+
+**recovered-from-prose (4825077579c170ed):** Execution shows 'unchanged'—both fence and prose return 'yes'. The rule [329989b28a883155] states 'prose or a fence (yes) or read it as strict JSON (no)', which the code implements correctly. The property claim that 'both return yes' is accurate. However, evidence block [e847048a8c7847a8] shows fence transforms can yield moves=true for this kernel, suggesting the behavior is more nuanced than the proposal tested. The property stands; the proposer should test fence-versus-strict-JSON to verify the yes/no distinction the rule describes.
+
+**span-occurs (9a54050b62390ea9):** Execution shows 'moved'—'hello' in 'Hello world' returned 'NOT_IN_DOCUMENT', 'Hello' returned 'verbatim'. The rule [329989b28a883155] says 'no relaxation: ... verbatim or NOT_IN_DOCUMENT'. The property claim mentions 'case_insensitive relaxation is added to the relaxations tuple' but the test did not add relaxations—it changed the span text itself. The code [10f155e3a8564119] does support 'case_insensitive' and 'date_range_completion' returns when relaxations are enabled, which the rules do not mention. This is genuine undocumented behavior. The property stands but the proposal tested standard case-sensitive matching, not relaxation behavior. A proposer should test with explicit relaxations enabled to verify the undocumented return values.
+
+**What matters:** The refusal-phrase case-insensitivity and span-occurs relaxation returns are genuine divergences between rules and code. The recovered-from-prose behavior matches the rule but evidence suggests more complex fence/prose distinctions exist. Proposers should test: (1) refusal phrases with mixed typographic AND case variations together, (2) span-occurs with relaxations tuple explicitly populated, (3) recovered-from-prose comparing strict JSON (should be 'no') versus fence/prose (should be 'yes').
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

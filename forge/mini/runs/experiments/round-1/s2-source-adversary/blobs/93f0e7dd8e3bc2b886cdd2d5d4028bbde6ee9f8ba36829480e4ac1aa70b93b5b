@@ -1,0 +1,121 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. Read this cycle's executions beside the proposals: say which expectations held, which failed, and why, reading the source; say which failures matter, which are trivial, and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+### Analysis of Check Behavior Against Proposals and Executions
+
+#### 1. **`recover_json_object` Function: Handling of Fenced Content**
+
+**Expectation (from docstring):** The function should extract the *last top-level balanced object* in the text, prioritizing the last one inside a code fence if any fence holds one. This implies:
+- Nested objects inside a fence should not alter the extraction of the last top-level object.
+- Trailing non-whitespace characters (e.g., prose) after a top-level object in a fence should not affect extraction.
+
+**Proposal 4482345abc6da9c9 (Nested Objects in Fence):**
+- **Input:** ````json
+{"key1": "value1"} {"key2": "value2"}
+````
+- **Rewritten:** ````json
+{"outer": {"key1": "value1"}} {"key2": "value2"}
+````
+- **Execution (01e7304451c98137):** Both inputs returned `{"key2":"value2"}`, as expected.
+
+**Verdict:** The function behaves correctly here. The docstring’s emphasis on *top-level* objects is upheld: nesting the first object inside an outer object does not change the fact that `{"key2": "value2"}` is the last top-level object in the fence. The implementation’s reliance on `json.JSONDecoder.raw_decode` to scan for top-level objects (not just the first `{` to last `}`) ensures this. No failure.
+
+**Proposal 1463e1fe060049d3 (Trailing Prose in Fence):**
+- **Input:** ````json
+{"key": "value"} some trailing prose
+````
+- **Rewritten:** ````json
+{"key": "value"}
+````
+- **Execution (01e7304451c98137):** Both inputs returned `{"key":"value"}`, as expected.
+
+**Verdict:** The function behaves correctly. The docstring does not require the fence content to be *strictly* a JSON object (i.e., no trailing characters), only that the last top-level object is extracted. The implementation’s use of `raw_decode` to scan for objects within the fence content (not just the entire fence) ensures this. No failure.
+
+**Evidence from Catalogue:**
+- [47cbc7b41aaf5c8f] confirms that `recover_json_object` is invariant to prose inside fences ("moves: false").
+  > `"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fence-with-prose", "moves": false`
+
+#### 2. **Edge Cases Not Covered by Proposals**
+
+**a. Duplicate Keys in Fenced Content:**
+The docstring and implementation handle duplicate keys by resolving them last-wins (via `_loads_last_wins`). However, the proposals did not test whether this behavior is preserved when duplicates appear in fenced content. The evidence catalogue does not include a transform for this, but the source confirms it:
+- `_loads_last_wins` is called for any candidate that fails strict JSON parsing, including fenced content.
+- [638a6360b40e8b8a] (fence transform) shows no movement for `recovery`, implying duplicate keys in fences are handled as expected.
+
+**b. Refusal Phrases Followed by JSON Objects:**
+The docstring for `parse_content` states that the refusal heuristic only decides the verdict if *no object can be recovered*. This is critical: a refusal phrase followed by a valid JSON object should still return `JSON_OBJECT` (not `REFUSAL_SUSPECTED`). The proposals did not test this, but the evidence catalogue confirms:
+- [56ed413d078ac9c2] shows that `refusal-phrase` moves to `true` when a refusal phrase precedes a JSON object ("moves: true"), but this does not affect `recovery` or `response-verdict`.
+  > `"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.refusal-prose-before", "moves": true`
+- [8bfbf8b9bdcd2a4c] confirms `response-verdict` remains `JSON_OBJECT` in such cases ("moves: false").
+  > `"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.refusal-prose-before", "moves": false`
+
+**c. Floats as Final Answers:**
+The docstring notes that a final answer refused for being a float (e.g., `3.14`) loses to an earlier draft that parsed as JSON. The proposals did not test this, but the evidence catalogue confirms:
+- [791e3ba34ce7d357] shows `recovery` is invariant to floats after a valid object ("moves: false").
+  > `"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.float-after", "moves": false`
+- [a0e68e5c468b7070] shows `recovered-from-prose` moves to `true` when a float is the only recoverable object ("moves: true").
+  > `"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.float-after", "moves": true`
+
+#### 3. **Failures and Trivialities**
+
+**No Critical Failures:**
+The executed proposals (4482345abc6da9c9, 1463e1fe060049d3) behaved as expected. The implementation aligns with the docstring’s guarantees for:
+- Last top-level object extraction in fences.
+- Handling of trailing prose in fences.
+- Duplicate key resolution.
+- Refusal phrases followed by JSON objects.
+
+**Trivial or Non-Issues:**
+- **Case Sensitivity in Keys:** The docstring does not address case sensitivity, but the evidence catalogue shows `recovery` is case-sensitive (e.g., [d4ded569665ba70d] shows `recovery` moves when keys are uppercased). This is not a failure, as JSON keys are case-sensitive by design.
+  > `"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.upper-case", "moves": true`
+- **Whitespace Folding:** The docstring does not require whitespace folding, and the evidence confirms `recovery` is invariant to whitespace changes (e.g., [706dbfa18782a310]).
+  > `"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fold-whitespace", "moves": false`
+
+#### 4. **Next Steps for Proposers**
+
+**a. Test Refusal Phrase Heuristic:**
+The proposals did not test the interaction between refusal phrases and JSON object recovery. A useful pair would:
+- **Input:** A refusal phrase followed by a valid JSON object (e.g., `"I cannot assist. {\"key\": \"value\"}"`).
+- **Rewritten:** The same refusal phrase followed by an invalid object (e.g., `"I cannot assist. 3.14"`).
+- **Expect:** `response-verdict` changes from `JSON_OBJECT` to `REFUSAL_SUSPECTED` or `INVALID_JSON`.
+
+**b. Test Duplicate Keys in Fences:**
+The proposals did not test duplicate keys in fenced content. A useful pair would:
+- **Input:** ````json
+{"key": "value1", "key": "value2"}
+````
+- **Rewritten:** ````json
+{"key": "value2"}
+````
+- **Expect:** `recovery` returns the same object (last-wins resolution).
+
+**c. Test Nested Objects in Prose:**
+The docstring states that nested objects in prose are not candidates, but this was not tested. A useful pair would:
+- **Input:** `{"outer": {"key": "value"}}` (no fence).
+- **Rewritten:** `{"key": "value"}` (no fence, nested object removed).
+- **Expect:** `recovery` returns the same object (only top-level objects are candidates).
+
+**d. Test Float as Final Answer:**
+The docstring notes that floats lose to earlier JSON objects, but this was not tested. A useful pair would:
+- **Input:** `{"key": "value"} 3.14` (prose after a valid object).
+- **Rewritten:** `3.14` (only a float).
+- **Expect:** `recovery` changes from `{"key": "value"}` to `NO_OBJECT`.
+
+### Summary
+The checks under test (`recover_json_object`, `parse_content`, `refusal_phrase_in`) behave as documented for the tested cases. No critical failures were found, but the proposals did not cover:
+1. Refusal phrases followed by invalid objects.
+2. Duplicate keys in fenced content.
+3. Nested objects in prose.
+4. Floats as final answers.
+
+Proposers should focus on these edge cases in the next cycle.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

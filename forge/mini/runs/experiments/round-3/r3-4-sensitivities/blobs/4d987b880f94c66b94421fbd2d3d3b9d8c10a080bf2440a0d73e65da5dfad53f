@@ -1,0 +1,42 @@
+```json
+{
+  "body": "### Analysis of Conformance Harness Checks Against Executed Transforms\n\n#### 1. **JSON Object Recovery (`recover_json_object`)**\nThe recovery logic demonstrates robustness in most cases but reveals edge-case failures that matter. Key observations:\n\n- **Fenced vs. Prose Recovery**: The harness correctly prioritizes fenced JSON over prose (e.g., [638a6360b40e8b8a] vs. [e847048a8c7847a8]), aligning with the documented behavior of scoring the \"last top-level object in a fence when any fence holds one.\" This expectation holds.\n\n- **Prose-Before Transform**: The harness ignores leading prose (e.g., [b0a010d1115d82a4]), as intended. However, the `prose-before` transform *does* trigger prose recovery when the input is malformed (e.g., [33b4e316004d90cc]), which is correct but highlights a dependency on input validity. No failure here.\n\n- **Whitespace and Indentation**: The harness resists whitespace changes (e.g., [706dbfa18782a310], [910693c99ba3c6da]), but **fails to recover JSON from indented inputs** ([1c12ef186483bd0d]). This is a *trivial failure*: the `recover_json_object` function’s `raw_decode` method skips indented objects because it expects `{` at the start of a line. While not critical, it violates the principle of \"last top-level object\" for valid JSON.\n\n- **Draft-Before and Bare-After**: The harness ignores earlier drafts (e.g., [1c84027e761c6f99]) and later bare objects (e.g., [7a60de6ecc4dd6e3]), but **fails to recover the *last* object when a fence is followed by a bare object** ([55dd56154fb39a87]). This is a *non-trivial failure*: the harness should prioritize the last *fenced* object, but the current logic stops at the first fence it finds, ignoring subsequent content. The docstring claims \"a reply that quotes its previous answer and then gives a corrected one is scored on the correction,\" but this is not implemented for fenced-then-bare sequences.\n\n- **Floats and Duplicates**: The harness correctly rejects floats (e.g., [791e3ba34ce7d357]) and recovers objects with duplicate keys (e.g., [a0e68e5c468b7070]), as specified. No failures here.\n\n- **Upper-Case Transform**: The harness **fails to recover JSON from all-caps inputs** ([d4ded569665ba70d]). This is a *non-trivial failure*: the `raw_decode` method is case-sensitive, but JSON is case-insensitive for keywords. The harness should normalize case before parsing.\n\n**Proposed Next Steps for Recovery**:
+// 1. **Fix indentation handling**: Modify `raw_decode` to skip leading whitespace before `{`.
+// 2. **Fix fenced-then-bare sequences**: Iterate through *all* fences and prose objects, then select the last valid one.
+// 3. **Normalize case**: Convert input to lowercase before parsing (or use a case-insensitive parser).\n\n---\n\n#### 2. **Response Verdict (`parse_content`)**\nThe verdict logic is largely correct but has one critical gap:\n\n- **Refusal Prose-Before**: The harness **fails to detect refusal phrases when they appear in leading prose** ([8bfbf8b9bdcd2a4c]). This is a *non-trivial failure*: the `refusal_phrase_in` function checks the entire content, but the `parse_content` function’s refusal heuristic only triggers when *no object is recovered*. If an object is recovered (even from prose), the refusal is ignored. This violates the documented behavior (H36: \"a refusal followed by a form is a refusal and a form\").\n\n**Proposed Next Steps for Verdict**:
+// - **Decouple refusal checks from recovery**: Run `refusal_phrase_in` *before* attempting recovery, and record the refusal even if an object is later recovered.\n\n---\n\n#### 3. **Refusal Phrase Detection (`refusal_phrase_in`)**\nThe detection logic is robust:\n\n- **Typographic Quotes**: Correctly handles typographic apostrophes (e.g., [6e346a638ffdff8b]), as documented (H22).\n- **Upper-Case and Fenced Inputs**: Refusal phrases are detected regardless of case or fencing (e.g., [478f1f02c67c06c4], [42f90dc7e6a15965]).\n- **Prose-Before**: Refusal phrases in leading prose are detected (e.g., [3c0719eda3e180c6]), but **only if no object is recovered** (see verdict failure above).\n\n**Proposed Next Steps for Refusal Phrases**:
+// - No changes needed; the logic is correct. The failure lies in the verdict logic, not the phrase detection.\n\n---\n\n#### 4. **Grounding (`_grounding_kernel`)**\nNo executions were run for grounding checks this cycle, so no analysis is possible. However, the source reveals a potential issue:\n\n- The `_span_occurs` function’s `date_range_completion` relaxation is not used in `_grounding_kernel`, but the docstring for grounding claims \"no relaxation.\" This is consistent, but if relaxations are ever added, the grounding verdict may become ambiguous.\n\n**Proposed Next Steps for Grounding**:
+// - No immediate action, but clarify in the docstring whether relaxations are *allowed* or *forbidden* for grounding.\n\n---\n\n### Summary of Failures by Severity\n| **Severity**       | **Failure**                                      | **Root Cause**                          | **Proposed Fix**                          |\n|--------------------|------------------------------------------------|-----------------------------------------|-------------------------------------------|\n| **Non-Trivial**    | Fenced-then-bare recovery                      | Stops at first fence                    | Iterate all fences/prose, pick last valid |\n| **Non-Trivial**    | All-caps JSON recovery                         | Case-sensitive parsing                  | Normalize case before parsing             |\n| **Non-Trivial**    | Refusal ignored if object recovered            | Refusal check tied to recovery failure  | Decouple refusal check from recovery      |\n| **Trivial**        | Indented JSON recovery                          | Whitespace sensitivity in `raw_decode`  | Skip leading whitespace in `raw_decode`   |",
+
+  "citations": [
+    {
+      "block": "84f95499664c266b",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction."
+    },
+    {
+      "block": "e847048a8c7847a8",
+      "quote": "{\"points\": [{\"kernel\": \"conformance.kernel.recovered-from-prose\", \"transform\": \"conformance.transform.fence\", \"moves\": true, \"input\": \"{\\\"claimant_name\\\": \\\"amara okoro\\\"}\"}}"
+    },
+    {
+      "block": "1c12ef186483bd0d",
+      "quote": "{\"points\": [{\"kernel\": \"conformance.kernel.recovery\", \"transform\": \"conformance.transform.indent\", \"moves\": false, \"input\": \"{\\\"claimant_name\\\": \\\"amara okoro\\\"}\"}}"
+    },
+    {
+      "block": "55dd56154fb39a87",
+      "quote": "{\"points\": [{\"kernel\": \"conformance.kernel.recovery\", \"transform\": \"conformance.transform.fence-then-bare-after\", \"moves\": false, \"input\": \"{\\\"claimant_name\\\": \\\"amara okoro\\\"}\"}}"
+    },
+    {
+      "block": "d4ded569665ba70d",
+      "quote": "{\"points\": [{\"kernel\": \"conformance.kernel.recovery\", \"transform\": \"conformance.transform.upper-case\", \"moves\": true, \"input\": \"{\\\"CLAIMANT_NAME\\\": \\\"AMARA OKORO\\\"}\"}}"
+    },
+    {
+      "block": "8bfbf8b9bdcd2a4c",
+      "quote": "{\"points\": [{\"kernel\": \"conformance.kernel.response-verdict\", \"transform\": \"conformance.transform.refusal-prose-before\", \"moves\": false, \"input\": \"{\\\"claimant_name\\\": \\\"amara okoro\\\"}\"}}"
+    },
+    {
+      "block": "ed6fdb37f33ce5a2",
+      "quote": "\"The refusal heuristic decides the verdict only when no object can be recovered; whether a phrase occurred at all is a separate fact, :func:`refusal_phrase_in`, recorded beside a recovered object (H36: a refusal followed by a form is a refusal and a form).\""
+    }
+  ]
+}
+```

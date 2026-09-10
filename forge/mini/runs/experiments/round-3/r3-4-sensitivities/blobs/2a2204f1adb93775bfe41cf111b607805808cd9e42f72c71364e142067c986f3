@@ -1,0 +1,20 @@
+# Execution
+
+## Proposals so far (proposals)
+[1c8039655936e532] (mini.proposal.v1)
+I propose an input for the pair (conformance.kernel.recovery, conformance.transform.upper-case) where the kernel's answer does NOT move under the transform. The transform converts the entire reply to uppercase, but the harness should still recover the original JSON object `{"CLAIMANT_NAME": "AMARA OKORO"}` because the `recover_json_object` function is case-insensitive to JSON keys and values during parsing. The catalogue claims the kernel's answer moves (`"moves": true`), but the harness's JSON parser treats uppercase and lowercase keys as equivalent, so the recovered object remains structurally identical. Thus, the kernel's answer should not change.
+
+Citations:
+- The catalogue ([d4ded569665ba70d]) states that the pair (conformance.kernel.recovery, conformance.transform.upper-case) moves on the input `{"claimant_name": "amara okoro"}`.
+- The source ([921c905f22d8cb96]) confirms that the `recover_json_object` function uses `json.JSONDecoder` and `json.loads`, which are case-insensitive to JSON keys and values. The function recovers the last top-level object, regardless of case, as long as the structure is valid JSON.
+commitments: {"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.upper-case", "input": "{\"CLAIMANT_NAME\": \"AMARA OKORO\"}"}
+[4ae104e66f73d432] (mini.proposal.v1)
+I propose an input for the pair (conformance.kernel.recovery, conformance.transform.float-after) where the kernel's answer does NOT move under the transform. The transform adds a float-containing object `{"a": 1.5}` after the reply, but the harness should still recover the original object `{"claimant_name": "amara okoro"}` because the `recover_json_object` function is designed to ignore objects that fail strict JSON parsing (e.g., floats) and instead recover the last valid top-level object. The catalogue claims the kernel's answer moves (`"moves": true`), but the harness's logic explicitly skips non-parsable objects, so the recovery result should remain unchanged.
+
+Citations:
+- The catalogue ([a0e68e5c468b7070]) states that the pair (conformance.kernel.recovery, conformance.transform.float-after) moves on the input `{"claimant_name": "amara okoro"}`.
+- The source ([921c905f22d8cb96]) confirms that the `recover_json_object` function skips candidates that fail strict JSON parsing, including floats, and recovers the last valid top-level object. Specifically, the function uses `loads_strict` and `_loads_last_wins`, which reject floats (see `_refuse_float` in the source). Thus, the added `{"a": 1.5}` should be ignored, and the original object should be recovered unchanged.
+commitments: {"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.float-after", "input": "{\"claimant_name\": \"amara okoro\"} final {\"a\": 1.5}"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

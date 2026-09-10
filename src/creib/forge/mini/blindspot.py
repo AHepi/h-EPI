@@ -418,6 +418,71 @@ def reading_for(executed: str, expect: str, predicted: str | None) -> str:
     return READING_RULE_DIVERGES if predicted_held else READING_NEITHER
 
 
+NEXT_CELL_KIND = "mini.next-cell.v1"
+GRID_SOURCE = "grid"
+
+
+def grid_cells(state: Any, blobs: Any) -> tuple[str, ...]:
+    """The cells of the grid, one per paragraph of the ``grid`` source, read out of the run's own evidence."""
+
+    cells: list[str] = []
+    for block in state.blocks:
+        if block.get("source_id") != GRID_SOURCE:
+            continue
+        window = blobs.get(str(block["source_ref"]))[int(block["span_start"]) : int(block["span_end"])]
+        text = " ".join(window.decode("utf-8", errors="replace").split())
+        if text:
+            cells.append(text)
+    return tuple(cells)
+
+
+def cells_named(context: MachineContext) -> dict[str, int]:
+    """How many times each cell has been named in any artifact's commitments so far, its own kind's included."""
+
+    counts: dict[str, int] = {}
+    for key in context.state.artifact_order:
+        parsed = _proposal_of(context, context.state.artifacts[key])
+        if parsed is None or type(parsed.get("cell")) is not str:
+            continue
+        cell = " ".join(parsed["cell"].split())
+        counts[cell] = counts.get(cell, 0) + 1
+    return counts
+
+
+def _next_cell(context: MachineContext) -> str:
+    """A machine seat that names the cell of the grid to cover next: the first named least often.
+
+    The grid is enumerated by machine and instantiated by the model, so which cells get covered
+    is not the proposer's choice. A proposer that names a cell in its commitments counts as
+    covering it; so does this seat's own earlier output, so three seats in one cycle name three
+    cells. When every cell has been named the count starts again from the least named, and the
+    executor names the repeats.
+    """
+
+    cells = grid_cells(context.state, context.blobs)
+    if not cells:
+        return json.dumps({"body": "The grid source holds no cell.", "commitments": json.dumps({"cell": ""})})
+    counts = cells_named(context)
+    cell = min(cells, key=lambda item: (counts.get(item, 0), cells.index(item)))
+    named = sum(1 for item in cells if counts.get(item, 0))
+    return json.dumps(
+        {
+            "body": f"The cell to cover: {cell}\n({named} of {len(cells)} cells named so far.)",
+            "commitments": json.dumps({"cell": cell}, ensure_ascii=False),
+        },
+        ensure_ascii=False,
+    )
+
+
+NEXT_CELL_SEAT = register_machine_seat(MachineSeat(NEXT_CELL_KIND, "Names the cell of the grid source named least often so far.", _next_cell))
+#: A port window is counted in cycles, so a proposer that must see one cell and not its
+#: neighbours' draws a kind of its own: the same seat under a numbered kind id, one per proposer
+#: stage of a cycle.
+NEXT_CELL_KINDS: tuple[str, ...] = tuple(f"mini.next-cell.{index}.v1" for index in (1, 2, 3))
+for _kind_id in NEXT_CELL_KINDS:
+    register_machine_seat(MachineSeat(_kind_id, "Names the cell of the grid source named least often so far, for one proposer stage.", _next_cell))
+
+
 def standing_for_pair(executed: str, expect: str) -> str:
     """The rule for a proposer's own rewrite, where no catalogue row applies.
 

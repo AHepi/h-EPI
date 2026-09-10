@@ -1,0 +1,11 @@
+```json
+{
+ "body": "The proposal 0dc48cc461865c13 failed because the proposer misread the rule regarding 'no relaxation'. The proposer expected that a case difference between the value ('Apple') and the span ('apple') would result in `VALUE_NOT_IN_SPAN` based on the rule 'no relaxation' [e7d19d654ffc94fa]. However, the code implements a case-insensitive check for the value-in-span requirement: `if _normalise_whitespace(fields[\"value\"]).casefold() not in _normalise_whitespace(fields[\"span\"]).casefold():` (line 168 of [f7153e23af61fbae]). This explains why the execution result remained `GROUNDED` for both inputs.\n\nThis failure matters because it reveals a discrepancy between the documented 'no relaxation' policy and the actual implementation of the grounding kernel. A proposer should next attempt to find a relaxation that is actually absent from the code, such as punctuation or specific whitespace characters that `_normalise_whitespace` does not handle, or test the `_span_occurs` part of the grounding check, which does use a strict `normal_span in normal_document` check before attempting relaxations.",
+ "citations": [
+  {
+   "block": "e7d19d654ffc94fa",
+   "quote": "conformance.kernel.grounding: The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked"
+  }
+ ]
+}
+```

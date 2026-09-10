@@ -1,0 +1,19 @@
+```json
+{
+ "body": "The cycle's executions show a mix of expected and unexpected results for the grounding kernel.\n\nProposal 5948604739337308 held: the verdict remained `GROUNDED` when a character outside the span was changed, as expected since the matcher only checks if the normalized span is a substring of the normalized document [52d4ae5182d433e3].\n\nProposal 336fa4dfa4e82577 held: the verdict moved to `VALUE_NOT_IN_SPAN` when the value was changed to '5', confirming that the kernel performs a simple case-insensitive substring check without numeric normalization [52d4ae5182d433e3].\n\nProposal 6f641efe3a384996 failed: the proposer expected the verdict to remain `GROUNDED` after inserting a newline, citing that `_normalise_whitespace` would collapse it [52d4ae5182d433e3]. However, the execution resulted in `UNREADABLE_INPUT` [7c52ae8495b8eec5]. This failure is significant because it reveals that the input provided to the executor was not a valid JSON object. The rewritten input `{\"value\": \"five\", \"span\": \"five days\", \"document\": \"Amara was away for five\\ndays.\"}` contains a literal newline character inside a JSON string, which is forbidden by the JSON specification. The `recover_json_object` function uses `json.JSONDecoder().raw_decode` and `loads_strict`, both of which will fail on unescaped control characters [52d4ae5182d433e3].\n\nA proposer should next attempt to test whitespace normalization by using valid JSON escaping (e.g., `\\n`) or by testing whitespace that is legal within JSON strings (like tabs or multiple spaces) to see if the `_normalise_whitespace` logic behaves as expected without triggering a JSON parsing error.",
+ "citations": [
+  {
+   "block": "52d4ae5182d433e3",
+   "quote": "def _normalise_whitespace(value: str) -> str:\n    return \" \".join(value.split())"
+  },
+  {
+   "block": "52d4ae5182d433e3",
+   "quote": "if _normalise_whitespace(fields[\"value\"]).casefold() not in _normalise_whitespace(fields[\"span\"]).casefold():\n        return \"VALUE_NOT_IN_SPAN\""
+  },
+  {
+   "block": "7c52ae8495b8eec5",
+   "quote": "\"after\": \"UNREADABLE_INPUT\", \"as_expected\": false, \"before\": \"GROUNDED\", \"executed\": \"moved\", \"expect\": \"unchanged\", \"input\": \"{\\\"value\\\": \\\"five\\\", \\\"span\\\": \\\"five days\\\", \\\"document\\\": \\\"Amara was away for five days.\\\"}\", \"kernel\": \"conformance.kernel.grounding\", \"proposal\": \"6f641efe3a384996\", \"rewrite\": \"I inserted a newline character between 'five' and 'days' in the document.\", \"rewritten\": \"{\\\"value\\\": \\\"five\\\", \\\"span\\\": \\\"five days\\\", \\\"document\\\": \\\"Amara was away for five\\ndays.\\\"}\""
+  }
+ ]
+}
+```

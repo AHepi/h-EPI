@@ -1,0 +1,15 @@
+# Execution
+
+## Proposals so far (proposals)
+[032c8bc8bc9c2635] (mini.pair-proposal.grid.v1)
+I am covering the grid cell where there is one JSON object located inside a code fence, with prose appearing inside the fence before the object. According to the rules for `conformance.kernel.recovery`, the harness recovers the last object inside a code fence when any fence holds one. Moving the prose from inside the fence (before the object) to outside the fence (before the fence) does not change the fact that the object is inside a code fence, nor does it change its position as the last object in a fence, so the recovered object should remain unchanged.
+commitments: {"kernel": "conformance.kernel.recovery", "input": "```json\nHere is the result:\n{\"answer\": \"yes\"}\n```", "rewritten": "Here is the result:\n```json\n{\"answer\": \"yes\"}\n```", "expect": "unchanged", "rewrite": "Moved the prose from inside the code fence to before the code fence.", "cell": "one object, inside fence, prose inside fence before object"}
+[c73ece3c2bb1ee4b] (mini.pair-proposal.grid.v1)
+I am covering the grid cell where there is one JSON object located inside a code fence, with prose appearing after the fence. According to the rules for `conformance.kernel.recovery`, the harness recovers the last object inside a code fence when any fence holds one. Moving the prose from after the fence to before the fence does not change the fact that the object is inside a code fence, nor does it change its position as the last (and only) object in a fence, so the recovered object should remain unchanged.
+commitments: {"kernel": "conformance.kernel.recovery", "input": "```json\n{\"answer\": \"yes\"}\n```\nHere is the result.", "rewritten": "Here is the result.\n```json\n{\"answer\": \"yes\"}\n```", "expect": "unchanged", "rewrite": "Moved the prose from after the code fence to before the code fence.", "cell": "one object, inside fence, prose after"}
+[eb08a246f127af59] (mini.pair-proposal.grid.v1)
+I am covering the grid cell where there is one JSON object located inside a code fence, with prose appearing inside the fence after the object. According to the rules for `conformance.kernel.recovery`, the harness recovers the last object inside a code fence when any fence holds one. Moving the prose from inside the fence (after the object) to outside the fence (after the fence) does not change the fact that the object is inside a code fence, nor does it change its position as the last object in a fence, so the recovered object should remain unchanged.
+commitments: {"kernel": "conformance.kernel.recovery", "input": "```json\n{\"answer\": \"yes\"}\nHere is the result.\n```", "rewritten": "```json\n{\"answer\": \"yes\"}\n```\nHere is the result.", "expect": "unchanged", "rewrite": "Moved the prose from inside the code fence to after the code fence.", "cell": "one object, inside fence, prose inside fence after object"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

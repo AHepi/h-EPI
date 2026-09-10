@@ -1,0 +1,424 @@
+# Proposal: a reply as written
+
+You are shown the documented rules of the checks, not their code. Write your input as a REPLY a language model would actually give when asked to fill a form from a document: a heading, a sentence of reasoning or hedging, perhaps a quoted draft it then corrects, the form as JSON, perhaps a code fence with a label line inside it, perhaps a closing remark or a second copy of the form. The rewritten text is the same reply with ONE edit a real model might make: a label line inside the fence, a note between two copies, a sentence quoting the draft, an apology before the form, a trailing summary that repeats a field. Say what the rule, read as written, says the check's answer ought to do. Your kernel is one of conformance.kernel.recovery, conformance.kernel.recovered-from-prose, conformance.kernel.response-verdict, conformance.kernel.refusal-phrase. The commitments are a STRING whose content is JSON of the form {"kernel": "<id>", "input": "<the input text>", "rewritten": "<your rewritten text>", "expect": "moves" or "unchanged", "rewrite": "<one sentence naming what you changed>"}. The input and the rewritten text are instances written out in full, never descriptions. Do not repeat a pair shown among the earlier proposals.
+
+## The problem (problem)
+The checks under test are the conformance harness's own functions. Most seats are shown only their documented rules, not their code: how the harness recovers a JSON object from a reply, whether it had to recover it from prose, its response verdict, its refusal-phrase check, and its grounding matcher. The question: is there an input and a rewrite of it on which the rule, read as written, says one thing and the check, run by machine, does another? The executor runs the check on both texts and records what its answer did; nothing here decides anything, the record shows where a reading and the machine parted.
+
+## The documented rules of the checks (rules)
+[021a3c927a6ad8f1] (mini.kernel-rules.v1)
+REFUSAL_PHRASES = ['I cannot', "I can't", "I'm sorry", 'I am unable', 'as an AI', 'cannot assist']
+
+The kernels:
+
+- conformance.kernel.recovery: The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT.
+
+- conformance.kernel.recovered-from-prose: Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no).
+
+- conformance.kernel.response-verdict: The harness's response verdict for the reply: JSON_OBJECT, INVALID_JSON, REFUSAL_SUSPECTED, or another of its verdicts.
+
+- conformance.kernel.refusal-phrase: The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE.
+
+- conformance.kernel.span-occurs: Whether a cited span occurs in a document, whitespace-normalised, no relaxation: the input is one JSON object {"span", "document"}; verbatim or NOT_IN_DOCUMENT.
+
+- conformance.kernel.grounding: The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked: the input is one JSON object {"value", "span", "document"}; GROUNDED, SPAN_MISSING, SPAN_NOT_IN_DOCUMENT or VALUE_NOT_IN_SPAN.
+
+def recover_json_object(content: 'str') -> 'Any':
+    Project import: extract a JSON object from fences or surrounding prose.
+
+    Every top-level balanced object in the text is a candidate, not only the span from the
+    first ``{`` to the last ``}``: reasoning prose before or after the answer frequently
+    contains stray braces, and an object nested inside another is not a candidate of its own.
+    The object scored is the last one inside a code fence when any fence holds one, else the
+    last top-level object in the text, because a model places its final answer last and marks
+    it: a reply that quotes its previous answer and then gives a corrected one is scored on the
+    correction. Until 9 September 2026 the object with the most keys was taken, ties to the
+    last, and nine cycle replies that dropped a criticised key were scored on the draft that
+    still carried it (``docs/failure-modes.md``, H40). A candidate that parses as strict JSON,
+    or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float,
+    for instance) is passed over, so a final answer refused for a float loses to an earlier
+    draft that parsed (``docs/kernel.md``, P-06).
+
+def _loads_last_wins(candidate: 'str') -> 'tuple[Any, tuple[str, ...]] | None':
+    Parse JSON that strict parsing refused only because of repeated keys; last value wins.
+
+def parse_content(content: 'str', refusal_phrases: 'tuple[str, ...]') -> 'tuple[Any, str, str | None, bool]':
+    Return (parsed, response_verdict, detail, recovered_from_prose).
+
+    The refusal heuristic decides the verdict only when no object can be recovered; whether a
+    phrase occurred at all is a separate fact, :func:`refusal_phrase_in`, recorded beside a
+    recovered object (H36: a refusal followed by a form is a refusal and a form).
+
+def refusal_phrase_in(content: 'str', refusal_phrases: 'tuple[str, ...]') -> 'str | None':
+    The first refusal phrase the text contains, typographic quotes read as straight ones, or None.
+
+def _plain_quotes(text: 'str') -> 'str':
+    Fold typographic apostrophes and quotation marks to their ASCII forms.
+
+    The refusal phrase list is written with straight apostrophes; a model that writes
+    "I’m sorry" is refusing all the same, and the first live refusal in these
+    records was missed for exactly that reason (H22).
+
+def _normalise_whitespace(value: 'str') -> 'str':
+    (no docstring)
+
+def _span_occurs(span: 'str', document: 'str', relaxations: 'tuple[str, ...]') -> 'str | None':
+    Return None when the span is not in the document, else how it was matched ("verbatim" or a relaxation).
+
+def _grounding_kernel(text: 'str') -> 'str':
+    The grounding verdict as the harness gives it, with no relaxation and the value-in-span check on.
+
+    The three lines are the harness's own (``_grounding_verdict`` in ``oracle.py``), read here
+    over one JSON object rather than over a variant and its output.
+
+
+## Proposals so far (earlier)
+[6efcb04411e5d392] (mini.pair-proposal.reply.v1)
+The rule for `conformance.kernel.recovered-from-prose` states that the answer should be 'yes' if the harness had to recover the object from prose or a fence, and 'no' if it read it as strict JSON [a70c2e9bc362b532: "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)."].
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "input": "Here is the requested data:\n\n```json\n{\n  \"name\": \"John Doe\",\n  \"age\": 30\n}\n```", "rewritten": "Here is the requested data:\n\n```json\n{\n  \"name\": \"John Doe\",\n  \"age\": 30\n}\n```\n\nI hope this helps!", "expect": "unchanged", "rewrite": "Added a closing remark after the code fence."}
+[150216d26ecba558] (mini.pair-proposal.reply.v1)
+The rule for `conformance.kernel.refusal-phrase` states that it should identify the first listed refusal phrase the reply contains, treating typographic apostrophes as straight ones [c8c80e388572359c: "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE."].
+
+### Response
+
+I'm sorry, I cannot fulfill this request.
+
+```json
+{
+  "status": "refused"
+}
+```
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "input": "### Response\n\nI'm sorry, I cannot fulfill this request.\n\n```json\n{\n  \"status\": \"refused\"\n}\n```", "rewritten": "### Response\n\nI’m sorry, I cannot fulfill this request.\n\n```json\n{\n  \"status\": \"refused\"\n}\n```", "expect": "unchanged", "rewrite": "Changed the straight apostrophe in 'I'm' to a typographic one 'I’m'."}
+[01c44cbd6dd05644] (mini.pair-proposal.reply.v1)
+The rule for `conformance.kernel.recovery` states that if a reply contains multiple candidate JSON objects, the harness scores the last one inside a code fence if any fence holds one, otherwise the last top-level object in the text [329989b28a883155: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text"].
+
+### Response
+
+I'll start with a draft:
+```json
+{
+  "version": "1.0",
+  "status": "draft"
+}
+```
+
+Actually, let me correct that to the final version:
+
+```json
+{
+  "version": "1.1",
+  "status": "final"
+}
+```
+
+Here is the final JSON:
+```json
+{
+  "version": "1.1",
+  "status": "final"
+}
+```
+commitments: {"kernel": "conformance.kernel.recovery", "input": "### Response\n\nI'll start with a draft:\n```json\n{\n  \"version\": \"1.0\",\n  \"status\": \"draft\"\n}\n```\n\nActually, let me correct that to the final version:\n\n```json\n{\n  \"version\": \"1.1\",\n  \"status\": \"final\"\n}\n```\n\nHere is the final JSON:\n```json\n{\n  \"version\": \"1.1\",\n  \"status\": \"final\"\n}\n```", "rewritten": "### Response\n\nI'll start with a draft:\n```json\n{\n  \"version\": \"1.0\",\n  \"status\": \"draft\"\n}\n```\n\nActually, let me correct that to the final version:\n\n```json\n{\n  \"version\": \"1.1\",\n  \"status\": \"final\"\n}\n```\n\nHere is the final JSON:\n```json\n{\n  \"version\": \"1.1\",\n  \"status\": \"final\"\n}\n```\n\n(Note: The final object is repeated twice in fences).", "expect": "unchanged", "rewrite": "Added a note after the final code fence."}
+[8c1025813b4a6563] (mini.pair-proposal.reply.v1)
+The rule for `conformance.kernel.recovered-from-prose` states that the answer should be 'yes' if the harness had to recover the object from prose or a fence, and 'no' if it read it as strict JSON [a70c2e9bc362b532: "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)."].
+
+### Response
+
+I have filled out the form for you:
+
+```json
+{
+  "user_id": 12345,
+  "status": "active"
+}
+```
+
+I hope this is correct!
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "input": "### Response\n\nI have filled out the form for you:\n\n```json\n{\n  \"user_id\": 12345,\n  \"status\": \"active\"\n}\n```\n\nI hope this is correct!", "rewritten": "### Response\n\nI have filled out the form for you:\n\n```json\n{\n  \"user_id\": 12345,\n  \"status\": \"active\"\n}\n```\n\nI hope this is correct!\n\n(The JSON is provided in a code fence).", "expect": "unchanged", "rewrite": "Added a parenthetical note after the closing remark."}
+[8e33e090b5dd8395] (mini.pair-proposal.reply.v1)
+The rule for `conformance.kernel.recovery` states that the harness scores the last top-level object in the text if no code fence holds one, and that a reply quoting a previous answer and then providing a corrected one is scored on the correction [f3c7fbd61bc5f708: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction."].
+
+### Response
+
+I initially thought the answer was:
+{
+  "status": "draft",
+  "value": 10
+}
+
+But after reviewing, the correct answer is:
+{
+  "status": "final",
+  "value": 20
+}
+
+```json
+{
+  "status": "final",
+  "value": 20
+}
+```
+commitments: {"kernel": "conformance.kernel.recovery", "input": "### Response\n\nI initially thought the answer was:\n{\n  \"status\": \"draft\",\n  \"value\": 10\n}\n\nBut after reviewing, the correct answer is:\n{\n  \"status\": \"final\",\n  \"value\": 20\n}\n\n```json\n{\n  \"status\": \"final\",\n  \"value\": 20\n}\n```", "rewritten": "### Response\n\nI initially thought the answer was:\n{\n  \"status\": \"draft\",\n  \"value\": 10\n}\n\nBut after reviewing, the correct answer is:\n{\n  \"status\": \"final\",\n  \"value\": 20\n}\n\n```json\n{\n  \"status\": \"final\",\n  \"value\": 20\n}\n```\n\n(Note: The final JSON is provided in a fence).", "expect": "unchanged", "rewrite": "Added a note after the final code fence."}
+[0a5878ad5bf8d74e] (mini.pair-proposal.reply.v1)
+The rule for `conformance.kernel.recovered-from-prose` states that the answer should be 'yes' if the harness had to recover the object from prose or a fence, and 'no' if it read it as strict JSON [a70c2e9bc362b532: "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)."].
+
+### Response
+
+I have generated the JSON object for you:
+
+```json
+{
+  "id": "user_123",
+  "status": "verified"
+}
+```
+
+I hope this is what you needed!
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "input": "### Response\n\nI have generated the JSON object for you:\n\n```json\n{\n  \"id\": \"user_123\",\n  \"status\": \"verified\"\n}\n```\n\nI hope this is what you needed!", "rewritten": "### Response\n\nI have generated the JSON object for you:\n\n```json\n{\n  \"id\": \"user_123\",\n  \"status\": \"verified\"\n}\n```\n\nI hope this is what you needed!\n\n(The JSON is contained within a code fence).", "expect": "unchanged", "rewrite": "Added a parenthetical note at the end of the reply."}
+[bca01d7ae88f0873] (mini.pair-proposal.reply.v1)
+The rule for `conformance.kernel.recovery` states that the harness scores the last object inside a code fence if any fence holds one, otherwise the last top-level object in the text [d36f9fe80782c6eb: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text"].
+
+### Response
+
+I have prepared the data. Here is a draft:
+```json
+{
+  "id": 1,
+  "status": "draft"
+}
+```
+
+And here is the final version:
+```json
+{
+  "id": 1,
+  "status": "final"
+}
+```
+
+Actually, I'll just provide the final one again to be sure:
+```json
+{
+  "id": 1,
+  "status": "final"
+}
+```
+
+```json
+{
+  "id": 1,
+  "status": "final"
+}
+```
+commitments: {"kernel": "conformance.kernel.recovery", "input": "### Response\n\nI have prepared the data. Here is a draft:\n```json\n{\n  \"id\": 1,\n  \"status\": \"draft\"\n}\n```\n\nAnd here is the final version:\n```json\n{\n  \"id\": 1,\n  \"status\": \"final\"\n}\n```\n\nActually, I'll just provide the final one again to be sure:\n```json\n{\n  \"id\": 1,\n  \"status\": \"final\"\n}\n```", "rewritten": "### Response\n\nI have prepared the data. Here is a draft:\n```json\n{\n  \"id\": 1,\n  \"status\": \"draft\"\n}\n```\n\nAnd here is the final version:\n```json\n{\n  \"id\": 1,\n  \"status\": \"final\"\n}\n```\n\nActually, I'll just provide the final one again to be sure:\n```json\n{\n  \"id\": 1,\n  \"status\": \"final\"\n}\n```\n\n```json\n{\n  \"id\": 1,\n  \"status\": \"final\"\n}\n```", "expect": "unchanged", "rewrite": "Added an additional identical JSON object in a code fence at the end of the reply."}
+[1e2b6833e9248322] (mini.pair-proposal.reply.v1)
+The rule for `conformance.kernel.recovery` states that the harness scores the last object inside a code fence if any fence holds one, otherwise the last top-level object in the text [d36f9fe80782c6eb: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text"].
+
+### Response
+
+I have processed the request. Here is the result:
+
+```json
+{
+  "id": "A1",
+  "status": "complete"
+}
+```
+
+Wait, I noticed a typo. Here is the corrected version:
+
+{
+  "id": "A1",
+  "status": "verified"
+}
+
+I'll provide it in a fence just to be safe:
+
+```json
+{
+  "id": "A1",
+  "status": "verified"
+}
+```
+
+Actually, let me add one more detail to the final object:
+
+```json
+{
+  "id": "A1",
+  "status": "verified",
+  "timestamp": "2023-10-01"
+}
+```
+
+Final check: the last object is the one with the timestamp.
+commitments: {"kernel": "conformance.kernel.recovery", "input": "### Response\n\nI have processed the request. Here is the result:\n\n```json\n{\n  \"id\": \"A1\",\n  \"status\": \"complete\"\n}\n```\n\nWait, I noticed a typo. Here is the corrected version:\n\n{\n  \"id\": \"A1\",\n  \"status\": \"verified\"\n}\n\nI'll provide it in a fence just to be safe:\n\n```json\n{\n  \"id\": \"A1\",\n  \"status\": \"verified\"\n}\n```\n\nActually, let me add one more detail to the final object:\n\n```json\n{\n  \"id\": \"A1\",\n  \"status\": \"verified\",\n  \"timestamp\": \"2023-10-01\"\n}\n```\n\nFinal check: the last object is the one with the timestamp.", "rewritten": "### Response\n\nI have processed the request. Here is the result:\n\n```json\n{\n  \"id\": \"A1\",\n  \"status\": \"complete\"\n}\n```\n\nWait, I noticed a typo. Here is the corrected version:\n\n{\n  \"id\": \"A1\",\n  \"status\": \"verified\"\n}\n\nI'll provide it in a fence just to be safe:\n\n```json\n{\n  \"id\": \"A1\",\n  \"status\": \"verified\"\n}\n```\n\nActually, let me add one more detail to the final object:\n\n```json\n{\n  \"id\": \"A1\",\n  \"status\": \"verified\",\n  \"timestamp\": \"2023-10-01\"\n}\n```\n\nFinal check: the last object is the one with the timestamp.\n\n(The final object contains the timestamp field).", "expect": "unchanged", "rewrite": "Added a trailing summary that repeats a field."}
+[f47ee70fc75fd15f] (mini.pair-proposal.reply.v1)
+The rule for `conformance.kernel.refusal-phrase` states that it should identify the first listed refusal phrase the reply contains, treating typographic apostrophes as straight ones [c8c80e388572359c: "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE."].
+
+### Response
+
+I'm sorry, I cannot assist with that.
+
+```json
+{
+  "status": "refused"
+}
+```
+
+I apologize for the inconvenience.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "input": "### Response\n\nI'm sorry, I cannot assist with that.\n\n```json\n{\n  \"status\": \"refused\"\n}\n```\n\nI apologize for the inconvenience.", "rewritten": "### Response\n\nI'm sorry, I cannot assist with that.\n\n```json\n{\n  \"status\": \"refused\"\n}\n```\n\nI apologize for the inconvenience.\n\n(Note: The refusal phrase 'I'm sorry' is present).", "expect": "unchanged", "rewrite": "Added a note at the end of the reply repeating the refusal phrase."}
+[c1fb1670a7e6fe09] (mini.pair-proposal.reply.v1)
+The rule for `conformance.kernel.recovery` specifies that the harness prioritizes objects in code fences over those in prose: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text" [021a3c927a6ad8f1]. Therefore, if a reply contains a JSON object in a fence followed by a different JSON object in prose, the fenced object should still be the one recovered.
+
+### Response
+
+I have the data you requested:
+
+```json
+{
+  "id": "FENCED_OBJECT",
+  "status": "final"
+}
+```
+
+Actually, I'll just leave this here as a final note:
+{
+  "id": "PROSE_OBJECT",
+  "status": "final"
+}
+
+```json
+{
+  "id": "FENCED_OBJECT",
+  "status": "final"
+}
+```
+commitments: {"kernel": "conformance.kernel.recovery", "input": "### Response\n\nI have the data you requested:\n\n```json\n{\n  \"id\": \"FENCED_OBJECT\",\n  \"status\": \"final\"\n}\n```\n\nActually, I'll just leave this here as a final note:\n{\n  \"id\": \"PROSE_OBJECT\",\n  \"status\": \"final\"\n}", "rewritten": "### Response\n\nI have the data you requested:\n\n```json\n{\n  \"id\": \"FENCED_OBJECT\",\n  \"status\": \"final\"\n}\n```\n\nActually, I'll just leave this here as a final note:\n{\n  \"id\": \"PROSE_OBJECT\",\n  \"status\": \"final\"\n}\n\n```json\n{\n  \"id\": \"FENCED_OBJECT\",\n  \"status\": \"final\"\n}\n```", "expect": "unchanged", "rewrite": "Added a second identical JSON object in a code fence at the end of the reply."}
+
+## Verdicts so far (verdicts)
+[c1665bfae5bb52ac] (mini.verdict.v1)
+Verdict on this cycle's executions.
+6efcb04411e5d392: conformance.kernel.recovered-from-prose under proposer's own rewrite: Added a closing remark after the code fence. unchanged, expected unchanged -> rejected; no prediction
+150216d26ecba558: conformance.kernel.refusal-phrase under proposer's own rewrite: Changed the straight apostrophe in 'I'm' to a typographic one 'I’m'. unchanged, expected unchanged -> rejected; no prediction
+01c44cbd6dd05644: conformance.kernel.recovery under proposer's own rewrite: Added a note after the final code fence. unchanged, expected unchanged -> rejected; no prediction
+commitments: {"verdicts": [{"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.recovered-from-prose", "predicted": null, "proposal": "6efcb04411e5d392", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: Added a closing remark after the code fence."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.refusal-phrase", "predicted": null, "proposal": "150216d26ecba558", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: Changed the straight apostrophe in 'I'm' to a typographic one 'I’m'."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "01c44cbd6dd05644", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: Added a note after the final code fence."}]}
+[74269812fb663170] (mini.verdict.v1)
+Verdict on this cycle's executions.
+8c1025813b4a6563: conformance.kernel.recovered-from-prose under proposer's own rewrite: Added a parenthetical note after the closing remark. unchanged, expected unchanged -> rejected; no prediction
+8e33e090b5dd8395: conformance.kernel.recovery under proposer's own rewrite: Added a note after the final code fence. unchanged, expected unchanged -> rejected; no prediction
+0a5878ad5bf8d74e: conformance.kernel.recovered-from-prose under proposer's own rewrite: Added a parenthetical note at the end of the reply. unchanged, expected unchanged -> rejected; no prediction
+commitments: {"verdicts": [{"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.recovered-from-prose", "predicted": null, "proposal": "8c1025813b4a6563", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: Added a parenthetical note after the closing remark."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "8e33e090b5dd8395", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: Added a note after the final code fence."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.recovered-from-prose", "predicted": null, "proposal": "0a5878ad5bf8d74e", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: Added a parenthetical note at the end of the reply."}]}
+[0854390df1d98af7] (mini.verdict.v1)
+Verdict on this cycle's executions.
+bca01d7ae88f0873: conformance.kernel.recovery under proposer's own rewrite: Added an additional identical JSON object in a code fence at the end of the reply. unchanged, expected unchanged -> rejected; no prediction
+1e2b6833e9248322: conformance.kernel.recovery under proposer's own rewrite: Added a trailing summary that repeats a field. unchanged, expected unchanged -> rejected; no prediction
+f47ee70fc75fd15f: conformance.kernel.refusal-phrase under proposer's own rewrite: Added a note at the end of the reply repeating the refusal phrase. unchanged, expected unchanged -> rejected; no prediction
+commitments: {"verdicts": [{"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "bca01d7ae88f0873", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: Added an additional identical JSON object in a code fence at the end of the reply."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "1e2b6833e9248322", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: Added a trailing summary that repeats a field."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.refusal-phrase", "predicted": null, "proposal": "f47ee70fc75fd15f", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: Added a note at the end of the reply repeating the refusal phrase."}]}
+
+## Criticisms (criticisms)
+[c6df228f97097017] (mini.criticism.v1)
+All three proposals in this cycle failed to find a discrepancy between the documented rules and the machine execution; they all resulted in 'unchanged' outcomes as expected. 
+
+Proposals bca01d7ae88f0873 and 1e2b6833e9248322 tested `conformance.kernel.recovery`. They correctly identified the rule that the harness scores the last object in a fence or the last top-level object [d36f9fe80782c6eb: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text"]. However, by adding identical or non-interfering content, they did not challenge the logic. 
+
+Proposal f47ee70fc75fd15f tested `conformance.kernel.refusal-phrase` [d36f9fe80782c6eb: "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE."]. It merely repeated the phrase at the end of the text, which does not conflict with the 'first listed' requirement.
+
+None of these failures matter as they were not failures of the machine, but failures of the proposals to create a divergent case. A proposer should next attempt to create a conflict by exploiting the priority order of recovery (fences vs. top-level) or the specific list of refusal phrases. For example, placing a valid JSON object in prose *after* a valid JSON object in a fence should, according to the rules, still result in the fenced object being chosen.
+
+## Executions (executions)
+[6331b347dcc1839f] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+6efcb04411e5d392: conformance.kernel.recovered-from-prose -> unchanged, expected unchanged
+150216d26ecba558: conformance.kernel.refusal-phrase -> unchanged, expected unchanged
+01c44cbd6dd05644: conformance.kernel.recovery -> unchanged, expected unchanged
+commitments: {"executions": [{"after": "yes", "as_expected": true, "before": "yes", "executed": "unchanged", "expect": "unchanged", "input": "Here is the requested data:\n\n```json\n{\n  \"name\": \"John Doe\",\n  \"age\": 30\n}\n```", "kernel": "conformance.kernel.recovered-from-prose", "proposal": "6efcb04411e5d392", "rewrite": "Added a closing remark after the code fence.", "rewritten": "Here is the requested data:\n\n```json\n{\n  \"name\": \"John Doe\",\n  \"age\": 30\n}\n```\n\nI hope this helps!"}, {"after": "I cannot", "as_expected": true, "before": "I cannot", "executed": "unchanged", "expect": "unchanged", "input": "### Response\n\nI'm sorry, I cannot fulfill this request.\n\n```json\n{\n  \"status\": \"refused\"\n}\n```", "kernel": "conformance.kernel.refusal-phrase", "proposal": "150216d26ecba558", "rewrite": "Changed the straight apostrophe in 'I'm' to a typographic one 'I’m'.", "rewritten": "### Response\n\nI’m sorry, I cannot fulfill this request.\n\n```json\n{\n  \"status\": \"refused\"\n}\n```"}, {"after": "{\"status\":\"final\",\"version\":\"1.1\"}", "as_expected": true, "before": "{\"status\":\"final\",\"version\":\"1.1\"}", "executed": "unchanged", "expect": "unchanged", "input": "### Response\n\nI'll start with a draft:\n```json\n{\n  \"version\": \"1.0\",\n  \"status\": \"draft\"\n}\n```\n\nActually, let me correct that to the final version:\n\n```json\n{\n  \"version\": \"1.1\",\n  \"status\": \"final\"\n}\n```\n\nHere is the final JSON:\n```json\n{\n  \"version\": \"1.1\",\n  \"status\": \"final\"\n}\n```", "kernel": "conformance.kernel.recovery", "proposal": "01c44cbd6dd05644", "rewrite": "Added a note after the final code fence.", "rewritten": "### Response\n\nI'll start with a draft:\n```json\n{\n  \"version\": \"1.0\",\n  \"status\": \"draft\"\n}\n```\n\nActually, let me correct that to the final version:\n\n```json\n{\n  \"version\": \"1.1\",\n  \"status\": \"final\"\n}\n```\n\nHere is the final JSON:\n```json\n{\n  \"version\": \"1.1\",\n  \"status\": \"final\"\n}\n```\n\n(Note: The final object is repeated twice in fences)."}]}
+[e792ae351f347124] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+8c1025813b4a6563: conformance.kernel.recovered-from-prose -> unchanged, expected unchanged
+8e33e090b5dd8395: conformance.kernel.recovery -> unchanged, expected unchanged
+0a5878ad5bf8d74e: conformance.kernel.recovered-from-prose -> unchanged, expected unchanged
+commitments: {"executions": [{"after": "yes", "as_expected": true, "before": "yes", "executed": "unchanged", "expect": "unchanged", "input": "### Response\n\nI have filled out the form for you:\n\n```json\n{\n  \"user_id\": 12345,\n  \"status\": \"active\"\n}\n```\n\nI hope this is correct!", "kernel": "conformance.kernel.recovered-from-prose", "proposal": "8c1025813b4a6563", "rewrite": "Added a parenthetical note after the closing remark.", "rewritten": "### Response\n\nI have filled out the form for you:\n\n```json\n{\n  \"user_id\": 12345,\n  \"status\": \"active\"\n}\n```\n\nI hope this is correct!\n\n(The JSON is provided in a code fence)."}, {"after": "{\"status\":\"final\",\"value\":20}", "as_expected": true, "before": "{\"status\":\"final\",\"value\":20}", "executed": "unchanged", "expect": "unchanged", "input": "### Response\n\nI initially thought the answer was:\n{\n  \"status\": \"draft\",\n  \"value\": 10\n}\n\nBut after reviewing, the correct answer is:\n{\n  \"status\": \"final\",\n  \"value\": 20\n}\n\n```json\n{\n  \"status\": \"final\",\n  \"value\": 20\n}\n```", "kernel": "conformance.kernel.recovery", "proposal": "8e33e090b5dd8395", "rewrite": "Added a note after the final code fence.", "rewritten": "### Response\n\nI initially thought the answer was:\n{\n  \"status\": \"draft\",\n  \"value\": 10\n}\n\nBut after reviewing, the correct answer is:\n{\n  \"status\": \"final\",\n  \"value\": 20\n}\n\n```json\n{\n  \"status\": \"final\",\n  \"value\": 20\n}\n```\n\n(Note: The final JSON is provided in a fence)."}, {"after": "yes", "as_expected": true, "before": "yes", "executed": "unchanged", "expect": "unchanged", "input": "### Response\n\nI have generated the JSON object for you:\n\n```json\n{\n  \"id\": \"user_123\",\n  \"status\": \"verified\"\n}\n```\n\nI hope this is what you needed!", "kernel": "conformance.kernel.recovered-from-prose", "proposal": "0a5878ad5bf8d74e", "rewrite": "Added a parenthetical note at the end of the reply.", "rewritten": "### Response\n\nI have generated the JSON object for you:\n\n```json\n{\n  \"id\": \"user_123\",\n  \"status\": \"verified\"\n}\n```\n\nI hope this is what you needed!\n\n(The JSON is contained within a code fence)."}]}
+[f07414f7e443baa6] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+bca01d7ae88f0873: conformance.kernel.recovery -> unchanged, expected unchanged
+1e2b6833e9248322: conformance.kernel.recovery -> unchanged, expected unchanged
+f47ee70fc75fd15f: conformance.kernel.refusal-phrase -> unchanged, expected unchanged
+commitments: {"executions": [{"after": "{\"id\":1,\"status\":\"final\"}", "as_expected": true, "before": "{\"id\":1,\"status\":\"final\"}", "executed": "unchanged", "expect": "unchanged", "input": "### Response\n\nI have prepared the data. Here is a draft:\n```json\n{\n  \"id\": 1,\n  \"status\": \"draft\"\n}\n```\n\nAnd here is the final version:\n```json\n{\n  \"id\": 1,\n  \"status\": \"final\"\n}\n```\n\nActually, I'll just provide the final one again to be sure:\n```json\n{\n  \"id\": 1,\n  \"status\": \"final\"\n}\n```", "kernel": "conformance.kernel.recovery", "proposal": "bca01d7ae88f0873", "rewrite": "Added an additional identical JSON object in a code fence at the end of the reply.", "rewritten": "### Response\n\nI have prepared the data. Here is a draft:\n```json\n{\n  \"id\": 1,\n  \"status\": \"draft\"\n}\n```\n\nAnd here is the final version:\n```json\n{\n  \"id\": 1,\n  \"status\": \"final\"\n}\n```\n\nActually, I'll just provide the final one again to be sure:\n```json\n{\n  \"id\": 1,\n  \"status\": \"final\"\n}\n```\n\n```json\n{\n  \"id\": 1,\n  \"status\": \"final\"\n}\n```"}, {"after": "{\"id\":\"A1\",\"status\":\"verified\",\"timestamp\":\"2023-10-01\"}", "as_expected": true, "before": "{\"id\":\"A1\",\"status\":\"verified\",\"timestamp\":\"2023-10-01\"}", "executed": "unchanged", "expect": "unchanged", "input": "### Response\n\nI have processed the request. Here is the result:\n\n```json\n{\n  \"id\": \"A1\",\n  \"status\": \"complete\"\n}\n```\n\nWait, I noticed a typo. Here is the corrected version:\n\n{\n  \"id\": \"A1\",\n  \"status\": \"verified\"\n}\n\nI'll provide it in a fence just to be safe:\n\n```json\n{\n  \"id\": \"A1\",\n  \"status\": \"verified\"\n}\n```\n\nActually, let me add one more detail to the final object:\n\n```json\n{\n  \"id\": \"A1\",\n  \"status\": \"verified\",\n  \"timestamp\": \"2023-10-01\"\n}\n```\n\nFinal check: the last object is the one with the timestamp.", "kernel": "conformance.kernel.recovery", "proposal": "1e2b6833e9248322", "rewrite": "Added a trailing summary that repeats a field.", "rewritten": "### Response\n\nI have processed the request. Here is the result:\n\n```json\n{\n  \"id\": \"A1\",\n  \"status\": \"complete\"\n}\n```\n\nWait, I noticed a typo. Here is the corrected version:\n\n{\n  \"id\": \"A1\",\n  \"status\": \"verified\"\n}\n\nI'll provide it in a fence just to be safe:\n\n```json\n{\n  \"id\": \"A1\",\n  \"status\": \"verified\"\n}\n```\n\nActually, let me add one more detail to the final object:\n\n```json\n{\n  \"id\": \"A1\",\n  \"status\": \"verified\",\n  \"timestamp\": \"2023-10-01\"\n}\n```\n\nFinal check: the last object is the one with the timestamp.\n\n(The final object contains the timestamp field)."}, {"after": "I cannot", "as_expected": true, "before": "I cannot", "executed": "unchanged", "expect": "unchanged", "input": "### Response\n\nI'm sorry, I cannot assist with that.\n\n```json\n{\n  \"status\": \"refused\"\n}\n```\n\nI apologize for the inconvenience.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "f47ee70fc75fd15f", "rewrite": "Added a note at the end of the reply repeating the refusal phrase.", "rewritten": "### Response\n\nI'm sorry, I cannot assist with that.\n\n```json\n{\n  \"status\": \"refused\"\n}\n```\n\nI apologize for the inconvenience.\n\n(Note: The refusal phrase 'I'm sorry' is present)."}]}
+
+## Evidence (catalogue)
+To ground a claim in one of these, name its id in this artifact's citations; a quote must reproduce the block's own words.
+[638a6360b40e8b8a] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fence", "moves": false, "input": "{\"claimant_name\": \"amara okoro\",…
+[e847048a8c7847a8] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.fence", "moves": true, "input": "{\"claimant_name\": \"ama…
+[b0a010d1115d82a4] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.prose-before", "moves": false, "input": "{\"claimant_name\": \"amara o…
+[33b4e316004d90cc] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.prose-before", "moves": true, "input": "{\"claimant_name\"…
+[1c12ef186483bd0d] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.indent", "moves": false, "input": "{\"claimant_name\": \"amara okoro\"…
+[910693c99ba3c6da] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.indent", "moves": false, "input": "{\"claimant_name\": \"a…
+[706dbfa18782a310] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fold-whitespace", "moves": false, "input": "{\"claimant_name\": \"amar…
+[45929a4e30072bb7] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.fold-whitespace", "moves": false, "input": "{\"claimant_na…
+[7a60de6ecc4dd6e3] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.bare-after", "moves": true, "input": "{\"claimant_name\": \"amara okor…
+[1c84027e761c6f99] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.draft-before", "moves": false, "input": "{\"claimant_name\": \"amara o…
+[55dd56154fb39a87] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fence-then-bare-after", "moves": false, "input": "{\"claimant_name\": …
+[47cbc7b41aaf5c8f] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fence-with-prose", "moves": false, "input": "{\"claimant_name\": \"ama…
+[791e3ba34ce7d357] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.float-after", "moves": false, "input": "{\"claimant_name\": \"amara ok…
+[a0e68e5c468b7070] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.float-after", "moves": true, "input": "{\"claimant_name\":…
+[fece6100f6ea7485] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.fence", "moves": false, "input": "{\"claimant_name\": \"amara …
+[bea451e84fa483a5] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.prose-before", "moves": false, "input": "{\"claimant_name\": \…
+[1a9cd8bb407e62f8] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.bare-after", "moves": false, "input": "{\"claimant_name\": \"a…
+[9c839bd675122bb9] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.upper-case", "moves": false, "input": "{\"claimant_name\": \"a…
+[d4ded569665ba70d] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.upper-case", "moves": true, "input": "{\"claimant_name\": \"amara okor…
+[6e346a638ffdff8b] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.typographic-quotes", "moves": false, "input": "I'm sorry, no."}]…
+[478f1f02c67c06c4] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.upper-case", "moves": false, "input": "I'm sorry, no."}]}
+[42f90dc7e6a15965] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.fence", "moves": false, "input": "I'm sorry, no."}]}
+[3c0719eda3e180c6] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.prose-before", "moves": false, "input": "I'm sorry, no."}]}
+[56ed413d078ac9c2] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.refusal-prose-before", "moves": true, "input": "{\"claimant_name…
+[8bfbf8b9bdcd2a4c] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.refusal-prose-before", "moves": false, "input": "{\"claimant_n…
+[6ab8417a77f3b613] (registry, evidence) kernel conformance.kernel.grounding: The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked: the inp…
+[a70c2e9bc362b532] (registry, evidence) kernel conformance.kernel.recovered-from-prose: Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no).
+[65ae18af7a738b26] (registry, evidence) kernel conformance.kernel.recovery: The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT.
+[c8c80e388572359c] (registry, evidence) kernel conformance.kernel.refusal-phrase: The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE.
+[22dc5cbedaff143d] (registry, evidence) kernel conformance.kernel.response-verdict: The harness's response verdict for the reply: JSON_OBJECT, INVALID_JSON, REFUSAL_SUSPECTED, or another of its verdic…
+[966be5d711930718] (registry, evidence) kernel conformance.kernel.span-occurs: Whether a cited span occurs in a document, whitespace-normalised, no relaxation: the input is one JSON object {"span", "d…
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+
+To ground a claim, add a citation naming a block and quoting its own words, like this:
+  "citations": [{"block": "1a9cd8bb407e62f8", "quote": "<words copied from that block>"}]
+
+## The shape this answer must take
+`commitments` must be a STRING whose content is JSON text fitting exactly this schema (the field itself is a string, not an object):
+{
+  "properties": {
+    "expect": {
+      "enum": [
+        "moves",
+        "unchanged"
+      ]
+    },
+    "input": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "kernel": {
+      "pattern": "^conformance\\.kernel\\.(recovery|recovered-from-prose|response-verdict|refusal-phrase)$",
+      "type": "string"
+    },
+    "rewrite": {
+      "minLength": 3,
+      "type": "string"
+    },
+    "rewritten": {
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "kernel",
+    "input",
+    "rewritten",
+    "expect",
+    "rewrite"
+  ],
+  "type": "object"
+}

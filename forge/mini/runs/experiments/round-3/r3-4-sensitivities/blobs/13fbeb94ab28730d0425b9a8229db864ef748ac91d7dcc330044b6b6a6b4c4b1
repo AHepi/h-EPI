@@ -1,0 +1,18 @@
+```json
+{
+  "body": "I propose an input for the pair (conformance.kernel.recovery, conformance.transform.fence) where the kernel's answer does not move under the transform. The input is a JSON object that is already well-formed and placed inside a code fence, but the kernel's recovery logic will still pick the same object because it is the last top-level object in the text, regardless of the fence. This aligns with the kernel's behavior of prioritizing the last top-level object when no fenced object is present or when the fenced object is not the last one.\n\nSpecifically, the input is a reply that contains a fenced JSON object followed by prose that includes another top-level JSON object. The kernel will recover the last top-level object (the one in prose), not the fenced one, so the transform (adding a fence) does not change the recovered object. This is a case where the kernel's answer remains unchanged despite the transform being applied.",
+
+  "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"transform\": \"conformance.transform.fence\", \"input\": \"```json\\n{\\\"claimant_name\\\": \\\"amara okoro\\\", \\\"claim_id\\\": \\\"12345\\\"}\\n```\\nHere is the final answer: {\\\"claimant_name\\\": \\\"amara okoro\\\", \\\"claim_id\\\": \\\"67890\\\"}\"}",
+
+  "citations": [
+    {
+      "block": "84f95499664c266b",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction."
+    },
+    {
+      "block": "638a6360b40e8b8a",
+      "quote": "{\"points\": [{\"kernel\": \"conformance.kernel.recovery\", \"transform\": \"conformance.transform.fence\", \"moves\": false, \"input\": \"{\\\"claimant_name\\\": \\\"amara okoro\\\""
+    }
+  ]
+}
+```

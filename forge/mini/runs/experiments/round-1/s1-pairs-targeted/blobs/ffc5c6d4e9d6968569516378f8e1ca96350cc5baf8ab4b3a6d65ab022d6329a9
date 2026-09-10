@@ -1,0 +1,15 @@
+# Execution
+
+## Proposals so far (proposals)
+[d32223ce42497782] (mini.pair-proposal.recovery.v1)
+I am testing `conformance.kernel.recovery`. The `recover_json_object` function is designed to prefer the last top-level object in the text if no code fences are present. If I provide a reply containing two separate JSON objects, the kernel should recover the second one. If I rewrite the input to merge these into a single object (by wrapping them in a list or a parent object), the recovered value changes from the second object to the combined structure. This confirms that the recovery kernel's 'last-wins' logic for top-level objects is functioning as described in the docstring.
+commitments: {"kernel": "conformance.kernel.recovery", "input": "{\"a\": 1} {\"b\": 2}", "rewritten": "[{\"a\": 1}, {\"b\": 2}]", "expect": "moves", "rewrite": "Wrapped two separate top-level objects into a single JSON list."}
+[952e77cf5ac19399] (mini.pair-proposal.refusal.v1)
+I am testing `conformance.kernel.refusal-phrase`. The function `refusal_phrase_in` iterates through a list of `REFUSAL_PHRASES` and returns the first one it finds in the lowered, quote-normalized text. The list includes both "I cannot" and "cannot assist". If an input contains both, the order of the list determines the result. By rewriting the input to remove the phrase that appears earlier in the `REFUSAL_PHRASES` list, the kernel should move to the next matching phrase in the list.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "input": "I cannot assist you with this.", "rewritten": "I am unable to assist you with this.", "expect": "moves", "rewrite": "Replaced 'I cannot' (which appears first in the refusal list) with 'I am unable' (which appears later)."}
+[3a1aec8ebe68b82b] (mini.pair-proposal.grounding.v1)
+I am testing `conformance.kernel.grounding`. The `_grounding_kernel` function checks if the `value` is contained within the `span` using a case-insensitive comparison after whitespace normalization: `_normalise_whitespace(fields["value"]).casefold() not in _normalise_whitespace(fields["span"]).casefold()`. If I provide a value that differs from the span only by case, the verdict should be `GROUNDED`. If I rewrite the value to include a character not present in the span, the verdict should move to `VALUE_NOT_IN_SPAN`.
+commitments: {"kernel": "conformance.kernel.grounding", "input": "{\"value\": \"Amara\", \"span\": \"amara okoro\", \"document\": \"Amara Okoro was here.\"}", "rewritten": "{\"value\": \"Amara X\", \"span\": \"amara okoro\", \"document\": \"Amara Okoro was here.\"}", "expect": "moves", "rewrite": "Changed the value from a case-insensitive match of the span to a string that is not contained in the span."}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

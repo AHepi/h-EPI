@@ -1,0 +1,190 @@
+# Verdict
+
+## Executions (executions)
+[f3f280021f75698b] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+ea0d4a9212e440f4: conformance.kernel.recovery -> unchanged, expected unchanged
+34e37b056dea1b12: conformance.kernel.recovery -> unchanged, expected unchanged
+commitments: {"executions": [{"after": "{\"key\":\"value\"}", "as_expected": true, "before": "{\"key\":\"value\"}", "executed": "unchanged", "expect": "unchanged", "input": "```json\n{\"key\": \"value\"} {\"malformed\": \"unclosed\",\n```", "kernel": "conformance.kernel.recovery", "proposal": "ea0d4a9212e440f4", "rewrite": "Removed the malformed JSON object after the valid one in the fence.", "rewritten": "```json\n{\"key\": \"value\"}\n```"}, {"after": "{\"key\":\"value3\"}", "as_expected": true, "before": "{\"key\":\"value3\"}", "executed": "unchanged", "expect": "unchanged", "input": "```json\n{\"key\": \"value1\", \"key\": \"value2\"} {\"key\": \"value3\"}\n```", "kernel": "conformance.kernel.recovery", "proposal": "34e37b056dea1b12", "rewrite": "Removed duplicate keys from the first JSON object in the fence.", "rewritten": "```json\n{\"key\": \"value2\"} {\"key\": \"value3\"}\n```"}]}
+
+## Criticisms (criticisms)
+[6dcd92a00b834e8b] (mini.criticism.v1)
+### Criticism of the `recover_json_object` function and related checks
+
+#### Expectations that held
+1. **Last top-level object recovery**: The function correctly prioritizes the last top-level balanced JSON object in a fence or prose, as specified in the docstring. This is evident in executions [f3f280021f75698b], where both proposals (ea0d4a9212e440f4 and 34e37b056dea1b12) returned the last valid object in the fence, even when preceded by malformed or duplicate-key objects. The docstring explicitly states: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." This expectation held as expected.
+
+2. **Duplicate key resolution**: The function correctly resolves duplicate keys using a last-wins strategy, as demonstrated in proposal 34e37b056dea1b12. The execution showed that the last top-level object (`{"key": "value3"}`) was recovered unchanged, even when the preceding object had duplicate keys. This aligns with the docstring's note: "A reply that is otherwise one well-formed object with a repeated key is still scoreable: take the last value for each key."
+
+3. **Fence prioritization**: The function prioritizes objects in fences over those in prose, as shown in evidence [638a6360b40e8b8a], where the kernel `conformance.kernel.recovery` did not move (`moves: false`) when the input was already in a fence. This matches the docstring's logic: "Every top-level balanced object in the text is a candidate, not only the span from the first `{` to the last `}`... the last one inside a code fence when any fence holds one."
+
+4. **Refusal phrase detection**: The refusal phrase check is robust to typographic variations, as noted in the docstring for `_plain_quotes`: "The refusal phrase list is written with straight apostrophes; a model that writes 'I\u2019m sorry' is refusing all the same." Evidence [6e346a638ffdff8b] confirms this, as the refusal phrase was detected despite typographic quotes (`moves: false`).
+
+
+#### Expectations that failed
+1. **Malformed JSON handling in fences**: The docstring implies that the function should recover the last *valid* top-level object in a fence, even if it is followed by a malformed object. However, the current implementation may fail to recover any object if the last top-level object in the fence is malformed, even if an earlier valid object exists. While the execution [f3f280021f75698b] for proposal ea0d4a9212e440f4 showed the expected behavior (recovering `{"key": "value"}`), this does not fully test the edge case where the malformed object *prevents* recovery of an earlier valid object. The docstring states: "a reply that quotes its previous answer and then gives a corrected one is scored on the correction," but it does not explicitly address whether a malformed object *after* a valid one should invalidate the recovery. This ambiguity suggests a potential gap in the implementation's robustness.
+
+   - **Why it matters**: If the function fails to recover a valid object because of a trailing malformed object, it could incorrectly classify a reply as `INVALID_JSON` when it should recover the valid object. This would violate the principle that the last *valid* object in a fence should be prioritized.
+   - **Evidence**: The docstring's note about "nine cycle replies that dropped a criticised key" (H40) suggests that the function should be resilient to minor malformations in earlier drafts. However, the current implementation may not extend this resilience to malformed objects *after* a valid one.
+
+2. **Prose recovery edge cases**: The function's behavior when recovering objects from prose is not fully aligned with the docstring's emphasis on the "last top-level object." Evidence [7a60de6ecc4dd6e3] shows that the kernel `conformance.kernel.recovery` *did* move (`moves: true`) when a bare JSON object was placed after prose. This suggests that the function may not consistently prioritize the last top-level object in prose, especially when other structures (e.g., fences) are absent. The docstring states: "else the last top-level object in the text," but the implementation may not handle nested or interleaved prose and JSON objects robustly.
+
+   - **Why it matters**: If the function does not reliably recover the last top-level object in prose, it could misclassify replies that interleave JSON objects with explanatory text. This would undermine the harness's ability to score replies that embed their final answer in prose.
+   - **Evidence**: Evidence [b0a010d1115d82a4] shows that `conformance.kernel.recovery` did not move (`moves: false`) when prose was added *before* the JSON object, which is expected. However, the inconsistency with [7a60de6ecc4dd6e3] suggests that the function's behavior is not symmetric for prose *after* the object.
+
+3. **Case sensitivity in recovery**: The function does not account for case variations in JSON keys or values when recovering objects from prose or fences. Evidence [d4ded569665ba70d] shows that `conformance.kernel.recovery` *did* move (`moves: true`) when the input was converted to uppercase. This suggests that the function treats JSON objects as case-sensitive, which may not align with user expectations for robustness. While strict JSON parsing is technically correct, the docstring does not explicitly address whether the function should normalize case for recovery purposes.
+
+   - **Why it matters**: If the function fails to recover an object due to case mismatches, it could incorrectly classify a reply as `INVALID_JSON` when the object is otherwise valid. This would reduce the harness's tolerance for minor formatting variations.
+   - **Evidence**: The grounding matcher (`_span_occurs`) includes a `case_insensitive` relaxation, but this is not mirrored in the recovery logic. This inconsistency suggests that the recovery function may be overly strict compared to other parts of the harness.
+
+
+#### Trivial vs. non-trivial failures
+- **Trivial**: The case sensitivity issue (evidence [d4ded569665ba70d]) is relatively minor, as strict JSON parsing is technically correct. However, it could be addressed by adding a case-insensitive recovery mode for prose, similar to the grounding matcher's relaxations.
+
+- **Non-trivial**: The malformed JSON handling in fences (proposal ea0d4a9212e440f4) and prose recovery edge cases (evidence [7a60de6ecc4dd6e3]) are more significant. These failures could lead to incorrect scoring of replies that are otherwise well-formed, violating the harness's goal of robust recovery.
+
+
+#### Recommendations for proposers
+1. **Test malformed JSON in fences**: Propose inputs where a valid JSON object is followed by a malformed one in a fence, and verify that the function recovers the valid object. For example:
+   ```
+   Input: ```json
+   {"key": "value"} {"malformed": "unclosed"
+   ```
+   Rewritten: ```json
+   {"key": "value"}
+   ```
+   Expected: The function should recover `{"key": "value"}` in both cases. If it fails to recover the object in the input, this would confirm a bug.
+   ```
+
+2. **Test prose recovery symmetry**: Propose inputs where JSON objects are interleaved with prose, and verify that the function consistently recovers the last top-level object. For example:
+   ```
+   Input: Here is the answer: {"key": "value"}. Some additional text.
+   Rewritten: {"key": "value"}
+   Expected: The function should recover `{"key": "value"}` in both cases. If it fails to recover the object in the input, this would confirm an inconsistency.
+   ```
+
+3. **Test case insensitivity**: Propose inputs with case variations in JSON keys or values, and verify whether the function recovers the object. For example:
+   ```
+   Input: {"KEY": "VALUE"}
+   Rewritten: {"key": "value"}
+   Expected: The function should recover the object in both cases if case insensitivity is desired. If it fails to recover the object in the input, this would confirm the current strictness.
+   ```
+
+4. **Test duplicate keys in prose**: Propose inputs where duplicate keys appear in prose (not in a fence), and verify that the function recovers the last top-level object with duplicate keys resolved. For example:
+   ```
+   Input: {"key": "value1", "key": "value2"} {"key": "value3"}
+   Rewritten: {"key": "value3"}
+   Expected: The function should recover `{"key": "value3"}` in both cases, as the last top-level object should be prioritized.
+   ```
+
+The most critical next step is to address the malformed JSON handling in fences, as this could lead to incorrect scoring of otherwise valid replies.
+
+## Verdicts so far (verdicts)
+[74e4a072634ff996] (mini.verdict.v1)
+Verdict on this cycle's executions.
+4482345abc6da9c9: conformance.kernel.recovery under proposer's own rewrite: Nested the first top-level object inside an outer object in the fence. unchanged, expected unchanged -> rejected
+1463e1fe060049d3: conformance.kernel.recovery under proposer's own rewrite: Removed trailing prose after the JSON object in the fence. unchanged, expected unchanged -> rejected
+commitments: {"verdicts": [{"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.recovery", "proposal": "4482345abc6da9c9", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: Nested the first top-level object inside an outer object in the fence."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.recovery", "proposal": "1463e1fe060049d3", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: Removed trailing prose after the JSON object in the fence."}]}
+
+## Evidence (catalogue)
+To ground a claim in one of these, name its id in this artifact's citations; a quote must reproduce the block's own words.
+[638a6360b40e8b8a] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fence", "moves": false, "input": "{\"claimant_name\": \"amara okoro\",…
+[e847048a8c7847a8] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.fence", "moves": true, "input": "{\"claimant_name\": \"ama…
+[b0a010d1115d82a4] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.prose-before", "moves": false, "input": "{\"claimant_name\": \"amara o…
+[33b4e316004d90cc] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.prose-before", "moves": true, "input": "{\"claimant_name\"…
+[1c12ef186483bd0d] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.indent", "moves": false, "input": "{\"claimant_name\": \"amara okoro\"…
+[910693c99ba3c6da] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.indent", "moves": false, "input": "{\"claimant_name\": \"a…
+[706dbfa18782a310] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fold-whitespace", "moves": false, "input": "{\"claimant_name\": \"amar…
+[45929a4e30072bb7] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.fold-whitespace", "moves": false, "input": "{\"claimant_na…
+[7a60de6ecc4dd6e3] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.bare-after", "moves": true, "input": "{\"claimant_name\": \"amara okor…
+[1c84027e761c6f99] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.draft-before", "moves": false, "input": "{\"claimant_name\": \"amara o…
+[55dd56154fb39a87] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fence-then-bare-after", "moves": false, "input": "{\"claimant_name\": …
+[47cbc7b41aaf5c8f] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fence-with-prose", "moves": false, "input": "{\"claimant_name\": \"ama…
+[791e3ba34ce7d357] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.float-after", "moves": false, "input": "{\"claimant_name\": \"amara ok…
+[a0e68e5c468b7070] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.float-after", "moves": true, "input": "{\"claimant_name\":…
+[fece6100f6ea7485] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.fence", "moves": false, "input": "{\"claimant_name\": \"amara …
+[bea451e84fa483a5] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.prose-before", "moves": false, "input": "{\"claimant_name\": \…
+[1a9cd8bb407e62f8] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.bare-after", "moves": false, "input": "{\"claimant_name\": \"a…
+[9c839bd675122bb9] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.upper-case", "moves": false, "input": "{\"claimant_name\": \"a…
+[d4ded569665ba70d] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.upper-case", "moves": true, "input": "{\"claimant_name\": \"amara okor…
+[6e346a638ffdff8b] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.typographic-quotes", "moves": false, "input": "I'm sorry, no."}]…
+[478f1f02c67c06c4] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.upper-case", "moves": false, "input": "I'm sorry, no."}]}
+[42f90dc7e6a15965] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.fence", "moves": false, "input": "I'm sorry, no."}]}
+[3c0719eda3e180c6] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.prose-before", "moves": false, "input": "I'm sorry, no."}]}
+[56ed413d078ac9c2] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.refusal-prose-before", "moves": true, "input": "{\"claimant_name…
+[8bfbf8b9bdcd2a4c] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.refusal-prose-before", "moves": false, "input": "{\"claimant_n…
+[6ab8417a77f3b613] (registry, evidence) kernel conformance.kernel.grounding: The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked: the inp…
+[a70c2e9bc362b532] (registry, evidence) kernel conformance.kernel.recovered-from-prose: Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no).
+[65ae18af7a738b26] (registry, evidence) kernel conformance.kernel.recovery: The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT.
+[c8c80e388572359c] (registry, evidence) kernel conformance.kernel.refusal-phrase: The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE.
+[22dc5cbedaff143d] (registry, evidence) kernel conformance.kernel.response-verdict: The harness's response verdict for the reply: JSON_OBJECT, INVALID_JSON, REFUSAL_SUSPECTED, or another of its verdic…
+[966be5d711930718] (registry, evidence) kernel conformance.kernel.span-occurs: Whether a cited span occurs in a document, whitespace-normalised, no relaxation: the input is one JSON object {"span", "d…
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+
+To ground a claim, add a citation naming a block and quoting its own words, like this:
+  "citations": [{"block": "1a9cd8bb407e62f8", "quote": "<words copied from that block>"}]
+
+## The shape this answer must take
+`commitments` must be a STRING whose content is JSON text fitting exactly this schema (the field itself is a string, not an object):
+{
+  "properties": {
+    "verdicts": {
+      "items": {
+        "properties": {
+          "catalogued": {
+            "type": "boolean"
+          },
+          "column": {
+            "enum": [
+              "moves",
+              "unchanged",
+              null
+            ]
+          },
+          "executed": {
+            "type": "string"
+          },
+          "expected": {
+            "type": "string"
+          },
+          "kernel": {
+            "type": "string"
+          },
+          "proposal": {
+            "type": "string"
+          },
+          "same_input": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "standing": {
+            "enum": [
+              "candidate point",
+              "defect",
+              "rejected"
+            ]
+          },
+          "transform": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "proposal",
+          "executed",
+          "catalogued",
+          "standing"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "verdicts"
+  ],
+  "type": "object"
+}

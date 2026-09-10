@@ -1,0 +1,15 @@
+# Execution
+
+## Proposals so far (proposals)
+[48d9362e52765b96] (mini.pair-proposal.recovery.v1)
+I am testing `conformance.kernel.recovery` regarding the rule that the harness recovers the 'last one inside a code fence when any fence holds one'. I will provide an input with one JSON object in a code fence and one JSON object outside of it (after the fence). According to the rule, the one inside the fence should be scored regardless of its position relative to the top-level object. I will then rewrite it to move the fenced object to the beginning of the text. Since the rule specifies the 'last one inside a code fence' is chosen 'when any fence holds one', the result should remain unchanged.
+commitments: {"kernel": "conformance.kernel.recovery", "input": "Here is the result: \n```json\n{\"answer\": \"first\"}\n```\nActually, use this: {\"answer\": \"second\"}", "rewritten": "```json\n{\"answer\": \"first\"}\n```\nHere is the result: \nActually, use this: {\"answer\": \"second\"}", "expect": "unchanged", "rewrite": "Moved the code fence from the middle to the start of the text."}
+[42800d91a577c5b9] (mini.pair-proposal.refusal.v1)
+I am testing `conformance.kernel.refusal-phrase` to determine if the check considers text inside a code fence as part of the 'reply' for the purpose of detecting refusal phrases. The rule for `refusal_phrase_in` states it returns the first refusal phrase the 'text' contains, and the kernel definition says it is the first listed refusal phrase the 'reply' contains. It does not specify that text inside code fences is excluded. Therefore, if a refusal phrase is placed inside a code fence, the rule as written implies it should still be detected. I will provide an input where a refusal phrase is in prose and a rewritten version where that same phrase is moved inside a code fence; the result should remain unchanged.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "input": "I'm sorry, I cannot do that.", "rewritten": "```\nI'm sorry, I cannot do that.\n```", "expect": "unchanged", "rewrite": "Moved the refusal phrase into a code fence."}
+[77d28f44c337308f] (mini.pair-proposal.grounding.v1)
+I am testing `conformance.kernel.span-occurs` regarding the rule that it checks whether a span occurs in a document 'whitespace-normalised'. I will provide an input where the span contains a newline character and the document contains a space in the same position. According to the rule, since the check is 'whitespace-normalised', these should be treated as equivalent, and the result should be 'verbatim'. I will then rewrite the input so that the span and the document match exactly (both using a space). The result should remain 'unchanged'.
+commitments: {"kernel": "conformance.kernel.span-occurs", "input": "{\"span\": \"hello\nworld\", \"document\": \"hello world\"}", "rewritten": "{\"span\": \"hello world\", \"document\": \"hello world\"}", "expect": "unchanged", "rewrite": "Changed the newline in the span to a space to match the document exactly."}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

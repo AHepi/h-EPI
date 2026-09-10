@@ -1,0 +1,79 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. Read this cycle's executions beside the proposals: say which expectations held, which failed, and why, reading the source; say which failures matter, which are trivial, and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+### Analysis of Cycle Executions Against Proposals
+
+This cycle’s executions confirm that the two proposals—**1c8039655936e532** (upper-case transform) and **4ae104e66f73d432** (float-after transform)—correctly identified cases where the `conformance.kernel.recovery` check’s answer *should not* move under the given transforms. The harness’s behavior aligned with the proposals’ expectations, and the catalogue’s prior claims of movement (`"moves": true`) were incorrect. Below is a breakdown of why these expectations held, why the failures matter, and what proposers should prioritize next.
+
+---
+
+#### 1. **Upper-Case Transform (1c8039655936e532)**
+**Expectation**: The kernel’s answer should *not* change when the input JSON is converted to uppercase, because JSON parsing is case-insensitive to keys and values.
+**Execution Result**: *Unchanged* (recovered object: `{"CLAIMANT_NAME":"AMARA OKORO"}` → `{"CLAIMANT_NAME":"AMARA OKORO"}`).
+**Why It Held**:
+- The `recover_json_object` function relies on `json.JSONDecoder` and `json.loads`, which treat uppercase and lowercase keys as equivalent (e.g., `"claimant_name"` and `"CLAIMANT_NAME"` are parsed identically). The function recovers the *last top-level object* in the text, regardless of case, as long as the structure is valid JSON. This is explicitly documented in the source:
+  > "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text... A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable." ([921c905f22d8cb96])
+- The catalogue’s claim that the pair `(conformance.kernel.recovery, conformance.transform.upper-case)` moves on the input `{"claimant_name": "amara okoro"}` ([d4ded569665ba70d]) was therefore incorrect. The harness’s behavior is consistent with JSON’s case-insensitive semantics.
+
+**Why It Matters**:
+- The catalogue’s error risks misleading proposers into believing the harness is case-sensitive, which could lead to unnecessary or misguided proposals. The failure is *not trivial*: it misrepresents the kernel’s core behavior.
+- **Next Steps**: The catalogue should be updated to reflect that `conformance.kernel.recovery` is *invariant* under case transforms. Proposers should focus on transforms that *do* alter JSON structure (e.g., adding invalid objects, malformed keys) rather than superficial formatting.
+
+---
+
+#### 2. **Float-After Transform (4ae104e66f73d432)**
+**Expectation**: The kernel’s answer should *not* change when a float-containing object (`{"a": 1.5}`) is appended after the reply, because the harness skips non-parsable objects (e.g., floats) and recovers the last *valid* top-level object.
+**Execution Result**: *Unchanged* (recovered object: `{"claimant_name":"amara okoro"}` → `{"claimant_name":"amara okoro"}`).
+**Why It Held**:
+- The `recover_json_object` function explicitly rejects candidates that fail strict JSON parsing, including floats. The source states:
+  > "A candidate that parses as strict JSON... is scoreable; one that does not (a float, for instance) is passed over." ([921c905f22d8cb96])
+  The function uses `loads_strict` and `_loads_last_wins`, which call `_refuse_float` to reject floats. Thus, the appended `{"a": 1.5}` is ignored, and the original object is recovered unchanged.
+- The catalogue’s claim that the pair `(conformance.kernel.recovery, conformance.transform.float-after)` moves on the input `{"claimant_name": "amara okoro"}` ([a0e68e5c468b7070]) was incorrect. The harness’s behavior is consistent with its documented design.
+
+**Why It Matters**:
+- The catalogue’s error could lead proposers to assume the harness is sensitive to *all* trailing objects, even invalid ones. This is a *non-trivial* failure: it misrepresents the kernel’s resilience to malformed input.
+- **Next Steps**: The catalogue should be corrected to show that `conformance.kernel.recovery` is *invariant* under the `float-after` transform. Proposers should test transforms that *do* alter valid JSON (e.g., adding a well-formed object after the reply, which *would* change the recovered object).
+
+---
+
+#### 3. **Trivial Failures and Non-Issues**
+- **Case Insensitivity of Refusal Phrases**: The catalogue correctly shows that `conformance.kernel.refusal-phrase` is invariant under `upper-case` ([478f1f02c67c06c4]) and `typographic-quotes` ([6e346a638ffdff8b]). These are *trivial* because the harness’s `_plain_quotes` and case-folding logic are designed to handle such variations.
+- **Fenced vs. Prose Recovery**: The catalogue’s claim that `conformance.kernel.recovered-from-prose` moves under `float-after` ([a0e68e5c468b7070]) is *correct* but *trivial*: the harness recovers the object from prose (not a fence) when the float is appended, but the *recovered object itself* remains unchanged. This does not affect the kernel’s core behavior.
+
+---
+
+#### 4. **What Proposers Should Try Next**
+The cycle’s executions reveal two high-priority areas for future proposals:
+1. **Transforms That *Should* Change Recovery but Don’t**:
+   - **`bare-after` Transform**: The catalogue claims `conformance.kernel.recovery` *moves* under `bare-after` ([7a60de6ecc4dd6e3]), but the harness’s logic suggests it should *not* if the appended object is well-formed (e.g., `{"later": 1}`). Proposers should test whether the harness recovers the *last* object (the appended one) or the *first* (the original). If the latter, the catalogue’s claim is incorrect.
+   - **`draft-before` Transform**: The catalogue claims the kernel’s answer *does not move* under `draft-before` ([1c84027e761c6f99]), but the harness’s logic (recovering the *last* top-level object) suggests it *should* if the draft is well-formed. Proposers should verify this.
+
+2. **Edge Cases in JSON Parsing**:
+   - **Repeated Keys**: The harness resolves repeated keys with `last-wins` semantics. Proposers should test whether the kernel’s answer changes when a repeated key’s *value* is altered (e.g., `{"a": 1, "a": 2}` → `{"a": 1, "a": 3}`). The catalogue does not currently cover this.
+   - **Nested Objects**: The harness ignores nested objects (e.g., `{"a": {"b": 1}}` recovers `{"a": {"b": 1}}`, not `{"b": 1}`). Proposers should test whether transforms that *flatten* nested objects (e.g., `{"a": {"b": 1}}` → `{"b": 1}`) change the recovered object.
+
+3. **Refusal-Phrase Heuristic**:
+   - The catalogue shows that `conformance.kernel.refusal-phrase` *moves* under `refusal-prose-before` ([56ed413d078ac9c2]), but the harness’s logic treats refusal phrases as *separate* from the recovered object. Proposers should test whether the kernel’s answer changes when a refusal phrase is *followed* by a valid JSON object (e.g., `"I cannot assist." {"a": 1}`). The source states:
+     > "The refusal heuristic decides the verdict only when no object can be recovered; whether a phrase occurred at all is a separate fact." ([921c905f22d8cb96])
+     This suggests the kernel’s answer *should not* change if an object is recovered, even if a refusal phrase is present.
+
+---
+
+#### 5. **Key Takeaways**
+- **Successes**: The proposals correctly identified cases where the kernel’s answer *should not* move, and the executions confirmed this. The harness’s behavior is consistent with its documented design.
+- **Failures**: The catalogue’s claims of movement for `upper-case` and `float-after` were incorrect. These failures matter because they misrepresent the kernel’s core behavior.
+- **Next Steps**: Proposers should:
+  1. Focus on transforms that *structurally* alter JSON (e.g., adding well-formed objects, flattening nested objects) rather than superficial formatting.
+  2. Test edge cases in JSON parsing (e.g., repeated keys, nested objects).
+  3. Verify the refusal-phrase heuristic’s interaction with recovered objects.
+  4. Update the catalogue to reflect the kernel’s invariance under `upper-case` and `float-after`.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

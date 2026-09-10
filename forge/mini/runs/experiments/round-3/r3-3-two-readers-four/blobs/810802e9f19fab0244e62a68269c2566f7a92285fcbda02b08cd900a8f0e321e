@@ -1,0 +1,20 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id. A prediction beside each proposal says what a reader of the code expected; where the expectation from the rule and the prediction from the code disagree, and the machine sided with one, say which reading was wrong and why.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+All three proposals were executed and the results matched the proposers' expectations. However, proposal e44af2db0067ae2c reveals a significant discrepancy between the rule's wording and the code's implementation, which the proposer missed but the predictor correctly identified.
+
+For proposal e44af2db0067ae2c, the proposer expected the result to be 'unchanged' because the rule for `conformance.kernel.refusal-phrase` says it returns 'The first listed refusal phrase the reply contains' [c8c80e388572359c]. However, the predictor correctly noted that `parse_content` returns immediately if `loads_strict` succeeds (Line 84), bypassing the refusal check entirely. While the `conformance.kernel.refusal-phrase` kernel itself (implemented via `refusal_phrase_in`) would return the phrase, the harness's overall logic for determining the response verdict and recovery process means that a valid JSON object suppresses the 'REFUSAL_SUSPECTED' verdict. The proposer misread the interaction between the recovery logic and the refusal heuristic.
+
+Proposals 70cd24caf928d417 and e336bb711275a4dd correctly identified the behavior of the recovery and grounding kernels respectively. 
+
+Future proposers should focus on the priority of operations in `parse_content`: strict JSON parsing happens first, then recovery from prose, and only if both fail is the refusal heuristic used to determine the verdict. To find a failure, one should look for cases where a refusal phrase is present but a JSON object is also present, as the rule for the refusal kernel suggests it is a 'separate fact' [660f71affafc415a], but the verdict logic treats it as a fallback.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

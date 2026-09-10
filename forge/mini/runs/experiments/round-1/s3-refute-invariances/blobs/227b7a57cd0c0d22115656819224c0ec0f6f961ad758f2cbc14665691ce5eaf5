@@ -1,0 +1,15 @@
+# Execution
+
+## Proposals so far (proposals)
+[2262f241548a4e70] (mini.proposal.v1)
+I challenge catalogue row [706dbfa18782a310] which claims the recovery kernel does not move under fold-whitespace. The row's example likely lacks unusual whitespace inside string values. My input has multiple spaces within the claimant_name string value. The fold-whitespace transform collapses every whitespace run to one space, changing "John    Doe" to "John Doe" inside the JSON. Since the recovery kernel outputs the recovered object as canonical JSON, the output changes when string values change. This refutes the "moves: false" claim.
+commitments: {"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fold-whitespace", "input": "{\"claimant_name\": \"John    Doe\", \"case_id\": \"2024-001\"}"}
+[3e861c775374a0cb] (mini.proposal.v1)
+I challenge catalogue row [638a6360b40e8b8a] which claims the recovery kernel does not move under the fence transform. The row's example lacks a code fence marker inside a string value. My input embeds a complete JSON fence inside the note field. Without the fence transform, the recovery function extracts the inner fenced content and returns that object. With the fence transform wrapping the whole reply, the outer fence becomes the one extracted, returning the main object instead. This refutes the "moves: false" claim.
+commitments: {"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fence", "input": "{\"claimant_name\": \"amara okoro\", \"note\": \"```json {\\\"case_id\\\": \\\"2024-002\\\"} ```\"}"}
+[992e6d43c3842671] (mini.proposal.v1)
+I challenge catalogue row [706dbfa18782a310] which claims the recovery kernel does not move under fold-whitespace. The row's example has whitespace only in string values, not in keys. My input has multiple consecutive spaces inside a JSON key name. The fold-whitespace transform collapses every whitespace run to one space, changing the key from "claimant  name" to "claimant name". Since the recovery kernel outputs the recovered object as canonical JSON, the output changes when key names change. This refutes the "moves: false" claim.
+commitments: {"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fold-whitespace", "input": "{\"claimant  name\": \"amara\"}"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

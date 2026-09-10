@@ -1,0 +1,17 @@
+Tracing the `_grounding_kernel` function on the provided inputs:
+
+1. **Input**: `{"value": "Apple", "span": "Apple Inc.", "document": "Apple Inc. is a company"}`
+   - `fields` are extracted: `value`='Apple', `span`='Apple Inc.', `document`='Apple Inc. is a company'.
+   - `fields["span"].strip()` is not empty.
+   - `_span_occurs('Apple Inc.', 'Apple Inc. is a company', ())` returns 'verbatim' because the span is in the document.
+   - `_normalise_whitespace('Apple').casefold()` ('apple') is in `_normalise_whitespace('Apple Inc.').casefold()` ('apple inc.').
+   - Result: `GROUNDED`.
+
+2. **Rewritten**: `{"value": "Apple Corp", "span": "Apple Inc.", "document": "Apple Inc. is a company"}`
+   - `fields` are extracted: `value`='Apple Corp', `span`='Apple Inc.', `document`='Apple Inc. is a company'.
+   - `fields["span"].strip()` is not empty.
+   - `_span_occurs('Apple Inc.', 'Apple Inc. is a company', ())` returns 'verbatim'.
+   - `_normalise_whitespace('Apple Corp').casefold()` ('apple corp') is NOT in `_normalise_whitespace('Apple Inc.').casefold()` ('apple inc.').
+   - Result: `VALUE_NOT_IN_SPAN`.
+
+The kernel's answer changes from `GROUNDED` to `VALUE_NOT_IN_SPAN`.

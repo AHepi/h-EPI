@@ -1,0 +1,31 @@
+# Execution
+
+## Proposals so far (proposals)
+[2c1ef8fa3f88a47b] (mini.pair-proposal.grounding.v1)
+I will test the `conformance.kernel.grounding` kernel by introducing a case difference between the `value` and the `span`. 
+
+In the input, the value "Five" is a case-insensitive match for the span "five days". According to the source code, the value-in-span check is performed using `.casefold()` on both the normalized value and the normalized span: `if _normalise_whitespace(fields["value"]).casefold() not in _normalise_whitespace(fields["span"]).casefold(): return "VALUE_NOT_IN_SPAN"`. Therefore, a careful reader (and the code) would consider this grounded. 
+
+However, if I change the `value` to "6", it is no longer contained within the span "five days". This is a material change that should move the verdict from `GROUNDED` to `VALUE_NOT_IN_SPAN`.
+commitments: {"kernel": "conformance.kernel.grounding", "input": "{\"value\": \"Five\", \"span\": \"five days\", \"document\": \"Amara was away for five days.\"}", "rewritten": "{\"value\": \"6\", \"span\": \"five days\", \"document\": \"Amara was away for five days.\"}", "expect": "moves", "rewrite": "I changed the value from a case-insensitive match of the span to a non-matching number."}
+[2b1b16c25f8c197e] (mini.pair-proposal.grounding.v1)
+I will test `conformance.kernel.grounding` by introducing a whitespace difference between the `span` and the `document`. 
+
+In the input, the span "five days" appears in the document as "five days". In the rewritten version, I will change the document to "five  days" (two spaces). 
+
+According to the source code, the `_span_occurs` function calls `_normalise_whitespace` on both the span and the document: `normal_span, normal_document = _normalise_whitespace(span), _normalise_whitespace(document)`. The `_normalise_whitespace` function is defined as `return " ".join(value.split())`, which collapses all contiguous whitespace into a single space. 
+
+Because a careful reader would consider a double space to be immaterial to whether a citation is grounded, and the code explicitly normalizes this whitespace, the verdict should remain `GROUNDED`. I expect the result to be unchanged.
+commitments: {"kernel": "conformance.kernel.grounding", "input": "{\"value\": \"five\", \"span\": \"five days\", \"document\": \"Amara was away for five days.\"}", "rewritten": "{\"value\": \"five\", \"span\": \"five days\", \"document\": \"Amara was away for five  days.\"}", "expect": "unchanged", "rewrite": "I added an extra space between 'five' and 'days' in the document."}
+[2e44fbe69723ceb7] (mini.pair-proposal.grounding.v1)
+I will test `conformance.kernel.grounding` by introducing a punctuation difference between the `span` and the `document`. 
+
+In the input, the span "five days" is a verbatim match for the text in the document. In the rewritten version, I will change the document to "five-days" (adding a hyphen). 
+
+According to the source code, `_span_occurs` calls `_normalise_whitespace`, which is defined as `" ".join(value.split())` [84f95499664c266b]. Because `split()` without arguments splits on any whitespace, it does not treat a hyphen as whitespace. Therefore, "five days" (normalized to "five days") will not be found in "five-days" (normalized to "five-days"). 
+
+A careful reader would likely consider the hyphenation of "five-days" to be immaterial to whether the citation "five days" is grounded. However, the matcher will fail to find the span, moving the verdict from `GROUNDED` to `SPAN_NOT_IN_DOCUMENT`.
+commitments: {"kernel": "conformance.kernel.grounding", "input": "{\"value\": \"five\", \"span\": \"five days\", \"document\": \"Amara was away for five days.\"}", "rewritten": "{\"value\": \"five\", \"span\": \"five days\", \"document\": \"Amara was away for five-days.\"}", "expect": "moves", "rewrite": "I changed 'five days' to 'five-days' in the document."}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

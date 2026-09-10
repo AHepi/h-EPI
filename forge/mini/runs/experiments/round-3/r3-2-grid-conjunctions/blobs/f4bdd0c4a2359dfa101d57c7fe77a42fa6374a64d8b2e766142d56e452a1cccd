@@ -1,0 +1,18 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+All three proposals in this cycle were executed successfully, with the machine's results matching the proposers' expectations. There are no failures to analyze.
+
+Each proposer correctly interpreted the rule for `conformance.kernel.recovery` stating that the scored object is "the last one inside a code fence when any fence holds one, else the last top-level object in the text" [021a3c927a6ad8f1]. The executions [b3bdde724ce2f5e3] confirm that removing fences (1d4250d5d8daef57), removing non-JSON text from within a fence (d2e12a751e97ef4d), or removing preceding objects within a fence (a9891177d939b0d8) does not change the recovered object when the target object remains the last candidate in the priority order.
+
+Since these tests only confirmed the basic priority logic, a proposer should next try to find cases where the rule and code might diverge, such as testing the "last-wins" resolution for repeated keys or the specific handling of candidates that parse as floats (which the rule says are "passed over" [021a3c927a6ad8f1]).
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

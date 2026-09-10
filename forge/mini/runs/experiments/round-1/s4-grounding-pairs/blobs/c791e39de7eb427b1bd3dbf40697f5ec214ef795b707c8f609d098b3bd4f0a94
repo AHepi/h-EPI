@@ -1,0 +1,7 @@
+I will test `conformance.kernel.grounding` by introducing a case difference between the `span` and the `document`. 
+
+In the input, the span "five days" is a verbatim match for the document. In the rewritten version, I will change the document to "Five days" (capitalizing the first letter).
+
+According to the source code, `_span_occurs` calls `_normalise_whitespace` on both the span and the document, but it does not perform any case folding unless the `case_insensitive` relaxation is present in the `relaxations` tuple: `if normal_span in normal_document: return "verbatim"` [2c03be5b984f39ad]. The `_grounding_kernel` calls `_span_occurs` with an empty tuple for relaxations: `_span_occurs(fields["span"], fields["document"], ())` [2c03be5b984f39ad].
+
+A careful reader would consider the capitalization of the first word in a sentence to be immaterial to whether the citation is grounded. However, because the matcher is performing a case-sensitive check for the "verbatim" match, the verdict will move from `GROUNDED` to `SPAN_NOT_IN_DOCUMENT`.

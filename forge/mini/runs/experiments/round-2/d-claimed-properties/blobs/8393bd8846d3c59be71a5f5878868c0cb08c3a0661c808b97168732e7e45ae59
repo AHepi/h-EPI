@@ -1,0 +1,7 @@
+Three properties where code behavior diverges from documented rules:
+
+1. **recovery (float rejection)**: The rules state candidates that 'do not (a float, for instance) is passed over' but do not specify the mechanism. The code uses `parse_float=_refuse_float` in json.loads, actively rejecting floats during parsing rather than post-filtering. A top-level float candidate is refused at parse time, not after collection.
+
+2. **grounding (case relaxation)**: The rules state 'no relaxation' for the grounding verdict. However, the value-in-span check uses `.casefold()` for case-insensitive comparison (`_normalise_whitespace(fields['value']).casefold() not in _normalise_whitespace(fields['span']).casefold()`). This is a relaxation the rules do not acknowledge.
+
+3. **span-occurs (relaxation returns)**: The rules state the return is 'verbatim or NOT_IN_DOCUMENT'. The code can return 'case_insensitive' or 'date_range_completion' when those relaxations are in the tuple - outcomes the rules do not document.

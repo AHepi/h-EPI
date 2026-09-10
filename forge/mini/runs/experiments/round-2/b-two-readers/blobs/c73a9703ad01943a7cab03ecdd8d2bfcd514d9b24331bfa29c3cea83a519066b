@@ -1,0 +1,9 @@
+The kernel's answer on the rewritten text will differ from its answer on the input ('moves'). 
+
+Trace for the input: The input text 'Here is the answer in prose: {"claimant_name": "amara okoro", "correction": true}. Please confirm.' contains no code fences, so `recover_json_object` will skip the fenced pool and proceed to the top-level pool. The JSON object is the last (and only) top-level object in the text, so it is recovered from prose, resulting in `recovered_from_prose = True`.
+
+Trace for the rewritten text: The rewritten text '```json
+{"claimant_name": "amara okoro", "correction": true}
+```' contains a code fence with a JSON object. `recover_json_object` will first check the fenced pool, find the object, and return it immediately (since the fenced pool is checked first and in reverse order). This results in `recovered_from_prose = False`.
+
+The key line deciding this is in `recover_json_object`: `for pool in (fenced, top_level):`, where the fenced pool is checked before the top-level pool, and the last object in the fenced pool is prioritized.

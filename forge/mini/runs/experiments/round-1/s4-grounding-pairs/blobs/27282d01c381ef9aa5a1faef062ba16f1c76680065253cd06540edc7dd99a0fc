@@ -1,0 +1,33 @@
+# Execution
+
+## Proposals so far (proposals)
+[6f641efe3a384996] (mini.pair-proposal.grounding.v1)
+I will test `conformance.kernel.grounding` by introducing a span that crosses a word boundary in the document. 
+
+In the input, the span "five days" is a verbatim match for the document. In the rewritten version, I will change the document so that "five days" is split across a line break (represented as a newline character `\n`). 
+
+According to the source code, `_span_occurs` calls `_normalise_whitespace` on both the span and the document [52d4ae5182d433e3]. The `_normalise_whitespace` function is defined as `return " ".join(value.split())` [52d4ae5182d433e3]. Since `split()` without arguments splits on any whitespace (including newlines) and `join` replaces that whitespace with a single space, the newline in the document will be normalized to a space. 
+
+Because a careful reader would consider a line break to be immaterial to whether a citation is grounded, and the code explicitly normalizes this whitespace, the verdict should remain `GROUNDED`. I expect the result to be unchanged.
+commitments: {"kernel": "conformance.kernel.grounding", "input": "{\"value\": \"five\", \"span\": \"five days\", \"document\": \"Amara was away for five days.\"}", "rewritten": "{\"value\": \"five\", \"span\": \"five days\", \"document\": \"Amara was away for five\ndays.\"}", "expect": "unchanged", "rewrite": "I inserted a newline character between 'five' and 'days' in the document."}
+[5948604739337308] (mini.pair-proposal.grounding.v1)
+I will test `conformance.kernel.grounding` by introducing a non-ASCII letter (a Cyrillic 'а') into the document. 
+
+In the input, the span "five days" is a verbatim match for the document. In the rewritten version, I will replace the Latin 'a' in "Amara" with the Cyrillic 'а' (U+0430). 
+
+According to the source code, `_span_occurs` calls `_normalise_whitespace` [52d4ae5182d433e3], which only collapses whitespace using `split()` and `join()` [52d4ae5182d433e3]. It does not perform any Unicode normalization or character folding. Therefore, the Latin string "five days" will still be found in the document "Amara was away for five days." even if "Amara" contains a Cyrillic character, because the span itself does not overlap with the modified word.
+
+A careful reader would consider a visually identical character in a word outside the cited span to be immaterial to whether the citation is grounded. Since the matcher only checks if the normalized span is a substring of the normalized document, and the modification is outside that substring, the verdict should remain `GROUNDED`.
+commitments: {"kernel": "conformance.kernel.grounding", "input": "{\"value\": \"five\", \"span\": \"five days\", \"document\": \"Amara was away for five days.\"}", "rewritten": "{\"value\": \"five\", \"span\": \"five days\", \"document\": \"бmara was away for five days.\"}", "expect": "unchanged", "rewrite": "I replaced the Latin 'A' in 'Amara' with a Cyrillic 'а'."}
+[336fa4dfa4e82577] (mini.pair-proposal.grounding.v1)
+I will test `conformance.kernel.grounding` by introducing a value that is spelled differently from the span, but is semantically identical. 
+
+In the input, the value "five" is a verbatim match for the span "five days". In the rewritten version, I will change the value to "5". 
+
+According to the source code, the value-in-span check is a simple case-insensitive substring check: `if _normalise_whitespace(fields["value"]).casefold() not in _normalise_whitespace(fields["span"]).casefold(): return "VALUE_NOT_IN_SPAN"` [52d4ae5182d433e3]. It does not perform numeric normalization. Therefore, the string "5" is not contained within the string "five days".
+
+A careful reader would consider "5" and "five" to be immaterially different in this context, and would still consider the citation grounded. However, the matcher will fail the substring check, moving the verdict from `GROUNDED` to `VALUE_NOT_IN_SPAN`.
+commitments: {"kernel": "conformance.kernel.grounding", "input": "{\"value\": \"five\", \"span\": \"five days\", \"document\": \"Amara was away for five days.\"}", "rewritten": "{\"value\": \"5\", \"span\": \"five days\", \"document\": \"Amara was away for five days.\"}", "expect": "moves", "rewrite": "I changed the value from the word 'five' to the digit '5'."}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

@@ -1,0 +1,69 @@
+### Criticism of the `recover_json_object` function and related checks
+
+#### Expectations that held
+1. **Last top-level object recovery**: The function correctly prioritizes the last top-level balanced JSON object in a fence or prose, as specified in the docstring. This is evident in executions [f3f280021f75698b], where both proposals (ea0d4a9212e440f4 and 34e37b056dea1b12) returned the last valid object in the fence, even when preceded by malformed or duplicate-key objects. The docstring explicitly states: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." This expectation held as expected.
+
+2. **Duplicate key resolution**: The function correctly resolves duplicate keys using a last-wins strategy, as demonstrated in proposal 34e37b056dea1b12. The execution showed that the last top-level object (`{"key": "value3"}`) was recovered unchanged, even when the preceding object had duplicate keys. This aligns with the docstring's note: "A reply that is otherwise one well-formed object with a repeated key is still scoreable: take the last value for each key."
+
+3. **Fence prioritization**: The function prioritizes objects in fences over those in prose, as shown in evidence [638a6360b40e8b8a], where the kernel `conformance.kernel.recovery` did not move (`moves: false`) when the input was already in a fence. This matches the docstring's logic: "Every top-level balanced object in the text is a candidate, not only the span from the first `{` to the last `}`... the last one inside a code fence when any fence holds one."
+
+4. **Refusal phrase detection**: The refusal phrase check is robust to typographic variations, as noted in the docstring for `_plain_quotes`: "The refusal phrase list is written with straight apostrophes; a model that writes 'I\u2019m sorry' is refusing all the same." Evidence [6e346a638ffdff8b] confirms this, as the refusal phrase was detected despite typographic quotes (`moves: false`).
+
+
+#### Expectations that failed
+1. **Malformed JSON handling in fences**: The docstring implies that the function should recover the last *valid* top-level object in a fence, even if it is followed by a malformed object. However, the current implementation may fail to recover any object if the last top-level object in the fence is malformed, even if an earlier valid object exists. While the execution [f3f280021f75698b] for proposal ea0d4a9212e440f4 showed the expected behavior (recovering `{"key": "value"}`), this does not fully test the edge case where the malformed object *prevents* recovery of an earlier valid object. The docstring states: "a reply that quotes its previous answer and then gives a corrected one is scored on the correction," but it does not explicitly address whether a malformed object *after* a valid one should invalidate the recovery. This ambiguity suggests a potential gap in the implementation's robustness.
+
+   - **Why it matters**: If the function fails to recover a valid object because of a trailing malformed object, it could incorrectly classify a reply as `INVALID_JSON` when it should recover the valid object. This would violate the principle that the last *valid* object in a fence should be prioritized.
+   - **Evidence**: The docstring's note about "nine cycle replies that dropped a criticised key" (H40) suggests that the function should be resilient to minor malformations in earlier drafts. However, the current implementation may not extend this resilience to malformed objects *after* a valid one.
+
+2. **Prose recovery edge cases**: The function's behavior when recovering objects from prose is not fully aligned with the docstring's emphasis on the "last top-level object." Evidence [7a60de6ecc4dd6e3] shows that the kernel `conformance.kernel.recovery` *did* move (`moves: true`) when a bare JSON object was placed after prose. This suggests that the function may not consistently prioritize the last top-level object in prose, especially when other structures (e.g., fences) are absent. The docstring states: "else the last top-level object in the text," but the implementation may not handle nested or interleaved prose and JSON objects robustly.
+
+   - **Why it matters**: If the function does not reliably recover the last top-level object in prose, it could misclassify replies that interleave JSON objects with explanatory text. This would undermine the harness's ability to score replies that embed their final answer in prose.
+   - **Evidence**: Evidence [b0a010d1115d82a4] shows that `conformance.kernel.recovery` did not move (`moves: false`) when prose was added *before* the JSON object, which is expected. However, the inconsistency with [7a60de6ecc4dd6e3] suggests that the function's behavior is not symmetric for prose *after* the object.
+
+3. **Case sensitivity in recovery**: The function does not account for case variations in JSON keys or values when recovering objects from prose or fences. Evidence [d4ded569665ba70d] shows that `conformance.kernel.recovery` *did* move (`moves: true`) when the input was converted to uppercase. This suggests that the function treats JSON objects as case-sensitive, which may not align with user expectations for robustness. While strict JSON parsing is technically correct, the docstring does not explicitly address whether the function should normalize case for recovery purposes.
+
+   - **Why it matters**: If the function fails to recover an object due to case mismatches, it could incorrectly classify a reply as `INVALID_JSON` when the object is otherwise valid. This would reduce the harness's tolerance for minor formatting variations.
+   - **Evidence**: The grounding matcher (`_span_occurs`) includes a `case_insensitive` relaxation, but this is not mirrored in the recovery logic. This inconsistency suggests that the recovery function may be overly strict compared to other parts of the harness.
+
+
+#### Trivial vs. non-trivial failures
+- **Trivial**: The case sensitivity issue (evidence [d4ded569665ba70d]) is relatively minor, as strict JSON parsing is technically correct. However, it could be addressed by adding a case-insensitive recovery mode for prose, similar to the grounding matcher's relaxations.
+
+- **Non-trivial**: The malformed JSON handling in fences (proposal ea0d4a9212e440f4) and prose recovery edge cases (evidence [7a60de6ecc4dd6e3]) are more significant. These failures could lead to incorrect scoring of replies that are otherwise well-formed, violating the harness's goal of robust recovery.
+
+
+#### Recommendations for proposers
+1. **Test malformed JSON in fences**: Propose inputs where a valid JSON object is followed by a malformed one in a fence, and verify that the function recovers the valid object. For example:
+   ```
+   Input: ```json
+   {"key": "value"} {"malformed": "unclosed"
+   ```
+   Rewritten: ```json
+   {"key": "value"}
+   ```
+   Expected: The function should recover `{"key": "value"}` in both cases. If it fails to recover the object in the input, this would confirm a bug.
+   ```
+
+2. **Test prose recovery symmetry**: Propose inputs where JSON objects are interleaved with prose, and verify that the function consistently recovers the last top-level object. For example:
+   ```
+   Input: Here is the answer: {"key": "value"}. Some additional text.
+   Rewritten: {"key": "value"}
+   Expected: The function should recover `{"key": "value"}` in both cases. If it fails to recover the object in the input, this would confirm an inconsistency.
+   ```
+
+3. **Test case insensitivity**: Propose inputs with case variations in JSON keys or values, and verify whether the function recovers the object. For example:
+   ```
+   Input: {"KEY": "VALUE"}
+   Rewritten: {"key": "value"}
+   Expected: The function should recover the object in both cases if case insensitivity is desired. If it fails to recover the object in the input, this would confirm the current strictness.
+   ```
+
+4. **Test duplicate keys in prose**: Propose inputs where duplicate keys appear in prose (not in a fence), and verify that the function recovers the last top-level object with duplicate keys resolved. For example:
+   ```
+   Input: {"key": "value1", "key": "value2"} {"key": "value3"}
+   Rewritten: {"key": "value3"}
+   Expected: The function should recover `{"key": "value3"}` in both cases, as the last top-level object should be prioritized.
+   ```
+
+The most critical next step is to address the malformed JSON handling in fences, as this could lead to incorrect scoring of otherwise valid replies.

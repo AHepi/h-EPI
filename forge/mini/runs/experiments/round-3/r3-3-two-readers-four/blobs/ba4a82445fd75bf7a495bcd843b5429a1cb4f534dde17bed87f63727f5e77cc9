@@ -1,0 +1,7 @@
+The `_grounding_kernel` function first extracts the `value`, `span`, and `document` fields. It then checks if the span is present in the document using `_span_occurs(fields["span"], fields["document"], ())`. 
+
+For the input: `span` is 'Apple Inc' and `document` is 'Apple Inc.'. `_normalise_whitespace('Apple Inc')` is 'Apple Inc' and `_normalise_whitespace('Apple Inc.')` is 'Apple Inc.'. Since 'Apple Inc' is a substring of 'Apple Inc.', `_span_occurs` returns 'verbatim'. Then, it checks if `_normalise_whitespace('Apple').casefold()` ('apple') is in `_normalise_whitespace('Apple Inc').casefold()` ('apple inc'), which is true. The result is 'GROUNDED'.
+
+For the rewritten text: `span` is 'Apple Inc.' and `document` is 'Apple Inc.'. `_normalise_whitespace('Apple Inc.')` is 'Apple Inc.' and `_normalise_whitespace('Apple Inc.')` is 'Apple Inc.'. Since 'Apple Inc.' is a substring of 'Apple Inc.', `_span_occurs` returns 'verbatim'. Then, it checks if `_normalise_whitespace('Apple').casefold()` ('apple') is in `_normalise_whitespace('Apple Inc.').casefold()` ('apple inc.'), which is true. The result is 'GROUNDED'.
+
+In both cases, the kernel returns 'GROUNDED'.

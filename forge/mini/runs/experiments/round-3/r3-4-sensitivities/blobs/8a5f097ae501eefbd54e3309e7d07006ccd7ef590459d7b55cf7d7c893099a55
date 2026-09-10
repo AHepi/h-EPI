@@ -1,0 +1,16 @@
+```json
+{
+  "body": "I propose an input for the pair (conformance.kernel.recovery, conformance.transform.bare-after) where the kernel's answer does not move under the transform. The transform adds a bare object `{\"later\": 1}` after the reply, but the harness should recover the original object if the added object is not a valid JSON dict (e.g., a list or a float). However, the current implementation fails to recover the last object in prose, as noted in [7a60de6ecc4dd6e3]. To demonstrate a case where the answer *should not* move, I provide an input where the added object is a list, which the harness should ignore, thus recovering the original object both before and after the transform.\n\nCitation from the source:\n> \"A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over.\" ([51a2da55fab63214])\n\nThis implies that non-dict objects (like lists) are also passed over, so the harness should recover the original object in both cases.",
+  "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"transform\": \"conformance.transform.bare-after\", \"input\": {\"claimant_name\": \"amara okoro\"} then [\"not\", \"a\", \"dict\"]}",
+  "citations": [
+    {
+      "block": "51a2da55fab63214",
+      "quote": "A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over, so a final answer refused for a float loses to an earlier draft that parsed (``docs/kernel.md``, P-06)."
+    },
+    {
+      "block": "7a60de6ecc4dd6e3",
+      "quote": "{\"points\": [{\"kernel\": \"conformance.kernel.recovery\", \"transform\": \"conformance.transform.bare-after\", \"moves\": true, \"input\": \"{\\\"claimant_name\\\": \\\"amara okoro\\\"}\"}]}"
+    }
+  ]
+}
+```

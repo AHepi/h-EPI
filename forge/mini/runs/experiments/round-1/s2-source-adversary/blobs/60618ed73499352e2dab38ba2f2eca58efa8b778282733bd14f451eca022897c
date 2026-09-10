@@ -1,0 +1,69 @@
+### Analysis of `recover_json_object` and Related Checks
+
+#### Expectations Held
+1. **Fenced JSON Priority**: The `recover_json_object` function correctly prioritizes the last top-level JSON object inside a code fence over objects in prose, as specified in the docstring. This is confirmed by execution [d55dc5d52712b998], where the last object in the fence (`{"key": "value"}`) was recovered unchanged despite the presence of an earlier object with braces in a string value. The docstring’s expectation—that the last object in a fence is the one scored—held true.
+
+2. **Handling of Braces in Strings**: The function does not treat braces inside string values as structural braces, which aligns with the docstring’s implication that such braces should not interfere with parsing the last top-level object. Execution [d55dc5d52712b998] demonstrated this: the input `{"key": "value{with}braces"} {"key": "value"}` and its rewritten version with escaped braces both yielded the same recovered object (`{"key":"value"}`). This confirms the implementation’s robustness against braces in strings, as no parsing ambiguity arose.
+
+3. **Strict JSON Parsing and Recovery**: The function’s fallback to `loads_strict` and then `_loads_last_wins` for duplicate keys works as intended. Evidence block [b0a010d1115d82a4] shows that the function does not move (i.e., does not fail to recover) when prose precedes a valid JSON object, indicating that the strict parsing and recovery logic is sound for typical cases.
+
+4. **Refusal Phrase Detection**: The refusal phrase check is resilient to typographic quotes and case variations. Evidence blocks [6e346a638ffdff8b], [478f1f02c67c06c4], and [42f90dc7e6a15965] confirm that the function correctly identifies refusal phrases regardless of quote style, case, or formatting (e.g., fenced or in prose). The `_plain_quotes` helper function ensures this consistency, as noted in the docstring (H22).
+
+
+#### Expectations Failed
+1. **Edge Case: Unbalanced Braces in Fences**: While the function handles braces inside strings correctly, the docstring does not explicitly address cases where a fence contains *unbalanced* braces due to malformed JSON (e.g., `{"key": "value{with}"}`). The current implementation may fail to recover the last top-level object if the fence itself is unbalanced, even if a valid object exists later. This is a gap between the docstring’s general promise and the implementation’s behavior. No execution in this cycle tested this edge case, but it warrants attention.
+
+2. **Prose Recovery Ambiguity**: The docstring states that the function recovers the "last top-level object in the text" when no fence holds one, but evidence block [7a60de6ecc4dd6e3] shows that the function *does* move (i.e., fails to recover) when a bare JSON object is followed by prose. This suggests the prose recovery logic may not always align with the docstring’s "last top-level object" rule, particularly when prose disrupts the parsing of a trailing object. The docstring should clarify whether prose after a valid object should invalidate recovery.
+
+3. **Duplicate Key Resolution**: The `_loads_last_wins` function resolves duplicate keys as expected, but the docstring does not specify whether the returned object should include metadata about duplicates (e.g., the `duplicates` tuple). While this is not a functional failure, it is a documentation gap. Evidence block [a70c2e9bc362b532] (registry) notes that `recovered-from-prose` is a binary flag, but the presence of duplicates is not surfaced in the same way, which could lead to confusion.
+
+
+#### Failures That Matter
+1. **Unbalanced Braces in Fences**: This is a critical failure because it violates the docstring’s promise that the last top-level object should be recoverable regardless of earlier malformed content. If a fence contains unbalanced braces, the function may fail to recover a valid object later in the fence, which could lead to incorrect scoring in real-world scenarios. Proposers should test inputs like:
+   ```json
+   ```json
+   {"key": "value{with}"} {"key": "value"}
+   ```
+   ```
+   The expected behavior is that the last object (`{"key": "value"}`) should still be recovered, but the current implementation may not handle this.
+
+2. **Prose After Bare JSON**: The ambiguity in prose recovery matters because it affects how the harness interprets replies that mix JSON and prose. The docstring should explicitly state whether prose after a valid object should invalidate recovery or if the last object should still be prioritized. This is particularly relevant for models that append reasoning or disclaimers after their final answer.
+
+
+#### Trivial Failures
+1. **Documentation Gaps**: The lack of clarity around duplicate key metadata and unbalanced braces in fences is trivial in the sense that it does not affect the function’s core behavior. However, it could lead to misunderstandings in edge cases. These gaps should be addressed in the docstring but do not require immediate code changes.
+
+2. **Case Sensitivity in Refusal Phrases**: While the refusal phrase check is robust, the docstring does not explicitly state that it is case-insensitive. This is a minor oversight, as the implementation already handles case insensitivity via `_plain_quotes` and `.lower()`. No action is needed beyond documentation.
+
+
+#### Next Steps for Proposers
+1. **Test Unbalanced Braces in Fences**: Propose a pair where a fence contains unbalanced braces (e.g., due to malformed JSON) followed by a valid object. The expected behavior is that the last valid object should be recovered. If the function fails, this would confirm a critical gap in the implementation.
+   - Example input:
+     ```json
+     ```json
+     {"key": "value{with}"} {"key": "value"}
+     ```
+     ```
+   - Expected output: `{"key": "value"}` (unchanged).
+
+2. **Clarify Prose Recovery Rules**: Propose a pair where a valid JSON object is followed by prose, and the rewritten input removes the prose. The expected behavior is that the object should be recoverable in both cases, confirming that prose after a valid object does not invalidate recovery. If the function fails to recover the object in the presence of prose, the docstring should be updated to reflect this limitation.
+   - Example input: `{"key": "value"} Some prose.`
+   - Rewritten input: `{"key": "value"}`
+   - Expected output: `{"key": "value"}` (unchanged).
+
+3. **Surface Duplicate Key Metadata**: Propose a pair where the input contains duplicate keys, and the rewritten input resolves them. The expected behavior is that the recovered object should be the same in both cases, but the `duplicates` tuple should reflect the presence of duplicates in the original input. This would test whether the metadata is correctly surfaced.
+   - Example input: `{"key": "value1", "key": "value2"}`
+   - Rewritten input: `{"key": "value2"}`
+   - Expected output: `{"key": "value2"}` with `duplicates` tuple `("key",)` for the original input.
+
+
+#### Citations
+The following evidence blocks support the claims above:
+- **Fenced JSON Priority**: Execution [d55dc5d52712b998] confirms the last object in a fence is prioritized.
+  > `"after": "{\"key\":\"value\"}", "as_expected": true, "before": "{\"key\":\"value\"}"`
+
+- **Prose Recovery Ambiguity**: Evidence block [7a60de6ecc4dd6e3] shows the function moves (fails to recover) when prose follows a bare JSON object.
+  > `"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.bare-after", "moves": true`
+
+- **Refusal Phrase Resilience**: Evidence block [6e346a638ffdff8b] confirms refusal phrases are detected despite typographic quotes.
+  > `"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.typographic-quotes", "moves": false`

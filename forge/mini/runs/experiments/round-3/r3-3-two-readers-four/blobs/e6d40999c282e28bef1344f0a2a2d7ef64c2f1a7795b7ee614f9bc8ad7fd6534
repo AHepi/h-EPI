@@ -1,0 +1,6 @@
+```json
+{
+ "body": "The kernel's grounding verdict is determined by `_grounding_kernel`, which calls `_span_occurs`. \n\n1. For the input: `span` is \"hello world\" and `document` is \"hello\\nworld\".\n   - `_normalise_whitespace(\"hello world\")` results in \"hello world\".\n   - `_normalise_whitespace(\"hello\\nworld\")` results in \"hello world\" (since `.split()` splits on any whitespace, including newlines, and `\" \".join(...)` joins them with single spaces).\n   - The check `normal_span in normal_document` becomes `\"hello world\" in \"hello world\"`, which is True. Result: \"verbatim\".\n\n2. For the rewritten text: `span` is \"hello\\nworld\" and `document` is \"hello\\nworld\".\n   - `_normalise_whitespace(\"hello\\nworld\")` results in \"hello world\".\n   - `_normalise_whitespace(\"hello\\nworld\")` results in \"hello world\".\n   - The check `normal_span in normal_document` becomes `\"hello world\" in \"hello world\"`, which is True. Result: \"verbatim\".\n\nIn both cases, the `_span_occurs` function returns \"verbatim\", and the subsequent value-in-span check also passes. The final verdict for both is \"GROUNDED\".",
+ "commitments": "{\"proposal\": \"609f681b7d68797c\", \"expect\": \"unchanged\", \"trace\": \"Line 144: normal_span in normal_document\"}"
+}
+```

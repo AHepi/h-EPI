@@ -1,0 +1,16 @@
+```json
+{
+  "body": "The `recover_json_object` function's docstring states that it should extract the last top-level balanced object in the text, prioritizing the last one inside a code fence if any fence holds one. However, the implementation may not correctly handle cases where the last top-level object in a fence is preceded by a JSON object with braces inside string values. The docstring implies that the last top-level object should be extracted regardless of braces inside strings in earlier objects, but the current implementation might incorrectly treat braces inside strings as structural braces, leading to incorrect parsing. Here, I propose a pair where the input has a JSON object with braces inside a string value followed by a valid object in a fence, and the rewritten input has the same objects but with the braces inside the string value escaped. The expected output per the docstring is that the last top-level object should still be extracted unchanged.",
+  "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"input\": \"```json\\n{\\\"key\\\": \\\"value{with}braces\\\"} {\\\"key\\\": \\\"value\\\"}\\n```\", \"rewritten\": \"```json\\n{\\\"key\\\": \\\"value\\\\{with\\\\}braces\\\"} {\\\"key\\\": \\\"value\\\"}\\n```\", \"expect\": \"unchanged\", \"rewrite\": \"Escaped braces inside a string value in the first JSON object in the fence.\"}",
+  "citations": [
+    {
+      "block": "b0933060989fc235",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction."
+    },
+    {
+      "block": "7a60de6ecc4dd6e3",
+      "quote": "{\"points\": [{\"kernel\": \"conformance.kernel.recovery\", \"transform\": \"conformance.transform.bare-after\", \"moves\": true, \"input\": \"{\\\"claimant_name\\\": \\\"amara okor…"
+    }
+  ]
+}
+```

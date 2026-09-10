@@ -1,0 +1,15 @@
+# Execution
+
+## Proposals so far (proposals)
+[b94a4460132e20b5] (mini.pair-proposal.grid.v1)
+I am testing the cell 'object alone / same object again'. According to the rule for `conformance.kernel.recovery`, the object scored is 'the last one inside a code fence when any fence holds one, else the last top-level object in the text' [f3c7fbd61bc5f708]. In the input, there is an object inside a fence and the same object repeated as a bare object following it; the rule says the one inside the fence is scored. In the rewritten version, the fence is removed, leaving two identical top-level objects; the rule says the last one in the text is scored. Since both objects are identical, the recovered object remains unchanged.
+commitments: {"kernel": "conformance.kernel.recovery", "input": "```\n{\"a\": 1}\n```\n{\"a\": 1}", "rewritten": "{\"a\": 1}\n{\"a\": 1}", "expect": "unchanged", "rewrite": "Removed the code fence around the first object.", "cell": "object alone / same object again"}
+[541b23fe20c4c9f2] (mini.pair-proposal.grid.v1)
+I am testing the cell 'object alone / second fence holding another object'. According to the rule for `conformance.kernel.recovery`, the object scored is 'the last one inside a code fence when any fence holds one, else the last top-level object in the text' [f3c7fbd61bc5f708]. In the input, there are two fences; the rule says the object in the last fence is scored. In the rewritten version, the first fence is removed, leaving the second fence as the only one; the rule still says the object in the last (now only) fence is scored. Therefore, the recovered object remains unchanged.
+commitments: {"kernel": "conformance.kernel.recovery", "input": "```\n{\"a\": 1}\n```\n```\n{\"b\": 2}\n```", "rewritten": "{\"a\": 1}\n```\n{\"b\": 2}\n```", "expect": "unchanged", "rewrite": "Removed the code fence around the first object.", "cell": "object alone / second fence holding another object"}
+[89781d9ef06d998b] (mini.pair-proposal.grid.v1)
+I am testing the cell 'object then a sentence / nothing'. According to the rule for `conformance.kernel.recovery`, the object scored is 'the last one inside a code fence when any fence holds one, else the last top-level object in the text' [f3c7fbd61bc5f708]. In the input, the fence contains an object followed by a sentence; since the object is inside the fence, it is scored. In the rewritten version, the sentence inside the fence is removed, leaving only the object inside the fence; the rule still says the object inside the fence is scored. Therefore, the recovered object remains unchanged.
+commitments: {"kernel": "conformance.kernel.recovery", "input": "```\n{\"a\": 1}\nDone.\n```", "rewritten": "```\n{\"a\": 1}\n```", "expect": "unchanged", "rewrite": "Removed the sentence from inside the code fence.", "cell": "object then a sentence / nothing"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

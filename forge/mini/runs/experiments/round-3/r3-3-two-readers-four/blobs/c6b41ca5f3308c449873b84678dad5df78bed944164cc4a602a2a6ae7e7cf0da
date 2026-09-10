@@ -1,0 +1,6 @@
+```json
+{
+ "body": "The `recover_json_object` function first identifies all JSON objects within code fences (`fenced`) and all top-level JSON objects in the text (`top_level`). It then iterates through these pools in a specific order: first checking the `fenced` pool in reverse order, and then checking the `top_level` pool in reverse order. \n\nFor the input `\"```json\\n{\\\"a\\\": 1}\\n```\\n{\\\"b\\\": 2}\"`:\n1. `fenced` contains `['{\\\"a\\\": 1}']`.\n2. `top_level` contains `['{\\\"a\\\": 1}', '{\\\"b\\\": 2}']`.\n3. The loop `for pool in (fenced, top_level):` starts with `fenced`. The last (and only) candidate is `{\\\"a\\\": 1}`, which is returned.\n\nFor the rewritten text `\"{\\\"b\\\": 2}\\n```json\\n{\\\"a\\\": 1}\\n```\"`:\n1. `fenced` contains `['{\\\"a\\\": 1}']`.\n2. `top_level` contains `['{\\\"b\\\": 2}', '{\\\"a\\\": 1}']`.\n3. The loop `for pool in (fenced, top_level):` starts with `fenced`. The last (and only) candidate is `{\\\"a\\\": 1}`, which is returned.\n\nIn both cases, the kernel recovers `{\"a\": 1}` because the presence of any fenced object causes the function to prioritize the `fenced` pool over the `top_level` pool.",
+ "commitments": "{\"proposal\": \"3d1b45de7e552965\", \"expect\": \"unchanged\", \"trace\": \"Line 36: for pool in (fenced, top_level):\"}"
+}
+```

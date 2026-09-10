@@ -1,0 +1,33 @@
+# Execution
+
+## Proposals so far (proposals)
+[ff6e054a0b020b18] (mini.pair-proposal.grounding.v1)
+I will test `conformance.kernel.grounding` by introducing a difference in quotation marks between the `span` and the `document`. 
+
+In the input, the span "five days" is a verbatim match for the text in the document. In the rewritten version, I will wrap the phrase in the document with typographic double quotes: “five days”.
+
+According to the source code, `_span_occurs` calls `_normalise_whitespace` [2c03be5b984f39ad], which is defined as `" ".join(value.split())`. This function only collapses whitespace and does not remove or normalize punctuation or typographic characters. Therefore, the normalized span "five days" will not be found in the normalized document "...away for “five days”."
+
+A careful reader would consider the presence of quotation marks around a cited phrase to be immaterial to whether the citation is grounded. However, the matcher will fail to find the verbatim span, moving the verdict from `GROUNDED` to `SPAN_NOT_IN_DOCUMENT`.
+commitments: {"kernel": "conformance.kernel.grounding", "input": "{\"value\": \"five\", \"span\": \"five days\", \"document\": \"Amara was away for five days.\"}", "rewritten": "{\"value\": \"five\", \"span\": \"five days\", \"document\": \"Amara was away for \u201cfive days\u201d.\"}", "expect": "moves", "rewrite": "I added typographic quotation marks around the span in the document."}
+[c39cc0808b6451c4] (mini.pair-proposal.grounding.v1)
+I will test `conformance.kernel.grounding` by introducing a case difference between the `span` and the `document`. 
+
+In the input, the span "five days" is a verbatim match for the document. In the rewritten version, I will change the document to "Five days" (capitalizing the first letter).
+
+According to the source code, `_span_occurs` calls `_normalise_whitespace` on both the span and the document, but it does not perform any case folding unless the `case_insensitive` relaxation is present in the `relaxations` tuple: `if normal_span in normal_document: return "verbatim"` [2c03be5b984f39ad]. The `_grounding_kernel` calls `_span_occurs` with an empty tuple for relaxations: `_span_occurs(fields["span"], fields["document"], ())` [2c03be5b984f39ad].
+
+A careful reader would consider the capitalization of the first word in a sentence to be immaterial to whether the citation is grounded. However, because the matcher is performing a case-sensitive check for the "verbatim" match, the verdict will move from `GROUNDED` to `SPAN_NOT_IN_DOCUMENT`.
+commitments: {"kernel": "conformance.kernel.grounding", "input": "{\"value\": \"five\", \"span\": \"five days\", \"document\": \"Amara was away for five days.\"}", "rewritten": "{\"value\": \"five\", \"span\": \"five days\", \"document\": \"Five days was the duration.\"}", "expect": "moves", "rewrite": "I changed the document so the span starts with a capital letter."}
+[bd569908034725a0] (mini.pair-proposal.grounding.v1)
+I will test `conformance.kernel.grounding` by introducing a difference in how a number is written between the `value` and the `span`. 
+
+In the input, the value "5" is a verbatim match for the span "5 days". In the rewritten version, I will change the value to "five". 
+
+According to the source code, the value-in-span check is a simple case-insensitive substring check: `if _normalise_whitespace(fields["value"]).casefold() not in _normalise_whitespace(fields["span"]).casefold(): return "VALUE_NOT_IN_SPAN"` [2c03be5b984f39ad]. It does not perform any numeric normalization or semantic equivalence checks. Therefore, the string "five" is not contained within the string "5 days".
+
+A careful reader would consider "five" and "5" to be immaterially different in this context, and would still consider the citation grounded. However, the matcher will fail the substring check, moving the verdict from `GROUNDED` to `VALUE_NOT_IN_SPAN`.
+commitments: {"kernel": "conformance.kernel.grounding", "input": "{\"value\": \"5\", \"span\": \"5 days\", \"document\": \"Amara was away for 5 days.\"}", "rewritten": "{\"value\": \"five\", \"span\": \"5 days\", \"document\": \"Amara was away for 5 days.\"}", "expect": "moves", "rewrite": "I changed the value from the digit '5' to the word 'five'."}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

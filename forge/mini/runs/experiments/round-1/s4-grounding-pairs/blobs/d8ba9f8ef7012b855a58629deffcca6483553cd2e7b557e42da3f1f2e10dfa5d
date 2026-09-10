@@ -1,0 +1,7 @@
+I will test `conformance.kernel.grounding` by introducing a punctuation difference between the `span` and the `document`. 
+
+In the input, the span "five days" is a verbatim match for the text in the document. In the rewritten version, I will change the document to "five-days" (adding a hyphen). 
+
+According to the source code, `_span_occurs` calls `_normalise_whitespace`, which is defined as `" ".join(value.split())` [84f95499664c266b]. Because `split()` without arguments splits on any whitespace, it does not treat a hyphen as whitespace. Therefore, "five days" (normalized to "five days") will not be found in "five-days" (normalized to "five-days"). 
+
+A careful reader would likely consider the hyphenation of "five-days" to be immaterial to whether the citation "five days" is grounded. However, the matcher will fail to find the span, moving the verdict from `GROUNDED` to `SPAN_NOT_IN_DOCUMENT`.

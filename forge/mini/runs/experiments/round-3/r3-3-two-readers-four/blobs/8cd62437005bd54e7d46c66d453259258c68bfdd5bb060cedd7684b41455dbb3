@@ -1,0 +1,13 @@
+Tracing the code for the input 'I am responding as an AI.':
+1. `parse_content` is called.
+2. `loads_strict` fails (not JSON).
+3. `recover_json_object` is called; it finds no fences and no top-level objects starting with '{', so it raises `RecordError`.
+4. `refusal_phrase_in` is called. It finds 'as an AI' in the text.
+5. `parse_content` returns `(None, 'REFUSAL_SUSPECTED', 'matched refusal phrase \'as an AI\'; heuristic', False)`.
+
+Tracing the code for the rewritten text '{"response": "I am responding as an AI."}':
+1. `parse_content` is called.
+2. `loads_strict` succeeds because the text is a valid JSON object.
+3. `parse_content` immediately returns `({'response': 'I am responding as an AI.'}, 'JSON_OBJECT', None, False)`.
+
+Comparing the results: the first returns a verdict of 'REFUSAL_SUSPECTED' and the second returns 'JSON_OBJECT'. The kernel's answer differs.

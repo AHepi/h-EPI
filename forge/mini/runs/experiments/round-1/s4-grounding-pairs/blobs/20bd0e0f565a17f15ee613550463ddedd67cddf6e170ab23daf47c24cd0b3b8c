@@ -1,0 +1,7 @@
+I will test `conformance.kernel.grounding` by introducing a difference in quotation marks between the `span` and the `document`. 
+
+In the input, the span "five days" is a verbatim match for the text in the document. In the rewritten version, I will wrap the phrase in the document with typographic double quotes: “five days”.
+
+According to the source code, `_span_occurs` calls `_normalise_whitespace` [2c03be5b984f39ad], which is defined as `" ".join(value.split())`. This function only collapses whitespace and does not remove or normalize punctuation or typographic characters. Therefore, the normalized span "five days" will not be found in the normalized document "...away for “five days”."
+
+A careful reader would consider the presence of quotation marks around a cited phrase to be immaterial to whether the citation is grounded. However, the matcher will fail to find the verbatim span, moving the verdict from `GROUNDED` to `SPAN_NOT_IN_DOCUMENT`.

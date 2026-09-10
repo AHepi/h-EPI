@@ -1,0 +1,27 @@
+```json
+{
+ "body": "Two of the three proposals for `conformance.kernel.grounding` held their expectations, while one failed.\n\n**Successful Expectations**\n- **Case Sensitivity**: Proposal `c39cc0808b6451c4` correctly predicted that changing the document to start with a capital letter would move the verdict from `GROUNDED` to `SPAN_NOT_IN_DOCUMENT`. This is because `_span_occurs` only performs case folding if `case_insensitive` is in the relaxations [2c03be5b984f39ad], and `_grounding_kernel` passes an empty tuple `()` [2c03be5b984f39ad].\n- **Numeric Normalization**: Proposal `bd569908034725a0` correctly predicted that changing the value from \"5\" to \"five\" would move the verdict to `VALUE_NOT_IN_SPAN`. The source confirms a simple case-insensitive substring check is used: `if _normalise_whitespace(fields[\"value\"]).casefold() not in _normalise_whitespace(fields[\"span\"]).casefold(): return \"VALUE_NOT_IN_SPAN\"` [2c03be5b984f39ad].\n\n**Failed Expectation**\n- **Typographic Quotes**: Proposal `ff6e054a0b020b18` expected that adding typographic quotes around the span in the document would move the verdict to `SPAN_NOT_IN_DOCUMENT`. However, the execution [c8365b51db510c23] shows the result was `unchanged` (remaining `GROUNDED`). \n\n**Analysis of Failure**\nThis failure is significant because it reveals a discrepancy between the proposer's reading of the source and the actual behavior of the environment. The proposer argued that `_normalise_whitespace` (defined as `\" \".join(value.split())` [2c03be5b984f39ad]) does not remove typographic characters, which is true. However, the result `unchanged` suggests that the underlying string matching in the execution environment may be treating these characters as equivalent to their ASCII counterparts or that the input was handled differently than assumed.\n\n**Next Steps for Proposer**\nTo investigate why typographic quotes did not trigger a failure, a proposer should try introducing other non-whitespace characters that are definitely not normalized (e.g., symbols or different alphabets) or test if the `_plain_quotes` logic used in `refusal_phrase_in` [2c03be5b984f39ad] is accidentally being applied to the grounding kernel in the actual implementation, despite not appearing in the provided source for `_span_occurs`.",
+ "citations": [
+  {
+   "block": "2c03be5b984f39ad",
+   "quote": "def _normalise_whitespace(value: str) -> str:\n    return \" \".join(value.split())"
+  },
+  {
+   "block": "2c03be5b984f39ad",
+   "quote": "if \"case_insensitive\" in relaxations and normal_span.casefold() in normal_document.casefold():\n        return \"case_insensitive\""
+  },
+  {
+   "block": "2c03be5b984f39ad",
+   "quote": "_span_occurs(fields[\"span\"], fields[\"document\"], ())"
+  },
+  {
+   "block": "2c03be5b984f39ad",
+   "quote": "if _normalise_whitespace(fields[\"value\"]).casefold() not in _normalise_whitespace(fields[\"span\"]).casefold():\n        return \"VALUE_NOT_IN_SPAN\""
+  },
+  {
+   "block": "c8365b51db510c23",
+   "quote": "ff6e054a0b020b18: conformance.kernel.grounding -> unchanged, expected moves"
+  }
+ ]
+}
+```

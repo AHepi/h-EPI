@@ -1,0 +1,9 @@
+All three proposals in this cycle successfully moved the kernel outputs as expected, confirming the basic logic of the recovery, refusal, and grounding checks.
+
+1. **Recovery Priority**: Proposal `d38fa86953feac1a` correctly identified that `recover_json_object` prioritizes fenced objects over top-level objects. The execution showed that removing the fence shifted recovery from the first object (`{"a":1}`) to the last top-level object (`{"b":2}`), which aligns with the source stating the object is the "last one inside a code fence when any fence holds one, else the last top-level object in the text" [51a2da55fab63214].
+
+2. **Refusal Phrase Priority**: Proposal `23260fa5af51f85b` correctly tested the list-order priority of `refusal_phrase_in`. By replacing "I cannot" (the first item in `REFUSAL_PHRASES`) with "I am unable", the kernel moved to the next available match in the list, "I'm sorry" [51a2da55fab63214].
+
+3. **Grounding Verbatim Check**: Proposal `9febb707ff09c786` correctly demonstrated that `_grounding_kernel` returns `SPAN_NOT_IN_DOCUMENT` if the span is not found verbatim (after whitespace normalization) in the document [51a2da55fab63214].
+
+**Assessment**: These failures (moves) are expected and trivial as they only verify the documented behavior. To find more significant edge cases, a proposer should next target the `_loads_last_wins` logic (duplicate keys) or the `_plain_quotes` normalization for refusal phrases, as these involve more complex internal transformations.

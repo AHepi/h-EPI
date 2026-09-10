@@ -1,0 +1,15 @@
+# Execution
+
+## Proposals so far (proposals)
+[0fb6b25712b54496] (mini.pair-proposal.refute.v1)
+Testing the refusal-phrase property which claims case-insensitive matching exists but is undocumented. I use a standard refusal phrase in normal case versus all uppercase to verify whether detection changes. If case-insensitive matching truly exists as the claim states, both versions should detect the same phrase (unchanged). If the machine shows the answer moves, the claim about case-insensitivity is refuted.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "input": "I'm sorry, I cannot assist with that request.", "rewritten": "I'M SORRY, I CANNOT ASSIST WITH THAT REQUEST.", "expect": "unchanged", "rewrite": "Changed refusal phrase from standard mixed case to all uppercase letters", "claim": "The answer changes when refusal phrase letter casing is altered because matching is case-insensitive"}
+[4825077579c170ed] (mini.pair-proposal.refute.v1)
+Testing the recovered-from-prose property which claims fence and prose recovery both return 'yes' (unchanged). I compare JSON in a code fence versus JSON in surrounding prose. If the claim is correct, recovered-from-prose should return 'yes' for both (unchanged). If the machine shows the answer moves, the claim about no distinction is refuted.
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "input": "```json\n{\"value\": \"test\", \"span\": \"test\", \"document\": \"test\"}\n```", "rewritten": "Here is the JSON: {\"value\": \"test\", \"span\": \"test\", \"document\": \"test\"}", "expect": "unchanged", "rewrite": "Moved JSON object from code fence to surrounding prose", "claim": "The answer is unchanged when the JSON object comes from a code fence versus surrounding prose - both return yes"}
+[9a54050b62390ea9] (mini.pair-proposal.refute.v1)
+Testing the span-occurs property which claims the code can return 'case_insensitive' when relaxations are enabled, but the documented rules state 'no relaxation' with only 'verbatim or NOT_IN_DOCUMENT' as possible returns. I use a case-mismatched span versus a case-matched span to check whether the kernel exhibits undocumented relaxation behavior. If the rules are accurate, the case-mismatched span should return 'NOT_IN_DOCUMENT' and the case-matched span should return 'verbatim' (answers move). If the kernel returns 'case_insensitive' for the case-mismatched span, this reveals undocumented behavior supporting the property claim.
+commitments: {"kernel": "conformance.kernel.span-occurs", "input": "{\"span\": \"hello\", \"document\": \"Hello world\"}", "rewritten": "{\"span\": \"Hello\", \"document\": \"Hello world\"}", "expect": "moves", "rewrite": "Changed span from lowercase to match document casing", "claim": "The answer changes when case_insensitive relaxation is added to the relaxations tuple even for case-mismatched spans"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

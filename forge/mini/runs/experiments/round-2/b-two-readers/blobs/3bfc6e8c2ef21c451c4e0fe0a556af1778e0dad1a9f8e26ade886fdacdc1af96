@@ -1,0 +1,94 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id. A prediction beside each proposal says what a reader of the code expected; where the expectation from the rule and the prediction from the code disagree, and the machine sided with one, say which reading was wrong and why.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+### Analysis of Failed Expectations in Cycle Executions
+
+Three proposals failed to meet their expected outcomes in this cycle. Each failure reveals a misalignment between the documented rules and the code's behavior, or a misreading of the rules by the proposer. Below, I dissect each failure, quote the relevant rule, identify the decisive line of code, and prescribe next steps for the proposer.
+
+---
+
+#### 1. `conformance.kernel.recovered-from-prose` (Proposal `2169ecd2892eab2d`)
+**Expectation:** The check’s answer should *move* from `yes` (recovered from prose) to `no` (recovered from a fence) when the JSON object is moved from prose into a code fence.
+**Execution:** The check’s answer remained `unchanged` (`yes` → `yes`).
+**Rule vs. Code:** The rule and the code part company here.
+
+- **Rule (quoted from [a70c2e9bc362b532]):**
+  > "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)."
+  The rule’s wording implies an *exclusive* choice: recovery from a fence should count as `no` (strict JSON), while recovery from prose should count as `yes`.
+
+- **Code (decisive line in `parse_content`):**
+  > `return recovered, "JSON_OBJECT", detail, True`
+  The `recovered_from_prose` flag is hardcoded to `True` whenever `recover_json_object` succeeds, even if the object was recovered from a fence. This contradicts the rule’s implication that a fenced object should be treated as strict JSON (`no`).
+
+- **Why the failure matters:** The rule’s phrasing suggests that fenced JSON is a first-class citizen, distinct from prose recovery. The code, however, treats all recovered objects as prose-derived, erasing the distinction. This could mislead users into expecting fenced JSON to be handled more strictly (e.g., for validation or refusal checks).
+
+- **Next steps for the proposer:**
+  - **Rewrite the rule** to clarify that `recovered_from_prose` is `True` for *any* recovered object (fenced or prose), and add a separate field (e.g., `recovered_from_fence`) to distinguish fenced objects. Alternatively, **modify the code** to set `recovered_from_prose = False` when the object is recovered from a fence.
+  - Test edge cases where both prose and fenced objects exist in the same reply (e.g., [55dd56154fb39a87]).
+
+---
+
+#### 2. `conformance.kernel.refusal-phrase` (Proposal `e1012d1646207aaa`)
+**Expectation:** The check’s answer should *move* from `I cannot` to `NONE` when the refusal phrase is moved from inside a JSON object’s string value to prose outside.
+**Execution:** The check’s answer remained `unchanged` (`I cannot` → `I cannot`).
+**Rule vs. Code:** The proposer misread the rule.
+
+- **Rule (quoted from [c8c80e388572359c]):**
+  > "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE."
+  The rule does *not* exclude refusal phrases inside JSON objects. The phrase "the reply contains" refers to the entire reply text, including JSON regions.
+
+- **Code (decisive line in `refusal_phrase_in`):**
+  > `if _plain_quotes(phrase).lower() in lowered:`
+  The function scans the *entire* normalized text (via `_plain_quotes(content).lower()`), including JSON strings. This aligns with the rule’s wording.
+
+- **Why the failure matters:** The proposer assumed the rule would ignore refusal phrases inside JSON objects, but the rule and code both treat the entire reply as fair game. This is a critical distinction for refusal detection, as models may embed refusal phrases in JSON strings to evade detection.
+
+- **Next steps for the proposer:**
+  - **Clarify the rule** to explicitly state that refusal phrases are checked across the *entire* reply, including JSON strings. Add examples of JSON-embedded refusals (e.g., [56ed413d078ac9c2]).
+  - Test whether refusal phrases in *keys* (e.g., `{"I cannot": "verify"}`) are detected, as this may reveal edge cases in the normalization logic.
+
+---
+
+#### 3. `conformance.kernel.grounding` (Proposal `94fb3e005ca4ba39`)
+**Expectation:** The check’s answer should *move* from `VALUE_NOT_IN_SPAN` to `GROUNDED` when the span is adjusted to exactly match the value.
+**Execution:** The check’s answer remained `unchanged` (`GROUNDED` → `GROUNDED`).
+**Rule vs. Code:** The proposer misread the rule, and the prediction was incorrect.
+
+- **Rule (quoted from [6ab8417a77f3b613]):**
+  > "The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked."
+  The rule implies that the value must appear *verbatim* in the span, but the code’s implementation is more permissive.
+
+- **Code (decisive line in `_grounding_kernel`):**
+  > `if _normalise_whitespace(fields["value"]).casefold() in _normalise_whitespace(fields["span"]).casefold():`
+  The check passes if the normalized value is a *substring* of the normalized span, not an exact match. This explains why the input `{"value": "amara", "span": "amara okoro"}` returned `GROUNDED` (the value is a substring of the span).
+
+- **Why the failure matters:** The rule’s wording suggests a strict containment check, but the code allows partial matches. This could lead to false positives in grounding (e.g., `"amara"` matching `"amara okoro"`).
+
+- **Next steps for the proposer:**
+  - **Rewrite the rule** to clarify that the value must be a *substring* of the span (not an exact match). Alternatively, **modify the code** to enforce exact matches if that is the intended behavior.
+  - Test cases where the value is a substring but not a meaningful match (e.g., `{"value": "ama", "span": "amara okoro"}`).
+
+---
+
+### Summary of Misalignments
+| Kernel                     | Failure Type               | Root Cause                          | Next Steps                                                                                     |
+|----------------------------|----------------------------|-------------------------------------|------------------------------------------------------------------------------------------------|
+| `recovered-from-prose`     | Rule vs. Code              | Code ignores fence/prose distinction | Rewrite rule or modify code to distinguish fenced objects.                                    |
+| `refusal-phrase`           | Proposer misread rule      | Rule applies to entire reply        | Clarify rule to explicitly include JSON strings; test edge cases.                             |
+| `grounding`                | Proposer misread rule      | Code allows substring matches       | Rewrite rule to clarify substring behavior or modify code to enforce exact matches.           |
+
+### General Advice for Proposers
+1. **Read the code alongside the rules:** The rules are often terse, and the code’s behavior may diverge from the proposer’s interpretation. For example, the `grounding` kernel’s substring logic was not obvious from the rule’s wording.
+2. **Test edge cases early:** The `refusal-phrase` failure could have been avoided by testing JSON-embedded refusals before proposing. Use the evidence catalogue (e.g., [56ed413d078ac9c2]) to identify prior examples.
+3. **Clarify ambiguous rules:** If a rule’s wording is open to interpretation (e.g., "the reply contains" in `refusal-phrase`), propose a clarification or add examples to the documentation.
+4. **Validate predictions with traces:** The `grounding` prediction assumed exact matching, but the code’s trace revealed substring logic. Always cross-check predictions with the code’s actual logic (e.g., [2742b05758b19c31]).
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

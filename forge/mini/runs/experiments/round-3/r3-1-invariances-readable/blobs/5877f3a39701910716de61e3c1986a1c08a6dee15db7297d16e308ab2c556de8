@@ -1,0 +1,12 @@
+```json
+{
+ "body": "I am refuting the claim in [638a6360b40e8b8a] that the recovery kernel does not move under the fence transform. The `recover_json_object` function first extracts all content within code fences using a non-greedy regex `_FENCE = re.compile('```(?:json|JSON)?\\s*(.*?)```', re.DOTALL)`. It then iterates through these candidates in reverse order. If I provide an input that is a valid JSON object containing a string that looks like a code fence, the original recovery will return the whole object. However, once the fence transform wraps the entire input, the `_FENCE` regex will match the internal fence first (due to the non-greedy `.*?` matching from the first ``` to the first closing ```), creating a candidate that is a subset of the original object. If that subset is itself a valid JSON object, the kernel will recover it instead of the original object, causing the result to move.",
+ "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"transform\": \"conformance.transform.fence\", \"input\": \"{\\\"a\\\": \\\"```json\\n{\\\\\"b\\\": 1}\\n```\\\"}\"}",
+ "citations": [
+  {
+   "block": "638a6360b40e8b8a",
+   "quote": "{\"kernel\": \"conformance.kernel.recovery\", \"transform\": \"conformance.transform.fence\", \"moves\": false"
+  }
+ ]
+}
+```

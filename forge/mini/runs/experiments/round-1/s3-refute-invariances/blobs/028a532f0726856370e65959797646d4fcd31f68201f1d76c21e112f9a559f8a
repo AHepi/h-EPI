@@ -1,0 +1,22 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. Read this cycle's executions beside the proposals: say which expectations held, which failed, and why, reading the source; say which failures matter, which are trivial, and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+All three proposals failed to produce the expected movement. Each failure reveals a misunderstanding of how the source code actually behaves.
+
+**Proposal 84cd660f3bf71dcc** (recovered-from-prose under indent): Expected False→True, got unchanged (no→no). The proposer claimed leading whitespace before the opening brace breaks strict JSON parsing [09bf4dc676e6c7bd]: "Add blank lines before the reply and two spaces of indentation to every line." However, Python's json.loads() strips leading/trailing whitespace automatically, so indented JSON remains valid strict JSON. The recover_json_object function only triggers when strict parsing fails, which never happens here. This is a meaningful failure—the proposer misunderstood JSON whitespace tolerance.
+
+**Proposal 66d67b13d2ab04aa** (grounding under upper-case): Expected NOT_IN_DOCUMENT→verbatim, got UNREADABLE_INPUT→UNREADABLE_INPUT. The grounding kernel expects input with "span" and "document" fields parsed via _fields(), but the execution shows the input was unreadable both times [699c8056d123757f]: "the input is one JSON object {\"span\", \"document\"}." The proposer's input format was correct, but something in the transform or kernel handling made it unreadable. This failure matters—it suggests the transform may corrupt the JSON structure.
+
+**Proposal 5297178c33f29d8c** (recovery under float-after): Expected original object→{"a": 1.5}, got unchanged. The proposer assumed two parseable top-level objects would exist after the transform [fe8620155127e023]: "Put the word 'final' and an object holding a float, {\"a\": 1.5}, after the reply." The word 'final' between the objects breaks JSON parsing—the decoder cannot find two separate top-level objects when text intervenes. The recovery function only returns dicts that parse successfully, so the appended float-object is never reached. This is a meaningful failure—the proposer misread how the transform constructs output.
+
+**What to try next:** For indent, test with actual prose surrounding JSON (not just whitespace). For grounding, verify the transform preserves valid JSON structure. For float-after, use a transform that appends a bare object without intervening text, or test fence-then-bare-after which properly separates objects.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

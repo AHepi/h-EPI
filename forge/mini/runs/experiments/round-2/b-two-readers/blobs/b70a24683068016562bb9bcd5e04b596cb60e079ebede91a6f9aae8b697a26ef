@@ -1,0 +1,16 @@
+```json
+{
+  "body": "Testing the `conformance.kernel.recovery` rule's handling of JSON objects with repeated keys, specifically whether the rule's 'last-wins' resolution for repeated keys is correctly applied when the last occurrence of a key is nested inside a later top-level object. The rule states: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text... A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable.' The input contains two top-level objects, where the second object repeats a key from the first but with a different value. The rewritten version moves the repeated key to a nested object inside the second top-level object, which should still be the one scored with the last-wins resolution. The expectation is that the check will move ('moves') because the last occurrence of the repeated key changes from the second top-level object to the nested object within it, testing whether the rule's 'last-wins' applies to nested objects or only to top-level keys.",
+  "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"input\": \"Here is my initial answer: {\\\"claimant_name\\\": \\\"amara okoro\\\", \\\"status\\\": \\\"pending\\\"}. However, the correct answer is {\\\"claimant_name\\\": \\\"amara okoro\\\", \\\"status\\\": \\\"approved\\\"}.\", \"rewritten\": \"Here is my initial answer: {\\\"claimant_name\\\": \\\"amara okoro\\\", \\\"status\\\": \\\"pending\\\"}. However, the correct answer is {\\\"claimant_name\\\": \\\"amara okoro\\\", \\\"details\\\": {\\\"status\\\": \\\"approved\\\"}}.\", \"expect\": \"moves\", \"rewrite\": \"Moved the repeated key 'status' from the second top-level object into a nested object to test whether the rule's 'last-wins' resolution applies to nested objects.\"}",
+  "citations": [
+    {
+      "block": "660f71affafc415a",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction. A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over, so a final answer refused for a float loses to an earlier draft that parsed (``docs/kernel.md``, P-06)."
+    },
+    {
+      "block": "65ae18af7a738b26",
+      "quote": "kernel conformance.kernel.recovery: The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT."
+    }
+  ]
+}
+```

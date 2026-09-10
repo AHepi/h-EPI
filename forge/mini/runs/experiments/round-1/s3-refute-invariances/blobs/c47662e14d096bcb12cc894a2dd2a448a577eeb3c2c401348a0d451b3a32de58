@@ -1,0 +1,22 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. Read this cycle's executions beside the proposals: say which expectations held, which failed, and why, reading the source; say which failures matter, which are trivial, and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Two proposals met expectations; one failed.
+
+Proposal 2262f241548a4e70 succeeded: the recovery kernel moved under fold-whitespace when the input contained multiple spaces inside a string value. The execution shows the claimant_name changed from "John    Doe" to "John Doe", confirming the kernel's output changes when string content changes. This matters because catalogue row [706dbfa18782a310] claims "moves: false" for this kernel-transform pair, and the proposal correctly identifies a counterexample.
+
+Proposal 992e6d43c3842671 also succeeded: the recovery kernel moved when fold-whitespace collapsed spaces inside a JSON key name ("claimant  name" to "claimant name"). This is the same catalogue row challenged, now with a second independent counterexample. Both successes matter—they demonstrate the catalogue claim is wrong for multiple input patterns.
+
+Proposal 3e861c775374a0cb failed: the execution shows "unchanged" when the proposer expected "moved". The hypothesis was that embedding a JSON fence inside a string field, then wrapping the whole reply in an outer fence, would cause the recovery function to extract different content. But the before and after outputs are identical. Reading the source, recover_json_object collects all fenced spans first, then tries them in reversed order. When the outer fence wraps the entire reply, its content is the original JSON object (with the inner fence markers as literal text inside the note string). Parsing that outer-fence content yields the same object as parsing the original unfenced reply. The proposer's mental model of which fence gets priority was incorrect. This failure matters because it reveals a gap in understanding the recovery logic's fence-selection behavior.
+
+Next steps: For the fence transform, a proposer should test inputs where the outer fence's content differs structurally from the original reply—not just wrapping, but cases where the fence transform interacts with existing fences to change which span is extracted first. For fold-whitespace, further challenges to row [706dbfa18782a310] could test whitespace in array values or nested objects to strengthen the refutation.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

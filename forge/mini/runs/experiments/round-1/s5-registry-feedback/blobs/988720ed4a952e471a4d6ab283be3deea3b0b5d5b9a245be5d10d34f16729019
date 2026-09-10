@@ -1,0 +1,15 @@
+# Execution
+
+## Proposals so far (proposals)
+[1bbcdf984c64ceef] (mini.proposal.v1)
+I expect that applying typographic‑quotes to a refusal‑phrase input will not change the harness's refusal‑phrase verdict, because the harness lower‑cases and normalises quotes before matching; therefore the verdict should remain REFUSAL_SUSPECTED, demonstrating that the transform is invisible to the check.
+commitments: {"input":"{\"claimant_name\": \"mara\", \"total_days\": \"nine\"}","kernel":"conformance.kernel.refusal-phrase","transform":"conformance.transform.typographic-quotes"}
+[1c48e68eab60b78b] (mini.proposal.v1)
+I expect that applying a float-after transform to a recovery check will insert a trailing scalar, which the harness will treat as part of the recovered JSON and thus change the recovery verdict; this kernel-transform pair is not listed among the catalogue moves, so it should produce a move.
+commitments: {"kernel":"conformance.kernel.recovery","transform":"conformance.transform.float-after","input":"{\"claimant_name\":\"carl\",\"total_days\":\"four\"}"}
+[6e7ebbb8f6e8aa03] (mini.proposal.v1)
+I propose using the recovered-from-prose kernel with the prose-before transform, feeding the input {"claimant_name":"bob","total_days":"three"}. The catalogue entry for this kernel-transform pair (block 1c84027e761c6f99) lists moves=true, indicating that adding a sentence before the reply should change the harness's recovered-from-prose verdict. This differs from the earlier fence-only approach, which only flips the verdict when a fence is present; prose-before is a distinct transformation not yet tested in the last cycle, and the criticism of upper-case on fenced replies shows that case changes alone do not affect recovery, so a structural addition is more likely to produce a move. I expect the verdict to flip (i.e., the execution to record a move) because the added prose forces the harness to treat the response as recovered from prose in a different context, which the catalogue flags as a moving pair.
+commitments: {"kernel":"conformance.kernel.recovered-from-prose","transform":"conformance.transform.prose-before","input":"The answer is yes."}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

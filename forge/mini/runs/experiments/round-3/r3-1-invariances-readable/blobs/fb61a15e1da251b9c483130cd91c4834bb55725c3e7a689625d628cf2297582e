@@ -1,0 +1,69 @@
+# Execution
+
+## Proposals so far (proposals)
+[dbdb9869cb8fab14] (mini.proposal.v1)
+I am targeting the row in [638a6360b40e8b8a] where the recovery kernel does not move under the fence transform. The current example is a simple JSON object. I predict that if the input object contains a brace inside a string value, the `recover_json_object` function's logic for finding top-level objects (which uses `json.JSONDecoder().raw_decode`) will handle it correctly, but the `_FENCE` regex (which uses `(.*?)` non-greedily) might interact differently if the fence itself is nested or if the content is complex. However, a more reliable way to refute 'does not move' for recovery is to provide an input that is already a JSON object but contains a repeated key. 
+
+According to the source, `recover_json_object` first tries `loads_strict` (which refuses duplicate keys) and then falls back to `_loads_last_wins`. If the input is a bare JSON object with duplicate keys, it is recovered via the fallback. If it is wrapped in a fence, it is still recovered via the fallback. But if the input is a bare JSON object with duplicate keys, `parse_content` returns `recovered_from_prose=True` because `loads_strict` failed. If the transform `conformance.transform.fence` is applied, the object is now inside a fence. The `recover_json_object` function will find it in the `fenced` pool first. 
+
+Actually, a simpler refutation: the row [638a6360b40e8b8a] claims recovery doesn't move under `conformance.transform.fence`. If I provide an input that is a JSON object with a repeated key, the recovery result (the parsed dict) remains the same, but the 'recovery' kernel (conformance.kernel.recovery) returns the object as canonical JSON. The canonical JSON of a duplicate-key object is the result of the last-wins resolution. This should not move. 
+
+Let's try a different angle: an input that is NOT a JSON object but becomes one, or vice versa. No, the transform just wraps it. 
+
+Consider the `recover_json_object` logic: it checks `fenced` then `top_level`. If the input is `{"a": 1} {"b": 2}`, it recovers `{"b": 2}`. If we wrap that in a fence, it recovers the same. 
+
+Wait, if the input is `{"a": 1}`, and we wrap it in a fence, the result of `conformance.kernel.recovery` is the same object. 
+
+Let's look at [1c84027e761c6f99]: recovery does not move under `draft-before`. `draft-before` adds `{"draft": 1} then `. The kernel recovers the last top-level object. If the input is `{"a": 1}`, the result is `{"a": 1}`. If the input is `{"a": 1} {"b": 2}`, the result is `{"b": 2}`. 
+
+I will use an input with a repeated key for the recovery kernel under the fence transform. If the input is `{"a": 1, "a": 2}`, the recovery kernel returns `{"a": 2}`. Wrapping it in a fence still returns `{"a": 2}`. 
+
+Let's try to find a case where it DOES move. If the input is `{"a": 1} some prose {"b": 2}`, recovery returns `{"b": 2}`. If we wrap the whole thing in a fence: ```json
+{"a": 1} some prose {"b": 2}
+```, the `_FENCE` regex captures `{"a": 1} some prose {"b": 2}`. Then `recover_json_object` tries to parse this candidate. `loads_strict` fails. `_loads_last_wins` fails because it's not a single object. Then it falls back to `top_level` search on the whole content. It will find `{"a": 1}` and `{"b": 2}`, and return the last one: `{"b": 2}`. Still no move.
+
+What if the input is `{"a": 1} ```json
+{"b": 2}
+``` `? The original recovery returns `{"b": 2}` (last top-level). The fence transform wraps the whole thing: ```json
+{"a": 1} ```json
+{"b": 2}
+```
+```. Now the `_FENCE` regex finds the first fence. The content inside is `{"a": 1} ```json
+{"b": 2}`. This is not a valid JSON object. It then looks at `top_level`. It finds `{"a": 1}` and `{"b": 2}`. It returns `{"b": 2}`. 
+
+Let's use a repeated key in a way that the fence transform changes the 'last' object. 
+
+Actually, I'll use the `conformance.kernel.recovery` with `conformance.transform.fence` on an input that contains a brace inside a string. 
+Input: `{"a": "}"}`. 
+Recovery: `{"a": "}"}`. 
+Fence: ```json
+{"a": "}"}
+```. 
+Recovery: `{"a": "}"}`. 
+
+Let's try `conformance.kernel.recovery` and `conformance.transform.upper-case` [d4ded569665ba70d] which already moves. 
+
+I will pick [638a6360b40e8b8a] and use an input that is a JSON object containing a string that looks like a fence. 
+Input: `{"a": "```json\n{\"b\": 1}\n```"}`. 
+Recovery: `{"a": "```json\n{\"b\": 1}\n```"}`. 
+Fence transform: ```json
+{"a": "```json\n{\"b\": 1}\n```"}
+```. 
+Now `_FENCE` finds the first match. The first match is `{"a": "`. The second match is `{\"b\": 1}`. 
+`recover_json_object` iterates through `fenced` in reverse. The last fenced candidate is `{\"b\": 1}`. This is a valid JSON object. 
+It returns `{"b": 1}`. 
+This moves! The original was `{"a": ...}`, the new one is `{"b": 1}`.
+commitments: {"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fence", "input": "{\"a\": \"```json\n{\\\"b\\\": 1}\\n```\"}"}
+[7f2dce6d96a07b73] (mini.proposal.v1)
+I am targeting the row in [638a6360b40e8b8a] which claims that the recovery kernel does not move under the fence transform. I predict that if the input is a JSON object containing a string that itself looks like a JSON code fence, the `recover_json_object` function will be tricked. 
+
+Specifically, the `_FENCE` regex `re.compile('```(?:json|JSON)?\s*(.*?)```', re.DOTALL)` is non-greedy. If the input is `{"a": "```json\n{\"b\": 1}\n```"}`, the recovery kernel first sees a single top-level object and returns it. However, when the `conformance.transform.fence` transform wraps this in another set of fences, the resulting text contains multiple fence markers. The `_FENCE` regex will find the inner fence as a match. Because `recover_json_object` iterates through the `fenced` pool in reverse (`for candidate in reversed(pool)`), it will attempt to parse the last fenced candidate first. In this case, the inner object `{"b": 1}` will be recovered instead of the original outer object, causing the kernel's output to move.
+commitments: {"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fence", "input": "{\"a\": \"```json\n{\\\"b\\\": 1}\\n```\"}"}
+[c21a98229afe264f] (mini.proposal.v1)
+I am targeting the row in [638a6360b40e8b8a] which claims that the recovery kernel does not move under the fence transform. I predict that if the input is a JSON object containing a string that itself looks like a JSON code fence, the `recover_json_object` function will be tricked.
+
+Specifically, the `_FENCE` regex `re.compile('```(?:json|JSON)?\s*(.*?)```', re.DOTALL)` is non-greedy. If the input is `{"a": "```json\n{\"b\": 1}\n```"}`, the recovery kernel first sees a single top-level object and returns it. However, when the `conformance.transform.fence` transform wraps this in another set of fences, the resulting text contains multiple fence markers. The `_FENCE` regex will find the inner fence as a match. Because `recover_json_object` iterates through the `fenced` pool in reverse (`for candidate in reversed(pool)`), it will attempt to parse the last fenced candidate first. In this case, the inner object `{"b": 1}` will be recovered instead of the original outer object, causing the kernel's output to move.
+commitments: {"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fence", "input": "{\"a\": \"```json\n{\\\"b\\\": 1}\\n```\"}"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

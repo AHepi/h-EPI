@@ -1,0 +1,14 @@
+```json
+{
+  "body": "The `recover_json_object` function's docstring states that it should extract the last top-level balanced object in the text, prioritizing the last one inside a code fence if any fence holds one. However, the implementation does not correctly handle cases where a JSON object is nested inside another JSON object within a fence. Specifically, if a fence contains multiple top-level objects (e.g., `{...} {...}`), the function should extract the last one, but the current implementation may not do so reliably because it treats the entire fence content as a single candidate without re-parsing for nested top-level objects. I propose a pair where the input has two top-level objects in a fence, and the rewritten input has the same objects but with the first one nested inside an outer object, which should not change the expected output per the docstring (the last top-level object should still be extracted).",
+
+  "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"input\": \"```json\\n{\\\"key1\\\": \\\"value1\\\"} {\\\"key2\\\": \\\"value2\\\"}\\n```\", \"rewritten\": \"```json\\n{\\\"outer\\\": {\\\"key1\\\": \\\"value1\\\"}} {\\\"key2\\\": \\\"value2\\\"}\\n```\", \"expect\": \"unchanged\", \"rewrite\": \"Nested the first top-level object inside an outer object in the fence.\"}",
+
+  "citations": [
+    {
+      "block": "84f95499664c266b",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction."
+    }
+  ]
+}
+```

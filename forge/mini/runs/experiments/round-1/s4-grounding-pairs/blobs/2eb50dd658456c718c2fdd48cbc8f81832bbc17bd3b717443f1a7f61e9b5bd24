@@ -1,0 +1,7 @@
+I will test `conformance.kernel.grounding` by introducing a non-ASCII letter (a Cyrillic 'а') into the document. 
+
+In the input, the span "five days" is a verbatim match for the document. In the rewritten version, I will replace the Latin 'a' in "Amara" with the Cyrillic 'а' (U+0430). 
+
+According to the source code, `_span_occurs` calls `_normalise_whitespace` [52d4ae5182d433e3], which only collapses whitespace using `split()` and `join()` [52d4ae5182d433e3]. It does not perform any Unicode normalization or character folding. Therefore, the Latin string "five days" will still be found in the document "Amara was away for five days." even if "Amara" contains a Cyrillic character, because the span itself does not overlap with the modified word.
+
+A careful reader would consider a visually identical character in a word outside the cited span to be immaterial to whether the citation is grounded. Since the matcher only checks if the normalized span is a substring of the normalized document, and the modification is outside that substring, the verdict should remain `GROUNDED`.

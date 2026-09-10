@@ -1,0 +1,18 @@
+```json
+{
+  "body": "I propose testing the `conformance.kernel.recovery` kernel with the `conformance.transform.bare-after` transform. The catalogue row [7a60de6ecc4dd6e3] claims the transform changes the kernel's answer, but the harness's prose-scanning logic stops at the first valid object rather than continuing to the end of the text. This violates the \"last object wins\" rule. \n\nI predict the kernel's answer will NOT move (i.e., the recovered object will remain unchanged) if the input is a JSON object followed by prose that does *not* contain another valid JSON object. For example, adding a sentence like \"This is the final answer.\" after the object should not trigger the harness to recover a different object, as there is no subsequent valid JSON to recover. This would confirm the harness's current behavior of stopping at the first valid object, rather than adhering to its stated \"last object wins\" rule.\n\nCitations:\n- [7a60de6ecc4dd6e3]: The catalogue row shows the transform `conformance.transform.bare-after` is expected to move the kernel's answer, but the harness recovers the original object instead of the appended `{\"later\": 1}`.\n- The source states: \"The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it.\" This implies the harness should scan to the end of the text, not stop at the first valid object.",
+
+  "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"transform\": \"conformance.transform.bare-after\", \"input\": \"{\\\"claimant_name\\\": \\\"amara okoro\\\"} This is the final answer.\"}",
+
+  "citations": [
+    {
+      "block": "7a60de6ecc4dd6e3",
+      "quote": "{\"points\": [{\"kernel\": \"conformance.kernel.recovery\", \"transform\": \"conformance.transform.bare-after\", \"moves\": true, \"input\": \"{\\\"claimant_name\\\": \\\"amara okoro\\\", ..."
+    },
+    {
+      "block": "51a2da55fab63214",
+      "quote": "\"The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction.\""
+    }
+  ]
+}
+```

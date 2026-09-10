@@ -1,0 +1,13 @@
+# Execution
+
+## Proposals so far (proposals)
+[6898a97a73f7d3e1] (mini.proposal.v1)
+I propose an input for the pair (conformance.kernel.recovery, conformance.transform.bare-after) where the kernel's answer does NOT move under the transform. The transform adds a bare object `{"later": 1}` after the reply, but the harness should still recover the original object `{"claimant_name": "amara okoro"}` because the added object is not a valid top-level JSON object (it lacks proper separation or context). The harness's `recover_json_object` function is designed to recover the *last* top-level object, but in this case, the added `{"later": 1}` is not parsed as a separate object due to missing delimiters or prose context. Thus, the kernel's answer remains unchanged.
+
+Citations:
+- [7a60de6ecc4dd6e3] states the transform `conformance.transform.bare-after` adds `then {"later": 1}` after the reply, and the catalogue claims the kernel's answer moves (`"moves": true`). However, the harness's logic should not recover `{"later": 1}` as a separate object because it is not properly delimited or fenced. The source ([51a2da55fab63214]) confirms the harness recovers the *last* top-level object, but only if it is syntactically valid and properly separated.
+- The source also notes that stray braces in prose are ignored, and only well-formed objects are candidates. Here, `{"later": 1}` is not a valid candidate because it lacks proper separation (e.g., no fence or prose context like `then {...}`).
+commitments: {"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.bare-after", "input": "{\"claimant_name\": \"amara okoro\"} then {\"later\": 1}"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

@@ -1,0 +1,12 @@
+```json
+{
+ "body": "I am targeting the row in [638a6360b40e8b8a] which claims that the recovery kernel does not move under the fence transform. I predict that if the input is a valid JSON object containing a string that itself contains a valid JSON object wrapped in fences, the `recover_json_object` function will be tricked when the entire input is wrapped in a fence.\n\nSpecifically, the `_FENCE` regex `re.compile('```(?:json|JSON)?\\s*(.*?)```', re.DOTALL)` is non-greedy. If the input is `{\"a\": \"```json\\n{\\\"b\\\": 1}\\n```\"}`, the recovery kernel first sees a single top-level object and returns it. However, when the `conformance.transform.fence` transform wraps this in another set of fences, the resulting text contains multiple fence markers. The `_FENCE` regex will find the inner fence as a match. Because `recover_json_object` iterates through the `fenced` pool in reverse (`for candidate in reversed(pool)`), it will attempt to parse the last fenced candidate first. In this case, the inner object `{\"b\": 1}` will be recovered instead of the original outer object, causing the kernel's output to move.\n\nTo ensure the input is a valid JSON object (avoiding the `NO_OBJECT` result seen in [8cb3b46d9354fb91]), I am providing the input as a single-line JSON string where the inner quotes and newlines are properly escaped. The outer object is `{\"a\": \"...\"}`. Inside the string value, the inner JSON is `{\"b\": 1}`. To be a valid JSON string, the inner quotes must be `\\\"` and the newline must be `\\n`.",
+ "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"transform\": \"conformance.transform.fence\", \"input\": \"{\\\"a\\\": \\\"```json\\n{\\\\\\\"b\\\\\\\": 1}\\\\n```\\\"}\"}",
+ "citations": [
+  {
+   "block": "638a6360b40e8b8a",
+   "quote": "{\"kernel\": \"conformance.kernel.recovery\", \"transform\": \"conformance.transform.fence\", \"moves\": false, \"input\": \"{\\\"claimant_name\\\": \\\"amara okoro\\\",\u2026"
+  }
+ ]
+}
+```

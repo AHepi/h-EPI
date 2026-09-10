@@ -1,0 +1,6 @@
+```json
+{
+ "body": "Tracing the code for the input 'I am responding as an AI.':\n1. `parse_content` is called.\n2. `loads_strict` fails (not JSON).\n3. `recover_json_object` is called; it finds no fences and no top-level objects starting with '{', so it raises `RecordError`.\n4. `refusal_phrase_in` is called. It finds 'as an AI' in the text.\n5. `parse_content` returns `(None, 'REFUSAL_SUSPECTED', 'matched refusal phrase \\'as an AI\\'; heuristic', False)`.\n\nTracing the code for the rewritten text '{\"response\": \"I am responding as an AI.\"}':\n1. `parse_content` is called.\n2. `loads_strict` succeeds because the text is a valid JSON object.\n3. `parse_content` immediately returns `({'response': 'I am responding as an AI.'}, 'JSON_OBJECT', None, False)`.\n\nComparing the results: the first returns a verdict of 'REFUSAL_SUSPECTED' and the second returns 'JSON_OBJECT'. The kernel's answer differs.",
+ "commitments": "{\"proposal\": \"e44af2db0067ae2c\", \"expect\": \"moves\", \"trace\": \"Line 84 returns immediately if loads_strict succeeds, bypassing the refusal check.\"}"
+}
+```

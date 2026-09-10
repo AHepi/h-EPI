@@ -1,0 +1,15 @@
+# Execution
+
+## Proposals so far (proposals)
+[66b835cd75484d59] (mini.pair-proposal.grid.v1)
+I am covering the grid cell where there is one JSON object located outside a code fence, with prose appearing before the object. According to the rules for `conformance.kernel.recovery`, the harness recovers the last top-level object in the text if no code fence holds one. Moving the prose from before the object to after the object does not change the fact that there is only one top-level object, so the recovered object should remain unchanged.
+commitments: {"kernel": "conformance.kernel.recovery", "input": "Here is the result. {\"answer\": \"yes\"}", "rewritten": "{\"answer\": \"yes\"} Here is the result.", "expect": "unchanged", "rewrite": "Moved the prose from before the object to after the object.", "cell": "one object, outside fence, prose before"}
+[a322bb644395e26c] (mini.pair-proposal.grid.v1)
+I am covering the grid cell where there are two different JSON objects, both located outside of code fences, with prose appearing between them. According to the rules for `conformance.kernel.recovery`, the harness recovers the last top-level object in the text if no code fence holds one. In the input, the second object is the last top-level object. Moving the prose from between the two objects to before the first object does not change the fact that there are no code fences, nor does it change the identity or position of the last top-level object, so the recovered object should remain unchanged.
+commitments: {"kernel": "conformance.kernel.recovery", "input": "{\"id\": 1} Here is the result. {\"id\": 2}", "rewritten": "Here is the result. {\"id\": 1} {\"id\": 2}", "expect": "unchanged", "rewrite": "Moved the prose from between the two objects to before the first object.", "cell": "two objects: different, outside fence, prose between"}
+[877c914ba1b7db28] (mini.pair-proposal.grid.v1)
+I am covering the grid cell where there are two different JSON objects, both located outside of code fences, with prose appearing before the first object. According to the rules for `conformance.kernel.recovery`, the harness recovers the last top-level object in the text if no code fence holds one. In the input, the second object is the last top-level object. Moving the prose from before the first object to between the two objects does not change the fact that there are no code fences, nor does it change the identity or position of the last top-level object, so the recovered object should remain unchanged.
+commitments: {"kernel": "conformance.kernel.recovery", "input": "Here is the result. {\"id\": 1} {\"id\": 2}", "rewritten": "{\"id\": 1} Here is the result. {\"id\": 2}", "expect": "unchanged", "rewrite": "Moved the prose from before the first object to between the two objects.", "cell": "two objects: different, outside fence, prose before"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

@@ -1,0 +1,20 @@
+```json
+{
+  "body": "Testing the refusal-phrase check's handling of refusal phrases that appear *after* a JSON object in the reply. The documented rule states that the check returns the *first* listed refusal phrase the reply contains, regardless of its position relative to any JSON object. The input contains a refusal phrase ('I cannot') *after* a valid JSON object, while the rewritten version moves the refusal phrase *before* the JSON object. The rule's wording does not prioritize refusal phrases based on their position relative to JSON objects, so the check's answer should remain 'unchanged' (the first refusal phrase is still 'I cannot' in both cases). This tests whether the rule's 'first' is interpreted as first in document order or first relative to the JSON object.",
+  "commitments": "{\"kernel\": \"conformance.kernel.refusal-phrase\", \"input\": \"Here is the answer: {\\\"claimant_name\\\": \\\"amara okoro\\\"}. I cannot assist with further requests.\", \"rewritten\": \"I cannot assist with further requests. Here is the answer: {\\\"claimant_name\\\": \\\"amara okoro\\\"}.\", \"expect\": \"unchanged\", \"rewrite\": \"Moved the refusal phrase from after the JSON object to before it to test whether the check's 'first' refusal phrase is determined by document order or position relative to the JSON object.\"}",
+  "citations": [
+    {
+      "block": "c8c80e388572359c",
+      "quote": "kernel conformance.kernel.refusal-phrase: The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE."
+    },
+    {
+      "block": "329989b28a883155",
+      "quote": "REFUSAL_PHRASES = ['I cannot', \"I can't\", \"I'm sorry\", 'I am unable', 'as an AI', 'cannot assist']"
+    },
+    {
+      "block": "6e346a638ffdff8b",
+      "quote": "{\"points\": [{\"kernel\": \"conformance.kernel.refusal-phrase\", \"transform\": \"conformance.transform.typographic-quotes\", \"moves\": false, \"input\": \"I'm sorry, no.\"}]}"
+    }
+  ]
+}
+```

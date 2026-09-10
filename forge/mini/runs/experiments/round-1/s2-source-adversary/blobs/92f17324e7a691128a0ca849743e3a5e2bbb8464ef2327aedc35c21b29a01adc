@@ -1,0 +1,12 @@
+```json
+{
+  "body": "The `recover_json_object` function's docstring states that it should extract the last top-level balanced object in the text, prioritizing the last one inside a code fence if any fence holds one. However, the implementation may not correctly handle cases where the last top-level object in a fence is followed by non-whitespace characters (e.g., prose or stray characters) before the fence closes. The docstring implies that the last top-level object inside the fence should be extracted regardless of trailing non-whitespace characters, but the current implementation might not account for this edge case. Here, I propose a pair where the input has a top-level object in a fence followed by prose, and the rewritten input has the same object but with the prose removed, which should not change the expected output per the docstring (the same object should still be extracted).",
+  "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"input\": \"```json\\n{\\\"key\\\": \\\"value\\\"} some trailing prose\\n```\", \"rewritten\": \"```json\\n{\\\"key\\\": \\\"value\\\"}\\n```\", \"expect\": \"unchanged\", \"rewrite\": \"Removed trailing prose after the JSON object in the fence.\"}",
+  "citations": [
+    {
+      "block": "84f95499664c266b",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it"
+    }
+  ]
+}
+```

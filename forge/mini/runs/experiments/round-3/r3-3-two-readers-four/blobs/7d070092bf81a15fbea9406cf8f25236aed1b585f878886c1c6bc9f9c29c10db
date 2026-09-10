@@ -1,0 +1,17 @@
+The `_grounding_kernel` function calls `_span_occurs(fields["span"], fields["document"], ())`. Inside `_span_occurs`, the first operation is to create `normal_span` and `normal_document` by calling `_normalise_whitespace` on both. `_normalise_whitespace` uses `" ".join(value.split())`, which collapses all whitespace (including newlines) into single spaces. 
+
+For the input: 
+- `span` = "hello\nworld" -> `normal_span` = "hello world"
+- `document` = "hello world" -> `normal_document` = "hello world"
+- `normal_span in normal_document` is True, returning "verbatim".
+- The kernel then checks if `_normalise_whitespace("hello").casefold()` is in `_normalise_whitespace("hello\nworld").casefold()`, which is True ("hello" in "hello world").
+- Result: "GROUNDED".
+
+For the rewritten text:
+- `span` = "hello world" -> `normal_span` = "hello world"
+- `document` = "hello world" -> `normal_document` = "hello world"
+- `normal_span in normal_document` is True, returning "verbatim".
+- The kernel then checks if `_normalise_whitespace("hello").casefold()` is in `_normalise_whitespace("hello world").casefold()`, which is True.
+- Result: "GROUNDED".
+
+Since both result in "GROUNDED", the answer is unchanged.

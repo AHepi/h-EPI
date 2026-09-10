@@ -1,0 +1,29 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. Read this cycle's executions beside the proposals: say which expectations held, which failed, and why, reading the source; say which failures matter, which are trivial, and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The proposal in [6898a97a73f7d3e1] correctly identifies a case where the `conformance.kernel.recovery` check *should not* move under the `conformance.transform.bare-after` transform, and the execution in [2442865ce143053a] confirms this expectation: the kernel's answer remained unchanged. This is the expected behavior, as the harness's `recover_json_object` function is designed to recover the *last valid top-level JSON object* in the text, and the added `{"later": 1}` is not a valid candidate due to its lack of proper separation or context.
+
+### Why the expectation held
+The source ([51a2da55fab63214]) specifies that the harness recovers the last top-level object in the text, but only if it is syntactically valid and properly separated. The `bare-after` transform appends `then {"later": 1}` to the reply, but this addition is not a valid top-level object because:
+1. It lacks proper delimiters (e.g., no fence or prose context like `then {...}`).
+2. The harness ignores stray braces or malformed objects in prose, as noted in the source: "reasoning prose before or after the answer frequently contains stray braces, and an object nested inside another is not a candidate of its own."
+
+Thus, the harness correctly recovers the original object `{"claimant_name": "amara okoro"}` and ignores the malformed `{"later": 1}`. The execution result (`unchanged`) aligns with the harness's design.
+
+### Why the catalogue's claim is incorrect
+The catalogue ([7a60de6ecc4dd6e3]) claims the kernel's answer *moves* (`"moves": true`) for this pair, but this is incorrect. The harness's logic does not treat `{"later": 1}` as a valid top-level object, so the recovery result should not change. The catalogue's claim likely stems from an assumption that the added object would be parsed as a separate candidate, but the source explicitly rules this out.
+
+### What a proposer should try next
+1. **Test a properly delimited addition**: Propose an input where the added object is valid (e.g., fenced or properly separated in prose). For example, `{"claimant_name": "amara okoro"} then ```json {"later": 1}``` should cause the kernel's answer to move, as the harness would recover the last fenced object.
+2. **Test nested objects**: Propose an input where the added object is nested inside the original (e.g., `{"claimant_name": "amara okoro", "nested": {"later": 1}}`). The harness should recover the outer object, not the nested one, as nested objects are not top-level candidates.
+3. **Test refusal phrases with bare objects**: Propose an input where a refusal phrase precedes a bare object (e.g., `I cannot assist. {"later": 1}`). The harness should return `REFUSAL_SUSPECTED` and `NO_OBJECT`, as the refusal heuristic takes precedence over recovery.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

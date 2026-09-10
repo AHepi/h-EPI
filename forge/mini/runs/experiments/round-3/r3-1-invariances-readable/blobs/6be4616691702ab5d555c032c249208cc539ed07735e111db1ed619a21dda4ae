@@ -1,0 +1,19 @@
+```json
+{
+ "body": "The proposals in this cycle attempted to refute the claim that `conformance.kernel.recovery` does not move under `conformance.transform.fence` [638a6360b40e8b8a]. The proposers predicted that an input containing a string that looks like a JSON fence would trick the `_FENCE` regex and the `reversed(pool)` logic in `recover_json_object` [84f95499664c266b], causing the kernel to recover an inner object instead of the outer one.\n\nThis expectation failed. The execution [8cb3b46d9354fb91] shows that for the input `{\"a\": \"```json\\n{\\\"b\\\": 1}\\n```\"}`, the result was `unchanged` (specifically, both before and after were `NO_OBJECT`). \n\nReading the source [84f95499664c266b], the failure is trivial but instructive: the input provided is not a valid JSON object because the inner quotes are not escaped correctly for a raw string, or the structure is otherwise invalid for `loads_strict` and `_loads_last_wins`. Because the input failed to parse as a JSON object in both the 'before' and 'after' states, the kernel returned `NO_OBJECT` both times, resulting in no movement.\n\nA proposer should try again by ensuring the input is a valid, parseable JSON object first. To trigger the predicted failure, the input should be a valid object containing a string that contains a complete, valid JSON object wrapped in fences. For example: `{\"a\": \"```json\\n{\\\"b\\\": 1}\\\\n```\"}`. If the outer object is valid, the 'before' state will recover the outer object; if the fence transform then causes the `_FENCE` regex to capture the inner object and `recover_json_object` to prefer it, the result will move.",
+ "citations": [
+  {
+   "block": "638a6360b40e8b8a",
+   "quote": "{\"kernel\": \"conformance.kernel.recovery\", \"transform\": \"conformance.transform.fence\", \"moves\": false"
+  },
+  {
+   "block": "84f95499664c266b",
+   "quote": "_FENCE = re.compile('```(?:json|JSON)?\\s*(.*?)```', re.DOTALL)"
+  },
+  {
+   "block": "84f95499664c266b",
+   "quote": "for pool in (fenced, top_level):\\n        for candidate in reversed(pool):"
+  }
+ ]
+}
+```

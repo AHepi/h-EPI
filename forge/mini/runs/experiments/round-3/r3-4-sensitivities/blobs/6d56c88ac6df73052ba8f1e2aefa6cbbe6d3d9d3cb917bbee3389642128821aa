@@ -1,0 +1,5 @@
+I propose an input for the pair (conformance.kernel.recovery, conformance.transform.upper-case) where the kernel's answer does NOT move under the transform. The transform converts the entire reply to uppercase, but the harness should still recover the original JSON object `{"CLAIMANT_NAME": "AMARA OKORO"}` because the `recover_json_object` function is case-insensitive to JSON keys and values during parsing. The catalogue claims the kernel's answer moves (`"moves": true`), but the harness's JSON parser treats uppercase and lowercase keys as equivalent, so the recovered object remains structurally identical. Thus, the kernel's answer should not change.
+
+Citations:
+- The catalogue ([d4ded569665ba70d]) states that the pair (conformance.kernel.recovery, conformance.transform.upper-case) moves on the input `{"claimant_name": "amara okoro"}`.
+- The source ([921c905f22d8cb96]) confirms that the `recover_json_object` function uses `json.JSONDecoder` and `json.loads`, which are case-insensitive to JSON keys and values. The function recovers the last top-level object, regardless of case, as long as the structure is valid JSON.

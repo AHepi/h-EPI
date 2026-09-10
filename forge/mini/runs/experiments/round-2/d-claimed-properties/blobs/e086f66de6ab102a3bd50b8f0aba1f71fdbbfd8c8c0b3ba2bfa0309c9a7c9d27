@@ -1,0 +1,14 @@
+{
+  "body": "Testing Property 1 (recovery/float rejection): The claim states floats are rejected at parse time via parse_float refuse function, not post-filtering. Input contains a float candidate (3.14159) followed by valid JSON in a fence. Rewritten removes the float, keeping only the fenced JSON. If the claim holds, recovery should extract the same JSON object from both (float rejected at parse, JSON recovered from fence). If recovery differs, the float handling mechanism differs from the claim.",
+  "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"input\": \"The answer is 3.14159.\\n\\n```json\\n{\\\"claimant_name\\\": \\\"amara okoro\\\", \\\"amount\\\": 500}\\n```\", \"rewritten\": \"```json\\n{\\\"claimant_name\\\": \\\"amara okoro\\\", \\\"amount\\\": 500}\\n```\", \"expect\": \"unchanged\", \"rewrite\": \"Removed standalone float candidate while keeping fenced JSON object intact\", \"claim\": \"The answer is unchanged when a top-level float candidate exists - it is rejected at parse time via parse_float refuse function not post-filtering\"}",
+  "citations": [
+    {
+      "block": "65ae18af7a738b26",
+      "quote": "kernel conformance.kernel.recovery: The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT."
+    },
+    {
+      "block": "9cda97b84b710fb0",
+      "quote": "A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over"
+    }
+  ]
+}

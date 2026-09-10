@@ -1,0 +1,17 @@
+The current execution cycle shows that the recovery and verdict kernels generally behave as expected, but there are specific failures in the refusal and recovery logic that warrant further investigation.
+
+### Expectations that Held
+- **Fence Recovery**: Wrapping a JSON object in a fence correctly triggers `recovered-from-prose` [e847048a8c7847a8] and maintains the `response-verdict` as `JSON_OBJECT` [fece6100f6ea7485], which aligns with `recover_json_object` searching fences first [b78506c377b6b405].
+- **Prose Recovery**: Adding prose before the object correctly marks it as `recovered-from-prose` [33b4e316004d90cc] while preserving the recovered object [b0a010d1115d82a4].
+- **Refusal Normalization**: The `refusal-phrase` kernel is case-insensitive and handles typographic quotes, as seen by the lack of movement when applying `typographic-quotes` [6e346a638ffdff8b] or `upper-case` [478f1f02c67c06c4] to a refusal. This matches the use of `.lower()` and `_plain_quotes` in `refusal_phrase_in` [b78506c377b6b405].
+
+### Expectations that Failed
+- **Refusal Priority**: The transform `refusal-prose-before` caused the `refusal-phrase` kernel to move [56ed413d078ac9c2] even though a JSON object was present. This is expected behavior per `parse_content`, which states "whether a phrase occurred at all is a separate fact" [b78506c377b6b405]. However, the `response-verdict` did not move [8bfbf8b9bdcd2a4c], confirming that the presence of a recoverable object overrides the refusal heuristic for the verdict.
+- **Case Sensitivity in Recovery**: The `upper-case` transform caused `recovery` to move [d4ded569665ba70d]. This is a significant failure because JSON keys are case-sensitive; converting a valid JSON object to uppercase makes it invalid JSON (unless keys were already uppercase), which should lead to `NO_OBJECT` or `INVALID_JSON`.
+- **Bare Objects After**: The `bare-after` transform caused `recovery` to move [7a60de6ecc4dd6e3]. This confirms the logic in `recover_json_object` that the "last top-level object in the text" is taken [b78506c377b6b405].
+
+### Analysis and Next Steps
+- **Trivial Failures**: The movement in `recovered-from-prose` for fences and prose is trivial; it confirms the harness distinguishes between strict JSON and recovered JSON.
+- **Material Failures**: The `upper-case` movement [d4ded569665ba70d] is material as it tests the boundary of the JSON parser. The `bare-after` movement [7a60de6ecc4dd6e3] is material because it confirms that trailing noise (if it looks like JSON) can hijack the result.
+
+**Proposer Recommendation**: A proposer should test the "last-wins" duplicate key logic. The source [b78506c377b6b405] contains a specific function `_loads_last_wins` for cases where strict parsing fails due to repeated keys. No current transform in the catalogue tests this path. A new transform should be proposed that introduces duplicate keys into a JSON object to verify that the harness correctly recovers the object and identifies the duplicates in the `detail` string.

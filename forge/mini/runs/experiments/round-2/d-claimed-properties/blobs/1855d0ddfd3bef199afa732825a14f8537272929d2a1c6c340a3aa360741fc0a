@@ -1,0 +1,143 @@
+# Verdict
+
+## Executions (executions)
+[3eeb19ecfbd705f7] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+26a218dec7a26f68: conformance.kernel.grounding -> unchanged, expected unchanged
+eec1557d33d6a928: conformance.kernel.recovery -> unchanged, expected unchanged
+29a25f138ce821a0: conformance.kernel.recovery -> moved, expected moves
+commitments: {"executions": [{"after": "GROUNDED", "as_expected": true, "before": "GROUNDED", "executed": "unchanged", "expect": "unchanged", "input": "{\"value\": \"Hello\", \"span\": \"Hello\", \"document\": \"The text says Hello here.\"}", "kernel": "conformance.kernel.grounding", "proposal": "26a218dec7a26f68", "rewrite": "Changed value from Hello to hello to test case-insensitive matching in value-in-span check", "rewritten": "{\"value\": \"hello\", \"span\": \"Hello\", \"document\": \"The text says Hello here.\"}"}, {"after": "{\"answer\":\"fenced\",\"id\":1}", "as_expected": true, "before": "{\"answer\":\"fenced\",\"id\":1}", "executed": "unchanged", "expect": "unchanged", "input": "Reasoning here.\n\n```json\n{\"answer\": \"fenced\", \"id\": 1}\n```\n\nMore text.\n\n{\"answer\": \"top_level\", \"id\": 2}", "kernel": "conformance.kernel.recovery", "proposal": "eec1557d33d6a928", "rewrite": "Swapped positions of fenced and top-level JSON objects to test if fence priority is position-independent", "rewritten": "Reasoning here.\n\n{\"answer\": \"top_level\", \"id\": 2}\n\nMore text.\n\n```json\n{\"answer\": \"fenced\", \"id\": 1}\n```"}, {"after": "{\"name\":\"bob\",\"score\":200}", "as_expected": true, "before": "{\"name\":\"alice\",\"score\":100}", "executed": "moved", "expect": "moves", "input": "Here is my answer:\n\n{\"name\": \"alice\", \"score\": 100}", "kernel": "conformance.kernel.recovery", "proposal": "29a25f138ce821a0", "rewrite": "Changed JSON object values from alice/100 to bob/200 while keeping no duplicate keys to test strict parsing path", "rewritten": "Here is my answer:\n\n{\"name\": \"bob\", \"score\": 200}"}]}
+
+## Criticisms (criticisms)
+[9581fc2be3c2f18a] (mini.criticism.v1)
+All three proposals in this cycle executed as expected (as_expected: true for each). No expectations failed, meaning no divergence between rule readings and code behavior was exposed by these tests.
+
+Property 1 (recovery - fence priority): STANDS. The claim that fenced JSON objects win over top-level objects regardless of position was confirmed. The code iterates fenced pools before top-level pools: `for pool in (fenced, top_level):` [64db54f68a8d5da6], meaning any fenced object beats any top-level object. The documented rule says 'the last one inside a code fence when any fence holds one, else the last top-level object' [4c0fe8e4f113cf03], which the code implements correctly - fence priority is absolute, not position-dependent across pools.
+
+Property 2 (recovery - duplicate key handling): STANDS. The claim that _loads_last_wins returns None when JSON has no duplicate keys was confirmed. The function explicitly checks `if not seen_duplicates: return None` [64db54f68a8d5da6], meaning it only activates for duplicate-key cases. This matches the docstring stating it handles 'JSON that strict parsing refused only because of repeated keys' [64db54f68a8d5da6].
+
+Property 3 (grounding - case-insensitive value-in-span): STANDS. The claim that value-in-span uses case-insensitive matching was confirmed. The code uses `.casefold()` in the value-in-span check: `if _normalise_whitespace(fields["value"]).casefold() not in _normalise_whitespace(fields["span"]).casefold()` [64db54f68a8d5da6]. This IS a relaxation not documented in the rule, which states 'no relaxation, value-in-span checked' [4c0fe8e4f113cf03]. The property stands as a documented divergence - the code does something the rules don't mention.
+
+What a proposer should try next: Since all three properties were confirmed, proposers should test edge cases around these confirmed behaviors - for example, testing whether the fence regex handles edge cases (nested fences, malformed fences), whether _loads_last_wins handles nested duplicate keys correctly, or whether the casefold() behavior interacts unexpectedly with unicode normalization.
+
+## Verdicts so far (verdicts)
+[10135e4148ab71f2] (mini.verdict.v1)
+Verdict on this cycle's executions.
+0fb6b25712b54496: conformance.kernel.refusal-phrase under proposer's own rewrite: Changed refusal phrase from standard mixed case to all uppercase letters unchanged, expected unchanged -> rejected; no prediction
+4825077579c170ed: conformance.kernel.recovered-from-prose under proposer's own rewrite: Moved JSON object from code fence to surrounding prose unchanged, expected unchanged -> rejected; no prediction
+9a54050b62390ea9: conformance.kernel.span-occurs under proposer's own rewrite: Changed span from lowercase to match document casing moved, expected moves -> rejected; no prediction
+commitments: {"verdicts": [{"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.refusal-phrase", "predicted": null, "proposal": "0fb6b25712b54496", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: Changed refusal phrase from standard mixed case to all uppercase letters"}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.recovered-from-prose", "predicted": null, "proposal": "4825077579c170ed", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: Moved JSON object from code fence to surrounding prose"}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "moved", "expected": "moves", "kernel": "conformance.kernel.span-occurs", "predicted": null, "proposal": "9a54050b62390ea9", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: Changed span from lowercase to match document casing"}]}
+
+## Evidence (catalogue)
+To ground a claim in one of these, name its id in this artifact's citations; a quote must reproduce the block's own words.
+[638a6360b40e8b8a] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fence", "moves": false, "input": "{\"claimant_name\": \"amara okoro\",…
+[e847048a8c7847a8] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.fence", "moves": true, "input": "{\"claimant_name\": \"ama…
+[b0a010d1115d82a4] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.prose-before", "moves": false, "input": "{\"claimant_name\": \"amara o…
+[33b4e316004d90cc] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.prose-before", "moves": true, "input": "{\"claimant_name\"…
+[1c12ef186483bd0d] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.indent", "moves": false, "input": "{\"claimant_name\": \"amara okoro\"…
+[910693c99ba3c6da] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.indent", "moves": false, "input": "{\"claimant_name\": \"a…
+[706dbfa18782a310] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fold-whitespace", "moves": false, "input": "{\"claimant_name\": \"amar…
+[45929a4e30072bb7] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.fold-whitespace", "moves": false, "input": "{\"claimant_na…
+[7a60de6ecc4dd6e3] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.bare-after", "moves": true, "input": "{\"claimant_name\": \"amara okor…
+[1c84027e761c6f99] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.draft-before", "moves": false, "input": "{\"claimant_name\": \"amara o…
+[55dd56154fb39a87] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fence-then-bare-after", "moves": false, "input": "{\"claimant_name\": …
+[47cbc7b41aaf5c8f] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fence-with-prose", "moves": false, "input": "{\"claimant_name\": \"ama…
+[791e3ba34ce7d357] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.float-after", "moves": false, "input": "{\"claimant_name\": \"amara ok…
+[a0e68e5c468b7070] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.float-after", "moves": true, "input": "{\"claimant_name\":…
+[fece6100f6ea7485] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.fence", "moves": false, "input": "{\"claimant_name\": \"amara …
+[bea451e84fa483a5] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.prose-before", "moves": false, "input": "{\"claimant_name\": \…
+[1a9cd8bb407e62f8] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.bare-after", "moves": false, "input": "{\"claimant_name\": \"a…
+[9c839bd675122bb9] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.upper-case", "moves": false, "input": "{\"claimant_name\": \"a…
+[d4ded569665ba70d] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.upper-case", "moves": true, "input": "{\"claimant_name\": \"amara okor…
+[6e346a638ffdff8b] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.typographic-quotes", "moves": false, "input": "I'm sorry, no."}]…
+[478f1f02c67c06c4] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.upper-case", "moves": false, "input": "I'm sorry, no."}]}
+[42f90dc7e6a15965] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.fence", "moves": false, "input": "I'm sorry, no."}]}
+[3c0719eda3e180c6] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.prose-before", "moves": false, "input": "I'm sorry, no."}]}
+[56ed413d078ac9c2] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.refusal-prose-before", "moves": true, "input": "{\"claimant_name…
+[8bfbf8b9bdcd2a4c] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.refusal-prose-before", "moves": false, "input": "{\"claimant_n…
+[6ab8417a77f3b613] (registry, evidence) kernel conformance.kernel.grounding: The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked: the inp…
+[a70c2e9bc362b532] (registry, evidence) kernel conformance.kernel.recovered-from-prose: Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no).
+[65ae18af7a738b26] (registry, evidence) kernel conformance.kernel.recovery: The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT.
+[c8c80e388572359c] (registry, evidence) kernel conformance.kernel.refusal-phrase: The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE.
+[22dc5cbedaff143d] (registry, evidence) kernel conformance.kernel.response-verdict: The harness's response verdict for the reply: JSON_OBJECT, INVALID_JSON, REFUSAL_SUSPECTED, or another of its verdic…
+[966be5d711930718] (registry, evidence) kernel conformance.kernel.span-occurs: Whether a cited span occurs in a document, whitespace-normalised, no relaxation: the input is one JSON object {"span", "d…
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+
+To ground a claim, add a citation naming a block and quoting its own words, like this:
+  "citations": [{"block": "1a9cd8bb407e62f8", "quote": "<words copied from that block>"}]
+
+## The shape this answer must take
+`commitments` must be a STRING whose content is JSON text fitting exactly this schema (the field itself is a string, not an object):
+{
+  "properties": {
+    "verdicts": {
+      "items": {
+        "properties": {
+          "catalogued": {
+            "type": "boolean"
+          },
+          "column": {
+            "enum": [
+              "moves",
+              "unchanged",
+              null
+            ]
+          },
+          "executed": {
+            "type": "string"
+          },
+          "expected": {
+            "type": "string"
+          },
+          "kernel": {
+            "type": "string"
+          },
+          "predicted": {
+            "enum": [
+              "moves",
+              "unchanged",
+              "?",
+              null
+            ]
+          },
+          "proposal": {
+            "type": "string"
+          },
+          "reading": {
+            "type": "string"
+          },
+          "same_input": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "standing": {
+            "enum": [
+              "candidate point",
+              "defect",
+              "rejected"
+            ]
+          },
+          "transform": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "proposal",
+          "executed",
+          "catalogued",
+          "standing"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "verdicts"
+  ],
+  "type": "object"
+}

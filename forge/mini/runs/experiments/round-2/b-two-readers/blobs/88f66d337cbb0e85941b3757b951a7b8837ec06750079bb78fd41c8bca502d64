@@ -1,0 +1,218 @@
+# Proposal: refusal
+
+You are shown the documented rules of the checks, not their code. Write ONE test pair: an input and your own rewritten version of it, and say what the RULE, read as written, says the check's answer ought to do: move ('moves') or stay ('unchanged'). Your expectation comes from the rule's words alone. Aim for the cases the wording leaves open or decides by a clause a reader could miss: what counts as inside a fence, what counts as top-level, what prose around or inside a fence does, what a second object does, what the refusal list's order does. Your kernel is conformance.kernel.refusal-phrase or conformance.kernel.response-verdict, and your input is a reply in prose, with or without a JSON object. The commitments are a STRING whose content is JSON of the form {"kernel": "<id>", "input": "<the input text>", "rewritten": "<your rewritten text>", "expect": "moves" or "unchanged", "rewrite": "<one sentence naming what you changed>"}. The input and the rewritten text are instances written out in full, never descriptions. Do not repeat a pair shown among the earlier proposals.
+
+## The problem (problem)
+The checks under test are the conformance harness's own functions. Most seats are shown only their documented rules, not their code: how the harness recovers a JSON object from a reply, whether it had to recover it from prose, its response verdict, its refusal-phrase check, and its grounding matcher. The question: is there an input and a rewrite of it on which the rule, read as written, says one thing and the check, run by machine, does another? The executor runs the check on both texts and records what its answer did; nothing here decides anything, the record shows where a reading and the machine parted.
+
+## The documented rules of the checks (rules)
+[bea067fe1df1bd90] (mini.kernel-rules.v1)
+REFUSAL_PHRASES = ['I cannot', "I can't", "I'm sorry", 'I am unable', 'as an AI', 'cannot assist']
+
+The kernels:
+
+- conformance.kernel.recovery: The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT.
+
+- conformance.kernel.recovered-from-prose: Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no).
+
+- conformance.kernel.response-verdict: The harness's response verdict for the reply: JSON_OBJECT, INVALID_JSON, REFUSAL_SUSPECTED, or another of its verdicts.
+
+- conformance.kernel.refusal-phrase: The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE.
+
+- conformance.kernel.span-occurs: Whether a cited span occurs in a document, whitespace-normalised, no relaxation: the input is one JSON object {"span", "document"}; verbatim or NOT_IN_DOCUMENT.
+
+- conformance.kernel.grounding: The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked: the input is one JSON object {"value", "span", "document"}; GROUNDED, SPAN_MISSING, SPAN_NOT_IN_DOCUMENT or VALUE_NOT_IN_SPAN.
+
+def recover_json_object(content: 'str') -> 'Any':
+    Project import: extract a JSON object from fences or surrounding prose.
+
+    Every top-level balanced object in the text is a candidate, not only the span from the
+    first ``{`` to the last ``}``: reasoning prose before or after the answer frequently
+    contains stray braces, and an object nested inside another is not a candidate of its own.
+    The object scored is the last one inside a code fence when any fence holds one, else the
+    last top-level object in the text, because a model places its final answer last and marks
+    it: a reply that quotes its previous answer and then gives a corrected one is scored on the
+    correction. Until 9 September 2026 the object with the most keys was taken, ties to the
+    last, and nine cycle replies that dropped a criticised key were scored on the draft that
+    still carried it (``docs/failure-modes.md``, H40). A candidate that parses as strict JSON,
+    or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float,
+    for instance) is passed over, so a final answer refused for a float loses to an earlier
+    draft that parsed (``docs/kernel.md``, P-06).
+
+def _loads_last_wins(candidate: 'str') -> 'tuple[Any, tuple[str, ...]] | None':
+    Parse JSON that strict parsing refused only because of repeated keys; last value wins.
+
+def parse_content(content: 'str', refusal_phrases: 'tuple[str, ...]') -> 'tuple[Any, str, str | None, bool]':
+    Return (parsed, response_verdict, detail, recovered_from_prose).
+
+    The refusal heuristic decides the verdict only when no object can be recovered; whether a
+    phrase occurred at all is a separate fact, :func:`refusal_phrase_in`, recorded beside a
+    recovered object (H36: a refusal followed by a form is a refusal and a form).
+
+def refusal_phrase_in(content: 'str', refusal_phrases: 'tuple[str, ...]') -> 'str | None':
+    The first refusal phrase the text contains, typographic quotes read as straight ones, or None.
+
+def _plain_quotes(text: 'str') -> 'str':
+    Fold typographic apostrophes and quotation marks to their ASCII forms.
+
+    The refusal phrase list is written with straight apostrophes; a model that writes
+    "I’m sorry" is refusing all the same, and the first live refusal in these
+    records was missed for exactly that reason (H22).
+
+def _normalise_whitespace(value: 'str') -> 'str':
+    (no docstring)
+
+def _span_occurs(span: 'str', document: 'str', relaxations: 'tuple[str, ...]') -> 'str | None':
+    Return None when the span is not in the document, else how it was matched ("verbatim" or a relaxation).
+
+def _grounding_kernel(text: 'str') -> 'str':
+    The grounding verdict as the harness gives it, with no relaxation and the value-in-span check on.
+
+    The three lines are the harness's own (``_grounding_verdict`` in ``oracle.py``), read here
+    over one JSON object rather than over a variant and its output.
+
+
+## Proposals so far (earlier)
+[74455a50a2fbd283] (mini.pair-proposal.recovery.v1)
+Testing the rule's handling of nested JSON objects within prose, specifically whether the last top-level object is correctly identified when a nested object appears later in the text. The rule states: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." Here, the input contains two top-level objects, with the second nested inside prose. The rewritten version moves the nested object to the top level, which should be the one scored according to the rule. The expectation is that the check will move ('moves') because the last top-level object changes from the first to the second JSON object.
+commitments: {"kernel": "conformance.kernel.recovery", "input": "Here is my initial answer: {\"claimant_name\": \"amara okoro\"}. However, upon reflection, I think the correct answer is {\"claimant_name\": \"amara okoro\", \"correction\": true}.", "rewritten": "Here is my initial answer: {\"claimant_name\": \"amara okoro\"}. However, upon reflection, I think the correct answer is: {\"claimant_name\": \"amara okoro\", \"correction\": true}", "expect": "moves", "rewrite": "Moved the nested JSON object to the top level to test whether the last top-level object is correctly identified."}
+[c937e27203ef2986] (mini.pair-proposal.refusal.v1)
+Testing the refusal-phrase check's handling of refusal phrases that appear *after* a JSON object in the reply. The documented rule states that the check returns the *first* listed refusal phrase the reply contains, regardless of its position relative to any JSON object. The input contains a refusal phrase ('I cannot') *after* a valid JSON object, while the rewritten version moves the refusal phrase *before* the JSON object. The rule's wording does not prioritize refusal phrases based on their position relative to JSON objects, so the check's answer should remain 'unchanged' (the first refusal phrase is still 'I cannot' in both cases). This tests whether the rule's 'first' is interpreted as first in document order or first relative to the JSON object.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "input": "Here is the answer: {\"claimant_name\": \"amara okoro\"}. I cannot assist with further requests.", "rewritten": "I cannot assist with further requests. Here is the answer: {\"claimant_name\": \"amara okoro\"}.", "expect": "unchanged", "rewrite": "Moved the refusal phrase from after the JSON object to before it to test whether the check's 'first' refusal phrase is determined by document order or position relative to the JSON object."}
+[405758efc59a7dd8] (mini.pair-proposal.grounding.v1)
+Testing the `conformance.kernel.grounding` rule's handling of whitespace normalization in the span and document fields. The rule states that the span must occur in the document 'whitespace-normalised, no relaxation.' The input contains a span with extra whitespace that matches the document when normalized, while the rewritten version removes the extra whitespace from the span. The rule's wording implies that the span should be matched after normalization, so the check's answer should remain 'unchanged' (the span still occurs in the document). This tests whether the rule's 'whitespace-normalised' is applied to both the span and the document or only the document.
+commitments: {"kernel": "conformance.kernel.grounding", "input": "{\"value\": \"amara okoro\", \"span\": \"  amara   okoro  \", \"document\": \"The claimant is amara okoro.\"}", "rewritten": "{\"value\": \"amara okoro\", \"span\": \"amara okoro\", \"document\": \"The claimant is amara okoro.\"}", "expect": "unchanged", "rewrite": "Removed extra whitespace from the span to test whether the check normalizes whitespace in the span before matching it to the document."}
+[2169ecd2892eab2d] (mini.pair-proposal.recovery.v1)
+Testing the `conformance.kernel.recovered-from-prose` rule's handling of JSON objects embedded in prose versus those in fences, specifically whether the rule's distinction between 'prose or a fence' is correctly applied when a JSON object appears in both contexts. The rule states: 'Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no).' The input places a JSON object in prose, while the rewritten version moves the same object into a code fence. The rule's wording implies that recovery from a fence should not require prose parsing, so the check's answer should move from 'yes' to 'no'. This tests whether the rule's 'or' is interpreted as exclusive (fence takes precedence) or inclusive (prose and fence both count as 'yes').
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "input": "Here is the answer in prose: {\"claimant_name\": \"amara okoro\", \"correction\": true}. Please confirm.", "rewritten": "```json\n{\"claimant_name\": \"amara okoro\", \"correction\": true}\n```", "expect": "moves", "rewrite": "Moved the JSON object from prose into a code fence to test whether the check distinguishes between recovery from prose and recovery from a fence."}
+
+## Verdicts so far (verdicts)
+[73be2871ac560bd7] (mini.verdict.v1)
+Verdict on this cycle's executions.
+74455a50a2fbd283: conformance.kernel.recovery under proposer's own rewrite: Moved the nested JSON object to the top level to test whether the last top-level object is correctly identified. unchanged, expected moves, predicted unchanged -> candidate point (unchanged); expectation failed, prediction held
+c937e27203ef2986: conformance.kernel.refusal-phrase under proposer's own rewrite: Moved the refusal phrase from after the JSON object to before it to test whether the check's 'first' refusal phrase is d unchanged, expected unchanged, predicted moves -> rejected; expectation held, prediction failed
+405758efc59a7dd8: conformance.kernel.grounding under proposer's own rewrite: Removed extra whitespace from the span to test whether the check normalizes whitespace in the span before matching it to unchanged, expected unchanged, predicted unchanged -> rejected; expectation and prediction both held
+commitments: {"verdicts": [{"catalogue_moves": false, "catalogued": false, "column": "unchanged", "executed": "unchanged", "expected": "moves", "kernel": "conformance.kernel.recovery", "predicted": "unchanged", "proposal": "74455a50a2fbd283", "reading": "expectation failed, prediction held", "same_input": null, "standing": "candidate point", "transform": "proposer's own rewrite: Moved the nested JSON object to the top level to test whether the last top-level object is correctly identified."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.refusal-phrase", "predicted": "moves", "proposal": "c937e27203ef2986", "reading": "expectation held, prediction failed", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: Moved the refusal phrase from after the JSON object to before it to test whether the check's 'first' refusal phrase is d"}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.grounding", "predicted": "unchanged", "proposal": "405758efc59a7dd8", "reading": "expectation and prediction both held", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: Removed extra whitespace from the span to test whether the check normalizes whitespace in the span before matching it to"}]}
+
+## Criticisms (criticisms)
+[27c7cf37b6f1b9a5] (mini.criticism.v1)
+### Analysis of Failed Expectation in `conformance.kernel.recovery` (Proposal `74455a50a2fbd283`)
+
+The proposer’s expectation that the kernel’s answer would *move* between the input and rewritten text was incorrect. The rule and the code agree, but the proposer misread the rule’s handling of top-level JSON objects in prose.
+
+#### Rule vs. Code Alignment
+The rule states:
+> "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text."
+
+The code implements this literally:
+- It scans for top-level objects in the text (lines 25–35 in `recover_json_object`), appending each to `top_level`.
+- It then iterates over candidates in *reverse order* (`for candidate in reversed(pool)`), selecting the first valid JSON object (lines 37–50).
+- The *last* top-level object in the text is always chosen, regardless of whether it is nested in prose or separated by whitespace.
+
+#### Why the Expectation Failed
+The proposer assumed that moving the JSON object to the "top level" (by removing prose after it) would change the *order* of top-level objects. However, the rewritten text does not alter the order of the two top-level objects:
+1. `{"claimant_name": "amara okoro"}` (unchanged)
+2. `{"claimant_name": "amara okoro", "correction": true}` (still the last top-level object).
+
+The kernel’s answer remains *unchanged* because the *last* top-level object is identical in both texts. The proposer’s rewrite did not affect the parsing logic, only the surrounding prose, which the rule explicitly disregards for scoring.
+
+#### Evidence of Agreement
+The rule and code align in the following execution (block `7a60de6ecc4dd6e3`):
+> "points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.bare-after", "moves": true, "input": "{\"claimant_name\": \"amara okoro\"…"}]
+
+Here, the kernel *does* move when the *order* of top-level objects changes (e.g., a bare JSON object is added *after* the last one). This confirms the rule’s intent: the *last* top-level object is always selected, and the kernel behaves as written.
+
+#### What the Proposer Should Try Next
+To test the rule’s handling of top-level objects, the proposer should:
+1. **Add a new top-level object after the last one** (e.g., append `{"final_answer": true}`). The kernel should move to the new last object.
+2. **Nest the last object inside another** (e.g., `{"wrapper": {"claimant_name": …}}`). The kernel should *not* select the nested object, as it is not top-level.
+
+The failure here is not in the rule or code but in the proposer’s interpretation of "top-level." The rule’s words and the code’s behavior are consistent: the *last* top-level object in the text is always scored, regardless of prose placement.
+
+### Citations
+The following blocks support this analysis:
+- The rule’s definition of top-level objects (block `329989b28a883155`):
+  > "Every top-level balanced object in the text is a candidate, not only the span from the first ``{`` to the last ``}``… The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text."
+- The code’s implementation (block `10f155e3a8564119`, lines 37–50):
+  > "for pool in (fenced, top_level):\n    for candidate in reversed(pool):"
+- Evidence of the kernel’s behavior when top-level order changes (block `7a60de6ecc4dd6e3`):
+  > "points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.bare-after", "moves": true, …}]
+- The registry’s definition of the recovery kernel (block `65ae18af7a738b26`):
+  > "kernel conformance.kernel.recovery: The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT."
+
+## Evidence (catalogue)
+To ground a claim in one of these, name its id in this artifact's citations; a quote must reproduce the block's own words.
+[638a6360b40e8b8a] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fence", "moves": false, "input": "{\"claimant_name\": \"amara okoro\",…
+[e847048a8c7847a8] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.fence", "moves": true, "input": "{\"claimant_name\": \"ama…
+[b0a010d1115d82a4] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.prose-before", "moves": false, "input": "{\"claimant_name\": \"amara o…
+[33b4e316004d90cc] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.prose-before", "moves": true, "input": "{\"claimant_name\"…
+[1c12ef186483bd0d] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.indent", "moves": false, "input": "{\"claimant_name\": \"amara okoro\"…
+[910693c99ba3c6da] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.indent", "moves": false, "input": "{\"claimant_name\": \"a…
+[706dbfa18782a310] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fold-whitespace", "moves": false, "input": "{\"claimant_name\": \"amar…
+[45929a4e30072bb7] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.fold-whitespace", "moves": false, "input": "{\"claimant_na…
+[7a60de6ecc4dd6e3] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.bare-after", "moves": true, "input": "{\"claimant_name\": \"amara okor…
+[1c84027e761c6f99] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.draft-before", "moves": false, "input": "{\"claimant_name\": \"amara o…
+[55dd56154fb39a87] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fence-then-bare-after", "moves": false, "input": "{\"claimant_name\": …
+[47cbc7b41aaf5c8f] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fence-with-prose", "moves": false, "input": "{\"claimant_name\": \"ama…
+[791e3ba34ce7d357] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.float-after", "moves": false, "input": "{\"claimant_name\": \"amara ok…
+[a0e68e5c468b7070] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.float-after", "moves": true, "input": "{\"claimant_name\":…
+[fece6100f6ea7485] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.fence", "moves": false, "input": "{\"claimant_name\": \"amara …
+[bea451e84fa483a5] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.prose-before", "moves": false, "input": "{\"claimant_name\": \…
+[1a9cd8bb407e62f8] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.bare-after", "moves": false, "input": "{\"claimant_name\": \"a…
+[9c839bd675122bb9] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.upper-case", "moves": false, "input": "{\"claimant_name\": \"a…
+[d4ded569665ba70d] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.upper-case", "moves": true, "input": "{\"claimant_name\": \"amara okor…
+[6e346a638ffdff8b] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.typographic-quotes", "moves": false, "input": "I'm sorry, no."}]…
+[478f1f02c67c06c4] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.upper-case", "moves": false, "input": "I'm sorry, no."}]}
+[42f90dc7e6a15965] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.fence", "moves": false, "input": "I'm sorry, no."}]}
+[3c0719eda3e180c6] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.prose-before", "moves": false, "input": "I'm sorry, no."}]}
+[56ed413d078ac9c2] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.refusal-prose-before", "moves": true, "input": "{\"claimant_name…
+[8bfbf8b9bdcd2a4c] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.refusal-prose-before", "moves": false, "input": "{\"claimant_n…
+[6ab8417a77f3b613] (registry, evidence) kernel conformance.kernel.grounding: The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked: the inp…
+[a70c2e9bc362b532] (registry, evidence) kernel conformance.kernel.recovered-from-prose: Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no).
+[65ae18af7a738b26] (registry, evidence) kernel conformance.kernel.recovery: The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT.
+[c8c80e388572359c] (registry, evidence) kernel conformance.kernel.refusal-phrase: The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE.
+[22dc5cbedaff143d] (registry, evidence) kernel conformance.kernel.response-verdict: The harness's response verdict for the reply: JSON_OBJECT, INVALID_JSON, REFUSAL_SUSPECTED, or another of its verdic…
+[966be5d711930718] (registry, evidence) kernel conformance.kernel.span-occurs: Whether a cited span occurs in a document, whitespace-normalised, no relaxation: the input is one JSON object {"span", "d…
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+
+To ground a claim, add a citation naming a block and quoting its own words, like this:
+  "citations": [{"block": "1a9cd8bb407e62f8", "quote": "<words copied from that block>"}]
+
+## The shape this answer must take
+`commitments` must be a STRING whose content is JSON text fitting exactly this schema (the field itself is a string, not an object):
+{
+  "properties": {
+    "expect": {
+      "enum": [
+        "moves",
+        "unchanged"
+      ]
+    },
+    "input": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "kernel": {
+      "pattern": "^conformance\\.kernel\\.(refusal-phrase|response-verdict)$",
+      "type": "string"
+    },
+    "rewrite": {
+      "minLength": 3,
+      "type": "string"
+    },
+    "rewritten": {
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "kernel",
+    "input",
+    "rewritten",
+    "expect",
+    "rewrite"
+  ],
+  "type": "object"
+}

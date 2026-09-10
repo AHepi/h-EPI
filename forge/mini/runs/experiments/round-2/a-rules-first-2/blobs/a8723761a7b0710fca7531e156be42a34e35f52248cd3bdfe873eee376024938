@@ -1,0 +1,6 @@
+All three proposals in this cycle were successful; there were no failures to analyze. The executions [b2e76b7b71170594] confirm that the machine's behavior aligns with the documented rules for `recovered-from-prose`, `response-verdict`, and `grounding`.
+
+Since the current proposals only tested the 'happy path' of the rules, a proposer should next attempt to find edge cases where the rule and code might diverge. Specifically, they should investigate:
+1. **Recovery Priority**: The rule says the object scored is the "last one inside a code fence when any fence holds one, else the last top-level object in the text" [934eac6cd189abce]. A proposer should test a reply containing both a fenced object and a later top-level object to verify the fence takes precedence regardless of position.
+2. **Refusal Phrase Normalization**: The rule mentions "typographic apostrophes read as straight" [934eac6cd189abce]. A proposer should test if other typographic characters (like curly quotes) are handled consistently by `_plain_quotes` [618f712d29ac501c].
+3. **Grounding Whitespace**: The rule specifies "whitespace-normalised" [934eac6cd189abce]. A proposer should test if the `_normalise_whitespace` implementation [618f712d29ac501c] handles all expected whitespace characters (e.g., tabs, newlines) as the rule implies.

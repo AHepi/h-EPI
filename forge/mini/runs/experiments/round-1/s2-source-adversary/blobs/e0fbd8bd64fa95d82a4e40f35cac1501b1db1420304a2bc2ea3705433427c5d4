@@ -1,0 +1,64 @@
+```json
+{
+  "body": "### Analysis of `recover_json_object` and Related Checks\n\n#### Expectations Met\n1. **Last Top-Level Object Priority (Fenced vs. Prose)**\n   The executions confirm that `recover_json_object` correctly prioritizes the last top-level object inside a code fence over objects in prose, even when the fence contains multiple objects or trailing non-whitespace characters. This aligns with the docstring's guarantee:\n   > \"The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.\"\n   - Proposal `1463e1fe060049d3` (trailing prose in fence) and its execution (`01e7304451c98137`) show the function ignores trailing prose and extracts the last object in the fence, as expected.\n   - Evidence block `47cbc7b41aaf5c8f` further supports this, demonstrating that `recover_json_object` is unaffected by prose following a fenced object (`\"moves\": false`).\n\n2. **Nested Objects in Fences**\n   The function correctly ignores nested objects when identifying top-level candidates. Proposal `4482345abc6da9c9` (nested first object) and its execution show the last top-level object (`{\"key2\": \"value2\"}`) is extracted regardless of nesting in earlier objects. This matches the docstring's emphasis on *top-level* objects:\n   > \"an object nested inside another is not a candidate of its own.\"\n\n3. **Strict JSON Parsing and Fallbacks**\n   The function's fallback to `last-wins` parsing for duplicate keys works as documented. Evidence block `a0e68e5c468b7070` shows that a float (non-dict) after a valid object does not disrupt recovery (`\"moves\": true` for `recovered-from-prose`), confirming the docstring's note:\n   > \"A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable.\"\n\n4. **Refusal Phrase Detection**\n   The `refusal_phrase_in` function reliably detects refusal phrases regardless of typographic quotes or case. Evidence blocks `6e346a638ffdff8b` (typographic quotes) and `478f1f02c67c06c4` (uppercase) show no false negatives (`\"moves\": false`), validating the docstring's claim:\n   > \"typographic apostrophes and quotation marks [are] folded to their ASCII forms.\"\n\n5. **Response Verdict Stability**\n   The `parse_content` function's verdicts are stable under superficial transformations. Evidence blocks `fece6100f6ea7485` (fenced JSON), `bea451e84fa483a5` (prose before), and `1a9cd8bb407e62f8` (bare JSON after) all return `\"moves\": false` for `response-verdict`, confirming the docstring's separation of verdict logic from recovery heuristics.\n\n\n#### Expectations Failed (or Edge Cases)\n1. **Fence Parsing Edge Case: Multiple Top-Level Objects**\n   While the function works for the tested cases, the implementation's reliance on `json.JSONDecoder.raw_decode` may fail to handle *adjacent* top-level objects in a fence (e.g., `{\"a\": 1}{\"b\": 2}`) if the decoder stops at the first valid object. The docstring implies all top-level objects in a fence should be candidates, but the code does not explicitly re-parse the fence content for multiple objects. This is a *latent* failure mode not yet triggered by proposals.\n   - **Why it matters**: A model might output multiple top-level objects in a fence (e.g., drafts or corrections), and the harness should score the last one. The current implementation may miss later objects if the decoder stops early.\n   - **Next step**: Propose a pair where a fence contains two adjacent top-level objects (e.g., `{\"key1\": 1}{\"key2\": 2}`) and a rewrite that removes the first object. The expectation is `changed` (output should switch from `key1` to `key2`), but the current implementation may return `unchanged`.\n\n2. **Prose Recovery: Stray Braces**\n   The docstring warns about stray braces in prose, but the implementation does not explicitly handle cases where prose contains *partial* JSON objects (e.g., `{\"key\": \"value\"` without closing brace). Evidence block `33b4e316004d90cc` shows `recovered-from-prose` moves when prose is added before a valid object (`\"moves\": true`), but the behavior for malformed prose is untested.\n   - **Why it matters**: A model might output a truncated object in prose, and the harness should either recover it (if recoverable) or fail gracefully. The current implementation may raise `RecordError` unpredictably.\n   - **Next step**: Propose a pair with a malformed object in prose (e.g., `{\"key\": \"value\"`) and a rewrite that completes it. The expectation is `changed` (output should switch from `NO_OBJECT` to the recovered object), but the current implementation may return `unchanged` (failing to recover).\n\n3. **Grounding: Whitespace Normalization**\n   The `_span_occurs` function normalizes whitespace for span matching, but the docstring does not specify whether this applies to the `value` field in grounding checks. Evidence block `6ab8417a77f3b613` (registry) states:\n   > \"whitespace-normalised, no relaxation, value-in-span checked.\"\n   However, the implementation's `_normalise_whitespace` function is only applied to `span` and `document`, not `value`. This could lead to false negatives if the `value` contains irregular whitespace.\n   - **Why it matters**: A model might output a `value` with extra spaces (e.g., `\"  value  \"`), which would fail the `VALUE_NOT_IN_SPAN` check even if the span contains the same value.\n   - **Next step**: Propose a pair where the `value` field has irregular whitespace and a rewrite that normalizes it. The expectation is `changed` (output should switch from `VALUE_NOT_IN_SPAN` to `GROUNDED`), but the current implementation may return `unchanged`.\n\n\n#### Trivial Failures\n1. **Case Sensitivity in Refusal Phrases**\n   The `refusal_phrase_in` function is case-insensitive (evidence block `478f1f02c67c06c4`), but the `REFUSAL_PHRASES` list is not exhaustive. For example, a model might refuse with `\"I am not able to...\"` (not in the list), which would be missed. This is trivial because:\n   - The docstring does not claim the list is exhaustive.\n   - The harness's refusal verdict is heuristic, not definitive.\n   - **Next step**: None. The list can be expanded incrementally.\n\n2. **Fence Detection: Language Tags**\n   The `_FENCE` regex matches ````json` or ````JSON`, but not other language tags (e.g., ````javascript`). This is trivial because:\n   - The docstring specifies the harness targets JSON objects.\n   - Models are unlikely to use non-JSON language tags for JSON output.\n   - **Next step**: None. The regex can be expanded if needed.\n\n\n#### Summary of Next Steps\n| Failure Mode               | Proposed Test Case                                                                 | Expected Outcome | Why It Matters                          |
+|-----------------------------|------------------------------------------------------------------------------------|------------------|-----------------------------------------|
+| Adjacent top-level objects  | Fence: `{\"key1\": 1}{\"key2\": 2}` → `{\"key2\": 2}`                              | `changed`        | Ensures last object is scored.          |
+| Malformed prose objects     | Prose: `{\"key\": \"value\"` → `{\"key\": \"value\"}`                              | `changed`        | Ensures graceful recovery from prose.   |
+| Whitespace in `value` field | Grounding: `{\"value\": \"  x  \", \"span\": \"x\", \"document\": \"x\"}` → `{\"value\": \"x\", ...}` | `changed`        | Prevents false negatives in grounding.  |",
+
+  "citations": [
+    {
+      "block": "84f95499664c266b",
+      "quote": "\"The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction.\""
+    },
+    {
+      "block": "84f95499664c266b",
+      "quote": "\"an object nested inside another is not a candidate of its own.\""
+    },
+    {
+      "block": "84f95499664c266b",
+      "quote": "\"A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable.\""
+    },
+    {
+      "block": "84f95499664c266b",
+      "quote": "\"typographic apostrophes and quotation marks [are] folded to their ASCII forms.\""
+    },
+    {
+      "block": "4482345abc6da9c9",
+      "quote": "\"the last top-level object inside the fence should be extracted regardless of trailing non-whitespace characters\""
+    },
+    {
+      "block": "01e7304451c98137",
+      "quote": "1463e1fe060049d3: conformance.kernel.recovery -> unchanged, expected unchanged"
+    },
+    {
+      "block": "47cbc7b41aaf5c8f",
+      "quote": "{\"kernel\": \"conformance.kernel.recovery\", \"transform\": \"conformance.transform.fence-with-prose\", \"moves\": false, \"input\": \"{\"claimant_name\": \"ama...\"}"
+    },
+    {
+      "block": "a0e68e5c468b7070",
+      "quote": "{\"kernel\": \"conformance.kernel.recovered-from-prose\", \"transform\": \"conformance.transform.float-after\", \"moves\": true, \"input\": \"{\"claimant_name\": \"amara okoro\"...\"}"
+    },
+    {
+      "block": "6e346a638ffdff8b",
+      "quote": "{\"kernel\": \"conformance.kernel.refusal-phrase\", \"transform\": \"conformance.transform.typographic-quotes\", \"moves\": false, \"input\": \"I'm sorry, no.\"}"
+    },
+    {
+      "block": "478f1f02c67c06c4",
+      "quote": "{\"kernel\": \"conformance.kernel.refusal-phrase\", \"transform\": \"conformance.transform.upper-case\", \"moves\": false, \"input\": \"I'm sorry, no.\"}"
+    },
+    {
+      "block": "fece6100f6ea7485",
+      "quote": "{\"kernel\": \"conformance.kernel.response-verdict\", \"transform\": \"conformance.transform.fence\", \"moves\": false, \"input\": \"{\"claimant_name\": \"amara okoro\"...\"}"
+    },
+    {
+      "block": "6ab8417a77f3b613",
+      "quote": "kernel conformance.kernel.grounding: The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked: the input is one JSON object {\"span\", \"document\", \"value\"}."
+    },
+    {
+      "block": "33b4e316004d90cc",
+      "quote": "{\"kernel\": \"conformance.kernel.recovered-from-prose\", \"transform\": \"conformance.transform.prose-before\", \"moves\": true, \"input\": \"{\"claimant_name\": \"ama...\"}"
+    }
+  ]
+}
+```

@@ -1,0 +1,7 @@
+I will test `conformance.kernel.grounding` by introducing a value that is spelled differently from the span, but is semantically identical. 
+
+In the input, the value "five" is a verbatim match for the span "five days". In the rewritten version, I will change the value to "5". 
+
+According to the source code, the value-in-span check is a simple case-insensitive substring check: `if _normalise_whitespace(fields["value"]).casefold() not in _normalise_whitespace(fields["span"]).casefold(): return "VALUE_NOT_IN_SPAN"` [52d4ae5182d433e3]. It does not perform numeric normalization. Therefore, the string "5" is not contained within the string "five days".
+
+A careful reader would consider "5" and "five" to be immaterially different in this context, and would still consider the citation grounded. However, the matcher will fail the substring check, moving the verdict from `GROUNDED` to `VALUE_NOT_IN_SPAN`.

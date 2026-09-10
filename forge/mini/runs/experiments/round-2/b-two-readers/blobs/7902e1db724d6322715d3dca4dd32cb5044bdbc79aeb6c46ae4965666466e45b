@@ -1,0 +1,43 @@
+### Analysis of Failed Expectation in `conformance.kernel.recovery` (Proposal `74455a50a2fbd283`)
+
+The proposer’s expectation that the kernel’s answer would *move* between the input and rewritten text was incorrect. The rule and the code agree, but the proposer misread the rule’s handling of top-level JSON objects in prose.
+
+#### Rule vs. Code Alignment
+The rule states:
+> "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text."
+
+The code implements this literally:
+- It scans for top-level objects in the text (lines 25–35 in `recover_json_object`), appending each to `top_level`.
+- It then iterates over candidates in *reverse order* (`for candidate in reversed(pool)`), selecting the first valid JSON object (lines 37–50).
+- The *last* top-level object in the text is always chosen, regardless of whether it is nested in prose or separated by whitespace.
+
+#### Why the Expectation Failed
+The proposer assumed that moving the JSON object to the "top level" (by removing prose after it) would change the *order* of top-level objects. However, the rewritten text does not alter the order of the two top-level objects:
+1. `{"claimant_name": "amara okoro"}` (unchanged)
+2. `{"claimant_name": "amara okoro", "correction": true}` (still the last top-level object).
+
+The kernel’s answer remains *unchanged* because the *last* top-level object is identical in both texts. The proposer’s rewrite did not affect the parsing logic, only the surrounding prose, which the rule explicitly disregards for scoring.
+
+#### Evidence of Agreement
+The rule and code align in the following execution (block `7a60de6ecc4dd6e3`):
+> "points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.bare-after", "moves": true, "input": "{\"claimant_name\": \"amara okoro\"…"}]
+
+Here, the kernel *does* move when the *order* of top-level objects changes (e.g., a bare JSON object is added *after* the last one). This confirms the rule’s intent: the *last* top-level object is always selected, and the kernel behaves as written.
+
+#### What the Proposer Should Try Next
+To test the rule’s handling of top-level objects, the proposer should:
+1. **Add a new top-level object after the last one** (e.g., append `{"final_answer": true}`). The kernel should move to the new last object.
+2. **Nest the last object inside another** (e.g., `{"wrapper": {"claimant_name": …}}`). The kernel should *not* select the nested object, as it is not top-level.
+
+The failure here is not in the rule or code but in the proposer’s interpretation of "top-level." The rule’s words and the code’s behavior are consistent: the *last* top-level object in the text is always scored, regardless of prose placement.
+
+### Citations
+The following blocks support this analysis:
+- The rule’s definition of top-level objects (block `329989b28a883155`):
+  > "Every top-level balanced object in the text is a candidate, not only the span from the first ``{`` to the last ``}``… The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text."
+- The code’s implementation (block `10f155e3a8564119`, lines 37–50):
+  > "for pool in (fenced, top_level):\n    for candidate in reversed(pool):"
+- Evidence of the kernel’s behavior when top-level order changes (block `7a60de6ecc4dd6e3`):
+  > "points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.bare-after", "moves": true, …}]
+- The registry’s definition of the recovery kernel (block `65ae18af7a738b26`):
+  > "kernel conformance.kernel.recovery: The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT."

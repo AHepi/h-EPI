@@ -1,0 +1,15 @@
+# Execution
+
+## Proposals so far (proposals)
+[84cd660f3bf71dcc] (mini.proposal.v1)
+I challenge catalogue row [910693c99ba3c6da] which claims the recovered-from-prose kernel does not move under the indent transform. The row's example is likely valid JSON that remains parseable after indentation, or prose that requires recovery both before and after. My input is valid strict JSON: {"claimant_name": "amara okoro"}. Before the indent transform, strict JSON parsing succeeds in parse_content, so recovered-from-prose returns False. After the indent transform adds two spaces of indentation to every line and blank lines before the reply, the content becomes invalid JSON (leading whitespace before the opening brace breaks strict parsing). The recovery function then extracts the object from the indented prose, and recovered-from-prose returns True. The output changes from False to True, refuting the 'moves: false' claim.
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.indent", "input": "{\"claimant_name\": \"amara okoro\"}"}
+[66d67b13d2ab04aa] (mini.proposal.v1)
+I challenge catalogue row [69fe684bf76585e8] which claims the grounding kernel does not move under upper-case. The row's example likely has span and document that match verbatim regardless of case. My input has a span in lowercase that occurs in the document only when case is ignored. The upper-case transform converts the entire reply to capitals, making the span match verbatim in the document after transformation. Before the transform, _span_occurs with empty relaxations returns NOT_IN_DOCUMENT because 'hello' does not occur verbatim in 'HELLO world' after whitespace normalization. After the transform, both become uppercase and 'HELLO' occurs verbatim in 'HELLO WORLD', returning 'verbatim'. This refutes the 'moves: false' claim.
+commitments: {"kernel": "conformance.kernel.grounding", "transform": "conformance.transform.upper-case", "input": "{\"span\": \"hello\", \"document\": \"HELLO world\"}"}
+[5297178c33f29d8c] (mini.proposal.v1)
+I challenge catalogue row [791e3ba34ce7d357] which claims the recovery kernel does not move under float-after. The row's example likely has only one JSON object, so recovery returns the same object before and after. My input is valid JSON with a single object. The float-after transform appends 'final' and {"a": 1.5} after the reply. Before the transform, recovery finds and returns the original object. After the transform, the content contains two top-level objects; the recovery function returns the last dict found, which is the appended {"a": 1.5} rather than the original object. This changes the output, refuting the 'moves: false' claim.
+commitments: {"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.float-after", "input": "{\"claimant_name\": \"amara okoro\"}"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

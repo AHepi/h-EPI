@@ -1,0 +1,17 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id. A prediction beside each proposal says what a reader of the code expected; where the expectation from the rule and the prediction from the code disagree, and the machine sided with one, say which reading was wrong and why.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Proposal 3ad9e81d8186b930 failed because the proposer misread the rule regarding 'strict JSON'. The proposer claimed that a leading newline means the harness had to recover the object from prose, expecting the result to move from 'yes' to 'no' [3ad9e81d8186b930]. However, the code implements strict JSON parsing via `loads_strict(content)` (line 103), which uses Python's `json.loads`. As noted in the prediction [db0029d86d0c9915], `json.loads` ignores leading whitespace, meaning `
+{"a": 1}` is read as strict JSON. The rule's phrase 'read it as strict JSON (no)' [a70c2e9bc362b532] is satisfied by the code's behavior. This failure matters because it reveals a misunderstanding of what constitutes 'strict JSON' in the context of the harness's implementation. A proposer should try adding non-whitespace characters (e.g., a single letter) before the JSON object to ensure `loads_strict` fails and `recover_json_object` is invoked.
+
+Proposals c1b11a35002805e4 and 880dfa9a91534cb8 succeeded as expected.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

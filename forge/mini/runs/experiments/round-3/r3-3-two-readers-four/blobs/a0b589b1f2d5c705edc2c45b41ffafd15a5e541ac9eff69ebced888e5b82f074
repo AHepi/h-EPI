@@ -1,0 +1,15 @@
+Tracing the `recover_json_object` function:
+
+1. **Input**: `"```json\n{\"first\": 1}\n```\n{\"second\": 2}"`
+   - `_FENCE.finditer` finds one match: `{"first": 1}`. `fenced` = `['{"first": 1}']`.
+   - `top_level` scan finds two objects: `{"first": 1}` and `{"second": 2}`.
+   - The function iterates through `pool` in order: `(fenced, top_level)`.
+   - It checks `fenced` first. `reversed(fenced)` yields `{"first": 1}`. This is a dict, so it returns `{"first": 1}`.
+
+2. **Rewritten**: `"{\"second\": 2}\n```json\n{\"first\": 1}\n```"`
+   - `_FENCE.finditer` finds one match: `{"first": 1}`. `fenced` = `['{"first": 1}']`.
+   - `top_level` scan finds two objects: `{"second": 2}` and `{"first": 1}`.
+   - The function iterates through `pool` in order: `(fenced, top_level)`.
+   - It checks `fenced` first. `reversed(fenced)` yields `{"first": 1}`. This is a dict, so it returns `{"first": 1}`.
+
+In both cases, the presence of a code fence causes the function to prioritize the fenced content over the top-level prose content, regardless of their relative positions in the text.

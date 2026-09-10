@@ -1,0 +1,22 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+All three proposals in this cycle were successful, with the machine's behavior aligning perfectly with the documented rules. 
+
+Proposal cd0aeccc7f2e4016 correctly identified that wrapping a JSON object in a code fence triggers a 'yes' for `recovered-from-prose`, as the rule explicitly groups fences with prose: "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)" [a70c2e9bc362b532].
+
+Proposal 47ae52ddfadca9d3 correctly tested the priority of object recovery over the refusal heuristic. The rule for `parse_content` states: "The refusal heuristic decides the verdict only when no object can be recovered" [934eac6cd189abce]. The execution confirmed that adding a valid JSON object moved the verdict from `REFUSAL_SUSPECTED` to `JSON_OBJECT` despite the presence of a refusal phrase.
+
+Proposal 3fa907c0824d943a correctly targeted the 'value-in-span' check of the grounding kernel. The rule specifies the verdict is given with "value-in-span checked" [934eac6cd189abce]. The execution confirmed that when the value was not in the span, the result was `VALUE_NOT_IN_SPAN`, and moving the value to match the span resulted in `GROUNDED`.
+
+Since no failures occurred, there are no misreadings or discrepancies to report. Proposers should continue to seek edge cases in the recovery logic, such as the interaction between multiple candidates (fenced vs. top-level) or the specific behavior of the 'last-wins' duplicate key resolution mentioned in the rules [934eac6cd189abce].
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

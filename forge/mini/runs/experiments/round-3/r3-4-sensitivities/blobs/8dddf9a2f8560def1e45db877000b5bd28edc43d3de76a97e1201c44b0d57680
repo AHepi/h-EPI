@@ -1,0 +1,22 @@
+```json
+{
+  "body": "I propose an input for the pair (conformance.kernel.recovery, conformance.transform.fence-then-bare-after) where the kernel's answer does NOT move under the transform. The transform wraps the reply in a fence and adds a bare object `{\"later\": 1}` after the fence. However, the harness should still recover the original object `{\"claimant_name\": \"amara okoro\"}` because the added bare object is not a valid top-level JSON object due to its lack of proper separation or context. The `recover_json_object` function prioritizes the last *fenced* object when one exists, and the bare object after the fence is ignored as it is not properly delimited or syntactically valid as a standalone object.\n\nCitations:\n- [5cc9a9d5f26707de] states the transform `conformance.transform.fence-then-bare-after` wraps the reply in a fence and adds `then {\"later\": 1}` after the fence. The catalogue ([55dd56154fb39a87]) claims the kernel's answer does *not* move (`\"moves\": false`), but this is inconsistent with the transform's design. The harness should recover the fenced object, not the bare one, as the source ([51a2da55fab63214]) specifies that the last object *inside a code fence* is prioritized when any fence holds one.\n- The source also notes that stray braces or malformed objects in prose are ignored, so the bare `{\"later\": 1}` should not affect recovery.",
+
+  "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"transform\": \"conformance.transform.fence-then-bare-after\", \"input\": \"```json\\n{\\\"claimant_name\\\": \\\"amara okoro\\\"}\\n``` then {\\\"later\\\": 1}\"}",
+
+  "citations": [
+    {
+      "block": "5cc9a9d5f26707de",
+      "quote": "transform conformance.transform.fence-then-bare-after: Wrap the reply in a fence and add a bare object {\"later\": 1} after the fence."
+    },
+    {
+      "block": "55dd56154fb39a87",
+      "quote": "{\"points\": [{\"kernel\": \"conformance.kernel.recovery\", \"transform\": \"conformance.transform.fence-then-bare-after\", \"moves\": false, \"input\": \"{\\\"claimant_name\\\": \\\"amara okoro\\\"}\"}]}"
+    },
+    {
+      "block": "51a2da55fab63214",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it"
+    }
+  ]
+}
+```
