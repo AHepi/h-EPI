@@ -33,6 +33,7 @@ from creib.strict_json import loads_strict
 
 from .common import MiniError
 from .evidence import cut_source, folded
+from .formats import loads_admitting_control
 from .machines import MachineContext, MachineSeat, register_machine_seat
 
 PROPOSAL_KIND = "mini.proposal.v1"
@@ -233,8 +234,15 @@ def registry_text(prefix: str = "") -> str:
 
 
 def _proposal_of(context: MachineContext, record: Mapping[str, Any]) -> dict[str, Any] | None:
+    """The commitments of one artifact, read as the format layer read them.
+
+    A raw line break a model wrote inside the string is admitted here as it is there
+    (`formats.loads_admitting_control`); a seat that refused what the format accepted would
+    mark its own run's proposals unreadable, which is what mini register M13 records.
+    """
+
     try:
-        parsed = loads_strict(context.commitments(record))
+        parsed, _recovered = loads_admitting_control(context.commitments(record))
     except RecordError:
         return None
     return parsed if type(parsed) is dict else None

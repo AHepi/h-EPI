@@ -227,6 +227,17 @@ class _PredictingResponder:
         return Reply(text=text, prompt_tokens=1, completion_tokens=1)
 
 
+    def test_a_proposal_whose_json_carries_a_raw_line_break_is_run_not_called_unreadable(self) -> None:
+        """M13: the executor reads the commitments the way the format layer read them."""
+
+        with_break = json.dumps({"kernel": kernels.KERNEL_RECOVERY, "input": OBJECT, "rewritten": "```\n" + OBJECT + "\n```", "expect": "moves", "rewrite": "test"})
+        raw = with_break.replace("\\n", "\n")
+        self.assertIn("\n", json.loads(json.dumps(raw)), "the commitments string itself now carries the break")
+        state, executions, verdicts = self._run({"propose": [submission("a body", raw)]})
+        self.assertEqual(executions[0]["executed"], "unchanged", "the pair ran: a fence around the object does not move what is recovered")
+        self.assertEqual(executions[0]["rewritten"], "```\n" + OBJECT + "\n```")
+
+
 class NextCellTests(MiniTestCase):
     """The grid is enumerated by machine: each next-cell seat names the cell named least often."""
 

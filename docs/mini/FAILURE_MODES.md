@@ -443,9 +443,20 @@ line break inside the commitments string, where the model should have written
 the two characters backslash and n. A reply is now read strictly first and, if
 that fails on a control character alone, again admitting it, and the artifact
 records `control-characters` beside `fence` and `prose` (`SPEC.md` §17). Nothing
-else the strict reader refuses is admitted. The template half — a pattern
-written for one shape refusing another — stays open, and is a manifest's
-business rather than the machine's.
+else the strict reader refuses is admitted.
+
+That fix was half a fix, and the next run said so: with the format layer
+admitting the break, the machine seat that reads the same commitments string
+back still read it strictly and marked two of the run's first three proposals
+`unreadable` (`runs/experiments/round-4/r4-6-skeletons-mistral-after-m13/`,
+cycle 1, under the intermediate machine). A seat that refuses what the format
+accepted spends a call and records nothing, so `_proposal_of` now reads a
+commitments string the way the format layer read it. The rule this leaves is
+worth stating: wherever mini reads the same text twice, the two readings are the
+same reading.
+
+The template half — a pattern written for one shape refusing another — stays
+open, and is a manifest's business rather than the machine's.
 
 ## M14 — A pair whose two texts differ in more than one thing
 

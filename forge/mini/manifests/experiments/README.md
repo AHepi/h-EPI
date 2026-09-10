@@ -372,3 +372,9 @@ meant and records that it did (`docs/mini/FAILURE_MODES.md` M13,
 again under the fix as `r4-6-skeletons-mistral-after-m13`, so the replication
 question the round was asked to settle can be answered. Its first record stays
 in the tree as the evidence for M13.
+
+That re-run started under an intermediate machine, where the format layer
+admitted the line break and the executor seat still refused it, and its record
+is kept as the evidence for the second half of M13. The clean replication is
+`r4-7-skeletons-mistral-after-m13b`, the same manifest, model, seat and cycles
+again, with both readings the same reading.
