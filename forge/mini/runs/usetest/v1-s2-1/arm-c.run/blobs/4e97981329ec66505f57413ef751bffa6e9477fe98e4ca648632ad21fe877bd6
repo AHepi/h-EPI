@@ -1,0 +1,21 @@
+# Execution
+
+## Proposals so far (proposals)
+[50e10b80e92bed34] (mini.pair-proposal.usetest.v1)
+The documented rule for `k_recovery` states that the object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. The rule further specifies that a candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable, while a non-parsing candidate (e.g., a float) is passed over. 
+
+In the given cell, the input is a code fence containing a single JSON object `A`. The rewritten text removes the JSON object entirely, leaving only an empty code fence. Since the rule requires the last object inside a fence (or the last top-level object) to be scoreable, the input (`fence[ A ]`) yields a valid JSON object, while the rewritten text (`fence[ ]`) yields no object. Thus, the check's answer *moves* from a valid object to `NO_OBJECT`. The rule explicitly states that a final answer refused for a non-parsing candidate (here, the absence of any object) loses to an earlier draft that parsed, so the verdict changes.
+
+The relevant words from the rule: "The object scored is the last one inside a code fence when any fence holds one... A candidate that parses as strict JSON... is scoreable; one that does not... is passed over."
+cell: fence[ A ]
+input: ```
+{"a": 1}
+```
+rewrite: Removed the JSON object `A` from the code fence, leaving it empty.
+rewritten: ```
+
+```
+commitments: {"kernel": "recovery", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

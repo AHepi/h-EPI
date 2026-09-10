@@ -1,0 +1,35 @@
+[
+  {
+    "phase": "mini",
+    "stop_reason": "budget_cap",
+    "executions": [
+      {
+        "cell": "```\n{\"a\": 1}\n```",
+        "detail": "the input is not the cell it names: MINI_USETEST_CELL_UNREADABLE: '```\\n{\"a\": 1}\\n```' is not a cell of this grammar",
+        "executed": "INVALID_INSTANTIATION",
+        "expect": "unchanged",
+        "input": "```\n{\"a\": 1}\n```",
+        "kernel": "recovery",
+        "proposal": "7f3e5666430e219b",
+        "rewrite": "added a plain sentence after the fence",
+        "rewritten": "```\n{\"a\": 1}\n```\nHere is the result:"
+      },
+      {
+        "cell": "fence[ A ] S",
+        "detail": "the rewritten text is no cell of the grammar",
+        "executed": "INVALID_INSTANTIATION",
+        "expect": "unchanged",
+        "input": "```\n{\"a\": 1}\n```\nHere is the result:",
+        "kernel": "recovery",
+        "proposal": "c6a1640da230f343",
+        "rewrite": "added a JSON object after the sentence",
+        "rewritten": "```\n{\"a\": 1}\n```\nHere is the result:\n{\"b\": 2}",
+        "rewritten_cell": ""
+      }
+    ]
+  },
+  {
+    "phase": "report",
+    "reply": "{\n  \"claim\": \"The recovery check rejects a fenced JSON object as input before applying recover_json_object, so the documented fence-recovery rule is never exercised.\",\n  \"expected\": \"recover_json_object should recover the JSON object inside the code fence, e.g. {\\\"a\\\": 1}.\",\n  \"observed\": \"The check returns INVALID_INSTANTIATION with detail 'the input is not the cell it names: MINI_USETEST_CELL_UNREADABLE: ... is not a cell of this grammar'.\",\n  \"reproducer\": \"```\\n{\\\"a\\\": 1}\\n```\",\n  \"source_basis\": \"The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text\",\n  \"execution_evidence\": \"INVALID_INSTANTIATION: '```\\\\n{\\\"a\\\": 1}\\\\n```' is not a cell of this grammar\",\n  \"scope\": \"All inputs consisting solely of a fenced JSON object\",\n  \"uncertainty\": \"Whether the grammar-cell requirement is an intentional precondition of the test harness; the documented rule does not mention it.\"\n}"
+  }
+]

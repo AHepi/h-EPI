@@ -1,0 +1,29 @@
+{
+  "arm": "D",
+  "cost": {
+    "completion_tokens": 1782,
+    "completion_tokens_allowed": 12000,
+    "invocations": 8,
+    "invocations_allowed": 8,
+    "machine_executions": 0,
+    "prompt_tokens": 19265,
+    "wall_ms": 236115
+  },
+  "instance": "s2-1",
+  "leaks": [
+    "mini",
+    "cell"
+  ],
+  "model": "nemotron-3-nano:30b",
+  "packet": {
+    "claim": "The documented parsing rule fails to correctly recover JSON objects when they appear inside a fenced code block that also contains surrounding prose, causing an INVALID_INSTANTIATION error.",
+    "execution_evidence": "INVALID_INSTANTIATION",
+    "expected": "The rule should allow recovery of a top‑level JSON object from within a fence even when additional text precedes or follows it, and should not raise an INVALID_INSTANTIATION.",
+    "observed": "INVALID_INSTANTIATION: 'the input is not the cell it names: MINI_USETEST_CELL_UNREADABLE: 'fence[ {\"a\":1} ] Here is the result:' names '{\"a\":1}', which the grammar does not hold'",
+    "reproducer": "fence[ {\"a\":1} ] Here is the result:",
+    "scope": "JSON objects embedded in fenced code blocks that are not the sole content of the cell (i.e., surrounded by additional prose).",
+    "source_basis": "Every top‑level balanced object in the text is a candidate, not only the span from the first ``{`` to the last ``}``: reasoning prose before or after the answer frequently contains stray braces, and an object nested inside another is not a candidate of its own.",
+    "uncertainty": "Whether the rule intends to accept any surrounding prose or only when the fence itself contains the object, and whether the error stems from the grammar or the test harness."
+  },
+  "protocol": "mini-use-test-1"
+}

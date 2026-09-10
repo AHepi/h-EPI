@@ -1,0 +1,30 @@
+{
+  "arm": "C",
+  "ceiling_breached": false,
+  "cost": {
+    "completion_tokens": 8497,
+    "completion_tokens_allowed": 12000,
+    "invocations": 8,
+    "invocations_allowed": 8,
+    "machine_executions": 2,
+    "prompt_tokens": 54576,
+    "wall_ms": 558736
+  },
+  "instance": "s2-2",
+  "leaks": [
+    "cell"
+  ],
+  "method_version": 2,
+  "model": "deepseek-v4-pro:0813",
+  "packet": {
+    "claim": "The recovery check rejects a valid rewritten text as INVALID_INSTANTIATION because the text is not a grammar cell, even though recover_json_object is defined on arbitrary text and should return the fenced object.",
+    "execution_evidence": "executed: INVALID_INSTANTIATION, expect: unchanged, detail: the rewritten text is no cell of the grammar",
+    "expected": "Recovery returns the fenced object {\"a\":1} (unchanged) because a code fence holds an object and the rule prefers the last object inside a code fence over later top-level objects.",
+    "observed": "The test harness reports INVALID_INSTANTIATION with detail 'the rewritten text is no cell of the grammar' instead of evaluating recovery.",
+    "reproducer": "```\n{\"a\": 1}\n```\nHere is the result:\n{\"b\": 2}",
+    "scope": "Recovery inputs where a fenced JSON object is followed by prose and then a top-level JSON object, and the combined text is not accepted by the test grammar.",
+    "source_basis": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text",
+    "uncertainty": "The documented rules do not state that recovery inputs must be grammar cells; if the harness intentionally restricts to cells, that restriction is not documented here."
+  },
+  "protocol": "mini-use-test-1"
+}

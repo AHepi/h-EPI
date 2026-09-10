@@ -1,0 +1,30 @@
+{
+  "arm": "D",
+  "ceiling_breached": false,
+  "cost": {
+    "completion_tokens": 3042,
+    "completion_tokens_allowed": 12000,
+    "invocations": 8,
+    "invocations_allowed": 8,
+    "machine_executions": 1,
+    "prompt_tokens": 26084,
+    "wall_ms": 149632
+  },
+  "instance": "s2-3",
+  "leaks": [
+    "cell"
+  ],
+  "method_version": 2,
+  "model": "deepseek-v4-pro:0813",
+  "packet": {
+    "claim": "The second test case did not execute: the rewritten text was rejected as 'no cell of the grammar', so the expected unchanged recovery result was not verified.",
+    "execution_evidence": "INVALID_INSTANTIATION; detail: the rewritten text is no cell of the grammar",
+    "expected": "unchanged",
+    "observed": "INVALID_INSTANTIATION",
+    "reproducer": "```\n{\"a\": 1, \"a\": 2}\n```\nHere is the result:\n{\"b\": 3}",
+    "scope": "rewritten texts that append a top-level JSON object after a prose sentence following a fenced JSON object with repeated keys",
+    "source_basis": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text; A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable.",
+    "uncertainty": "Whether the failure is in the recovery function or in the test harness's cell grammar; the documented recovery rule would return the fenced object unchanged, but the harness did not reach recovery."
+  },
+  "protocol": "mini-use-test-1"
+}

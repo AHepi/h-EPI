@@ -1,0 +1,40 @@
+[
+  {
+    "phase": "mini",
+    "stop_reason": "budget_cap",
+    "executions": [
+      {
+        "after": "{\"a\":1}",
+        "as_expected": false,
+        "before": "{\"a\":1}",
+        "cell": "fence[ A ]",
+        "executed": "unchanged",
+        "expect": "moves",
+        "input": "```\n{\"a\":1}\n```",
+        "kernel": "recovery",
+        "proposal": "aad3a592837d390a",
+        "rewrite": "add {\"b\":2} after the closing fence",
+        "rewritten": "```\n{\"a\":1}\n```\n{\"b\":2}",
+        "rewritten_cell": "fence[ A ] B"
+      },
+      {
+        "after": "{\"b\":2}",
+        "as_expected": false,
+        "before": "{\"a\":1}",
+        "cell": "fence[ A ] S",
+        "executed": "moved",
+        "expect": "unchanged",
+        "input": "```\n{\"a\":1}\n```\nHere is the result:",
+        "kernel": "recovery",
+        "proposal": "a4867d3aa88ab787",
+        "rewrite": "add {\"b\":2} inside the fence after {\"a\":1}",
+        "rewritten": "```\n{\"a\":1}\n{\"b\":2}\n```\nHere is the result:",
+        "rewritten_cell": "fence[ A B ] S"
+      }
+    ]
+  },
+  {
+    "phase": "report",
+    "reply": "{\n  \"claim\": \"The test campaign expects recover_json_object to move to the object after the closing fence when a fence already contains an object, but the documented rule says the last object inside a code fence wins when any fence holds one.\",\n  \"expected\": \"The recovered object remains {\\\"a\\\":1} because the fence holds an object and it is the last one inside a code fence.\",\n  \"observed\": \"The recovered object remains {\\\"a\\\":1}.\",\n  \"reproducer\": \"```\\n{\\\"a\\\":1}\\n```\\n{\\\"b\\\":2}\",\n  \"source_basis\": \"The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text\",\n  \"execution_evidence\": \"unchanged\",\n  \"scope\": \"inputs where a code fence contains a JSON object and another JSON object is added after the closing fence\",\n  \"uncertainty\": \"None\"\n}"
+  }
+]

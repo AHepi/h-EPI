@@ -1,0 +1,28 @@
+{
+  "arm": "B",
+  "cost": {
+    "completion_tokens": 4888,
+    "completion_tokens_allowed": 12000,
+    "invocations": 2,
+    "invocations_allowed": 8,
+    "machine_executions": 6,
+    "prompt_tokens": 8304,
+    "wall_ms": 61000
+  },
+  "instance": "s2-1",
+  "leaks": [
+    "kernel"
+  ],
+  "model": "qwen3.5:397b",
+  "packet": {
+    "claim": "The recovered-from-prose kernel and parse_content function incorrectly report objects recovered from code fences as 'recovered from prose'. The recover_json_object function distinguishes between fence and prose sources (preferring fenced objects), but parse_content always sets the recovered_from_prose flag to True and uses 'object recovered from prose' in the detail message regardless of whether the object came from a fence or actual prose.",
+    "execution_evidence": "{\"kernel\": \"recovered-from-prose\", \"input\": \"```json\\n{\\\"a\\\": 1}\\n```\", \"expected\": \"no\", \"answer\": \"yes\"}",
+    "expected": "For fenced JSON input like '```json\\n{\"a\": 1}\\n```', the recovered-from-prose kernel should return 'no' (or the detail should say 'recovered from fence') since the object was extracted from a code fence, not prose.",
+    "observed": "The recovered-from-prose kernel returns 'yes' for fenced JSON, and the parse_content detail message says 'object recovered from prose' even when the object came from a fence.",
+    "reproducer": "```json\n{\"a\": 1}\n```",
+    "scope": "All inputs where JSON objects are recovered from code fences rather than strict parsing or prose scanning",
+    "source_basis": "The recover_json_object docstring states 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text'. The parse_content function returns True for the 4th element whenever recover_json_object succeeds, with detail 'object recovered from prose' when there are no duplicates, regardless of fence vs prose source.",
+    "uncertainty": "The documented rule for k_recovered_from_prose says 'prose or a fence (yes)' which ambiguously suggests both should return 'yes', but the kernel name and detail messages imply a distinction should exist."
+  },
+  "protocol": "mini-use-test-1"
+}

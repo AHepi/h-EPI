@@ -1,0 +1,38 @@
+[
+  {
+    "phase": "mini",
+    "stop_reason": "budget_cap",
+    "executions": [
+      {
+        "after": "{\"a\":1}",
+        "as_expected": true,
+        "before": "{\"a\":1}",
+        "cell": "fence[ A ]",
+        "executed": "unchanged",
+        "expect": "unchanged",
+        "input": "```\n{\"a\":1}\n```",
+        "kernel": "recovery",
+        "proposal": "c291408fb850dbd3",
+        "rewrite": "fence[ A ] S",
+        "rewritten": "```\n{\"a\":1}\n```\nHere is the result:",
+        "rewritten_cell": "fence[ A ] S"
+      },
+      {
+        "cell": "fence[ A ] S",
+        "detail": "the rewritten text is no cell of the grammar",
+        "executed": "INVALID_INSTANTIATION",
+        "expect": "unchanged",
+        "input": "```\n{\"a\":1}\n```\nHere is the result:",
+        "kernel": "recovery",
+        "proposal": "c628bc1cf1d07409",
+        "rewrite": "fence[ A ] S fence[ 1.2 ]",
+        "rewritten": "```\n{\"a\":1}\n```\nHere is the result:\n```\n1.2\n```",
+        "rewritten_cell": ""
+      }
+    ]
+  },
+  {
+    "phase": "report",
+    "reply": "{\n  \"claim\": \"The input grammar rejects a reply that contains an earlier fenced JSON object and a later fenced float, even though recover_json_object is specified to pass over the float and recover the earlier object.\",\n  \"expected\": \"recover_json_object returns the earlier fenced JSON object {\\\"a\\\":1} because the last fenced block is a float, which is not scoreable and is passed over.\",\n  \"observed\": \"The test harness reports INVALID_INSTANTIATION with detail 'the rewritten text is no cell of the grammar', so no recovery result is produced.\",\n  \"reproducer\": \"```\\n{\\\"a\\\":1}\\n```\\nHere is the result:\\n```\\n1.2\\n```\",\n  \"source_basis\": \"The object scored is the last one inside a code fence when any fence holds one... A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over, so a final answer refused for a float loses to an earlier draft that parsed (``docs/kernel.md``, P-06).\",\n  \"execution_evidence\": \"executed: INVALID_INSTANTIATION; detail: the rewritten text is no cell of the grammar\",\n  \"scope\": \"replies with a fenced JSON object followed by a later fenced non-object scalar such as a float\",\n  \"uncertainty\": \"The failure is reported by the grammar/instantiation layer, not by recover_json_object itself; it is unclear whether recover_json_object would return the earlier object if invoked directly on the text.\"\n}"
+  }
+]

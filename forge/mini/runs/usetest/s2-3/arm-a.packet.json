@@ -1,0 +1,28 @@
+{
+  "arm": "A",
+  "ceiling_breached": false,
+  "cost": {
+    "completion_tokens": 10069,
+    "completion_tokens_allowed": 12000,
+    "invocations": 1,
+    "invocations_allowed": 8,
+    "machine_executions": 0,
+    "prompt_tokens": 3858,
+    "wall_ms": 60491
+  },
+  "instance": "s2-3",
+  "leaks": [],
+  "method_version": 2,
+  "model": "deepseek-v4-pro:0813",
+  "packet": {
+    "claim": "_span_occurs returns None (and k_span_occurs returns NOT_IN_DOCUMENT) for a span that is verbatim present in the document when the span contains consecutive whitespace, because the document is whitespace-normalized but the span is not.",
+    "execution_evidence": "none: no executable oracle",
+    "expected": "k_span_occurs should return 'verbatim' for input {\"span\": \"hello  world\", \"document\": \"hello  world\"} because the span occurs exactly in the document.",
+    "observed": "k_span_occurs returns 'NOT_IN_DOCUMENT' because _span_occurs compares the unnormalized span against the normalized document.",
+    "reproducer": "{\"span\": \"hello  world\", \"document\": \"hello  world\"}",
+    "scope": "k_span_occurs inputs where the span contains two or more consecutive whitespace characters and the document contains that exact span.",
+    "source_basis": "Return None when the span is not in the document, else how it was matched (\"verbatim\" or a relaxation).",
+    "uncertainty": "None"
+  },
+  "protocol": "mini-use-test-1"
+}

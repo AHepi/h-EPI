@@ -1,0 +1,18 @@
+# Execution
+
+## Proposals so far (proposals)
+[a72315a0d6893d87] (mini.pair-proposal.usetest.v1)
+The rule says: "The refusal heuristic decides the verdict only when no object can be recovered". For the input, a fence with {"a": 1}, no refusal phrase, object recovered, so verdict is not refusal. For the rewritten, a fence with {"a": 1} followed by 'I cannot', a refusal phrase is present but an object is recovered, so per that rule the verdict should still not be refusal; the check should stay unchanged. However, the check moves to refusal because of H36 'a refusal followed by a form is a refusal and a form'.
+cell: fence[ A ]
+input: ```
+{"a": 1}
+```
+rewrite: added 'I cannot' after the fence
+rewritten: ```
+{"a": 1}
+```
+I cannot
+commitments: {"kernel": "response-verdict", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

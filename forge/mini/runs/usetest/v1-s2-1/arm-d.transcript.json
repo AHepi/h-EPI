@@ -1,0 +1,34 @@
+[
+  {
+    "phase": "mini",
+    "stop_reason": "budget_cap",
+    "executions": [
+      {
+        "cell": "0dc923a60b169f32",
+        "detail": "the input is not the cell it names: MINI_USETEST_CELL_UNREADABLE: '0dc923a60b169f32' is not a cell of this grammar",
+        "executed": "INVALID_INSTANTIATION",
+        "expect": "moves",
+        "input": "fence[ A ]",
+        "kernel": "recovery",
+        "proposal": "25b8bca4bb93f084",
+        "rewrite": "fence[ B ]",
+        "rewritten": "fence[ B ]"
+      },
+      {
+        "cell": "fence[ {\"a\":1} ] Here is the result:",
+        "detail": "the input is not the cell it names: MINI_USETEST_CELL_UNREADABLE: 'fence[ {\"a\":1} ] Here is the result:' names '{\"a\":1}', which the grammar does not hold",
+        "executed": "INVALID_INSTANTIATION",
+        "expect": "moves",
+        "input": "fence[ {\"a\":1} ] Here is the result:",
+        "kernel": "recovery",
+        "proposal": "dff2eab67961963c",
+        "rewrite": "fence[ {\"b\":2} ] Here is the result:",
+        "rewritten": "fence[ {\"a\":1} ]"
+      }
+    ]
+  },
+  {
+    "phase": "report",
+    "reply": "{\n  \"claim\": \"The documented parsing rule fails to correctly recover JSON objects when they appear inside a fenced code block that also contains surrounding prose, causing an INVALID_INSTANTIATION error.\",\n  \"expected\": \"The rule should allow recovery of a top‑level JSON object from within a fence even when additional text precedes or follows it, and should not raise an INVALID_INSTANTIATION.\",\n  \"observed\": \"INVALID_INSTANTIATION: 'the input is not the cell it names: MINI_USETEST_CELL_UNREADABLE: 'fence[ {\\\"a\\\":1} ] Here is the result:' names '{\\\"a\\\":1}', which the grammar does not hold'\",\n  \"reproducer\": \"fence[ {\\\"a\\\":1} ] Here is the result:\",\n  \"source_basis\": \"Every top‑level balanced object in the text is a candidate, not only the span from the first ``{`` to the last ``}``: reasoning prose before or after the answer frequently contains stray braces, and an object nested inside another is not a candidate of its own.\",\n  \"execution_evidence\": \"INVALID_INSTANTIATION\",\n  \"scope\": \"JSON objects embedded in fenced code blocks that are not the sole content of the cell (i.e., surrounded by additional prose).\",\n  \"uncertainty\": \"Whether the rule intends to accept any surrounding prose or only when the fence itself contains the object, and whether the error stems from the grammar or the test harness.\"\n}"
+  }
+]

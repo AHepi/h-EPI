@@ -1,0 +1,31 @@
+{
+  "arm": "E",
+  "ceiling_breached": false,
+  "cost": {
+    "completion_tokens": 4546,
+    "completion_tokens_allowed": 12000,
+    "invocations": 8,
+    "invocations_allowed": 8,
+    "machine_executions": 1,
+    "prompt_tokens": 27586,
+    "wall_ms": 183984
+  },
+  "instance": "s2-3",
+  "leaks": [
+    "cell",
+    "verdict"
+  ],
+  "method_version": 2,
+  "model": "deepseek-v4-pro:0813",
+  "packet": {
+    "claim": "The test campaign expects the response verdict to change when a refusal phrase is added after a fenced JSON object, but the documented rule says the refusal heuristic only decides the verdict when no object can be recovered.",
+    "execution_evidence": "executed: unchanged, as_expected: false",
+    "expected": "The response verdict remains JSON_OBJECT because the fenced object is recoverable.",
+    "observed": "The code returned JSON_OBJECT unchanged; the test recorded as_expected false.",
+    "reproducer": "```\n{\"a\": 1}\n```\nI cannot",
+    "scope": "Any reply containing a recoverable JSON object and a refusal phrase after it.",
+    "source_basis": "The refusal heuristic decides the verdict only when no object can be recovered; whether a phrase occurred at all is a separate fact, :func:`refusal_phrase_in`, recorded beside a recovered object (H36: a refusal followed by a form is a refusal and a form).",
+    "uncertainty": "The second test's mutation was invalid (rewritten text no cell of grammar), so its expectation that recovery moves to a later outside object was not executed; the rule also says fenced objects take priority over later top-level objects."
+  },
+  "protocol": "mini-use-test-1"
+}

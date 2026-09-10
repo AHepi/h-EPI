@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. Read this cycle's executions beside the proposals: say which expectations held, which failed, which inputs the validator threw away and why, and what a proposer should build next. Cite nothing you were not shown.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Expectation held: c291408fb850dbd3 expected recovery unchanged, and execution ac642c4ec4ebf27a returned before and after both {"a":1} with as_expected true. No inputs were thrown away this cycle; the single pair passed cell validation and ran. The edit is a no-op under the documented rule: the original fence holds object A, and adding a plain sentence after the fence leaves the fence as the only fenced object, so the scored object remains A. This does not expose a defect. Next, a proposer should target the fence-selection rule's interaction with non-parseable candidates. Build a reply with two fenced objects where the last fence contains a float or other non-JSON candidate; the rule says the scored object is the last one inside a code fence, but recover_json_object passes over candidates that do not parse, so the check may score an earlier parseable fenced object instead. A single edit that appends a later fence with a float would test whether the check follows the literal last-fenced-object rule or the parseable-candidate fallback.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

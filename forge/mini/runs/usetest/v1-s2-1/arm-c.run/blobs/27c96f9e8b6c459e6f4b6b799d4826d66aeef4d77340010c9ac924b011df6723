@@ -1,0 +1,16 @@
+```json
+{
+  "body": "The documented rule for `recover_json_object` states that the object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. The rule explicitly prioritizes the last object in a fence over any other candidates, including those in prose or earlier fences. \n\nIn the given cell, the input contains a code fence with object `A` and a prose object `B`. The rule dictates that `A` (the last object in the fence) should be scored, not `B`. \n\nThe rewritten text removes `A`, leaving only `B` in prose. Since there is no longer a code fence, the rule now dictates that `B` (the last top-level object in the text) should be scored. \n\nThus, the check's answer **moves** from `A` to `B` when `A` is removed, as the rule's priority shifts from the fence to the prose. The relevant words from the rule are: \"The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.\"",
+  "commitments": "{\"kernel\": \"recovery\", \"expect\": \"moves\"}",
+  "input": "```\n{\"a\": 1}\n```\n{\"b\": 2}",
+  "rewritten": "{\"b\": 2}",
+  "rewrite": "Removed the code fence containing `A` (`{\"a\": 1}`), leaving only `B` in prose.",
+  "cell": "The cell to cover: fence[ A ] B\n(2 of 20 cells named so far.)",
+  "citations": [
+    {
+      "block_id": "2d3aa9d77ad600d4",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it"
+    }
+  ]
+}
+```

@@ -1,0 +1,20 @@
+```json
+{
+  "body": "The documented rule for `k_recovery` (via `recover_json_object`) states that the object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. The rule explicitly prioritizes the last object in a fence over any other candidates, including earlier fenced objects or top-level objects in prose. \n\nIn the given cell, the input contains a fenced JSON object `A` followed by a sentence `S`. The rewritten text removes the fenced object `A`, leaving only the sentence `S`. Since `S` is plain prose and contains no JSON object, the rewritten text has no recoverable object. The rule dictates that the check's answer **moves** from recovering `A` (input) to `NO_OBJECT` (rewritten), as the last fenced object is removed and no other candidate remains.\n\nKey words from the rule: \"The object scored is the last one inside a code fence when any fence holds one\" and \"a candidate that parses as strict JSON [...] is scoreable; one that does not [...] is passed over\". The input has a scoreable object (`A`), while the rewritten text has none.",
+  "commitments": "{\"kernel\": \"recovery\", \"expect\": \"moves\"}",
+  "input": "```\n{\"a\": 1}\n```\nHere is the result:",
+  "rewritten": "Here is the result:",
+  "rewrite": "fence[ A ]",
+  "cell": "The cell to cover: fence[ A ] S\n(1 of 20 cells named so far.)",
+  "citations": [
+    {
+      "block_id": "60cea08222162d25",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it"
+    },
+    {
+      "block_id": "60cea08222162d25",
+      "quote": "a candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over"
+    }
+  ]
+}
+```

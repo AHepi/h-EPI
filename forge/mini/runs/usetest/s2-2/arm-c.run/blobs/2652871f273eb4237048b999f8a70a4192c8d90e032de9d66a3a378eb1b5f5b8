@@ -1,0 +1,20 @@
+# Execution
+
+## Proposals so far (proposals)
+[f13ed2c8a705fb94] (mini.pair-proposal.usetest.v1)
+The rule for recovery says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." For the original text, the fence holds the object {"a": 1}, so the answer is that object. For the rewritten text, the fence holds only the sentence and no object, so the rule falls to the else branch: the last top-level object in the text. The text after the fence is the sentence 'Here is the result:', which is not a JSON object, so no object is recovered; the answer is NO_OBJECT. Therefore the check's answer ought to move.
+cell: fence[ S A ] S
+input: ```
+Here is the result:
+{"a": 1}
+```
+Here is the result:
+rewrite: Removed the JSON object A from inside the fence.
+rewritten: ```
+Here is the result:
+```
+Here is the result:
+commitments: {"kernel": "recovery", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

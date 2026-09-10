@@ -1,0 +1,16 @@
+```json
+{
+  "body": "The documented rule for `k_recovery` states that the object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. The rule explicitly prioritizes the last object in a fence over any other candidates, including those in prose (e.g., `B` in this case).\n\nFor the given cell:\n- `input` contains a fence with `A` and prose with `B`. The rule dictates that `A` (the last object in the fence) is the scoreable object.\n- `rewritten` removes `A`, leaving only `B` in prose. The rule now dictates that `B` (the last top-level object in the text) is the scoreable object.\n\nThe check's answer **moves** between the two texts because the scoreable object changes from `A` to `B`. The rule's words: \"the last one inside a code fence when any fence holds one, else the last top-level object in the text\" explicitly describe this behavior.",
+  "commitments": "{\"kernel\": \"recovery\", \"expect\": \"moves\"}",
+  "input": "```\n{\"a\": 1}\n```\n{\"b\": 2}",
+  "rewritten": "```\n```\n{\"b\": 2}",
+  "rewrite": "Removed the JSON object `A` from the fence, leaving only `B` in prose.",
+  "cell": "fence[ A ] B",
+  "citations": [
+    {
+      "block_id": "2d3aa9d77ad600d4",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it"
+    }
+  ]
+}
+```

@@ -1,0 +1,20 @@
+# Execution
+
+## Proposals so far (proposals)
+[86eba1174797bd1a] (mini.pair-proposal.usetest.v1)
+The rule says: "Until 9 September 2026 the object with the most keys was taken, ties to the last." For the input, the only object is {"a":1} inside the fence, so recovery is {"a":1}. For the rewritten, there are two objects: {"a":1} inside the fence and {"b":2,"c":3} after the sentence. The second has more keys (2 vs 1), so under the most-keys rule the recovery should be {"b":2,"c":3}. The check should move from {"a":1} to {"b":2,"c":3}.
+cell: fence[ A ] S
+input: ```
+{"a":1}
+```
+Here is the result:
+rewrite: added {"b":2,"c":3} after the sentence
+rewritten: ```
+{"a":1}
+```
+Here is the result:
+{"b":2,"c":3}
+commitments: {"kernel": "recovery", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

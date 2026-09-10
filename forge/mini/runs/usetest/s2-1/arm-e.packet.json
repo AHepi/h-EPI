@@ -1,0 +1,31 @@
+{
+  "arm": "E",
+  "ceiling_breached": false,
+  "cost": {
+    "completion_tokens": 3298,
+    "completion_tokens_allowed": 12000,
+    "invocations": 7,
+    "invocations_allowed": 8,
+    "machine_executions": 0,
+    "prompt_tokens": 23671,
+    "wall_ms": 512018
+  },
+  "instance": "s2-1",
+  "leaks": [
+    "mini",
+    "cell"
+  ],
+  "method_version": 2,
+  "model": "deepseek-v4-pro:0813",
+  "packet": {
+    "claim": "The recovery check rejects a fenced JSON object as input before applying recover_json_object, so the documented fence-recovery rule is never exercised.",
+    "execution_evidence": "INVALID_INSTANTIATION: '```\\n{\"a\": 1}\\n```' is not a cell of this grammar",
+    "expected": "recover_json_object should recover the JSON object inside the code fence, e.g. {\"a\": 1}.",
+    "observed": "The check returns INVALID_INSTANTIATION with detail 'the input is not the cell it names: MINI_USETEST_CELL_UNREADABLE: ... is not a cell of this grammar'.",
+    "reproducer": "```\n{\"a\": 1}\n```",
+    "scope": "All inputs consisting solely of a fenced JSON object",
+    "source_basis": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text",
+    "uncertainty": "Whether the grammar-cell requirement is an intentional precondition of the test harness; the documented rule does not mention it."
+  },
+  "protocol": "mini-use-test-1"
+}

@@ -145,7 +145,12 @@ def _mini_arm(args: argparse.Namespace, instance: Path, ceiling: usetest.Ceiling
     from creib.forge.mini.report import read_run
     from creib.forge.mini.runner import run_mini
 
-    calls_for_mini = max(1, ceiling.invocations - 1)
+    # Mini checks its call budget between cycles and not after every call, so a cycle that
+    # starts under budget can finish over it (the audit's F-H). The shared ceiling is the whole
+    # point of this comparison, so the budget is set low enough that the worst overrun still
+    # fits: one call for the packet, and one cycle's worth of slack.
+    per_cycle = 2 if args.arm in (usetest.ARM_D, usetest.ARM_E) else 1
+    calls_for_mini = max(1, ceiling.invocations - 1 - (per_cycle - 1))
     manifest = usetest.arm_manifest(args.arm, instance.name, cycles=calls_for_mini, max_calls=calls_for_mini)
     manifest_path = instance / f"arm-{args.arm.lower()}.manifest.json"
     _write(manifest_path, json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")
@@ -206,6 +211,10 @@ def _run(args: argparse.Namespace) -> int:
         "packet": packet.neutral() if packet is not None else None,
         "leaks": list(packet.leaks()) if packet is not None else [],
         "cost": {**ceiling.as_dict(), "wall_ms": elapsed},
+        "method_version": usetest.METHOD_VERSION,
+        # Parity is the comparison's primary control, so a breach is reported rather than left
+        # to be noticed in the numbers.
+        "ceiling_breached": ceiling.used_invocations > ceiling.invocations or ceiling.used_completion_tokens > ceiling.completion_tokens,
     }
     _write(instance / f"arm-{args.arm.lower()}.packet.json", json.dumps(result, indent=2, ensure_ascii=False, sort_keys=True) + "\n")
     _write(instance / f"arm-{args.arm.lower()}.transcript.json", json.dumps(transcript, indent=2, ensure_ascii=False)[:400_000] + "\n")

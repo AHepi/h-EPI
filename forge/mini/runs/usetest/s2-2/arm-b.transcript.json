@@ -1,0 +1,36 @@
+[
+  {
+    "phase": "tests",
+    "reply": "{\n  \"tests\": [\n    {\n      \"kernel\": \"recovery\",\n      \"input\": \"```json\\n{\\\"a\\\":1}\\n```\\n```json\\n{\\\"a\\\":1,\\\"a\\\":2}\\n```\",\n      \"expected\": \"{\\\"a\\\":2}\"\n    },\n    {\n      \"kernel\": \"recovery\",\n      \"input\": \"```text\\n{\\\"a\\\":1}\\n```\\n{\\\"b\\\":2}\",\n      \"expected\": \"{\\\"a\\\":1}\"\n    },\n    {\n      \"kernel\": \"refusal-phrase\",\n      \"input\": \"I'm sorry I cannot\",\n      \"expected\": \"I'm sorry\"\n    },\n    {\n      \"kernel\": \"span-occurs\",\n      \"input\": \"{\\\"span\\\":\\\"a  b\\\",\\\"document\\\":\\\"a b\\\"}\",\n      \"expected\": \"NOT_IN_DOCUMENT\"\n    }\n  ]\n}",
+    "results": [
+      {
+        "kernel": "recovery",
+        "input": "```json\n{\"a\":1}\n```\n```json\n{\"a\":1,\"a\":2}\n```",
+        "expected": "{\"a\":2}",
+        "answer": "{\"a\":1}"
+      },
+      {
+        "kernel": "recovery",
+        "input": "```text\n{\"a\":1}\n```\n{\"b\":2}",
+        "expected": "{\"a\":1}",
+        "answer": "{\"b\":2}"
+      },
+      {
+        "kernel": "refusal-phrase",
+        "input": "I'm sorry I cannot",
+        "expected": "I'm sorry",
+        "answer": "I cannot"
+      },
+      {
+        "kernel": "span-occurs",
+        "input": "{\"span\":\"a  b\",\"document\":\"a b\"}",
+        "expected": "NOT_IN_DOCUMENT",
+        "answer": "verbatim"
+      }
+    ]
+  },
+  {
+    "phase": "report",
+    "reply": "{\n  \"claim\": \"recover_json_object does not apply last-wins duplicate-key resolution to fenced candidates, so when the last fenced object has duplicate keys it is skipped and an earlier fenced object is returned instead.\",\n  \"expected\": \"{\\\"a\\\":2}\",\n  \"observed\": \"{\\\"a\\\":1}\",\n  \"reproducer\": \"```json\\n{\\\"a\\\":1}\\n```\\n```json\\n{\\\"a\\\":1,\\\"a\\\":2}\\n```\",\n  \"source_basis\": \"A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; The object scored is the last one inside a code fence when any fence holds one.\",\n  \"execution_evidence\": \"kernel recovery returned {\\\"a\\\":1} for the reproducer\",\n  \"scope\": \"Replies with multiple fenced JSON objects where the last fenced object has duplicate keys and an earlier fenced object is strict JSON.\",\n  \"uncertainty\": \"none\"\n}"
+  }
+]

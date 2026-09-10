@@ -1,0 +1,31 @@
+{
+  "arm": "E",
+  "ceiling_breached": true,
+  "cost": {
+    "completion_tokens": 4203,
+    "completion_tokens_allowed": 12000,
+    "invocations": 9,
+    "invocations_allowed": 8,
+    "machine_executions": 1,
+    "prompt_tokens": 29147,
+    "wall_ms": 363913
+  },
+  "instance": "s2-2",
+  "leaks": [
+    "kernel",
+    "cell"
+  ],
+  "method_version": 2,
+  "model": "deepseek-v4-pro:0813",
+  "packet": {
+    "claim": "The input grammar rejects a reply that contains an earlier fenced JSON object and a later fenced float, even though recover_json_object is specified to pass over the float and recover the earlier object.",
+    "execution_evidence": "executed: INVALID_INSTANTIATION; detail: the rewritten text is no cell of the grammar",
+    "expected": "recover_json_object returns the earlier fenced JSON object {\"a\":1} because the last fenced block is a float, which is not scoreable and is passed over.",
+    "observed": "The test harness reports INVALID_INSTANTIATION with detail 'the rewritten text is no cell of the grammar', so no recovery result is produced.",
+    "reproducer": "```\n{\"a\":1}\n```\nHere is the result:\n```\n1.2\n```",
+    "scope": "replies with a fenced JSON object followed by a later fenced non-object scalar such as a float",
+    "source_basis": "The object scored is the last one inside a code fence when any fence holds one... A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over, so a final answer refused for a float loses to an earlier draft that parsed (``docs/kernel.md``, P-06).",
+    "uncertainty": "The failure is reported by the grammar/instantiation layer, not by recover_json_object itself; it is unclear whether recover_json_object would return the earlier object if invoked directly on the text."
+  },
+  "protocol": "mini-use-test-1"
+}

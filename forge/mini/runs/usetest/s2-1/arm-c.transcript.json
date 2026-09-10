@@ -1,0 +1,77 @@
+[
+  {
+    "phase": "mini",
+    "stop_reason": "budget_cap",
+    "executions": [
+      {
+        "after": "JSON_OBJECT",
+        "as_expected": true,
+        "before": "JSON_OBJECT",
+        "cell": "fence[ A ]",
+        "executed": "unchanged",
+        "expect": "unchanged",
+        "input": "```\n{\"a\": 1}\n```",
+        "kernel": "response-verdict",
+        "proposal": "78944767dced3f03",
+        "rewrite": "added one part after the fence: the refusal phrase 'I cannot'",
+        "rewritten": "```\n{\"a\": 1}\n```\nI cannot",
+        "rewritten_cell": "fence[ A ] S"
+      },
+      {
+        "after": "{\"b\":2}",
+        "as_expected": true,
+        "before": "{\"a\":1}",
+        "cell": "fence[ A ] S",
+        "executed": "moved",
+        "expect": "moves",
+        "input": "```\n{\"a\": 1}\n```\nHere is the result:",
+        "kernel": "recovery",
+        "proposal": "72e2454faa27b65a",
+        "rewrite": "```\n{\"a\": 1}\n{\"b\": 2}\n```\nHere is the result:",
+        "rewritten": "```\n{\"a\": 1}\n{\"b\": 2}\n```\nHere is the result:",
+        "rewritten_cell": "fence[ A B ] S"
+      },
+      {
+        "cell": "fence[ A ] B",
+        "detail": "the input is not the cell it names: the cell wants object A where the text has prose",
+        "executed": "INVALID_INSTANTIATION",
+        "expect": "moves",
+        "input": "```\nA\n```\nB",
+        "kernel": "recovery",
+        "proposal": "c57027462bff4227",
+        "rewrite": "added C after B",
+        "rewritten": "```\nA\n```\nB\n{\"c\": 3}"
+      },
+      {
+        "after": "{\"a\":1}",
+        "as_expected": false,
+        "before": "{\"a\":1}",
+        "cell": "fence[ A ] A",
+        "executed": "unchanged",
+        "expect": "moves",
+        "input": "```\n{\"a\":1}\n```\n{\"a\":1}",
+        "kernel": "recovery",
+        "proposal": "eaf5293395d94696",
+        "rewrite": "add {\"b\":2} inside the fence after {\"a\":1}",
+        "rewritten": "```\n{\"a\":1}\n{\"b\":2}\n```\n{\"a\":1}",
+        "rewritten_cell": "fence[ A B ] A"
+      },
+      {
+        "cell": "fence[ A ] fence[ B ]",
+        "detail": "the rewritten text is no cell of the grammar",
+        "executed": "INVALID_INSTANTIATION",
+        "expect": "moves",
+        "input": "```\n{\"a\": 1}\n```\n```\n{\"b\": 2}\n```",
+        "kernel": "recovery",
+        "proposal": "31b44032861591ba",
+        "rewrite": "Added fence[ C ] after fence[ B ].",
+        "rewritten": "```\n{\"a\": 1}\n```\n```\n{\"b\": 2}\n```\n```\n{\"c\": 3}\n```",
+        "rewritten_cell": ""
+      }
+    ]
+  },
+  {
+    "phase": "report",
+    "reply": "{\n  \"claim\": \"recover_json_object violates its documented fence-priority rule: it returns the trailing top-level object instead of the last object inside the code fence.\",\n  \"expected\": \"For the rewritten text, k_recovery should return {\\\"b\\\":2} because the last object inside the only code fence is {\\\"b\\\":2}.\",\n  \"observed\": \"k_recovery returned {\\\"a\\\":1}; the campaign recorded after={\\\"a\\\":1}, executed=unchanged, as_expected=false.\",\n  \"reproducer\": \"```\\n{\\\"a\\\":1}\\n{\\\"b\\\":2}\\n```\\n{\\\"a\\\":1}\",\n  \"source_basis\": \"The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text\",\n  \"execution_evidence\": \"Campaign entry eaf5293395d94696: input=```\\n{\\\"a\\\":1}\\n```\\n{\\\"a\\\":1}; rewrite=add {\\\"b\\\":2} inside the fence after {\\\"a\\\":1}; rewritten=```\\n{\\\"a\\\":1}\\n{\\\"b\\\":2}\\n```\\n{\\\"a\\\":1}; expect=moves; executed=unchanged; after={\\\"a\\\":1}; as_expected=false.\",\n  \"scope\": \"Texts with one code fence containing two JSON objects and a trailing top-level object equal to the first fenced object.\",\n  \"uncertainty\": \"None.\"\n}"
+  }
+]

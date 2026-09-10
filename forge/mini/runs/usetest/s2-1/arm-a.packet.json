@@ -1,0 +1,28 @@
+{
+  "arm": "A",
+  "ceiling_breached": false,
+  "cost": {
+    "completion_tokens": 10456,
+    "completion_tokens_allowed": 12000,
+    "invocations": 1,
+    "invocations_allowed": 8,
+    "machine_executions": 0,
+    "prompt_tokens": 3876,
+    "wall_ms": 53957
+  },
+  "instance": "s2-1",
+  "leaks": [],
+  "method_version": 2,
+  "model": "deepseek-v4-pro:0813",
+  "packet": {
+    "claim": "recover_json_object ignores fenced candidates when there is more than one code fence, so it can score a later non-fenced object instead of the last fenced object as documented.",
+    "execution_evidence": "none: no executable oracle",
+    "expected": "The object scored is the last one inside a code fence when any fence holds one; for the reproducer, that is {\"b\": 2}.",
+    "observed": "The code only uses the fenced pool when len(fenced) == 1; with two fences it falls through to top_level and returns the last top-level object, {\"c\": 3}.",
+    "reproducer": "```json\n{\"a\": 1}\n```\n```json\n{\"b\": 2}\n```\n{\"c\": 3}",
+    "scope": "replies containing two or more fenced JSON objects and a later top-level JSON object outside any fence",
+    "source_basis": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text",
+    "uncertainty": "The phrase 'any fence holds one' could be read as 'exactly one fence', but the surrounding text and contrast with 'else the last top-level object' indicate at least one fence."
+  },
+  "protocol": "mini-use-test-1"
+}

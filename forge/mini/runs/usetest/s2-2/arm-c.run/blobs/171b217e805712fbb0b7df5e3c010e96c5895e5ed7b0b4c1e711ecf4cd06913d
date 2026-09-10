@@ -1,0 +1,26 @@
+# Execution
+
+## Proposals so far (proposals)
+[bdac20d867df55b2] (mini.pair-proposal.usetest.v1)
+The rule for k_recovery says: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' In the original text, there are two code fences, each holding one object; the last fence holds {"b": 2}, so recovery returns {"b": 2}. In the rewritten text, the same two fences remain, and a top-level object {"c": 3} is added after the second fence. Because a fence still holds an object, the rule says the scored object is still the last one inside a code fence, which is {"b": 2}. Therefore the check's answer ought to stay unchanged.
+cell: [6f7a76a9f8e93ace] (mini.next-cell.1.v1)
+The cell to cover: fence[ A ] fence[ B ]
+(4 of 20 cells named so far.)
+input: ```
+{"a": 1}
+```
+```
+{"b": 2}
+```
+rewrite: Added a top-level JSON object {"c": 3} after the second fence.
+rewritten: ```
+{"a": 1}
+```
+```
+{"b": 2}
+```
+{"c": 3}
+commitments: {"kernel": "recovery", "expect": "unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

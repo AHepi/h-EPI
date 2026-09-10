@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. Read this cycle's executions beside the proposals: say which expectations held, which failed, which inputs the validator threw away and why, and what a proposer should build next. Cite nothing you were not shown.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Only one pair ran, and its expectation failed. The proposal expected k_recovery to move from the fenced A to the added top-level B, but the execution records before and after both as {"a":1} and executed as "unchanged" (as_expected false). That matches the rule as written: "The object scored is the last one inside a code fence when any fence holds one", so adding B after the closing fence leaves the fenced object A as the last fenced object and should not change recovery. No inputs were thrown away; the pair was validated against its cell and ran, with the rewritten cell recorded as fence[ A ] B. A proposer should next target the fence rule's actual ambiguity, such as multiple fences each containing an object, a fence containing more than one top-level object, or a fenced object that fails to parse while a later top-level object parses, to see whether the check incorrectly falls back to the last top-level object.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

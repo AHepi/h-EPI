@@ -1,0 +1,38 @@
+[
+  {
+    "phase": "mini",
+    "stop_reason": "budget_cap",
+    "executions": [
+      {
+        "after": "{\"a\":1}",
+        "as_expected": true,
+        "before": "{\"a\":1}",
+        "cell": "fence[ A ]",
+        "executed": "unchanged",
+        "expect": "unchanged",
+        "input": "```\n{\"a\": 1}\n```",
+        "kernel": "recovery",
+        "proposal": "56fb18a50a3540d3",
+        "rewrite": "added {\"b\": 2} after the closing fence line",
+        "rewritten": "```\n{\"a\": 1}\n```\n{\"b\": 2}",
+        "rewritten_cell": "fence[ A ] B"
+      },
+      {
+        "cell": "fence[ A ] S",
+        "detail": "the rewritten text is no cell of the grammar",
+        "executed": "INVALID_INSTANTIATION",
+        "expect": "unchanged",
+        "input": "```\n{\"a\": 1}\n```\nHere is the result:",
+        "kernel": "recovery",
+        "proposal": "dbda2124d5efc9dd",
+        "rewrite": "added {\"b\": 2} after the sentence",
+        "rewritten": "```\n{\"a\": 1}\n```\nHere is the result:\n{\"b\": 2}",
+        "rewritten_cell": ""
+      }
+    ]
+  },
+  {
+    "phase": "report",
+    "reply": "{\n  \"claim\": \"The second test case is marked INVALID_INSTANTIATION, but the recovery rule says the fenced object should still be recovered unchanged.\",\n  \"expected\": \"unchanged\",\n  \"observed\": \"INVALID_INSTANTIATION\",\n  \"reproducer\": \"```\\n{\\\"a\\\": 1}\\n```\\nHere is the result:\\n{\\\"b\\\": 2}\",\n  \"source_basis\": \"The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text\",\n  \"execution_evidence\": \"INVALID_INSTANTIATION (the rewritten text is no cell of the grammar)\",\n  \"scope\": \"inputs with a fenced JSON object followed by prose and a top-level object\",\n  \"uncertainty\": \"The recovery function was not executed on the rewritten text, so the actual recovery result is not observed; the rule implies unchanged.\"\n}"
+  }
+]

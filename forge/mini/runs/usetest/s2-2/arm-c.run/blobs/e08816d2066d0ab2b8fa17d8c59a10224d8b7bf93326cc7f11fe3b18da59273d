@@ -1,0 +1,18 @@
+# Execution
+
+## Proposals so far (proposals)
+[13230bb3887ddedf] (mini.pair-proposal.usetest.v1)
+For the kernel response-verdict, the rule says: "The refusal heuristic decides the verdict only when no object can be recovered." In the input, the fence contains one JSON object A, so an object is recovered and no refusal phrase is present; the verdict is not decided by the refusal heuristic. In the rewritten text, a refusal phrase 'I cannot do that.' is added as a second part, but the object A is still recovered because the added part is not a JSON object and is passed over. Since an object is recovered in both texts, the refusal heuristic does not decide the verdict in either case. Therefore the rule, read as written, says the response verdict should stay unchanged between the two texts.
+cell: fence[ A ]
+input: ```
+{"a": 1}
+```
+rewrite: added the refusal phrase 'I cannot do that.' as a second part after A
+rewritten: ```
+{"a": 1}
+I cannot do that.
+```
+commitments: {"kernel": "response-verdict", "expect": "unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

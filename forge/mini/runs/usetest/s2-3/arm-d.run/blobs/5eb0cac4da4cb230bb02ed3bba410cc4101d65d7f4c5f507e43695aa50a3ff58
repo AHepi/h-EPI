@@ -1,0 +1,21 @@
+{
+  "body": "One pair was executed this cycle, and its expectation held. The proposal asserted that with a fenced object and a later top-level object, recovery must stay on the fenced object because the rule says the last object inside a code fence wins when any fence holds one. The execution confirms this: before and after both returned {\"a\":1}, and as_expected is true. No inputs were thrown away by the validator; the only pair was validated against its cell and executed. The proposer should next build pairs that stress the other branches of recover_json_object: multiple fences where only a later fence holds a parseable object, a fence containing an unparseable float followed by a parseable top-level object, repeated keys resolved last-wins, and refusal phrases beside a recovered object, since none of those are covered by this cycle.",
+  "citations": [
+    {
+      "id": "rules",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text"
+    },
+    {
+      "id": "executions",
+      "quote": "d0dcca6c2f6ee2ed: recovery unchanged, expected unchanged"
+    },
+    {
+      "id": "executions",
+      "quote": "\"as_expected\": true, \"before\": \"{\\\"a\\\":1}\", \"after\": \"{\\\"a\\\":1}\""
+    },
+    {
+      "id": "proposals",
+      "quote": "Therefore the rule says k_recovery should be unchanged (both return {\"a\": 1})."
+    }
+  ]
+}

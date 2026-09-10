@@ -1,0 +1,28 @@
+{
+  "arm": "A",
+  "ceiling_breached": false,
+  "cost": {
+    "completion_tokens": 6940,
+    "completion_tokens_allowed": 12000,
+    "invocations": 1,
+    "invocations_allowed": 8,
+    "machine_executions": 0,
+    "prompt_tokens": 3873,
+    "wall_ms": 43901
+  },
+  "instance": "s2-2",
+  "leaks": [],
+  "method_version": 2,
+  "model": "deepseek-v4-pro:0813",
+  "packet": {
+    "claim": "recover_json_object skips fenced JSON objects with duplicate keys instead of resolving them last-wins, so a later top-level object can be scored even though a fenced object exists.",
+    "execution_evidence": "none: no executable oracle",
+    "expected": "The last fenced object with duplicate keys should be parsed with last-wins and returned, because the rules say any candidate that parses as strict JSON or as JSON with repeated keys resolved last-wins is scoreable, and the last fenced object is preferred when any fence holds one.",
+    "observed": "The fenced pool only attempts loads_strict; on duplicate keys it sets parsed=None and continues. The top-level pool then scans all objects, including the fenced one, but reversed order may pick a later top-level object outside the fence, returning that instead.",
+    "reproducer": "```json\n{\"a\": 1, \"a\": 2}\n```\n{\"b\": 3}",
+    "scope": "Replies containing a fenced JSON object with duplicate keys followed by a later top-level JSON object outside any fence.",
+    "source_basis": "Docstring: 'A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable' and 'The object scored is the last one inside a code fence when any fence holds one'. Source comment: 'A reply that is otherwise one well-formed object with a repeated key is still scoreable: take the last value for each key'.",
+    "uncertainty": "Assumes loads_strict rejects duplicate keys as documented; not executed."
+  },
+  "protocol": "mini-use-test-1"
+}

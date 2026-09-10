@@ -45,6 +45,15 @@ from creib.strict_json import loads_strict
 from .common import MiniError
 
 USE_TEST_ID = "mini-use-test-1"
+#: The method version. The protocol forbids editing prompts, grids, validators or special cases
+#: inside a registered block: a change makes a new method version and starts a new block.
+#: Version 1 threw away a fenced packet, let a mini arm spend past the shared ceiling, and told a
+#: proposer to remove a part from cells that have only one, so its first cells could not be
+#: instantiated at all. Version 2 trusted the proposal's echo of the cell it had been given, so a
+#: seat that copied the rendered port text instead of the cell failed validation for the
+#: rendering's fault; version 3 takes the assigned cell from the assignment. Every break is
+#: recorded in ``docs/mini/USE_TEST.md``.
+METHOD_VERSION = 3
 
 #: The harness functions a subject is built around. Everything they reach is copied with them:
 #: the closure is computed from the source rather than listed, so a subject cannot go stale
@@ -622,16 +631,30 @@ class Packet:
 
 
 def packet_from(raw: Any, instance_id: str, arm: str, model: str) -> Packet | None:
-    """Read a packet out of whatever an arm returned, or nothing if it did not write one."""
+    """Read a packet out of whatever an arm returned, or nothing if it did not write one.
+
+    A model that wraps its JSON in a code fence has written a packet, and version 1 of this
+    machinery threw it away: an arm that had found something was recorded as having found
+    nothing, which would have biased the comparison in favour of whichever arm happened to
+    fence less. The fence is stripped as mini strips it everywhere else.
+    """
 
     if type(raw) is str:
-        try:
-            raw = loads_strict(raw)
-        except RecordError:
-            try:
-                raw = loads_strict(raw, control_characters=True)
-            except RecordError:
-                return None
+        from .kinds import strip_fence
+
+        unfenced, _fenced = strip_fence(raw)
+        for candidate in (unfenced, raw):
+            for lenient in (False, True):
+                try:
+                    raw = loads_strict(candidate, control_characters=lenient)
+                except RecordError:
+                    continue
+                break
+            else:
+                continue
+            break
+        else:
+            return None
     if type(raw) is not dict:
         return None
     if not any(type(raw.get(name)) is str and raw[name].strip() for name in ("claim", "observed")):
@@ -881,13 +904,31 @@ def _execution_seat(context: Any) -> str:
     subject = load_subject(bound_subject())
     executions: list[dict[str, Any]] = []
     lines: list[str] = []
+    # The cell under test is the one the machine handed out this cycle, read from the assignment
+    # itself. A proposal's echo of it is recorded and never trusted: a seat that copies the
+    # rendered port text instead of the cell would otherwise fail validation for the rendering's
+    # fault, which is what version 2 did (USE_TEST break 5, and the audit's F-A in miniature).
+    assigned = ""
+    for key in context.state.artifact_order:
+        record = context.state.artifacts[key]
+        if str(record["kind_id"]).startswith("mini.next-cell.") and int(record.get("cycle", 0)) == context.cycle:
+            from .blindspot import proposal_fields as _fields_of
+
+            named = (_fields_of(context.commitments(record), record.get("extra")) or {}).get("cell")
+            if type(named) is str and named.strip():
+                assigned = " ".join(named.split())
     for key in context.state.artifact_order:
         record = context.state.artifacts[key]
         kind_id = str(record["kind_id"])
         if not kind_id.startswith(PROPOSAL_PREFIX) or int(record.get("cycle", 0)) != context.cycle:
             continue
         parsed = proposal_fields(context.commitments(record), record.get("extra")) or {}
-        entry: dict[str, Any] = {"proposal": str(record["artifact_id"])[:16], "cell": str(parsed.get("cell", ""))}
+        entry: dict[str, Any] = {
+            "proposal": str(record["artifact_id"])[:16],
+            "cell": assigned or " ".join(str(parsed.get("cell", "")).split()),
+            "cell_echoed": str(parsed.get("cell", ""))[:200],
+            "cell_assigned": assigned,
+        }
         kernel_id = str(parsed.get("kernel", ""))
         source_text, rewritten = str(parsed.get("input", "")), str(parsed.get("rewritten", ""))
         expect = str(parsed.get("expect", ""))
@@ -959,7 +1000,9 @@ _PROPOSER_INSTRUCTION = (
     "closing bracket comes after the closing fence line, one part per line. Build the input exactly from the cell, "
     "each part on its own line and written out in full, and nothing added: a validator will check it against the cell "
     "before anything is run, and an input that is not the cell is thrown away. The rewritten text is the same reply "
-    "with ONE part removed, and it must also satisfy a cell of the same grammar. Write real line breaks, never the two "
+    "with exactly ONE part added or removed, and it must itself be another cell of the same grammar — a fence must "
+    "still hold at least one part, so a reply whose fence holds one object is changed by adding after the fence rather "
+    "than by emptying it. Write real line breaks, never the two "
     "characters backslash and n. Say what the rule, read as written, says the check's answer ought to do between the "
     "two texts: move ('moves') or stay ('unchanged'), naming in the body the words of the rule you read it from and "
     "which answer the rule gives for each text. Your kernel is one of recovery, recovered-from-prose, "

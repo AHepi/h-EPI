@@ -1,0 +1,18 @@
+# Execution
+
+## Proposals so far (proposals)
+[78944767dced3f03] (mini.pair-proposal.usetest.v1)
+The rule for response_verdict says: "The refusal heuristic decides the verdict only when no object can be recovered; whether a phrase occurred at all is a separate fact, :func:`refusal_phrase_in`, recorded beside a recovered object (H36: a refusal followed by a form is a refusal and a form)." For the input, the text is a fence holding the JSON object A, so an object is recovered and the verdict is not refusal. For the rewritten text, the same fence still holds A, so an object is still recovered; the added refusal phrase 'I cannot' is recorded separately but does not decide the verdict. Therefore the rule, read as written, says the check's answer ought to be unchanged between the two texts.
+cell: fence[ A ]
+input: ```
+{"a": 1}
+```
+rewrite: added one part after the fence: the refusal phrase 'I cannot'
+rewritten: ```
+{"a": 1}
+```
+I cannot
+commitments: {"kernel": "response-verdict", "expect": "unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

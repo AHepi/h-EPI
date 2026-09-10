@@ -1,0 +1,98 @@
+[
+  {
+    "phase": "mini",
+    "stop_reason": "cycle_cap",
+    "executions": [
+      {
+        "after": "JSON_OBJECT",
+        "as_expected": true,
+        "before": "JSON_OBJECT",
+        "cell": "fence[ A ]",
+        "executed": "unchanged",
+        "expect": "unchanged",
+        "input": "```\n{\"a\": 1}\n```",
+        "kernel": "response-verdict",
+        "proposal": "13230bb3887ddedf",
+        "rewrite": "added the refusal phrase 'I cannot do that.' as a second part after A",
+        "rewritten": "```\n{\"a\": 1}\nI cannot do that.\n```",
+        "rewritten_cell": "fence[ A S ]"
+      },
+      {
+        "cell": "fence[ A ] S",
+        "detail": "the rewritten text is no cell of the grammar",
+        "executed": "INVALID_INSTANTIATION",
+        "expect": "unchanged",
+        "input": "```\n{\"a\": 1}\n```\nHere is the result:",
+        "kernel": "recovery",
+        "proposal": "56a9fa018297c073",
+        "rewrite": "added a top-level JSON object after the sentence",
+        "rewritten": "```\n{\"a\": 1}\n```\nHere is the result:\n{\"b\": 2}",
+        "rewritten_cell": ""
+      },
+      {
+        "after": "{\"a\":1}",
+        "as_expected": true,
+        "before": "{\"a\":1}",
+        "cell": "fence[ A ] B",
+        "executed": "unchanged",
+        "expect": "unchanged",
+        "input": "```\n{\"a\": 1}\n```\n{\"b\": 2}",
+        "kernel": "recovery",
+        "proposal": "d4c13cb5fb414dfa",
+        "rewrite": "removed B",
+        "rewritten": "```\n{\"a\": 1}\n```",
+        "rewritten_cell": "fence[ A ]"
+      },
+      {
+        "cell": "[ead1000267b0a5f6] (mini.next-cell.1.v1)\nThe cell to cover: fence[ A ] A\n(3 of 20 cells named so far.)",
+        "detail": "the input is not the cell it names: MINI_USETEST_CELL_UNREADABLE: '[ead1000267b0a5f6] (mini.next-cell.1.v1)\\nThe cell to cover: fence[ A ] A\\n(3 of 20 cells named so far.)' is not a cell of this grammar",
+        "executed": "INVALID_INSTANTIATION",
+        "expect": "moves",
+        "input": "```\n{\"a\":1}\n```\n{\"a\":1}",
+        "kernel": "recovery",
+        "proposal": "7ded0fe89d19ba2e",
+        "rewrite": "```\n{\"a\":1}\n```\n{\"a\":1}\n{\"b\":2}",
+        "rewritten": "```\n{\"a\":1}\n```\n{\"a\":1}\n{\"b\":2}"
+      },
+      {
+        "cell": "[6f7a76a9f8e93ace] (mini.next-cell.1.v1)\nThe cell to cover: fence[ A ] fence[ B ]\n(4 of 20 cells named so far.)",
+        "detail": "the input is not the cell it names: MINI_USETEST_CELL_UNREADABLE: '[6f7a76a9f8e93ace] (mini.next-cell.1.v1)\\nThe cell to cover: fence[ A ] fence[ B ]\\n(4 of 20 cells named so far.)' is not a cell of this grammar",
+        "executed": "INVALID_INSTANTIATION",
+        "expect": "unchanged",
+        "input": "```\n{\"a\": 1}\n```\n```\n{\"b\": 2}\n```",
+        "kernel": "recovery",
+        "proposal": "bdac20d867df55b2",
+        "rewrite": "Added a top-level JSON object {\"c\": 3} after the second fence.",
+        "rewritten": "```\n{\"a\": 1}\n```\n```\n{\"b\": 2}\n```\n{\"c\": 3}"
+      },
+      {
+        "cell": "fence[ S A ]",
+        "detail": "the rewritten text is no cell of the grammar",
+        "executed": "INVALID_INSTANTIATION",
+        "expect": "moves",
+        "input": "```\nHere is the result:\n{\"a\": 1}\n```",
+        "kernel": "recovery",
+        "proposal": "1e688b2ec5a8ce17",
+        "rewrite": "removed A",
+        "rewritten": "```\nHere is the result:\n```",
+        "rewritten_cell": ""
+      },
+      {
+        "cell": "fence[ S A ] S",
+        "detail": "the rewritten text is no cell of the grammar",
+        "executed": "INVALID_INSTANTIATION",
+        "expect": "moves",
+        "input": "```\nHere is the result:\n{\"a\": 1}\n```\nHere is the result:",
+        "kernel": "recovery",
+        "proposal": "f13ed2c8a705fb94",
+        "rewrite": "Removed the JSON object A from inside the fence.",
+        "rewritten": "```\nHere is the result:\n```\nHere is the result:",
+        "rewritten_cell": ""
+      }
+    ]
+  },
+  {
+    "phase": "report",
+    "reply": "{\n  \"claim\": \"The recovery check rejects a valid rewritten text as INVALID_INSTANTIATION because the text is not a grammar cell, even though recover_json_object is defined on arbitrary text and should return the fenced object.\",\n  \"expected\": \"Recovery returns the fenced object {\\\"a\\\":1} (unchanged) because a code fence holds an object and the rule prefers the last object inside a code fence over later top-level objects.\",\n  \"observed\": \"The test harness reports INVALID_INSTANTIATION with detail 'the rewritten text is no cell of the grammar' instead of evaluating recovery.\",\n  \"reproducer\": \"```\\n{\\\"a\\\": 1}\\n```\\nHere is the result:\\n{\\\"b\\\": 2}\",\n  \"source_basis\": \"The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text\",\n  \"execution_evidence\": \"executed: INVALID_INSTANTIATION, expect: unchanged, detail: the rewritten text is no cell of the grammar\",\n  \"scope\": \"Recovery inputs where a fenced JSON object is followed by prose and then a top-level JSON object, and the combined text is not accepted by the test grammar.\",\n  \"uncertainty\": \"The documented rules do not state that recovery inputs must be grammar cells; if the harness intentionally restricts to cells, that restriction is not documented here.\"\n}"
+  }
+]

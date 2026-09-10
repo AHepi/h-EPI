@@ -134,6 +134,14 @@ class PacketTests(MiniTestCase):
         leaky = usetest.packet_from({"claim": "the mini grid cell moved", "observed": "x"}, "i1", usetest.ARM_C, "m")
         self.assertTrue(leaky.leaks(), "a packet that names the method is reported, not quietly cleaned")
 
+    def test_a_fenced_packet_is_a_packet(self) -> None:
+        """Version 1 threw one away, so an arm that had found something was recorded as silent."""
+
+        fenced = '```json\n{"claim": "the fenced object is passed over", "observed": "{\\"z\\":9}", "reproducer": "r"}\n```'
+        packet = usetest.packet_from(fenced, "i1", usetest.ARM_C, "m")
+        self.assertIsNotNone(packet)
+        self.assertEqual(packet.neutral()["claim"], "the fenced object is passed over")
+
     def test_a_reply_that_is_not_a_packet_is_no_packet(self) -> None:
         self.assertIsNone(usetest.packet_from("not json at all", "i1", usetest.ARM_A, "m"))
         self.assertIsNone(usetest.packet_from({"claim": "", "observed": ""}, "i1", usetest.ARM_A, "m"))
@@ -175,13 +183,16 @@ class ArmTests(MiniTestCase):
         os.environ[usetest.SUBJECT_ENV] = str(subject)
         try:
             manifest = usetest.arm_manifest(usetest.ARM_C, "i1", cycles=2, max_calls=2)
+            self.assertEqual(usetest.METHOD_VERSION, 3, "a changed method starts a new block")
+            # The machine hands out the grid's first cell, so a conforming proposal builds that
+            # one; a proposal that builds another cell is not conforming however good it is.
             conforming = submission(
                 "built as given",
                 json.dumps({"kernel": "recovery", "expect": "unchanged"}),
-                input=CONTROL,
-                rewritten='```\nHere is the result:\n{"a": 1}\n```',
-                rewrite="removed the bare object",
-                cell="fence[ S A ] B",
+                input='```\n{"a": 1}\n```',
+                rewritten='```\n{"a": 1}\n```\n{"b": 2}',
+                rewrite="added a bare object after the fence",
+                cell="fence[ A ]",
             )
             wrong = submission(
                 "claims the cell and builds another",
@@ -200,10 +211,11 @@ class ArmTests(MiniTestCase):
                 if str(state.artifacts[key]["kind_id"]) == usetest.EXECUTION_KIND
                 for entry in json.loads(blobs.get(str(state.artifacts[key]["commitments_ref"])).decode("utf-8"))["executions"]
             ]
-            self.assertEqual([item["executed"] for item in executed], ["moved", "INVALID_INSTANTIATION"])
-            self.assertEqual((executed[0]["before"], executed[0]["after"]), ('{"b":2}', '{"a":1}'))
-            self.assertFalse(executed[0]["as_expected"], "the conforming pair is the control: the rule says the fenced object either way")
-            self.assertEqual(executed[0]["rewritten_cell"], "fence[ S A ]", "the rewrite lands in another cell of the grammar")
+            self.assertEqual([item["executed"] for item in executed], ["unchanged", "INVALID_INSTANTIATION"])
+            self.assertEqual(executed[0]["cell_assigned"], "fence[ A ]", "the cell under test is the one the machine handed out")
+            self.assertEqual((executed[0]["before"], executed[0]["after"]), ('{"a":1}', '{"a":1}'), "the fenced object wins either way")
+            self.assertTrue(executed[0]["as_expected"])
+            self.assertEqual(executed[0]["rewritten_cell"], "fence[ A ] B", "the rewrite lands in another cell of the grammar")
             self.assertIn("not the cell it names", executed[1]["detail"])
             self.assertNotIn("before", executed[1], "an invalid instantiation is not a result")
         finally:

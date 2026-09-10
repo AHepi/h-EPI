@@ -1,0 +1,28 @@
+{
+  "arm": "C",
+  "ceiling_breached": false,
+  "cost": {
+    "completion_tokens": 3752,
+    "completion_tokens_allowed": 12000,
+    "invocations": 8,
+    "invocations_allowed": 8,
+    "machine_executions": 3,
+    "prompt_tokens": 43822,
+    "wall_ms": 629522
+  },
+  "instance": "s2-1",
+  "leaks": [],
+  "method_version": 2,
+  "model": "deepseek-v4-pro:0813",
+  "packet": {
+    "claim": "recover_json_object violates its documented fence-priority rule: it returns the trailing top-level object instead of the last object inside the code fence.",
+    "execution_evidence": "Campaign entry eaf5293395d94696: input=```\n{\"a\":1}\n```\n{\"a\":1}; rewrite=add {\"b\":2} inside the fence after {\"a\":1}; rewritten=```\n{\"a\":1}\n{\"b\":2}\n```\n{\"a\":1}; expect=moves; executed=unchanged; after={\"a\":1}; as_expected=false.",
+    "expected": "For the rewritten text, k_recovery should return {\"b\":2} because the last object inside the only code fence is {\"b\":2}.",
+    "observed": "k_recovery returned {\"a\":1}; the campaign recorded after={\"a\":1}, executed=unchanged, as_expected=false.",
+    "reproducer": "```\n{\"a\":1}\n{\"b\":2}\n```\n{\"a\":1}",
+    "scope": "Texts with one code fence containing two JSON objects and a trailing top-level object equal to the first fenced object.",
+    "source_basis": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text",
+    "uncertainty": "None."
+  },
+  "protocol": "mini-use-test-1"
+}

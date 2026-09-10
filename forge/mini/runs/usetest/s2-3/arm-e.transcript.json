@@ -1,0 +1,38 @@
+[
+  {
+    "phase": "mini",
+    "stop_reason": "budget_cap",
+    "executions": [
+      {
+        "after": "JSON_OBJECT",
+        "as_expected": false,
+        "before": "JSON_OBJECT",
+        "cell": "fence[ A ]",
+        "executed": "unchanged",
+        "expect": "moves",
+        "input": "```\n{\"a\": 1}\n```",
+        "kernel": "response-verdict",
+        "proposal": "a72315a0d6893d87",
+        "rewrite": "added 'I cannot' after the fence",
+        "rewritten": "```\n{\"a\": 1}\n```\nI cannot",
+        "rewritten_cell": "fence[ A ] S"
+      },
+      {
+        "cell": "fence[ A ] S",
+        "detail": "the rewritten text is no cell of the grammar",
+        "executed": "INVALID_INSTANTIATION",
+        "expect": "moves",
+        "input": "```\n{\"a\":1}\n```\nHere is the result:",
+        "kernel": "recovery",
+        "proposal": "86eba1174797bd1a",
+        "rewrite": "added {\"b\":2,\"c\":3} after the sentence",
+        "rewritten": "```\n{\"a\":1}\n```\nHere is the result:\n{\"b\":2,\"c\":3}",
+        "rewritten_cell": ""
+      }
+    ]
+  },
+  {
+    "phase": "report",
+    "reply": "{\n  \"claim\": \"The test campaign expects the response verdict to change when a refusal phrase is added after a fenced JSON object, but the documented rule says the refusal heuristic only decides the verdict when no object can be recovered.\",\n  \"expected\": \"The response verdict remains JSON_OBJECT because the fenced object is recoverable.\",\n  \"observed\": \"The code returned JSON_OBJECT unchanged; the test recorded as_expected false.\",\n  \"reproducer\": \"```\\n{\\\"a\\\": 1}\\n```\\nI cannot\",\n  \"source_basis\": \"The refusal heuristic decides the verdict only when no object can be recovered; whether a phrase occurred at all is a separate fact, :func:`refusal_phrase_in`, recorded beside a recovered object (H36: a refusal followed by a form is a refusal and a form).\",\n  \"execution_evidence\": \"executed: unchanged, as_expected: false\",\n  \"scope\": \"Any reply containing a recoverable JSON object and a refusal phrase after it.\",\n  \"uncertainty\": \"The second test's mutation was invalid (rewritten text no cell of grammar), so its expectation that recovery moves to a later outside object was not executed; the rule also says fenced objects take priority over later top-level objects.\"\n}"
+  }
+]

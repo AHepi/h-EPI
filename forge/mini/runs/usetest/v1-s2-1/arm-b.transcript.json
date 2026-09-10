@@ -1,0 +1,48 @@
+[
+  {
+    "phase": "tests",
+    "reply": "{\n  \"tests\": [\n    {\n      \"kernel\": \"recovery\",\n      \"input\": \"```json\\n{\\\"a\\\": 1}\\n```\\n```json\\n{\\\"b\\\": 2}\\n```\",\n      \"expected\": \"{\\\"b\\\": 2}\"\n    },\n    {\n      \"kernel\": \"recovered-from-prose\",\n      \"input\": \"```json\\n{\\\"a\\\": 1}\\n```\\n```json\\n{\\\"b\\\": 2}\\n```\",\n      \"expected\": \"no\"\n    },\n    {\n      \"kernel\": \"recovery\",\n      \"input\": \"```json\\n{\\\"a\\\": 1}\\n```\",\n      \"expected\": \"{\\\"a\\\": 1}\"\n    },\n    {\n      \"kernel\": \"recovered-from-prose\",\n      \"input\": \"```json\\n{\\\"a\\\": 1}\\n```\",\n      \"expected\": \"no\"\n    },\n    {\n      \"kernel\": \"recovery\",\n      \"input\": \"Here is {\\\"x\\\": 1} and {\\\"y\\\": 2}\",\n      \"expected\": \"{\\\"y\\\": 2}\"\n    },\n    {\n      \"kernel\": \"recovered-from-prose\",\n      \"input\": \"Here is {\\\"x\\\": 1} and {\\\"y\\\": 2}\",\n      \"expected\": \"yes\"\n    }\n  ]\n}",
+    "results": [
+      {
+        "kernel": "recovery",
+        "input": "```json\n{\"a\": 1}\n```\n```json\n{\"b\": 2}\n```",
+        "expected": "{\"b\": 2}",
+        "answer": "{\"b\":2}"
+      },
+      {
+        "kernel": "recovered-from-prose",
+        "input": "```json\n{\"a\": 1}\n```\n```json\n{\"b\": 2}\n```",
+        "expected": "no",
+        "answer": "yes"
+      },
+      {
+        "kernel": "recovery",
+        "input": "```json\n{\"a\": 1}\n```",
+        "expected": "{\"a\": 1}",
+        "answer": "{\"a\":1}"
+      },
+      {
+        "kernel": "recovered-from-prose",
+        "input": "```json\n{\"a\": 1}\n```",
+        "expected": "no",
+        "answer": "yes"
+      },
+      {
+        "kernel": "recovery",
+        "input": "Here is {\"x\": 1} and {\"y\": 2}",
+        "expected": "{\"y\": 2}",
+        "answer": "{\"y\":2}"
+      },
+      {
+        "kernel": "recovered-from-prose",
+        "input": "Here is {\"x\": 1} and {\"y\": 2}",
+        "expected": "yes",
+        "answer": "yes"
+      }
+    ]
+  },
+  {
+    "phase": "report",
+    "reply": "{\n  \"claim\": \"The recovered-from-prose kernel and parse_content function incorrectly report objects recovered from code fences as 'recovered from prose'. The recover_json_object function distinguishes between fence and prose sources (preferring fenced objects), but parse_content always sets the recovered_from_prose flag to True and uses 'object recovered from prose' in the detail message regardless of whether the object came from a fence or actual prose.\",\n  \"expected\": \"For fenced JSON input like '```json\\\\n{\\\"a\\\": 1}\\\\n```', the recovered-from-prose kernel should return 'no' (or the detail should say 'recovered from fence') since the object was extracted from a code fence, not prose.\",\n  \"observed\": \"The recovered-from-prose kernel returns 'yes' for fenced JSON, and the parse_content detail message says 'object recovered from prose' even when the object came from a fence.\",\n  \"reproducer\": \"```json\\n{\\\"a\\\": 1}\\n```\",\n  \"source_basis\": \"The recover_json_object docstring states 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text'. The parse_content function returns True for the 4th element whenever recover_json_object succeeds, with detail 'object recovered from prose' when there are no duplicates, regardless of fence vs prose source.\",\n  \"execution_evidence\": \"{\\\"kernel\\\": \\\"recovered-from-prose\\\", \\\"input\\\": \\\"```json\\\\n{\\\\\\\"a\\\\\\\": 1}\\\\n```\\\", \\\"expected\\\": \\\"no\\\", \\\"answer\\\": \\\"yes\\\"}\",\n  \"scope\": \"All inputs where JSON objects are recovered from code fences rather than strict parsing or prose scanning\",\n  \"uncertainty\": \"The documented rule for k_recovered_from_prose says 'prose or a fence (yes)' which ambiguously suggests both should return 'yes', but the kernel name and detail messages imply a distinction should exist.\"\n}"
+  }
+]
