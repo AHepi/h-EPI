@@ -73,6 +73,9 @@ class ArtifactKind:
     #: so the second call sees the body alone; what it sees is the operator's
     #: to declare, and the default is only a default (R37).
     commitment_ports: tuple[str, ...] = ()
+    #: What this kind of seat is asked to do, shown at the head of every brief for the kind,
+    #: the commitments call's included. The problem statement is the run's; this is the kind's.
+    instruction: str | None = None
 
     def port(self, port_id: str) -> InputPort:
         for item in self.input_ports:
@@ -94,6 +97,7 @@ class ArtifactKind:
             "input_ports": [item.to_dict() for item in self.input_ports],
             "output_port": self.output_port.to_dict(),
             **({} if self.format_spec is None else {"format": dict(self.format_spec)}),
+            **({} if self.instruction is None else {"instruction": self.instruction}),
             "optional_fields": list(self.optional_fields),
             "failure_policy": self.failure_policy.to_dict(),
             "commitment_call": self.commitment_call,
@@ -144,6 +148,7 @@ def kind_from_dict(raw: Any, where: str) -> ArtifactKind:
             "MINI_COMMITMENT_CALL_UNKNOWN",
             f"kind {kind_id!r} sets commitment_call to {commitment_call!r}; it must be 'two' or 'single'",
         )
+    instruction = None if entry.get("instruction") is None else text(entry.get("instruction"), f"{where}.instruction")
     commitment_ports = tuple(
         text(item, f"{where}.commitment_ports[{index}]", "MINI_PORT_UNKNOWN")
         for index, item in enumerate(array_value(entry.get("commitment_ports") or [], f"{where}.commitment_ports", "MINI_PORT_UNKNOWN"))
@@ -168,6 +173,7 @@ def kind_from_dict(raw: Any, where: str) -> ArtifactKind:
         failure_policy=failure_policy_from_dict(entry.get("failure_policy"), f"{where}.failure_policy"),
         commitment_call=commitment_call,
         commitment_ports=commitment_ports,
+        instruction=instruction,
     )
 
 

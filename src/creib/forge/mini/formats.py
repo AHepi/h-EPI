@@ -236,7 +236,7 @@ def _json_schema(spec: dict[str, Any], where: str) -> CompiledCheck:
     return CompiledCheck(
         "json_schema",
         "must be JSON fitting the declared shape",
-        f"must be JSON fitting exactly this schema:\n{as_text}",
+        f"must be a STRING whose content is JSON text fitting exactly this schema (the field itself is a string, not an object):\n{as_text}",
         run,
     )
 

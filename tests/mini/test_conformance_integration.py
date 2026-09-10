@@ -138,15 +138,36 @@ class TheLoopUnderTheStubTests(MiniTestCase):
         catalogued = [entry for entry in entries if entry["catalogued"]]
         self.assertEqual(len(catalogued), 4)
         self.assertTrue(all(entry["standing"] == STANDING_REJECTED for entry in catalogued))
+        self.assertTrue(all(entry["same_input"] is True for entry in catalogued), "the stub proposes each row on the row's own input")
+
+    def test_a_catalogued_sensitivity_on_another_input_is_read_as_such(self) -> None:
+        """What the first live run misread as a defect: the row's example moved on its input, and
+        the proposal's input did not. (That run's input was a description of an object rather than
+        one; the format now refuses that, so this uses an object with nothing to capitalise.)"""
+
+        plan = compile_manifest(MANIFEST)
+        from creib.forge.mini.executor import ScriptedResponder
+        from creib.forge.mini.runner import run_mini
+
+        script = json.loads(json.dumps(load_strict(SCRIPT)))
+        triple = json.dumps({"kernel": kernels.KERNEL_RECOVERY, "transform": "conformance.transform.upper-case", "input": '{"1": "2"}'})
+        script["propose-1"]["1"] = [json.dumps({"body": "As the first live run did.", "commitments": triple})]
+        outcome = run_mini(plan, self.tmp / "run", ScriptedResponder(script), "script:test")
+        state = replay(outcome.root / "log.jsonl", plan.genesis)
+        entries = self._verdicts(outcome, state)
+        entry = next(item for item in entries if item["transform"] == "conformance.transform.upper-case" and item["kernel"] == kernels.KERNEL_RECOVERY)
+        self.assertEqual((entry["executed"], entry["catalogued"], entry["catalogue_moves"], entry["same_input"]), ("unchanged", True, True, False))
+        self.assertEqual((entry["standing"], entry["column"]), (STANDING_CANDIDATE, "unchanged"))
 
     def test_the_uncatalogued_pairs_land_where_the_rule_puts_them(self) -> None:
         plan, outcome, state = self._run()
         entries = {(entry["kernel"], entry["transform"]): entry for entry in self._verdicts(outcome, state)}
         moved = entries[(kernels.KERNEL_RECOVERED_FROM_PROSE, "conformance.transform.bare-after")]
         self.assertEqual((moved["executed"], moved["catalogued"], moved["standing"]), ("moved", False, STANDING_CANDIDATE))
+        self.assertEqual(moved["column"], "moves")
         unchanged = entries[(kernels.KERNEL_RECOVERY, "conformance.transform.prose-after")]
-        self.assertEqual((unchanged["executed"], unchanged["catalogued"], unchanged["standing"]), ("unchanged", False, STANDING_REJECTED))
-        # The invariance the standing rule does not hold is in the ledger compare prints.
+        self.assertEqual((unchanged["executed"], unchanged["catalogued"], unchanged["standing"], unchanged["column"]), ("unchanged", False, STANDING_CANDIDATE, "unchanged"))
+        # The same invariance is in the ledger compare prints, read across the run.
         reading = read_root(outcome.root)
         self.assertEqual([(item["kernel"], item["transform"]) for item in reading.ledger], [(kernels.KERNEL_RECOVERY, "conformance.transform.prose-after")])
 
@@ -188,12 +209,20 @@ class TheCommittedLiveRootsTests(MiniTestCase):
         return root, replay(root / "log.jsonl", genesis)
 
     def test_each_root_replays_to_its_end(self) -> None:
-        for name in ("conformance-blind-spot-gemma4-31b-1", "conformance-blind-spot-gemma4-31b-2", "conformance-blind-spot-gemma4-31b-3"):
+        for name in ("conformance-blind-spot-gemma4-31b-1", "conformance-blind-spot-gemma4-31b-2", "conformance-blind-spot-gemma4-31b-3", "conformance-blind-spot-gemma4-31b-4"):
             with self.subTest(root=name):
                 root, state = self._replay(name)
                 self.assertTrue(state.ended)
                 self.assertEqual(state.cycles_completed, 2)
                 self.assertEqual(state.responder_id, "model:gemma4:31b")
+
+    def test_the_fourth_run_records_the_endpoint_it_was_sent_to(self) -> None:
+        root, state = self._replay("conformance-blind-spot-gemma4-31b-4")
+        started = json.loads((root / "log.jsonl").read_text(encoding="utf-8").splitlines()[0])["payload"]
+        self.assertEqual(started["endpoint"]["timeout_seconds"], 300, "the --timeout-seconds override, recorded")
+        self.assertEqual(started["endpoint"]["base_url"], "https://ollama.com")
+        self.assertNotIn("endpoint", load_strict(root / "run-header.json"), "the manifest declared none, so the header carries none")
+        self.assertEqual(state.drops_by_kind, {}, "no submission was dropped")
 
     def test_the_second_run_lost_its_first_cycle_to_the_blind_call(self) -> None:
         root, state = self._replay("conformance-blind-spot-gemma4-31b-2")

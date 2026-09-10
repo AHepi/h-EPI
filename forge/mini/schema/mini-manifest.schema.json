@@ -145,6 +145,76 @@
           "maxLength": 128
         }
       }
+    },
+    "endpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "base_url",
+        "timeout_seconds",
+        "options",
+        "think"
+      ],
+      "properties": {
+        "kind": {
+          "const": "ollama-chat"
+        },
+        "base_url": {
+          "type": "string",
+          "pattern": "^https?://[^\\s/]+(/[^\\s]*)?$"
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3600
+        },
+        "options": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "temperature",
+            "seed"
+          ],
+          "properties": {
+            "temperature": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2
+            },
+            "seed": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "think": {
+          "anyOf": [
+            {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            {
+              "enum": [
+                "low",
+                "medium",
+                "high"
+              ]
+            }
+          ],
+          "description": "The reasoning setting sent with every request: a boolean, or a level for the models that take one (gpt-oss ignores a boolean, L10). A run record carries the setting actually sent, which a run-time override may have changed from the pilot's."
+        },
+        "auth": {
+          "description": "bearer: Authorization from OLLAMA_API_KEY (default when absent); none: no key, for a local Ollama.",
+          "enum": [
+            "bearer",
+            "none"
+          ]
+        }
+      },
+      "description": "The service a live run calls, in the conformance harness's own shape: the same reader, the same executor, the key read from OLLAMA_API_KEY at call time in one place, and auth none for a local Ollama. Absent, the shipped default applies and no header key is written."
     }
   },
   "$defs": {

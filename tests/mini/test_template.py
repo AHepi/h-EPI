@@ -63,6 +63,43 @@ class OneTemplateTests(MiniTestCase):
         self.assertIn("example.note.v1", plan.kinds)
 
 
+class InstructionTests(MiniTestCase):
+    """A kind's instruction is what its seat is asked to do; the problem is the run's."""
+
+    def _with_instruction(self, text: str | None):
+        manifest = base_manifest()
+        if text is not None:
+            manifest["kinds"][1]["instruction"] = text
+        return manifest
+
+    def test_the_instruction_heads_the_brief_and_the_commitments_call(self) -> None:
+        from creib.forge.mini.log import BlobStore, MiniState, EventLog
+        from creib.forge.mini.runner import _Recorder, _batch_evidence, render_brief, render_commitments_brief
+
+        plan = self.compile(self._with_instruction("Do not propose. Read the executions and say which held."))
+        root = self.tmp / "brief"
+        root.mkdir()
+        blobs = BlobStore(root / "blobs")
+        state = MiniState()
+        _batch_evidence(plan, blobs, _Recorder(EventLog(root / "log.jsonl", plan.genesis), state, plan.genesis))
+        brief, _ = render_brief(plan, state, blobs, plan.stage("x1"), 1)
+        self.assertTrue(brief.startswith("# Criticism\n\nDo not propose. Read the executions and say which held."), brief[:120])
+        second = render_commitments_brief(plan, plan.kinds["k.criticism"], "a body", state, blobs, plan.stage("x1"), 1)
+        self.assertIn("Do not propose. Read the executions and say which held.", second)
+        other, _ = render_brief(plan, state, blobs, plan.stage("c1"), 1)
+        self.assertNotIn("Do not propose", other, "the instruction is the kind's, not the run's")
+
+    def test_an_absent_instruction_adds_no_key_and_a_present_one_moves_the_identity(self) -> None:
+        bare = self.compile(self._with_instruction(None))
+        self.assertNotIn("instruction", bare.kinds["k.criticism"].to_dict())
+        told = self.compile(self._with_instruction("Read the executions."))
+        self.assertEqual(told.kinds["k.criticism"].to_dict()["instruction"], "Read the executions.")
+        self.assertNotEqual(bare.run_id, told.run_id)
+
+    def test_an_empty_instruction_is_refused(self) -> None:
+        self.assertRefuses("MINI_MANIFEST_INVALID", self.compile, self._with_instruction(""))
+
+
 class BodyAndCommitmentsTests(MiniTestCase):
     def test_two_fields_are_enough(self) -> None:
         """R7: a submission carrying only body and commitments is accepted."""

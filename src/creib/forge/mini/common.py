@@ -113,6 +113,8 @@ MINI_CODES: frozenset[str] = frozenset(
         "MINI_BLOB_MISSING",
         "MINI_BLOB_UNWRITABLE",
         "MINI_RUN_ROOT_OCCUPIED",
+        "MINI_ENDPOINT_INVALID",
+        "MINI_LIVE_KEY_MISSING",
     }
 )
 

@@ -237,7 +237,7 @@ class TheFormatIsShownTests(MiniTestCase):
         first = sent[0].decode("utf-8")
         self.assertIn('\\"commit\\"', first)
         self.assertIn("required", first)
-        self.assertIn("must be JSON fitting exactly this schema", first)
+        self.assertIn("whose content is JSON text fitting exactly this schema", first)
 
     def test_the_keyword_list_is_written_out_in_full(self) -> None:
         compiled = compile_format_spec(

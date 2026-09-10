@@ -5,7 +5,8 @@ the same responder — and prints their verdict artifacts side by side, with eac
 root's executed-invariance ledger: the kernel and transform pairs the catalogue
 does not list, that a MACHINE seat executed, and that came out unchanged. A
 model's prose about an invariance never enters a ledger; only an executed result
-does.
+does. Since 10 September the same pairs are also candidate points for the
+unchanged column in the verdict; the ledger is the same fact read across a run.
 
 It prints no score, no total, no ordering, and no count offered as merit. A
 template's own verdict counts are not an objective and nothing here may be tuned

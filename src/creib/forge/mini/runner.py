@@ -287,6 +287,8 @@ def render_brief(
 
     kind = plan.kinds[str(stage.kind_id)]
     sections = [f"# {kind.title}"]
+    if kind.instruction is not None:
+        sections.append(kind.instruction)
     exposed: set[str] = set()
     for port_id in stage.ports:
         rendered, block_ids = render_port(plan, state, blobs, stage, port_id, cycle)
@@ -334,6 +336,10 @@ def render_commitments_brief(
         "# Commitments",
         "Below is one piece of writing. Say what is being committed to if it is taken up.",
     ]
+    if kind.instruction is not None:
+        # The kind's own words are what the seat IS asked to do, not evidence or another
+        # artifact; they go to both calls, and the blind default of the second call is untouched.
+        sections.append(kind.instruction)
     if alone:
         sections.append("You are shown nothing else, and nothing else is relevant.")
     sections.extend(["## The writing", body])
@@ -627,12 +633,20 @@ def _offered(
     return tuple(offered)
 
 
-def run_mini(plan: RunPlan, root: Path, responder: Responder, responder_id: str = "unrecorded") -> RunOutcome:
+def run_mini(
+    plan: RunPlan,
+    root: Path,
+    responder: Responder,
+    responder_id: str = "unrecorded",
+    endpoint: Any | None = None,
+) -> RunOutcome:
     """Run one plan into one root, and return what the record says.
 
     The stage list is the body of one cycle; the cycle repeats until the host
     stops it. ``responder_id`` names what answered — a digest of a script, or a
     model — so two roots can later be checked for having been asked the same way.
+    ``endpoint`` is what a live run actually sent to, run-time overrides included,
+    and is written to the run's first event; a scripted run passes none.
     """
 
     if not isinstance(root, Path):
@@ -658,6 +672,9 @@ def run_mini(plan: RunPlan, root: Path, responder: Responder, responder_id: str 
             "attention_policy": plan.attention.policy_id,
             "cycles": plan.cycles.to_dict(),
             "declared_order": [stage.stage_id for stage in plan.stages],
+            # A live run records the endpoint actually used, overrides included, as the
+            # conformance run record does; the plan's own endpoint is in the header.
+            **({} if endpoint is None else {"endpoint": endpoint.to_dict()}),
         },
     )
     _batch_evidence(plan, blobs, recorder)

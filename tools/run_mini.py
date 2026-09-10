@@ -9,8 +9,11 @@
 
 Only ``live`` calls a model. ``run`` drives the scripted responder, so the
 replies come from the script file and nothing leaves the machine. ``live``
-reads the key from ``OLLAMA_API_KEY`` at call time through the conformance
-harness's own executor; it costs money and writes records meant to be kept.
+calls the endpoint the manifest declares (or the shipped default) through the
+conformance harness's own executor, which reads the key from ``OLLAMA_API_KEY``
+at call time and is the one place in this repository that touches it; an
+endpoint with ``"auth": "none"`` needs no key. It costs money and writes
+records meant to be kept.
 
 Standard library plus the package; ``PYTHONPATH=src``.
 """
@@ -25,7 +28,7 @@ import sys
 from creib.errors import CREIBError
 from creib.strict_json import load_strict
 from creib.forge.mini import conformance_kernels  # noqa: F401  registers the conformance harness's checks as kernels
-from creib.forge.mini.executor import LiveResponder, ScriptedResponder
+from creib.forge.mini.executor import LiveResponder, ScriptedResponder, endpoint_with_overrides
 from creib.forge.mini.compare import UNSUPPORTED, compare_roots
 from creib.forge.mini.common import MiniError, digest_bytes
 from creib.forge.mini.log import LOG_NAME, replay
@@ -93,14 +96,19 @@ def target_compare(args: argparse.Namespace) -> int:
 
 def target_live(args: argparse.Namespace) -> int:
     plan = compile_manifest(Path(args.manifest))
-    responder = LiveResponder(args.model, timeout_seconds=args.timeout_seconds, retries=args.retries)
-    outcome = run_mini(plan, Path(args.output_dir), responder, f"model:{args.model}")
+    # The endpoint is the manifest's, or the shipped default; --think and --timeout-seconds
+    # override it for this run exactly as the conformance runner's flags do, and the run's
+    # first event records what was sent. The key is read inside the executor and nowhere else.
+    endpoint = endpoint_with_overrides(plan.endpoint, think=args.think, timeout_seconds=args.timeout_seconds)
+    responder = LiveResponder(args.model, endpoint=endpoint, retries=args.retries)
+    outcome = run_mini(plan, Path(args.output_dir), responder, f"model:{args.model}", endpoint=endpoint)
     print(
         json.dumps(
             {
                 "run_id": outcome.run_id,
                 "model": args.model,
-                "timeout_seconds": args.timeout_seconds,
+                "endpoint": endpoint.to_dict(),
+                "retries": args.retries,
                 "root": str(outcome.root),
                 "calls": responder.calls,
                 "stop_reason": outcome.stop_reason,
@@ -157,8 +165,9 @@ def main(argv: list[str] | None = None) -> int:
     live_parser.add_argument("--manifest", required=True)
     live_parser.add_argument("--model", required=True)
     live_parser.add_argument("--output-dir", required=True)
-    live_parser.add_argument("--timeout-seconds", type=int, default=180)
-    live_parser.add_argument("--retries", type=int, default=0)
+    live_parser.add_argument("--think", default=None, help="override the manifest endpoint's reasoning setting for this run: true, false, none, low, medium, or high; recorded in the run's first event")
+    live_parser.add_argument("--timeout-seconds", type=int, default=None, help="override the manifest endpoint's call timeout for this run; recorded in the run's first event")
+    live_parser.add_argument("--retries", type=int, default=0, help="transport retries per call, passed to the harness's executor")
     live_parser.set_defaults(run=target_live)
     compare_parser = sub.add_parser("compare")
     compare_parser.add_argument("--root", action="append", required=True)

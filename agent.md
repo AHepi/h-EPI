@@ -203,6 +203,21 @@ A removal that moved nothing is read by the controls: generate them from the sam
 
 Work on a branch (`claude/*`, `codex/*`, or a human-chosen name); never commit on or push to `main`. Before every commit run `python tools/check.py all` (lint, the offline suite, every pilot planned, and `cite`, which resolves every record id the documents cite), stage explicit paths (never `.venv`, key material, or documents you are not licensed to share), run `git diff --cached --check`, and confirm no key is in the diff (`git grep -l Bearer -- forge/conformance/runs` must print nothing). Push with `git push -u origin HEAD`; never force, never `HEAD:main`, never rebase, reset, or amend published history. Publication is a pull request and merging is a human action. The `h-epi-safe-publish` skill walks through the same steps.
 
+## Use 13: run a mini template
+
+Mini asks a series of seats a series of questions in cycles and keeps everything it gets back; a seat is a model or a registered machine function, and a kind of artifact is a record, never a class. The shipped templates are `forge/mini/manifests/default/` (conjecture, criticism, verdict), `operator-example/`, `blind-spot/` (mini's own checks as kernels), and `conformance-blind-spot/` (the harness's own checks as kernels, with a catalogue drawn from `docs/kernel.md`).
+
+```sh
+python tools/run_mini.py compile --manifest forge/mini/manifests/conformance-blind-spot/manifest.json
+python tools/run_mini.py run --manifest … --script forge/mini/scripts/conformance-blind-spot.json --output-dir /tmp/stub   # no model called
+export OLLAMA_API_KEY=…   # read inside the harness's executor at call time; nowhere else
+python tools/run_mini.py live --manifest … --model gemma4:31b --output-dir forge/mini/runs/<root> --timeout-seconds 300
+python tools/run_mini.py replay --root forge/mini/runs/<root>
+python tools/run_mini.py compare --root <one> --root <another>   # refuses --score
+```
+
+A manifest may declare `endpoint` in exactly the shape a pilot's endpoint has; absent, the shipped default applies. For a local Ollama set `"auth": "none"` and no key is needed. Read a run from its record: the first event carries the endpoint actually sent to, every artifact says which seat made it and how many calls it took, and the last verdict artifact of a blind-spot run is the deliverable a person turns into boundary points. `docs/mini/SPEC.md` is the reference and `docs/mini/FAILURE_MODES.md` the register.
+
 ## What not to expect
 
 The harness will not tell you a model is good, that it understood a document, or that it can fill forms in general. It will tell you, with records, what a model did on your documents and where the blame can lie when it was wrong. That is the whole product, and `docs/reports/` explains why it stops there.

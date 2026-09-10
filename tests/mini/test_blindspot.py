@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 
 from creib.forge.mini.blindspot import (
+    COLUMN_MOVES,
+    COLUMN_UNCHANGED,
     STANDING_CANDIDATE,
     STANDING_DEFECT,
     STANDING_REJECTED,
@@ -14,6 +16,7 @@ from creib.forge.mini.blindspot import (
     registered_transforms,
     resolve_kernel,
     resolve_transform,
+    column_for,
     standing_for,
 )
 from creib.forge.mini.compare import compare_roots, read_root
@@ -42,23 +45,44 @@ def _script() -> dict:
 
 
 class TheStandingRuleTests(MiniTestCase):
-    def test_an_uncatalogued_movement_is_a_candidate_point(self) -> None:
+    """A catalogue row is read as a kernel point is: an invariance is a claim over the class, a
+    sensitivity is an example on one input."""
+
+    def test_an_uncatalogued_movement_is_a_candidate_point_for_the_moves_column(self) -> None:
         self.assertEqual(standing_for("moved", False), STANDING_CANDIDATE)
+        self.assertEqual(column_for("moved", STANDING_CANDIDATE), COLUMN_MOVES)
 
-    def test_a_catalogue_claiming_a_movement_that_did_not_happen_is_a_defect(self) -> None:
-        self.assertEqual(standing_for("unchanged", True, catalogue_moves=True), STANDING_DEFECT)
+    def test_an_uncatalogued_invariance_is_a_candidate_point_for_the_unchanged_column(self) -> None:
+        """The blind spot nobody wrote down. Until 10 September it was rejected and kept only in
+        compare's ledger, where the deliverable, the last verdict, never showed it."""
 
-    def test_a_catalogue_denying_a_movement_that_did_happen_is_a_defect(self) -> None:
+        self.assertEqual(standing_for("unchanged", False), STANDING_CANDIDATE)
+        self.assertEqual(column_for("unchanged", STANDING_CANDIDATE), COLUMN_UNCHANGED)
+
+    def test_a_catalogued_invariance_refuted_by_one_moving_input_is_a_defect(self) -> None:
         self.assertEqual(standing_for("moved", True, catalogue_moves=False), STANDING_DEFECT)
+        self.assertEqual(standing_for("moved", True, catalogue_moves=False, same_input=False), STANDING_DEFECT)
 
-    def test_a_catalogued_pair_that_agrees_is_neither(self) -> None:
+    def test_a_catalogued_sensitivity_that_fails_on_its_own_input_is_a_defect(self) -> None:
+        self.assertEqual(standing_for("unchanged", True, catalogue_moves=True, same_input=True), STANDING_DEFECT)
+
+    def test_a_catalogued_sensitivity_that_fails_on_another_input_is_a_candidate_for_the_unchanged_column(self) -> None:
+        """An input the check is blind to where the catalogue's example moved. Without an input
+        on the row nobody can tell the two apart, and the reading is the same."""
+
+        for same_input in (False, None):
+            self.assertEqual(standing_for("unchanged", True, catalogue_moves=True, same_input=same_input), STANDING_CANDIDATE)
+        self.assertEqual(column_for("unchanged", STANDING_CANDIDATE), COLUMN_UNCHANGED)
+
+    def test_an_agreement_adds_no_row(self) -> None:
         self.assertEqual(standing_for("moved", True, catalogue_moves=True), STANDING_REJECTED)
         self.assertEqual(standing_for("unchanged", True, catalogue_moves=False), STANDING_REJECTED)
+        self.assertIsNone(column_for("moved", STANDING_REJECTED))
 
-    def test_an_uncatalogued_invariance_is_not_a_standing(self) -> None:
-        """It belongs in the ledger compare prints, not in a verdict's standing."""
-
-        self.assertEqual(standing_for("unchanged", False), STANDING_REJECTED)
+    def test_a_proposal_that_could_not_run_is_rejected(self) -> None:
+        for executed in ("unrunnable", "unreadable"):
+            self.assertEqual(standing_for(executed, False), STANDING_REJECTED)
+            self.assertEqual(standing_for(executed, True, catalogue_moves=True), STANDING_REJECTED)
 
 
 class KernelAndTransformTests(MiniTestCase):

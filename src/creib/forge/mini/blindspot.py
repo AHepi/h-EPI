@@ -163,10 +163,16 @@ register_transform(Transform("mini.transform.append-blank-line", "Add a newline 
 # --- the catalogue ---
 
 
-def catalogue_from(state: Any, blobs: Any) -> dict[tuple[str, str], bool]:
+#: What a catalogue row says: whether the kernel's verdict moved under the transform, and the
+#: input that was checked, when the row names one. A row without an input is a claim about the
+#: pair alone and cannot be told from a row about some other input.
+CatalogueRow = dict[str, Any]
+
+
+def catalogue_from(state: Any, blobs: Any) -> dict[tuple[str, str], CatalogueRow]:
     """Read the catalogue out of a run's own evidence, never off the disk."""
 
-    listed: dict[tuple[str, str], bool] = {}
+    listed: dict[tuple[str, str], CatalogueRow] = {}
     for block in state.blocks:
         if block.get("source_id") != CATALOGUE_SOURCE:
             continue
@@ -176,12 +182,30 @@ def catalogue_from(state: Any, blobs: Any) -> dict[tuple[str, str], bool]:
         except (RecordError, UnicodeDecodeError):
             continue
         for point in (parsed or {}).get("points", []) if type(parsed) is dict else []:
-            listed[(str(point.get("kernel")), str(point.get("transform")))] = bool(point.get("moves"))
+            source = point.get("input")
+            listed[(str(point.get("kernel")), str(point.get("transform")))] = {
+                "moves": bool(point.get("moves")),
+                "input": source if type(source) is str else None,
+            }
     return listed
 
 
-def catalogue_from_blocks(context: MachineContext) -> dict[tuple[str, str], bool]:
+def catalogue_from_blocks(context: MachineContext) -> dict[tuple[str, str], CatalogueRow]:
     return catalogue_from(context.state, context.blobs)
+
+
+def registry_text(prefix: str = "") -> str:
+    """The registered kernels and transforms as a proposer is shown them: one per paragraph.
+
+    A proposer asked for registered ids and shown none invents them (the first live run of the
+    blind-spot template, mini register M5); a JSON registry cut at blank lines is one block and
+    the legend shows only its first line (M6). A text registry, one entry per paragraph, is a
+    source the legend can show whole.
+    """
+
+    lines = [f"kernel {kernel.kernel_id}: {kernel.description}" for kernel in registered_kernels() if kernel.kernel_id.startswith(prefix)]
+    lines += [f"transform {transform.transform_id}: {transform.description}" for transform in registered_transforms() if transform.transform_id.startswith(prefix)]
+    return "\n\n".join(lines) + "\n"
 
 
 def _proposal_of(context: MachineContext, record: Mapping[str, Any]) -> dict[str, Any] | None:
@@ -222,6 +246,7 @@ def _execute(context: MachineContext) -> str:
             {
                 "kernel": kernel_id,
                 "transform": transform_id,
+                "input": source,
                 "before": before,
                 "after": after,
                 "executed": "moved" if before != after else "unchanged",
@@ -238,20 +263,61 @@ def _execute(context: MachineContext) -> str:
     )
 
 
-def standing_for(executed: str, catalogued: bool, catalogue_moves: bool | None = None) -> str:
+COLUMN_MOVES = "moves"
+COLUMN_UNCHANGED = "unchanged"
+COLUMNS: tuple[str, ...] = (COLUMN_MOVES, COLUMN_UNCHANGED)
+
+
+def standing_for(
+    executed: str,
+    catalogued: bool,
+    catalogue_moves: bool | None = None,
+    same_input: bool | None = None,
+) -> str:
     """The rule, stated once: read by the machine seat and by the tests.
 
-    A defect is the catalogue and the execution DISAGREEING — the catalogue
-    claiming a movement that did not happen, or denying one that did. A
-    catalogued pair whose execution agrees with the catalogue is neither a
-    defect nor a discovery. Only an uncatalogued movement is a candidate point;
-    an uncatalogued non-movement is an invariance and belongs in the ledger
-    `compare` prints, not in a standing.
+    A kernel point in this repository has two columns, what the verdict moves
+    under and what it does not, and each is shown on one input. The rule reads
+    a catalogue row the same way:
+
+    - A row that says the pair does NOT move is an invariance claim over every
+      input of the class; one execution that moves refutes it, and that is a
+      DEFECT in the catalogue. An execution that does not move agrees.
+    - A row that says the pair MOVES is a sensitivity shown on the row's own
+      input. An execution that moves agrees. One that does not move on the same
+      input is a DEFECT, the row's own example being wrong; on another input
+      it is a CANDIDATE POINT for the unchanged column, an input on which the
+      check is blind to a rewrite it sees elsewhere.
+    - An uncatalogued pair is a CANDIDATE POINT either way: for the moves
+      column if it moved, for the unchanged column if it did not. The second
+      is the blind spot nobody wrote down, which is what the loop is for.
+    - A proposal that could not be run is REJECTED, and so is an agreement:
+      neither adds a row.
+
+    Until 10 September an uncatalogued non-movement was rejected and a
+    catalogued pair was compared without regard to its input, so a proposal on
+    a different input read as a defect where the catalogue and the code agree
+    (the first live run of the conformance template).
     """
 
-    if catalogued:
-        return STANDING_DEFECT if (executed == "moved") != bool(catalogue_moves) else STANDING_REJECTED
-    return STANDING_CANDIDATE if executed == "moved" else STANDING_REJECTED
+    if executed not in ("moved", "unchanged"):
+        return STANDING_REJECTED
+    moved = executed == "moved"
+    if not catalogued:
+        return STANDING_CANDIDATE
+    if not bool(catalogue_moves):
+        return STANDING_DEFECT if moved else STANDING_REJECTED
+    if moved:
+        return STANDING_REJECTED
+    return STANDING_DEFECT if same_input else STANDING_CANDIDATE
+
+
+def column_for(executed: str, standing: str) -> str | None:
+    """Which column of a kernel point a candidate would fill; nothing for any other standing."""
+
+    if standing != STANDING_CANDIDATE:
+        return None
+    return COLUMN_MOVES if executed == "moved" else COLUMN_UNCHANGED
 
 
 def _verdict(context: MachineContext) -> str:
@@ -264,8 +330,12 @@ def _verdict(context: MachineContext) -> str:
         for entry in parsed.get("executions", []):
             executed = str(entry.get("executed"))
             key = (str(entry.get("kernel")), str(entry.get("transform")))
-            catalogued = key in catalogue
-            claims = catalogue.get(key)
+            row = catalogue.get(key)
+            catalogued = row is not None
+            claims = None if row is None else bool(row["moves"])
+            row_input = None if row is None else row["input"]
+            same_input = None if row_input is None or "input" not in entry else str(entry["input"]) == row_input
+            standing = standing_for(executed, catalogued, claims, same_input)
             verdicts.append(
                 {
                     "proposal": str(entry.get("proposal")),
@@ -274,13 +344,15 @@ def _verdict(context: MachineContext) -> str:
                     "executed": executed,
                     "catalogued": catalogued,
                     "catalogue_moves": bool(claims),
-                    "standing": standing_for(executed, catalogued, claims),
+                    "same_input": same_input,
+                    "standing": standing,
+                    "column": column_for(executed, standing),
                 }
             )
     lines = [
         f"{item['proposal']}: {item['kernel']} under {item['transform']} {item['executed']}, "
-        f"{'catalogue says it ' + ('moves' if item['catalogue_moves'] else 'does not move') if item['catalogued'] else 'not catalogued'}"
-        f" -> {item['standing']}"
+        f"{'catalogue says it ' + ('moves' if item['catalogue_moves'] else 'does not move') + ('' if item['same_input'] is None else (' on this input' if item['same_input'] else ' on another input')) if item['catalogued'] else 'not catalogued'}"
+        f" -> {item['standing']}{'' if item['column'] is None else ' (' + item['column'] + ')'}"
         for item in verdicts
     ]
     return json.dumps(
@@ -316,6 +388,7 @@ VERDICT_SCHEMA: dict[str, Any] = {
                     "executed": {"type": "string"},
                     "catalogued": {"type": "boolean"},
                     "standing": {"enum": list(STANDINGS)},
+                    "column": {"enum": [*COLUMNS, None]},
                 },
             },
         }

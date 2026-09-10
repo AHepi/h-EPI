@@ -1,0 +1,181 @@
+# Proposal
+
+## The problem (problem)
+For each of this prototype's own checks, name a rewrite of an input under which the check's verdict ought to move. Propose a kernel, a transform, and an input. The executor will run it; the catalogue says which pairs anyone has written down already. A pair that moves and is not catalogued is a boundary nobody has recorded; a pair the catalogue says moves and that does not move is a defect in the catalogue.
+
+## Proposals so far (earlier)
+[ac1042606b813c15] (mini.proposal.v1)
+A proposal here is a triple: a kernel (one of the prototype's own checks), a transform (a rewrite), and an input stated as it stands before the rewrite. The executor applies the transform and re-runs the kernel; the pair moves iff the verdict differs before and after. Whether a moving pair is already recorded in the catalogue, and whether any catalogue-claimed motion fails to reproduce, are judgements I cannot make for the reason below, so I state expected motions and leave classification to the run.
+
+Limitation, stated up front. The one catalogue block I can see (c82a3c8063d2d61a) arrives truncated: I can read its identity and the first words of its note, but not the pair list or the move flags. Two consequences. First, I claim novelty for nothing — any of my pairs may already be written down. Second, I cannot nominate a defect case (a pair the catalogue says moves that does not move), because I cannot read what the catalogue says moves; covering that direction needs the full catalogue text first.
+
+Since the prototype's own check list is likewise not visible to me, I aim at the two check shapes a mini kernel-boundaries prototype most plausibly contains: an exact-match checker and a structural parser checker. If the real checks differ, these triples should be re-aimed rather than run as-is.
+
+Triple 1. Kernel: equals-'hello' — accept iff the input is exactly the characters h,e,l,l,o. Transform: trim — strip leading and trailing whitespace. Input: ' hello ' (space-prefixed and space-suffixed). Expected motion: reject → accept. The kernel is byte-strict; the transform removes the only difference. If the run shows no motion, either the transform is not trimming or the kernel is not exact-match, and the run should say which.
+
+Triple 2. Kernel: equals-'hello' (same kernel). Transform: lowercase (ASCII case folding). Input: 'HELLO'. Expected motion: reject → accept. Same kernel as Triple 1 with an independent rewrite: if both move, the kernel's boundary is sensitive to two separate rewrites; if only one moves, the run itself identifies which rewrite the kernel tolerates.
+
+Triple 3. Kernel: json-number — accept iff the whole input parses as a JSON number. Transform: prepend '-'. Input: '1'. Expected motion: accept → reject, since '--1' is not a JSON number. This probes the direction the first two triples do not: a rewrite that breaks an accepting input rather than repairing a rejecting one.
+
+Triple 4. Kernel: json-number (same kernel). Transform: append 'e'. Input: '1'. Expected motion: accept → reject ('1e' has an exponent marker with no exponent). Same kernel and same input as Triple 3 with a different transform, both expected to move the same way — a cheap consistency check; if one moves and the other does not, the difference lies in the transform implementations, not the kernel.
+
+Not claimed here: that any of these pairs is absent from the catalogue; that any catalogue entry is defective. Priority if only one triple is run: Triple 1 — the smallest complete demonstration of kernel, transform, input, and a stated expected motion the run can confirm or refute.
+commitments: {"kernel": "equals-'hello' — accept iff the input is exactly the characters h,e,l,l,o (byte-strict exact match)", "transform": "trim — strip leading and trailing whitespace; expected motion: reject → accept; if the run shows no motion, it must report which failed — the transform is not trimming or the kernel is not exact-match", "input": "' hello ' (space-prefixed and space-suffixed)"}
+[bc4b975d80aefe10] (mini.proposal.v1)
+One triple, filling the cell the earlier proposal (ac1042606b813c15) leaves empty: a repair-direction rewrite on the parser kernel. Its two json-number triples move only in the breaking direction ('1' → '--1' and '1' → '1e'); if only those run, the record shows the number kernel's boundary from one side. This triple supplies the other side, on the same kernel, so the results compose into one boundary picture.
+
+Triple 5. Kernel: json-number — accept iff the whole input parses as a JSON number (the same kernel as the earlier Triples 3 and 4). Transform: append '0'. Input: '1e'. Expected motion: reject → accept.
+
+Why the motion is expected. '1e' is not a JSON number under any plausible implementation: an exponent marker with no exponent digits. JSON.parse throws on it; a strict number grammar rejects it. Appending '0' yields '1e0', a valid JSON number under both readings — the grammar allows an exponent of zero, and the leading-zero rule constrains the integer part, not the exponent. Unlike a trim probe on this kernel (input ' 1 ' would move only under a strict-grammar kernel and stand still under JSON.parse, which tolerates surrounding whitespace), this pair's motion does not depend on which implementation the prototype uses; that is why I propose it rather than the trim probe.
+
+What the run distinguishes. If the pair moves, the record gains a two-sided crossing on one rewrite family: '1' —append 'e'→ '1e' (earlier Triple 4, accept → reject), then '1e' —append '0'→ '1e0' (this triple, reject → accept). The endpoints '1' and '1e0' both accept while the intermediate '1e' rejects, so the accepting set is not interval-like under append rewrites; this pair is the second crossing of that path. If the pair does not move, the report should say which of three faults holds: (a) the transform did not append — checkable against earlier Triple 4, which uses the same transform family; (b) the kernel already accepts '1e', so it is not a whole-input parse but something laxer, such as a contains-a-number check ('1e' contains the number '1'); (c) the kernel rejects '1e0', so it is stricter than the JSON number grammar. Each refutation points at a different component, so the pair is diagnostic even in refutation.
+
+Standing limitations, unchanged from the earlier proposal. The one catalogue block visible to me (c82a3c8063d2d61a) is truncated: its note begins 'Kernel and transform pairs already written down, and whether the kernel's verdict is known to move under th…' and the pair list and move flags lie beyond the cut. So I claim novelty for nothing — this pair may already be recorded — and I nominate no defect case, since I cannot read what the catalogue says moves. Classification is left to the run against the full catalogue text.
+
+Remaining cell after this run: the breaking direction on the exact-match kernel (e.g. 'hello' with one appended character, expected accept → reject, distinguishing exact-match from a prefix or contains reading). I leave it for a later proposal rather than dilute this one.
+commitments: {"kernel": "json-number", "transform": "append '0'", "input": "1e"}
+[e3ad7a1bde02d5d2] (mini.proposal.v1)
+This proposal fills the one cell the earlier proposals leave open and repairs one mis-specified expectation they leave behind, so that after this run each kernel the earlier proposals aimed at is crossed in both directions, with no expectation left that the run must refute for reasons outside the kernel.
+
+Triple 6. Kernel: equals-'hello' — accept iff the input is exactly the characters h,e,l,l,o (the same kernel as Triples 1 and 2 of ac1042606b813c15). Transform: append 'x'. Input: 'hello'. Expected motion: accept → reject.
+
+Why the motion is expected. The kernel is byte-strict, and 'hellox' is the accepted string with one character added. Appending is the minimal breaking rewrite: it alters nothing already correct and introduces exactly one fault, so any whole-input comparison against the literal rejects it.
+
+What the run distinguishes. This is the triple that separates exact-match from its laxer neighbours, which Triples 1 and 2 leave indistinguishable: trim on ' hello ' and lowercase on 'HELLO' move under a starts-with reading exactly as they do under an exact reading, so a starts-with kernel looks identical to an exact-match kernel in the record so far. (A contains reading is already disfavoured by Triple 1, since ' hello ' contains 'hello' and so would not move under it.) 'hellox' is accepted by both a starts-with-'hello' check and a contains-'hello' check, so this triple moves only under exact-match: motion confirms the byte-strict reading, and stillness refutes it in favour of one of the laxer readings. If it is still, the probe that separates the two survivors is a prepend — 'xhello' is contains-yes but starts-with-no — which I name here but do not formally propose.
+
+Composition. With this triple the exact-match kernel carries two repair-direction rewrites (trim, lowercase) and one breaking rewrite, mirroring the json-number kernel's two breaking rewrites and one repair. The accepting set of this kernel is a single point, so every rewrite direction leaves it; the record should show crossings on both kernels in both directions.
+
+Triple 7 — a correction, not a new cell. Triple 3 of ac1042606b813c15 is mis-specified as written: prepending '-' to '1' yields '-1', which is a valid JSON number under JSON.parse and under the strict grammar alike, so that pair should stand still, not move. Its stated justification — '--1' is not a JSON number — implies the intended input was '-1'. I propose the intended pair so the record gains the crossing instead of an unexplained non-motion: kernel json-number, transform prepend '-', input '-1', expected motion accept → reject ('--1' carries two minus signs and parses under no JSON number reading). Triple 4 already crosses the breaking direction on this kernel, so this adds no cell; it adds a second, independent breaking rewrite, matching the pattern of Triples 1 and 2, and it replaces an expectation whose failure would falsely implicate the transform or the kernel with one whose stillness would mean only that the original input was typed wrong: '-1' is simply a number.
+
+Standing limitations, unchanged from the earlier proposals. The one catalogue block visible to me (c82a3c8063d2d61a) is truncated to the first words of its note; the pair list and move flags lie beyond the cut, so I claim novelty for nothing and nominate no defect case — classification is left to the run against the full catalogue text. The prototype's own check list is likewise not visible; both triples assume the two kernels the earlier proposals aimed at and should be re-aimed if the real checks differ.
+
+Remaining cells after this run: none for the two guessed kernels — each then has repair- and breaking-direction coverage. What stays open is whether the prototype contains checks beyond these two shapes; only the run can show that.
+
+Priority if only one triple is run: Triple 6 — the sole probe that separates exact-match from the starts-with reading, completing the cell the previous proposal named and left open.
+commitments: {"kernel": "equals-'hello' — accept iff the input is exactly the characters h,e,l,l,o (byte-strict exact match)", "transform": "append 'x'", "input": "hello"}
+[2e242386c0e45309] (mini.proposal.v1)
+What the verdicts establish, and the one variable left untried.
+
+Three proposals wrote seven triples, but the verdicts record one executed pair per proposal — the single triple each proposal carried in its commitments field; the rest were prose. All three executed pairs were unrunnable. The executed set:
+
+- Pair 1: kernel stated as a full descriptive sentence ("equals-'hello' — accept iff the input is exactly the characters h,e,l,l,o (byte-strict exact match)"), transform stated as prose with the expected motion and a conditional report demand embedded in the string, input stated with literal quote marks ("' hello '").
+- Pair 2: everything bare — "json-number", "append '0'", "1e".
+- Pair 3: kernel descriptive, transform and input bare — "append 'x'", "hello".
+
+Uniform unrunnability across that set is the diagnostic fact. The kernels differ (two shapes), the string forms differ (descriptive vs bare), the inputs differ; nothing is common to all three except the pipeline itself. Two hypotheses survive: (a) the executor ran nothing this cycle; (b) the executor is up but neither kernel naming resolved to a check the prototype contains. The input-format hypothesis is disfavoured alone — two of three inputs are bare alphanumeric strings. The transform hypothesis is weakened — trim and append are the most canonical rewrites — but Pair 1's transform field carried prose no identifier registry would match, so it is not eliminated.
+
+The untried cell. For the exact-match kernel, only the descriptive string form has been executed (Pairs 1 and 3). For the json-number kernel, only the bare form has been executed (Pair 2). So the bare form of the exact-match kernel is the one cell of the form-by-kernel grid no run has touched — and it can be reached while changing nothing else, because Pair 3's transform and input were already bare.
+
+Triple 8. Kernel: equals-'hello' (bare identifier; no gloss, no em dash, no expected-motion text riding in the string). Transform: append 'x' (unchanged from the rejected triple). Input: hello (unchanged). Expected motion: accept → reject.
+
+The kernel-level diagnostic is unchanged from its earlier statement: the kernel is byte-strict, 'hellox' is the accepted string with exactly one character added, so motion confirms the exact-match reading, and stillness refutes it in favour of the laxer readings, since starts-with-'hello' and contains-'hello' both accept 'hellox'. What this run adds is the test of string form itself.
+
+What each outcome settles. Runs and moves (accept → reject): the descriptive string was the blocker; the record gains its first executed pair, and catalogue classification — recorded boundary or unrecorded one — becomes meaningful for the first time. Runs and stands still: the kernel is laxer than exact-match, or the transform did not append; the report should say which, since a stillness here is a finding about the kernel's reading, not a pipeline fault. Unrunnable again: both forms have then failed for one kernel (descriptive in Pairs 1 and 3, bare here) and the bare form failed for the other (Pair 2); no third guess from outside can separate "executor down" from "wrong identifiers", because the prototype's check list is visible only to the executor. So the unrunnable verdict must carry a reason code: executor-unavailable; or kernel-identifier-not-found, together with the list of the prototype's actual kernel identifiers; or transform-identifier-not-found, with that list; or input-unparseable. With the lists, the next proposal aims at real names; without them, every future proposal is a blind guess and every unrunnable verdict is a dead end instead of a map.
+
+One flag on the catalogue flags. Every verdict so far says "not catalogued", but the only catalogue block visible in this cycle is cut before any pair list appears. If the lookup ran against the full catalogue text, "not catalogued" is evidence; if it ran against the same truncated text I see, it is a default and says nothing about novelty. The report should state which text the lookup ran against — one line, and it decides whether every "not catalogued" in the record is usable.
+
+Standing limitations, unchanged. The catalogue's pair list and move flags remain beyond the cut, so I claim novelty for nothing and nominate no defect case; classification is the run's job against the full text. The correction pair from the previous proposal (json-number, prepend '-', input '-1', expected accept → reject) stays queued behind the identifier question — it is worth running only once some identifier form has resolved.
+
+Priority if only one triple is run: this one. It is the smallest change that separates the two surviving hypotheses, and it is the only proposal on the table whose failure mode itself produces information.
+commitments: {"kernel": "equals-'hello'", "transform": "append 'x'", "input": "hello"}
+[d0f8332533e2215f] (mini.proposal.v1)
+The untested variable is the transform string's form, and it has been suspect in every executed run.
+
+Three pairs have been executed, all unrunnable. The last proposal's form-grid (kernel-string form against kernel) left one dimension untouched, and re-reading the executed set, every run sits in its suspect region:
+
+- Pair 1's transform was prose with an embedded demand — unmatchable under any identifier registry.
+- Pair 2's transform was "append '0'" — quoted-argument syntax.
+- Pair 3's transform was "append 'x'" — the same quoted-argument syntax.
+
+No executed pair has ever carried a bare, argument-free transform identifier. If the registry holds bare names — "trim", "lowercase", fixed argument-free rewrites, with arguments passed some other way or not at all — then all three pairs fail at the transform stage, and the uniform unrunnability is explained with no hypothesis about the executor being down or the kernel names being wrong. That is now the strongest single-factor explanation on the table, and the pending Triple 8 does not test it: Triple 8's transform is "append 'x'", the same quoted-arg form whose matchability is in question.
+
+Triple 9. Kernel: equals-'hello' (bare identifier, character-for-character the same string Triple 8 commits). Transform: lowercase (bare, argument-free — no quotes, no argument, no prose). Input: HELLO. Expected motion: reject → accept.
+
+Design. The pair holds the kernel string identical to the pending Triple 8 and varies the transform form and the input, so the two pending pairs read as one experiment: same kernel, two transform forms. Lowercase is chosen over trim deliberately: trim's natural input " hello " risks an executor that strips the input field itself, which would defeat the transform silently and masquerade as kernel stillness; "HELLO" is an unambiguous bare token and lowercase on it is unambiguous. The pair also executes, in canonical string form, the content of the never-run Triple 2 of ac1042606b813c15 (lowercase on 'HELLO'), whose carrier proposal's commitments went to Triple 1 instead.
+
+Why the motion is expected. The exact-match kernel rejects "HELLO" — case differs; lowercase yields "hello", which it accepts. The pair also moves under the starts-with and case-sensitive contains readings, so motion here does not by itself separate exact-match from the laxer readings; that work stays with Triple 8's append-'x' probe, where it belongs. This pair's job is the form test, and any runnable verdict — moving or still — settles it.
+
+What the outcomes settle, jointly with the pending Triple 8.
+
+- Both run: bare identifiers resolve end to end, and the motions carry the kernel diagnostics — both moving confirms byte-strict exact-match on two independent rewrites; mine moving while Triple 8 stands still leaves starts-with and contains live, and the prepend probe already named ('xhello': contains-yes, starts-with-no) separates them; mine standing still means the kernel already accepts "HELLO" (a case-insensitive reading) or the transform did not lowercase, and the report should say which.
+- Mine runs, Triple 8 unrunnable: the executor is up and the kernel string resolves, so Triple 8's failure lands on its transform — the quoted-argument syntax is unmatchable while bare names resolve. That one finding explains all three historical unrunnables, and the queued pairs should be re-issued in whatever form the transform list actually names.
+- Mine unrunnable, Triple 8 runs: "lowercase" is absent from the transform registry while "append 'x'" is present; the verdict should carry the actual transform identifier list so the next proposal aims at real names.
+- Both unrunnable: two different transform forms failed on the same kernel string, so the transform field is exonerated as the sole blocker and the suspects narrow to the kernel identifier itself or a down executor. Then the reason-code demand of 2e242386c0e45309 becomes the only way forward, and a second round of bare "unrunnable" verdicts with no reason codes, issued after that demand, is itself a finding: the verdict channel does not carry reasons, and every further proposal is a blind guess by construction.
+
+A structural point either way. The breaking-direction pairs named for the json-number kernel (append 'e' on '1', prepend '-' on '-1') all need argument-bearing transforms. If the registry turns out to be argument-free only, those pairs are unexpressible as stated and the record can carry only argument-free rewrites — a constraint on the whole boundary map, worth knowing now rather than after five more unrunnable rounds.
+
+Catalogue flags, unchanged and still unanswered. The only catalogue block visible to me is cut before its pair list — its note reads "Kernel and transform pairs already written down, and whether the kernel's verdict is known to move under th…" — so I claim novelty for nothing and nominate no defect case; classification is the run's job against the full text. And every verdict so far says "not catalogued"; that is usable evidence only if the lookup ran against the full catalogue text rather than the truncated block I see. One line in the report settles it.
+
+Priority. Triple 8 keeps the priority it claimed; this pair is its designed complement and should run beside it. If only one executes this cycle, Triple 8 goes first and this pair follows — the two together are the minimal set that separates the three surviving single-factor explanations: executor down, kernel identifier wrong, transform form wrong.
+commitments: {"kernel": "equals-'hello'", "transform": "lowercase", "input": "HELLO"}
+[26d7a8ef2b493f7f] (mini.proposal.v1)
+The dead-end marker fired, and it fired in a format that could not have carried an answer.
+
+Both pending pairs came back bare "unrunnable" with no reason codes (e3055994404d47af) — exactly the outcome d0f8332533e2215f designated as the finding that the verdict channel does not carry reasons. The record now shows why the demand was unanswerable: both verdict blocks carry the same seven fields — catalogue_moves, catalogued, executed, kernel, proposal, standing, transform — and none is a place a reason could sit; the verdict bodies carry none either. I put the question no further. It is a structural fact of the channel now, not a request.
+
+Before conceding that every further proposal is a blind guess, one form variable turns out never to have been isolated: the quote character. Read the five executed pairs by their two identifier fields alone:
+
+- Pair 1 (ac1042606b813c15): quote-bearing kernel (the descriptive equals-'hello' sentence), prose transform, quoted input.
+- Pair 2 (bc4b975d80aefe10): quote-free kernel ("json-number"), quoted-argument transform ("append '0'").
+- Pairs 3 and 4 (e3ad7a1bde02d5d2, 2e242386c0e45309): quote-bearing kernels, quoted-argument transforms ("append 'x'").
+- Pair 5 (d0f8332533e2215f): quote-bearing kernel ("equals-'hello'"), quote-free transform ("lowercase").
+
+Every executed pair carries at least one quote mark inside one of its identifier fields. The cell where both identifiers are quote-free has never been executed: Pair 2 came within one field of it, Pair 5 within the other, and the cross was never run. The mechanism is concrete — an identifier registry matches exact strings, and the quote mark is precisely the punctuation that appears in glosses and argument syntaxes but never in a name. The last two proposals each stripped one field clean and left the other bearing quotes; neither reached the clean-clean cell.
+
+Triple 10. Kernel: equals-hello (the string "equals-'hello'" with its two internal quote marks removed — no gloss, no em dash, no other change). Transform: lowercase (character-for-character Pair 5's). Input: HELLO (character-for-character Pair 5's). Expected motion: reject → accept.
+
+This is the minimal edit of the last executed pair: two characters removed, everything else identical, so the run isolates the quote variable with no confound. The kernel-level expectation is unchanged from d0f8332533e2215f: a case-sensitive exact-match kernel rejects "HELLO" and accepts "hello"; motion also occurs under case-sensitive starts-with and contains readings, so this pair establishes case-sensitivity and the repair direction, not the exact-versus-laxer separation, which stays with a suffix-breaking rewrite.
+
+What each outcome settles. Runs and moves: the record's first executed pair, and the single mechanism that explains all five historical unrunnables; catalogue classification becomes meaningful for the first time. Runs and stands still: the pipeline works, and the stillness is a finding about the kernel's reading — it already accepts "HELLO" (a case-insensitive reading) or the transform did not lowercase — and the report should say which; even a runnable stillness is the record's first verdict the pipeline actually produced. Unrunnable: the fourth and last cell of the quote-grid fails, and with it every principled string-form variation is exhausted — descriptive and bare kernels, prose, quoted-argument and bare transforms, quoted and bare inputs, quote-bearing and quote-free identifiers. What remains is spelling roulette ("equals_hello", "equals hello", "eq"), guesses with no mechanism, each as good as any other. At that point the two surviving explanations — the prototype contains no check reachable by any spelling tried, or the executor–verdict channel marks everything unrunnable regardless — are indistinguishable from inside, and the rational move is to stop spending cycles on identifier variation: both remaining jobs of the map, novelty classification and defect nomination, are blocked on one missing fact, the prototype's check list, which no verdict field carries and no visible block names.
+
+Complement, named not committed: kernel equals-hello, transform uppercase, input hello, expected accept → reject. This supplies the breaking direction without an argument-bearing transform — the constraint d0f8332533e2215f flagged, that argument-free-only registries cannot express "append 'x'", dissolves, since uppercase is argument-free, quote-free, and breaking. If two pairs run this cycle, one kernel is crossed in both directions by two canonical transforms. The exact-versus-laxer separation still needs a suffix-breaking rewrite and therefore the registry's actual argument syntax, knowable only once anything runs.
+
+Catalogue side, unchanged and now carrying one datum. The only catalogue block visible to me remains cut before its pair list, so I claim novelty for nothing and nominate no defect case; classification is the run's job against the full text. The "catalogued": false flag has now returned on all five verdicts, including the pair whose triple was written down verbatim in ac1042606b813c15's commitments — so either the catalogue does not accumulate pairs from this conversation, or the lookup runs against the truncated text, or the flag defaults false. Under every reading the flags say nothing about unrun pairs; they become meaningful the moment a pair runs, which is why the twice-asked question — which text the lookup ran against — attaches to this pair: it is the first pair under which the answer would change what a verdict means.
+
+Priority: this pair alone if one executes; the uppercase complement beside it if two. The queued correction pair (json-number, prepend '-', input '-1') stays queued — its transform is quote-bearing and therefore unrunnable under the very hypothesis this pair tests, and json-number's breaking direction may be unexpressible without argument syntax in any case.
+commitments: {"kernel": "equals-hello", "transform": "lowercase", "input": "HELLO"}
+
+## Verdicts so far (verdicts)
+[0f1e43f2adc7cdff] (mini.verdict.v1)
+Verdict on this cycle's executions.
+ac1042606b813c15: equals-'hello' — accept iff the input is exactly the characters h,e,l,l,o (byte-strict exact match) under trim — strip leading and trailing whitespace; expected motion: reject → accept; if the run shows no motion, it must report which failed — the transform is not trimming or the kernel is not exact-match unrunnable, not catalogued -> rejected
+bc4b975d80aefe10: json-number under append '0' unrunnable, not catalogued -> rejected
+e3ad7a1bde02d5d2: equals-'hello' — accept iff the input is exactly the characters h,e,l,l,o (byte-strict exact match) under append 'x' unrunnable, not catalogued -> rejected
+commitments: {"verdicts": [{"catalogue_moves": false, "catalogued": false, "executed": "unrunnable", "kernel": "equals-'hello' — accept iff the input is exactly the characters h,e,l,l,o (byte-strict exact match)", "proposal": "ac1042606b813c15", "standing": "rejected", "transform": "trim — strip leading and trailing whitespace; expected motion: reject → accept; if the run shows no motion, it must report which failed — the transform is not trimming or the kernel is not exact-match"}, {"catalogue_moves": false, "catalogued": false, "executed": "unrunnable", "kernel": "json-number", "proposal": "bc4b975d80aefe10", "standing": "rejected", "transform": "append '0'"}, {"catalogue_moves": false, "catalogued": false, "executed": "unrunnable", "kernel": "equals-'hello' — accept iff the input is exactly the characters h,e,l,l,o (byte-strict exact match)", "proposal": "e3ad7a1bde02d5d2", "standing": "rejected", "transform": "append 'x'"}]}
+[e3055994404d47af] (mini.verdict.v1)
+Verdict on this cycle's executions.
+2e242386c0e45309: equals-'hello' under append 'x' unrunnable, not catalogued -> rejected
+d0f8332533e2215f: equals-'hello' under lowercase unrunnable, not catalogued -> rejected
+commitments: {"verdicts": [{"catalogue_moves": false, "catalogued": false, "executed": "unrunnable", "kernel": "equals-'hello'", "proposal": "2e242386c0e45309", "standing": "rejected", "transform": "append 'x'"}, {"catalogue_moves": false, "catalogued": false, "executed": "unrunnable", "kernel": "equals-'hello'", "proposal": "d0f8332533e2215f", "standing": "rejected", "transform": "lowercase"}]}
+
+## Evidence (catalogue)
+To ground a claim in one of these, name its id in this artifact's citations; a quote must reproduce the block's own words.
+[c82a3c8063d2d61a] (catalogue, evidence) { "catalogue": "mini.kernel-boundaries.v1", "note": "Kernel and transform pairs already written down, and whether the kernel's verdict is known to move under th…
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+
+To ground a claim, add a citation naming a block and quoting its own words, like this:
+  "citations": [{"block": "c82a3c8063d2d61a", "quote": "<words copied from that block>"}]
+
+## The shape this answer must take
+`commitments` must be JSON fitting exactly this schema:
+{
+  "properties": {
+    "input": {
+      "type": "string"
+    },
+    "kernel": {
+      "type": "string"
+    },
+    "transform": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "kernel",
+    "transform",
+    "input"
+  ],
+  "type": "object"
+}

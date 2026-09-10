@@ -1,7 +1,7 @@
 {
   "schema_version": "creib.mini.manifest.v1",
   "manifest_id": "mini.conformance-blind-spot.v1",
-  "problem": "The checks under test are the conformance harness's own: how it recovers a JSON object from a reply, whether it had to recover it from prose, its response verdict, and its refusal-phrase check. Name a rewrite of a reply under which one of those checks ought to change its answer, and it may not. Propose exactly one pair per artifact: a kernel id and a transform id taken from the registry shown in the evidence (the entries beginning 'kernel' and 'transform'), and an input. The input is an INSTANCE, never a description: either one bare strict JSON object with string values, written out, such as {\"claimant_name\": \"amara okoro\", \"total_days\": \"five\"}, or one short prose sentence, written out, such as I'm sorry, no. The executor runs the kernel on your input before and after the transform and records whether the answer moved. The catalogue entries in the evidence say which pairs are already written down, on which input, and whether each moved there; prefer a pair the catalogue does not list. In the body, say what you expect to happen and why. The commitments must be a STRING containing JSON of the form {\"kernel\": \"<id>\", \"transform\": \"<id>\", \"input\": \"<the instance>\"}; the string itself is the JSON, not an object.",
+  "problem": "The checks under test are the conformance harness's own: how it recovers a JSON object from a reply, whether it had to recover it from prose, its response verdict, and its refusal-phrase check. The question for every seat: is there a rewrite of a reply under which one of those checks ought to change its answer and does not, or moves where nobody has written it down? The executor runs a proposed kernel on a proposed input before and after a proposed transform and records whether the answer moved; the catalogue entries in the evidence say which pairs are written down, on which input, and whether each moved there.",
   "cycles": {
     "max_cycles": 2
   },
@@ -120,7 +120,8 @@
           ]
         }
       },
-      "commitment_call": "single"
+      "commitment_call": "single",
+      "instruction": "Propose exactly one pair: a kernel id and a transform id taken from the registry entries in the evidence (they begin 'kernel' and 'transform'), and an input. The input is an INSTANCE, never a description: either one bare strict JSON object with string values, written out, such as {\"claimant_name\": \"amara okoro\", \"total_days\": \"five\"}, or one short prose sentence, written out, such as I'm sorry, no. Prefer a pair the catalogue does not list. In the body, say what you expect to happen and why. The commitments are a STRING whose content is JSON of the form {\"kernel\": \"<id>\", \"transform\": \"<id>\", \"input\": \"<the instance>\"}."
     },
     {
       "kind_id": "mini.execution.v1",
@@ -141,16 +142,6 @@
       "kind_id": "mini.criticism.v1",
       "title": "Criticism",
       "input_ports": [
-        {
-          "port_id": "role",
-          "port_type": "evidence_legend",
-          "params": {
-            "tiers": [
-              "roles"
-            ]
-          },
-          "window": "all"
-        },
         {
           "port_id": "problem",
           "port_type": "problem"
@@ -179,7 +170,8 @@
       "output_port": {
         "port_id": "out",
         "produces_kind": "mini.criticism.v1"
-      }
+      },
+      "instruction": "Do not propose. Read this cycle's executions beside the proposals: say which expectations held, which failed, and why, citing the catalogue and registry blocks by id."
     },
     {
       "kind_id": "mini.verdict.v1",
@@ -258,6 +250,19 @@
                             "defect",
                             "rejected"
                           ]
+                        },
+                        "column": {
+                          "enum": [
+                            "moves",
+                            "unchanged",
+                            null
+                          ]
+                        },
+                        "same_input": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
                         }
                       }
                     }
@@ -313,7 +318,6 @@
       "stage_id": "criticise",
       "kind_id": "mini.criticism.v1",
       "ports": [
-        "role",
         "problem",
         "proposals",
         "executions",
@@ -344,16 +348,6 @@
     {
       "source_id": "registry",
       "path": "registry.txt"
-    },
-    {
-      "source_id": "critic-role",
-      "path": "critic-role.txt",
-      "tier": "roles"
-    }
-  ],
-  "tiers": [
-    {
-      "tier": "roles"
     }
   ]
 }

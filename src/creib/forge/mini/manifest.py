@@ -42,6 +42,7 @@ from .ports import (
     port_type_from_dict,
 )
 from .routing import Routing, routing_from_dict
+from .executor import DEFAULT_ENDPOINT, endpoint_from_manifest
 from .stops import STOP_NEVER, StopCondition, resolve_stop_condition
 
 
@@ -125,6 +126,11 @@ class RunPlan:
     policy_overrides: tuple[Mapping[str, Any], ...]
     attention: AttentionPolicy
     sources: tuple[Source, ...]
+    #: The service a live run calls. Declared in the manifest, it is part of the header and so
+    #: of the run's identity; absent, the shipped default applies and the header carries no key,
+    #: so a manifest that says nothing keeps the identity it had before endpoints existed.
+    endpoint: Any = DEFAULT_ENDPOINT
+    endpoint_declared: bool = False
 
     def stage(self, stage_id: str) -> Stage:
         for item in self.stages:
@@ -333,6 +339,9 @@ def compile_manifest(path: Path, policy_dir: Path | None = None) -> RunPlan:
             raise MiniError("MINI_TIER_UNKNOWN", f"sources[{index}] is tagged {tier!r}, which nothing declares")
         sources.append(Source(source_id=source_id, tier=str(tier), raw=body))
 
+    endpoint_declared = manifest.get("endpoint") is not None
+    endpoint = endpoint_from_manifest(manifest["endpoint"]) if endpoint_declared else DEFAULT_ENDPOINT
+
     manifest_id = text(manifest.get("manifest_id"), "manifest_id")
     problem = text(manifest.get("problem"), "problem")
     header: dict[str, Any] = {
@@ -348,6 +357,7 @@ def compile_manifest(path: Path, policy_dir: Path | None = None) -> RunPlan:
         "policy": policy.to_dict(),
         "attention": attention.policy_id,
         "sources": [source.to_dict() for source in sources],
+        **({"endpoint": endpoint.to_dict()} if endpoint_declared else {}),
     }
     genesis = content_id(RUN_HEADER_DOMAIN, header)
     return RunPlan(
@@ -368,4 +378,6 @@ def compile_manifest(path: Path, policy_dir: Path | None = None) -> RunPlan:
         policy_overrides=overrides,
         attention=attention,
         sources=tuple(sources),
+        endpoint=endpoint,
+        endpoint_declared=endpoint_declared,
     )

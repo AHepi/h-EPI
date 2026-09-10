@@ -18,9 +18,55 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Mapping, Protocol, Sequence
 
-from creib.forge.conformance.executor import ChatRequest, OllamaChatExecutor
+import dataclasses
+import os
+
+from creib.errors import RecordError
+from creib.forge.conformance.executor import API_KEY_ENV, ChatRequest, OllamaChatExecutor
+from creib.forge.conformance.spec import Endpoint, endpoint_from_dict, think_setting
 
 from .common import MiniError
+
+#: The endpoint a manifest that declares none is run against: the conformance harness's own
+#: shape, read by its own reader. The key is read from OLLAMA_API_KEY at call time inside
+#: OllamaChatExecutor and nowhere else; ``auth: none`` sends no key, for a local Ollama.
+DEFAULT_ENDPOINT: Endpoint = endpoint_from_dict(
+    {
+        "kind": "ollama-chat",
+        "base_url": "https://ollama.com",
+        "timeout_seconds": 180,
+        "options": {"temperature": 0, "seed": 7},
+        "think": None,
+    }
+)
+
+
+def endpoint_from_manifest(raw: Any) -> Endpoint:
+    """Read a manifest's endpoint with the conformance harness's reader, refusing as a mini refusal."""
+
+    try:
+        return endpoint_from_dict(raw)
+    except (RecordError, KeyError, TypeError) as error:
+        raise MiniError("MINI_ENDPOINT_INVALID", f"endpoint: {error}") from error
+
+
+def endpoint_with_overrides(endpoint: Endpoint, think: str | None = None, timeout_seconds: int | None = None) -> Endpoint:
+    """A run-time override of the reasoning setting or the call timeout, as the conformance runner takes them.
+
+    The plan is unchanged; the run's record carries what was sent.
+    """
+
+    if think is not None:
+        raw_think = {"true": True, "false": False, "none": None, "null": None}.get(think.lower(), think)
+        try:
+            endpoint = dataclasses.replace(endpoint, think=think_setting(raw_think, "--think"))
+        except RecordError as error:
+            raise MiniError("MINI_ENDPOINT_INVALID", str(error)) from error
+    if timeout_seconds is not None:
+        if type(timeout_seconds) is not int or not 1 <= timeout_seconds <= 3600:
+            raise MiniError("MINI_ENDPOINT_INVALID", "--timeout-seconds must be a whole number of seconds from 1 to 3600")
+        endpoint = dataclasses.replace(endpoint, timeout_seconds=timeout_seconds)
+    return endpoint
 
 
 @dataclass(frozen=True)
@@ -187,24 +233,38 @@ def contract_for(phase: str) -> tuple[str, dict[str, Any]]:
 
 
 class LiveResponder:
-    """One model call per attempt, through the harness's own Ollama executor."""
+    """One model call per attempt, through the harness's own Ollama executor.
+
+    The endpoint is the conformance harness's ``Endpoint``: base URL, timeout, temperature,
+    seed, reasoning setting, and auth. The executor built from it is the one place in this
+    repository that touches the key. When this responder builds its own executor and the
+    endpoint's auth is bearer, an absent key is refused here, before any record is written,
+    rather than at the first call with a run already open.
+    """
 
     def __init__(
         self,
         model: str,
         executor: Any | None = None,
         *,
-        seed: int = 7,
-        timeout_seconds: int = 180,
+        endpoint: Endpoint = DEFAULT_ENDPOINT,
         retries: int = 0,
     ) -> None:
         self.model = model
-        self._executor = (
-            executor
-            if executor is not None
-            else OllamaChatExecutor(timeout_seconds=timeout_seconds, retries=retries)
-        )
-        self._seed = seed
+        self.endpoint = endpoint
+        if executor is None:
+            if endpoint.auth == "bearer" and not os.environ.get(API_KEY_ENV):
+                raise MiniError(
+                    "MINI_LIVE_KEY_MISSING",
+                    f"the endpoint's auth is bearer and {API_KEY_ENV} is not set; export it for this process, or set the manifest endpoint's auth to none for a local Ollama",
+                )
+            executor = OllamaChatExecutor(
+                base_url=endpoint.base_url,
+                timeout_seconds=endpoint.timeout_seconds,
+                retries=retries,
+                auth=endpoint.auth,
+            )
+        self._executor = executor
         self._calls = 0
 
     @property
@@ -220,8 +280,8 @@ class LiveResponder:
                 system=system,
                 user=request.brief,
                 format_schema=schema,
-                options={"temperature": 0, "seed": self._seed},
-                think=None,
+                options={"temperature": self.endpoint.temperature, "seed": self.endpoint.seed},
+                think=self.endpoint.think,
             )
         )
         if not response.usable:

@@ -147,11 +147,11 @@ for _transform in TRANSFORMS:
 
 
 def registry_text() -> str:
-    """The registry as a proposer is shown it: one kernel or transform per paragraph."""
+    """The conformance registry as a proposer is shown it: one kernel or transform per paragraph."""
 
-    lines = [f"kernel {kernel.kernel_id}: {kernel.description}" for kernel in KERNELS]
-    lines += [f"transform {transform.transform_id}: {transform.description}" for transform in TRANSFORMS]
-    return "\n\n".join(lines) + "\n"
+    from .blindspot import registry_text as _registry_text
+
+    return _registry_text("conformance.")
 
 
 __all__ = [

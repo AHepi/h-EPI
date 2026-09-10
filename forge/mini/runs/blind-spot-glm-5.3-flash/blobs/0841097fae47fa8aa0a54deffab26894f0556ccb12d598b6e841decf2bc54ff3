@@ -1,0 +1,97 @@
+# Verdict
+
+## Executions (executions)
+[8524108f59ae43d1] (mini.execution.v1)
+Executed this cycle's proposals.
+ac1042606b813c15: unrunnable
+bc4b975d80aefe10: unrunnable
+e3ad7a1bde02d5d2: unrunnable
+commitments: {"executions": [{"detail": "MINI_KERNEL_UNKNOWN: no kernel \"equals-'hello' — accept iff the input is exactly the characters h,e,l,l,o (byte-strict exact match)\"; known: ['mini.kernel.carries-because', 'mini.kernel.cut-count', 'mini.kernel.folded', 'mini.kernel.json-readable']", "executed": "unrunnable", "kernel": "equals-'hello' — accept iff the input is exactly the characters h,e,l,l,o (byte-strict exact match)", "proposal": "ac1042606b813c15", "transform": "trim — strip leading and trailing whitespace; expected motion: reject → accept; if the run shows no motion, it must report which failed — the transform is not trimming or the kernel is not exact-match"}, {"detail": "MINI_KERNEL_UNKNOWN: no kernel 'json-number'; known: ['mini.kernel.carries-because', 'mini.kernel.cut-count', 'mini.kernel.folded', 'mini.kernel.json-readable']", "executed": "unrunnable", "kernel": "json-number", "proposal": "bc4b975d80aefe10", "transform": "append '0'"}, {"detail": "MINI_KERNEL_UNKNOWN: no kernel \"equals-'hello' — accept iff the input is exactly the characters h,e,l,l,o (byte-strict exact match)\"; known: ['mini.kernel.carries-because', 'mini.kernel.cut-count', 'mini.kernel.folded', 'mini.kernel.json-readable']", "executed": "unrunnable", "kernel": "equals-'hello' — accept iff the input is exactly the characters h,e,l,l,o (byte-strict exact match)", "proposal": "e3ad7a1bde02d5d2", "transform": "append 'x'"}]}
+
+## Criticisms (criticisms)
+[372f2083bacb79ba] (mini.criticism.v1)
+The execution record answers the question the earlier proposals could only guess at. All three came back unrunnable (8524108f59ae43d1), and the executor's error message lists the prototype's actual checks: mini.kernel.carries-because, mini.kernel.cut-count, mini.kernel.folded, mini.kernel.json-readable. The earlier proposals' own standing rule — re-aim if the real checks differ — now fires. Nothing was run, so nothing in the record contradicts their reasoning; the failure was aim, not argument. This criticism re-aims every cell at the four real kernels, so that after the next run each check the prototype actually contains has at least one named rewrite under which its verdict ought to move.
+
+Two warnings carry over before the triples. First, the correction e3ad7a1bde02d5d2 made to Triple 3 transfers verbatim: prepending '-' to a bare number yields another valid number ('1' → '-1'), so on json-readable that rewrite is a stillness probe, not a mover, and must not be re-proposed as one. Second, bc4b975d80aefe10's whitespace observation transfers: a JSON parser tolerates surrounding whitespace, so trim on ' 1 ' does not move json-readable either. The transforms survive — append, prepend, trim, lowercase, plus one addition, delete-the-first-character, which is trivial to implement; if the run's transform vocabulary lacks it, the nearest equivalent should be substituted and the substitution recorded. The earlier triples should be retired as mis-aimed rather than retried; their transforms live on in the pairs below.
+
+Standing limitations, unchanged. The catalogue block (c82a3c8063d2d61a) is still truncated to the first words of its note; the pair list and move flags lie beyond the cut. I claim novelty for nothing and nominate no defect case; classification is left to the run against the full catalogue text. The kernel names are now known but their semantics are stated nowhere I can read, so each triple names the reading it aims at and what stillness would refute.
+
+Triple 1. Kernel: mini.kernel.json-readable — accept iff the whole input parses as JSON. Transform: append 'x'. Input: '1'. Expected motion: accept → reject; '1x' parses under no JSON reading. If it does not move, the kernel is not a whole-input parse but something laxer, such as contains-a-JSON-value ('1x' contains the number '1') — stillness is itself a finding, not a fault.
+
+Triple 2. Kernel: json-readable (same). Transform: append ']'. Input: '[1'. Expected motion: reject → accept; '[1' is an unclosed array, '[1]' a valid one. This supplies the repair direction on the same kernel, and it confirms Triple 1's refutation from the other side: under the lax contains reading, '[1' already accepts and the pair stands still.
+
+Triple 3. Kernel: mini.kernel.carries-because — accept iff the input carries the string 'because'. Transform: delete the first character. Input: 'because'. Expected motion: accept → reject; 'ecause' does not carry 'because'. If it does not move, the carried string is shorter than 'because' — 'ecause' still contains 'cause' — and the run's pattern over near-misses pins the actual string.
+
+Triple 4. Kernel: carries-because (same). Transform: lowercase. Input: 'BECAUSE'. Expected motion: reject → accept, iff matching is case-sensitive. Stillness means the kernel is case-insensitive, since 'BECAUSE' then already carries its target. This is the only probe aimed at this kernel that separates case-sensitive from case-insensitive readings; Triple 3 cannot, because both readings reject 'ecause'.
+
+Triple 5. Kernel: mini.kernel.folded — accept iff the input equals its own case-fold (for ASCII, equivalently: the input is already all-lowercase). Transform: append 'X'. Input: 'hello'. Expected motion: accept → reject, robustly: under the equals-its-own-fold reading 'helloX' differs from its fold 'hellox'; under the all-lowercase reading it contains an uppercase character; under a fold-then-compare-to-'hello' reading it folds to 'hellox' and misses while 'hello' hits. Stillness would mean the kernel is not case-based at all.
+
+Triple 6. Kernel: folded (same). Transform: lowercase. Input: 'HELLO'. Expected motion: reject → accept under the equals-its-own-fold and all-lowercase readings. Stillness instead indicates a fold-then-compare reading, under which 'HELLO' already accepts because its fold meets the target — a separation Triple 5 cannot make, since every case-based reading there agrees on both inputs.
+
+Triple 7. Kernel: mini.kernel.cut-count — accept iff a counted quantity of the input equals a fixed target (the name suggests cuts or delimiter-separated units). Transform: append ',a'. Input: 'a'. Expected motion: the verdict flips. The rewrite steps every plausible counted quantity — comma-separated fields 1 → 2, commas 0 → 1, characters 1 → 3 — so under any exact-count reading whose target sits at a before- or after-value the verdict moves, and the flip's direction records that target, which nothing else this cycle can supply. Stillness means one of three faults: a threshold reading (at-least or at-most) rather than exact count; a counted quantity other than these (a different delimiter, say); or a target outside the values touched. Each refutation constrains a different parameter, so the pair is diagnostic even in stillness.
+
+Coverage. json-readable: breaking and repair (1, 2). carries-because: breaking plus the case diagnostic (3, 4). folded: a robust breaking rewrite and a reading-separating repair (5, 6). cut-count: one flip-by-one probe (7); its repair direction cannot be proposed honestly until the target is known, and Triple 7's flip is what supplies it. That is every check the executor says the prototype contains, each with a named rewrite under which its verdict ought to move.
+
+Remaining after this run: the target and delimiter behind cut-count; the case-sensitivity of carries-because; the reading of folded if Triple 6 stands still; and the defect direction — a pair the catalogue says moves that does not — still blocked until the catalogue's move flags are readable.
+
+Priority if only one triple is run: Triple 1 — the smallest pair on a kernel that certainly exists, whose motion is expected under the strictest and most common reading, and whose stillness cannot return an empty result, since it would itself identify the kernel as a contains-check. If the runner prefers information over certainty, Triple 7 is the alternative: the only probe of the one kernel whose verdict direction cannot be anticipated from its name.
+
+## Verdicts so far (verdicts)
+(nothing yet)
+
+## Evidence (catalogue)
+To ground a claim in one of these, name its id in this artifact's citations; a quote must reproduce the block's own words.
+[c82a3c8063d2d61a] (catalogue, evidence) { "catalogue": "mini.kernel-boundaries.v1", "note": "Kernel and transform pairs already written down, and whether the kernel's verdict is known to move under th…
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+
+To ground a claim, add a citation naming a block and quoting its own words, like this:
+  "citations": [{"block": "c82a3c8063d2d61a", "quote": "<words copied from that block>"}]
+
+## The shape this answer must take
+`commitments` must be JSON fitting exactly this schema:
+{
+  "properties": {
+    "verdicts": {
+      "items": {
+        "properties": {
+          "catalogued": {
+            "type": "boolean"
+          },
+          "executed": {
+            "type": "string"
+          },
+          "kernel": {
+            "type": "string"
+          },
+          "proposal": {
+            "type": "string"
+          },
+          "standing": {
+            "enum": [
+              "candidate point",
+              "defect",
+              "rejected"
+            ]
+          },
+          "transform": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "proposal",
+          "executed",
+          "catalogued",
+          "standing"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "verdicts"
+  ],
+  "type": "object"
+}

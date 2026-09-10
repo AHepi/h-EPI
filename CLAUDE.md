@@ -52,6 +52,14 @@ Run `all` before every commit. No model is called by any check. Do not add `asse
 - A new form is a new directory under `forge/conformance/pilots/`, never a code change. If a form cannot be expressed, extend the form profile in `spec.py` and say so in `docs/how-it-works.md`.
 - Live model runs are deliberate: they cost money and produce records that get committed. Use `--family BASELINE` for plain fills, `--limit` while developing, and a scratch `--output-dir` for anything you are not ready to commit.
 
+## Mini
+
+- Mini is a second machine beside the harness: one artifact template, kinds as records, declared wiring, an append-only hash-chained record. The code is `src/creib/forge/mini/`, its configurations `forge/mini/manifests/`, its records `forge/mini/runs/`, its documents `docs/mini/` (`SPEC.md` is the reference, written from the code; `FAILURE_MODES.md` its register). The command line is `tools/run_mini.py`.
+- Mini mints no standing. A verdict is an artifact a seat produced; the permission layer's `changes` is `nothing` and any other value is refused at compile. The blind-spot template reads a catalogue row as a kernel point: an invariance is a claim over the input class, a sensitivity is an example on the row's input, and an uncatalogued invariance is a candidate point for the unchanged column.
+- Every reply is stored verbatim as a content-addressed blob before it is read, the refused ones included. A blob may carry a trailing space a model wrote; `git diff --cached --check` will name it, and it is committed as it is, never edited.
+- A live run calls the endpoint the manifest declares, in the conformance pilot's own shape and read by its reader, through the harness's own `OllamaChatExecutor`, the one place the key is read; an endpoint with `"auth": "none"` needs no key. `--think` and `--timeout-seconds` override for one run and the run's first event records what was sent.
+- The conformance harness's own checks are registered as mini kernels by `src/creib/forge/mini/conformance_kernels.py`, and `forge/mini/manifests/conformance-blind-spot/` carries a catalogue drawn from `docs/kernel.md` that a test re-derives by execution. Nothing under `src/creib/forge/conformance/` changes for mini.
+
 ## Publishing
 
 - Work on a branch (`claude/*`, `codex/*`, or a human-chosen name). Never commit on or push to `main`; publication is a pull request and merging is a human action.
