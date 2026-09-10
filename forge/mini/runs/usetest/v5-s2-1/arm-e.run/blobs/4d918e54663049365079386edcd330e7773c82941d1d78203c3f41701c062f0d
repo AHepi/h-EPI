@@ -1,0 +1,26 @@
+# Execution
+
+## Proposals so far (proposals)
+[0751c5a2bffe21e8] (mini.pair-proposal.usetest.v1)
+Rule: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' Also, 'A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over.' Here B is {"b": 2.0}, which contains a float, so it is passed over. The first fence holds A, which is scoreable, so 'any fence holds one' is true. For the input, the last scoreable object inside a code fence is A, so the rule says recovery is A. For the rewritten text, adding C between the fences does not change what the fences hold; the last scoreable object inside a code fence is still A, so the rule says recovery is A. Therefore the rule's answer is unchanged. However, the code's fenced pool is used only when there is exactly one fence; with two fences it falls through to top_level, and reversed top_level picks C after B is passed over, so the code moves from A to C.
+cell: fence[ S A ] fence[ B ]
+input: ```
+Here is the result:
+{"a": 1}
+```
+```
+{"b": 2.0}
+```
+rewrite: fence[ S A ] C fence[ B ]
+rewritten: ```
+Here is the result:
+{"a": 1}
+```
+{"c": 3}
+```
+{"b": 2.0}
+```
+commitments: {"kernel":"recovery","expect":"unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

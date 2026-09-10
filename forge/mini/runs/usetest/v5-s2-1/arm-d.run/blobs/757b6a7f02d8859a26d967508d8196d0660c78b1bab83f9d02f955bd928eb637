@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown the documented rules and the complete source of the checks. Read this cycle's executions beside the proposals: say which expectations held, which failed, which inputs the validator threw away and why, and for each failure whether the proposer misread the rule or the rule as written and the code part company — quote the rule's words and name the line of code. Say what a proposer should build next. Cite nothing you were not shown.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Expectation failed: recovery moved from {"a":1} to {"b":2}, not unchanged. No inputs were discarded; the pair passed cell validation and ran. The proposer did not misread the rule; the rule as written and the code part company. The rule says 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' The code's fenced pool is the raw fenced content, not the last object inside it: `for pool in ((fenced if len(fenced) == 1 else []), top_level):` and `value = loads_strict(candidate.strip())`. Here the single fence's content is 'Here is the result:\n{"a": 1}', which is not itself a JSON object, so `loads_strict` fails and the code falls through to `top_level`; the last top-level object in the rewritten text is {"b":2}. Thus the rule points to A, the code returns B. A proposer should next build a pair with two fences each holding an object and an outside object after them: the rule says the last object inside a fence should be scored, but the code's `len(fenced) == 1` condition discards the fenced pool and scores the last top-level object, likely the outside one.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

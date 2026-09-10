@@ -1,0 +1,20 @@
+# Execution
+
+## Proposals so far (proposals)
+[c05ffe6ea4504953] (mini.pair-proposal.usetest.v1)
+The rule in recover_json_object states: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." For the input fence[ A S ], the fence holds object A, so the last object inside the fence is A; the rule says k_recovery should return A. For the rewritten fence[ A S ] B, the fence still holds A, and B is outside the fence, so the last object inside the fence remains A; the rule says k_recovery should still return A. Therefore the rule says the answer should be unchanged. However, we expect the check to move because it may incorrectly take the last top-level object overall, returning B in the rewritten.
+cell: fence[ A S ]
+input: ```
+{"a":1}
+Here is the result:
+```
+rewrite: add B after the fence
+rewritten: ```
+{"a":1}
+Here is the result:
+```
+{"b":2}
+commitments: {"kernel": "recovery", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
