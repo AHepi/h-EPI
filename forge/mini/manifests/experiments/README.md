@@ -306,9 +306,18 @@ nothing at all by any shape that let the proposer read the code and choose its
 own input. The angle does not need a rethink; it needed the choice of what to
 test taken away from the model.
 
-The run `e-replies-as-written` of round 2 on nemotron-3-nano:30b had not ended
-when this was written and its record is not committed; the README says so
-rather than waiting.
+**E of round 2, read when it ended.** Nine replies over three cycles on
+nemotron-3-nano:30b, nine run, five candidates, none of them a point. The
+model did not make one edit: every rewrite added a heading, an apology, a
+label line and sometimes a stray brace at once, so a pair says nothing about
+any one of them. Two of the five are the control's shape reached by accident,
+with the object still recovered because it also stands as a top-level object;
+three are the proposer failing to notice that its input was already recovered
+from prose. What this run shows is a requirement on the shape rather than on
+the check: a pair is only a probe if exactly one thing differs, and a small
+model asked for a realistic reply will not hold the rest fixed. The machine
+cannot enforce it (any two texts are a legal pair) and the record shows the
+cost of not enforcing it.
 
 ## Round 4
 

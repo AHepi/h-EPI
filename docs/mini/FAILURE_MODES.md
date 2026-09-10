@@ -384,7 +384,7 @@ functions, that its verdict now reads a catalogue as the harness reads a kernel
 point, and that a live model can be walked through it without a hand-written
 reply.
 
-## The experiments: seventeen runs, three rounds and two addenda
+## The experiments: eighteen runs, three rounds and two addenda
 
 `forge/mini/manifests/experiments/README.md` pre-registers the diagnosis, the
 positive control, the criterion and each round's shapes before its runs, and
@@ -435,14 +435,31 @@ written for one shape (a bare object or one sentence) refusing the input the
 mirror shape needed. Neither is a defect against a requirement; both cost a
 run its proposals, and the records say so.
 
-## What the seventeen runs show, and do not
+## M14 — A pair whose two texts differ in more than one thing
+
+**Seen on** `runs/experiments/round-2/e-replies-as-written/`, all three cycles:
+asked for a realistic model reply and one edit a model might make, the seat
+added a heading, an apology, a label line inside the fence and a stray brace in
+the same rewrite, and five of its nine pairs became candidate points that say
+nothing about any one change. **Status: OPEN.**
+
+A pair is a probe only if exactly one thing differs between its two texts, and
+nothing in the machine can enforce that: any two strings are a legal pair, and
+the difference is the proposer's to make. The shapes that worked took the choice
+away in a different way (a cell in a notation, with the rewrite named as one
+removal), which is a template's answer, not the machine's. A check that
+diffed the two texts and refused a pair whose difference is not one part would
+be a template decision with a real cost: it would need a notion of "part", which
+the machine does not have and should not acquire for one family of manifests.
+
+## What the eighteen runs show, and do not
 
 The control pre-registered in the README (a fence holding a sentence beside its
 object, and a bare object after it, scored on the bare object against the
-docstring) was found on the seventeenth run, by a proposer shown the docstring
+docstring) was found by the last shape of the third round, by a proposer shown the docstring
 and not the code, handed the control's cell in a notation, writing the
 docstring's expectation, with the machine's answer differing: `r3-7`, events 80
-and 146, and again at 168 on two more cells of the same class. Sixteen runs did
+and 146, and again at 168 on two more cells of the same class. The other seventeen runs did
 not find it: a proposer that reads the code expects what the code does; a
 proposer asked for a disagreement confirms invariances instead; a proposer
 that picks its own cell picks the easy ones; a proposer handed a cell in words

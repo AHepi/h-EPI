@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Criticism: The two proposals that were expected to cause a move (i.e., to have the harness recover a JSON object) resulted in NO_OBJECT (unchanged). This indicates a mismatch between the proposer's expectation and the actual behavior of conformance.kernel.recovery. The rule governing recovery (block 329989b28a883155) does not guarantee a move; the source code (block 10f155e3a8564119) explicitly returns NO_OBJECT when no JSON object can be recovered, as shown by the line `raise RecordError("no JSON object could be recovered from the response")`. Therefore the proposer misread the rule: they assumed the kernel would always recover an object, but the rule and code only move when a top‑level object is found in a fence or at the end of the text. The failures matter because they violate the expected transformation; next steps are to place the JSON payload inside a fenced code block or ensure it is the final top‑level object, and to avoid extraneous prose that prevents the parser from locating the object.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.
