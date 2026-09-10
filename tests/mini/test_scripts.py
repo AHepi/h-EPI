@@ -107,7 +107,7 @@ class OneScriptBothWaysTests(MiniTestCase):
         )
         rendered = compare_roots(first.root, second.root)
         self.assertEqual(rendered.count("### verdicts"), 2)
-        self.assertEqual(rendered.count("### executed-invariance ledger"), 2)
+        self.assertEqual(rendered.count("### executed-unchanged ledger"), 2)
 
 
 class ReorderingTests(MiniTestCase):

@@ -39,7 +39,8 @@ class ReadingTests(MiniTestCase):
         self.assertEqual((reading.responder_id, reading.ended, reading.cycles_completed), ("model:gemma4:31b", True, 7))
         self.assertEqual((reading.proposals, reading.ran, reading.drops, reading.format_failures), (21, 21, 0, 0))
         self.assertEqual(len(reading.cells_in_grid), 20)
-        self.assertEqual(len(reading.cells_named), 20, "every cell of the grid was named")
+        self.assertEqual(len(reading.cells_executed), 20, "every cell of the grid was executed, not merely handed out")
+        self.assertEqual(len(reading.cells_assigned), 20)
         self.assertEqual(reading.cells_uncovered, ())
         cells = [row.cell for row in reading.disagreements]
         self.assertIn("fence[ S A ] B", cells, "the control's own cell is among the contradictions")
@@ -69,7 +70,7 @@ class RuleTests(MiniTestCase):
 
     def test_the_escaping_rule_fires_on_the_run_that_lost_its_calls(self) -> None:
         decision = decide("r4-1", read_run(RUNS / "round-4" / "r4-1-skeletons-mistral"), _manifest("round-4/r4-1-skeletons-mistral"))
-        self.assertEqual(decision.rules_fired, ("fields-form",))
+        self.assertIn("fields-form", decision.rules_fired)
         proposer = next(k for k in decision.manifest["kinds"] if k["kind_id"] == "mini.pair-proposal.grid-1.v1")
         self.assertEqual(tuple(proposer["optional_fields"]), LONG_FIELDS)
         schema = proposer["format"]["commitments"]["all_of"][0]["schema"]
@@ -78,8 +79,20 @@ class RuleTests(MiniTestCase):
 
     def test_the_line_break_rule_fires_on_the_run_that_wrote_the_escape_out(self) -> None:
         decision = decide("r5-2", read_run(RUNS / "round-5" / "r5-2-skeletons-fields-qwen"), _manifest("round-5/r5-2-skeletons-fields-qwen"))
-        self.assertEqual(decision.rules_fired, ("real-line-breaks",))
+        self.assertIn("real-line-breaks", decision.rules_fired)
         self.assertIn("never the two characters backslash and n", json.dumps(decision.manifest))
+
+    def test_a_cell_handed_out_is_not_a_cell_tested(self) -> None:
+        """Audit F-A: one count made twenty assignments read as twenty tested cells."""
+
+        reading = read_run(RUNS / "round-4" / "r4-1-skeletons-mistral")
+        self.assertEqual(len(reading.cells_assigned), 20)
+        self.assertEqual(len(reading.cells_executed), 1, "one proposal survived that run's escaping failures")
+        self.assertEqual(len(reading.cells_uncovered), 19)
+        self.assertEqual(len(reading.cells_assigned_not_executed), 19)
+        self.assertIn("20 cells, 20 handed out, 1 attempted, 1 executed", render(reading))
+        decision = decide("r4-1", reading, _manifest("round-4/r4-1-skeletons-mistral"))
+        self.assertIn("cover-the-grid", decision.rules_fired, "and the campaign now sees the grid as uncovered")
 
     def test_the_one_change_rule_fires_on_the_run_that_changed_four_things(self) -> None:
         decision = decide("e", read_run(RUNS / "round-2" / "e-replies-as-written"), _manifest("round-2/e-replies-as-written"))

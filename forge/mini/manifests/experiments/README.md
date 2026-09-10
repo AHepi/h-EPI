@@ -439,20 +439,33 @@ runs only one of them will miss what the other sees.
   intermediate machine): twenty proposals reached the executor and nineteen were
   named `unreadable`, because the format layer admitted the raw line break and
   the seat that read the string back did not. Evidence for the second half of
-  M13 and for nothing else.
+  M13 and for nothing else. Its grid was handed out in full and one cell of it
+  was executed; the reading of the day said "twenty cells named", which the
+  audit of 10 September showed was a count of assignments (F-A), and the reader
+  now counts handed out, attempted and executed apart.
 - **`r4-7-skeletons-mistral-after-m13b`** (mistral-large-3:675b, both readings
   repaired): eleven drops and twenty-nine format failures still, ten proposals
   through, four disagreements. Three are the control's class: `fence[ A S ] B`,
   `fence[ A B ] C` and `fence[ A B ] A`, each scored on the bare object after
   the fence where the docstring says the fenced one.
 
-**The round's question is answered: the control was found by the method, not by
-the model.** Three models, gemma4:31b, qwen3.5:397b and mistral-large-3:675b,
-each shown the docstring and not the code, each handed the cells of the same
-enumerated grid in the same notation, each wrote the docstring's expectation and
-each was contradicted by the machine on the same class of reply. That is the
-strongest thing in this file, and it is a claim about a way of arranging seats,
-not about any model.
+**The round's question is answered as far as it can be: the finding does not
+depend on one model.** Three models, gemma4:31b, qwen3.5:397b and
+mistral-large-3:675b, each shown the docstring and not the code, each handed the
+cells of the same enumerated grid in the same notation, each wrote the
+docstring's expectation and each was contradicted by the machine on the same
+class of reply.
+
+What that rules out is one model's fortunate output. It does not isolate which
+part of the arrangement earned its cost: the human-written grid, the notation,
+the rules-only presentation, the critic, the cycle structure and the model all
+varied together, and the outcome belongs to the whole combination. An earlier
+version of this paragraph said the control was found "by the method, not by the
+model", which claims a causal separation these runs cannot support; the audit of
+10 September was right to name it, and it is withdrawn (`docs/mini/AUDIT_RESPONSE.md`,
+audit of 10 September, executive point). What is left standing is worth having
+and is narrower: this arrangement finds a defect that a docstring and its code
+disagree about, on three models, and the parts have not been ablated.
 
 What it cost to get there is the round's other finding. Mistral lost forty-one
 of forty-two calls in `r4-1`, nineteen of twenty executions in `r4-6`, and
@@ -592,9 +605,17 @@ the seat was left to choose what to test.
 
 So: the machine chooses what to test, the model instantiates it and reads the
 rule, the machine executes, and a person reads the disagreement. That division
-is the result. The seat's reading is ordinarily right — thirty-four of
-forty-two, when the pair is handed to it whole — which is exactly what makes a
+is what these records argue for. The seat's reading is ordinarily right — thirty-four
+of forty-two, when the pair is handed to it whole — which is exactly what makes a
 disagreement worth a person's time.
+
+Each of the five is a reading of runs that differed in more than the one thing it
+names, and no component was removed and re-run with everything else held. So they
+are conclusions about what went wrong when it went wrong, not measured
+contributions: the critic, the second commitment call, the repeated cycles and the
+attention policy have never been shown to earn their cost against a simpler
+arrangement that constructs the same cases and asks one model once. The audit of
+10 September says so, and the comparison it proposes has not been run.
 
 **What the loop cannot do.** A pair shape surfaces only disagreements, so a
 boundary both readers get right is in the record and not in the candidate list;
@@ -624,7 +645,7 @@ that was `tools/mini_campaign.py`.
 
 It ran both shapes, replayed both records, wrote both readings, and decided:
 `cover-the-grid` fired on the skeleton grid, which had ended on its cycle cap
-with nine of twenty cells named, and raised its cycles to seven; no rule fired
+with nine of its twenty cells executed, and raised its cycles to seven; no rule fired
 on the replies shape, whose pairs this time were within the measure. It wrote
 the second round's manifests and the note saying so, committed them, and ran
 them.

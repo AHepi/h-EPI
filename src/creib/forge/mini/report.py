@@ -23,6 +23,7 @@ from creib.strict_json import load_strict
 
 from .blindspot import (
     EXECUTION_KIND,
+    NEXT_CELL_PREFIX,
     GRID_SOURCE,
     PAIR_EXECUTION_KIND,
     PAIR_PROPOSAL_PREFIX,
@@ -117,7 +118,20 @@ class RunReading:
     executions: tuple[ExecutionRow, ...]
     verdicts: tuple[VerdictRow, ...]
     cells_in_grid: tuple[str, ...]
-    cells_named: tuple[str, ...]
+    #: Cells a next-cell seat handed out. An assignment is a reservation, not a test.
+    cells_assigned: tuple[str, ...]
+    #: Cells a proposal named. An attempt is not an execution either: the proposal may name a
+    #: cell and build something else, or name a kernel the executor cannot run.
+    cells_attempted: tuple[str, ...]
+    #: Cells whose proposal the executor actually ran. This is the only one of the three that
+    #: is coverage, and the three were one number until the audit of 10 September (F-A).
+    cells_executed: tuple[str, ...]
+
+    @property
+    def cells_named(self) -> tuple[str, ...]:
+        """Every cell any artifact named, assignments included. Kept for reading a record, not coverage."""
+
+        return tuple(dict.fromkeys(self.cells_assigned + self.cells_attempted))
 
     @property
     def disagreements(self) -> tuple[ExecutionRow, ...]:
@@ -137,8 +151,17 @@ class RunReading:
 
     @property
     def cells_uncovered(self) -> tuple[str, ...]:
-        named = set(self.cells_named)
-        return tuple(cell for cell in self.cells_in_grid if cell not in named)
+        """Cells of the grid no execution reached, whether or not one was assigned or attempted."""
+
+        executed = set(self.cells_executed)
+        return tuple(cell for cell in self.cells_in_grid if cell not in executed)
+
+    @property
+    def cells_assigned_not_executed(self) -> tuple[str, ...]:
+        """Cells handed out that no execution reached: the distance between reserving and testing."""
+
+        executed = set(self.cells_executed)
+        return tuple(cell for cell in self.cells_assigned if cell not in executed)
 
     @property
     def cells_off_grid(self) -> tuple[str, ...]:
@@ -165,8 +188,11 @@ class RunReading:
             "columns": dict(sorted(self.columns.items())),
             "readings": dict(sorted(self.readings.items())),
             "cells_in_grid": list(self.cells_in_grid),
-            "cells_named": list(self.cells_named),
+            "cells_assigned": list(self.cells_assigned),
+            "cells_attempted": list(self.cells_attempted),
+            "cells_executed": list(self.cells_executed),
             "cells_uncovered": list(self.cells_uncovered),
+            "cells_assigned_not_executed": list(self.cells_assigned_not_executed),
             "cells_off_grid": list(self.cells_off_grid),
             "disagreements": [
                 {
@@ -209,7 +235,8 @@ def read_run(root: Path) -> RunReading:
     state = replay(root / "log.jsonl", _genesis(root))
     blobs = BlobStore(root / "blobs")
     fields: dict[str, dict[str, Any]] = {}
-    cells: list[str] = []
+    assigned: list[str] = []
+    attempted: list[str] = []
     proposals = 0
     for key in state.artifact_order:
         record = state.artifacts[key]
@@ -222,7 +249,9 @@ def read_run(root: Path) -> RunReading:
             proposals += 1
         cell = parsed.get("cell")
         if type(cell) is str and cell.strip():
-            cells.append(" ".join(cell.split()))
+            # A cell a next-cell seat wrote was handed out; a cell a proposal wrote was
+            # attempted. Neither is a cell that was tested (audit F-A).
+            (assigned if kind_id.startswith(NEXT_CELL_PREFIX) else attempted).append(" ".join(cell.split()))
 
     executions: list[ExecutionRow] = []
     verdicts: list[VerdictRow] = []
@@ -294,7 +323,11 @@ def read_run(root: Path) -> RunReading:
         executions=tuple(executions),
         verdicts=tuple(verdicts),
         cells_in_grid=grid_cells(state, blobs),
-        cells_named=tuple(dict.fromkeys(cells)),
+        cells_assigned=tuple(dict.fromkeys(assigned)),
+        cells_attempted=tuple(dict.fromkeys(attempted)),
+        cells_executed=tuple(
+            dict.fromkeys(row.cell for row in executions if row.executed in ("moved", "unchanged") and row.cell)
+        ),
     )
 
 
@@ -325,9 +358,18 @@ def render(reading: RunReading) -> str:
     ]
     if reading.cells_in_grid:
         lines.append(
-            f"- grid: {len(reading.cells_named)} of {len(reading.cells_in_grid)} cells named"
-            + (f"; not named: {'; '.join(reading.cells_uncovered)}" if reading.cells_uncovered else "")
+            f"- grid: {len(reading.cells_in_grid)} cells, {len(reading.cells_assigned)} handed out, "
+            f"{len(reading.cells_attempted)} attempted, {len(reading.cells_executed)} executed"
+            + (f"; never executed: {'; '.join(reading.cells_uncovered)}" if reading.cells_uncovered else "")
+            + (
+                f"; handed out and not executed: {'; '.join(reading.cells_assigned_not_executed)}"
+                if reading.cells_assigned_not_executed
+                else ""
+            )
             + (f"; {len(reading.cells_off_grid)} named that the grid does not hold" if reading.cells_off_grid else "")
+        )
+        lines.append(
+            "  (a cell handed out is a reservation and a cell attempted is a proposal; only an executed cell was tested)"
         )
     lines.extend(["", "## Where the machine contradicted the proposal", ""])
     if not reading.disagreements:

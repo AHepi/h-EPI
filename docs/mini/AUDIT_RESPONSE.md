@@ -108,3 +108,153 @@ kind file and compiles twice around a format-only edit; no adversarial attention
 policy yet chooses every permitted post-verdict opportunity; the repaired live
 contract has not been through a real endpoint. Those are named in `SPEC.md`
 Part three rather than implied to be finished.
+
+---
+
+# The audit of 10 September 2026 — what I accepted, and why
+
+A second audit was supplied on 2026-09-10 against `974e504`, the revision on
+`main` that day. It reads the source, reproduces seven mechanisms with
+standalone probes, and inspects one committed execution blob. It states its own
+limits plainly: it did not install the package, run the suite, or rerun any
+experiment, so its findings are claims to be re-derived. I re-derived all eight
+against the real code before touching anything. **Six hold as stated, one is
+correct and already registered, one is correct and intentional.**
+
+| # | Finding | Verdict | Where it is answered |
+|---|---|---|---|
+| F-A | A named cell is not a completed, correctly targeted test | **Accepted** | `report.py`, cells counted three ways |
+| F-B | Disagreement is a triage signal, not a defect oracle | **Accepted; already argued** | `AUTONOMY.md`, and the reader now shows agreements |
+| F-C | Execution-affecting fields are outside artifact identity and ordinary rendering | **Accepted** | `runner.py`, identity payload and `_artifact_lines`; `common.py`, domain v2 |
+| F-D | Evidence previews can omit the clause a reader must interpret | **Correct; registered as M6** | `FAILURE_MODES.md` M6, with the addition below |
+| F-E | Run comparison admits confounds and overcompresses its evidence | **Accepted** | `compare.py`, gate wording, both executor kinds, witness rows |
+| F-F | Completion accounting has no completed-verdict invariant | **Accepted** | `runner.py`, `steps_exhausted` |
+| F-G | Successful calls lose their trace when a later phase fails | **Accepted** | `runner.py`, the drop event carries them |
+| F-H | Soft cycle budgets are not hard spend controls | **Correct; intentional and documented** | `SPEC.md` §7; no change |
+
+Each accepted finding has a regression in `tests/mini/test_audit_findings.py`
+(`FAudit20260910Tests`) that fails on the behaviour it repairs.
+
+## The executive point, which I accept and have acted on
+
+The audit says the sentence "the control was found by the method, not by the
+model" claims a causal separation the runs cannot support, because the grid, the
+notation, the presentation, the critic, the cycles and the model varied together.
+That is right, and it is exactly the kind of claim this repository exists to
+refuse. The sentence is withdrawn in
+`forge/mini/manifests/experiments/README.md`; what stands in its place is the
+narrower thing the records support — three models, one shape, the same
+contradiction, and no ablation. The synthesis's five-point "what the arrangement
+has to be" now says in its own words that its five points are readings of runs
+that differed in more than one thing, and that the critic, the second commitment
+call, the repeated cycles and attention have never been shown to earn their cost
+against a simpler arrangement.
+
+The audit's proposed decisive comparison — the same material through
+deterministic execution, through one direct rules-reading call, and through the
+full loop, with held-out cases and blinded classification — has **not** been run.
+It is the right next experiment and this response does not pretend otherwise.
+
+## Finding by finding
+
+**F-A, accepted.** `cells_named` counted a `cell` value in any artifact's fields,
+the next-cell seat's own assignment included, and my readings reported that count
+as coverage. The counting rule inside `blindspot.cells_named` is right for what it
+is for — three seats in one cycle must be handed three different cells — and it
+keeps its behaviour, with the reason written where it can be read. What changed is
+the reader: `report.RunReading` now carries `cells_assigned`, `cells_attempted` and
+`cells_executed` apart, `cells_uncovered` means no execution reached the cell, and
+`cells_assigned_not_executed` names the gap. Over the sixteen committed grid runs
+the distinction bites in four, and badly in two: `r4-1-skeletons-mistral` handed out
+twenty cells and executed one; `r4-6` handed out twenty, attempted nineteen and
+executed one. The reading of the day said "twenty cells named" in both cases, which
+the audit is right to call a coverage claim it had not earned. The campaign's
+`cover-the-grid` rule now fires on that gap, which is what it was for.
+
+The audit's deeper half — that the executor cannot establish that a proposal
+implements the cell it was assigned — stands and is **not** repaired here. It
+needs a host-owned task record, which is the workbench design the audit proposes;
+what exists is the record showing when it went wrong (M12) and now a count that
+does not hide it.
+
+**F-B, accepted, and already argued in the same direction.** Disagreement with a
+proposer's expectation is triage, not an oracle: a constant-wrong implementation
+agreed with by a correct prediction is `rejected`, and an agreement can hide a
+violation of an independently stated obligation. `AUTONOMY.md` argues the same
+conclusion from the other side and R-04 is the worked instance — a boundary that
+came out of an agreement the standing rule had rejected. The reader now shows
+agreements and disagreements together so the queue is not the only thing visible.
+The standing rule itself is unchanged, because narrowing it further would not make
+it an oracle and widening it would make it one falsely.
+
+**F-C, accepted; this one was mine and recent.** The fields form let a kind carry
+the input under test in its own optional fields. The artifact identity did not
+include them, so two artifacts that would execute differently could share an id;
+and `_artifact_lines` rendered body and commitments only, so a critic shown a
+proposal was not shown the text the machine would run. Both are repaired: the
+identity payload carries the kind's optional fields and the domain is
+`creib.mini.artifact.v2` so that ids written under the old payload stay as they
+are, and an artifact port renders each optional field on its own line. The audit
+is careful to say this is an incomplete identity projection and not a hash
+collision, and that the event record did carry `extra`; that is accurate.
+
+**F-D, correct, and registered as M6 since the blind-spot template's first live
+run.** The evidence legend folds whitespace and shows 160 characters per block
+while reporting the block as exposed, and the citation checker resolves against
+the full block, so a quote can verify against text the seat was never shown. The
+audit adds the interface mismatch, which M6 did not state, and it is added there.
+It also notes correctly that a machine seat emitting a full artifact bypasses the
+preview path entirely, which is why the grid and rules seats exist and why the
+experiments are not reading 160-character rules.
+
+**F-E, accepted, both halves.** The gate checked source digests and responder id
+and the report then announced that both roots were "asked the same way": two runs
+with different problems and different instructions passed it. The report now says
+what was checked — same sources, same responder — and says whether the two were
+compiled from the same manifest, which is a fact the record carries. The ledger
+read only `mini.execution.v1`, so every experiment after the third round produced
+an empty one; it now reads the pair executor too, and each row carries the input
+it was run on and the verdict both sides returned. The heading is
+`executed-unchanged ledger` and a row reads "unchanged under … on <input>", since
+"is invariant under" generalised a single result into a property.
+
+**F-F, accepted.** The inner loop stopped at `MAX_STEPS` with stages remaining and
+said nothing; the outer counter then counted that cycle as completed. A cycle that
+runs out of steps now ends the run with `stop_reason: steps_exhausted` and is not
+counted among the completed. The audit is right that it did not establish that its
+illustrative 513-stage manifest compiles; the regression patches `MAX_STEPS` to 1
+instead, which exercises the same invariant without depending on that question.
+
+**F-G, accepted.** In a two-call stage whose commitments phase fails, no artifact
+is admitted, and the successful body call's structured record was attached only to
+the artifact event that never happened. The drop event now carries the calls made
+before the failing phase, so a call that was made, paid for and answered leaves a
+record. The audit's wider recommendation — invocation records independent of
+artifact admission — is **not** done; it is the deferred per-invocation ledger the
+first audit response already records.
+
+**F-H, correct and intentional.** The call budget is checked between cycles, as
+`SPEC.md` §7 says. A started cycle can exceed it. The audit says plainly that this
+is a documented semantic choice and not a violation, and asks for hard limits for
+operational use. Nothing is changed; a hard limit on calls, tokens, time or cost
+belongs with the campaign runner rather than the cycle rule, and is not built.
+
+## What I did not take
+
+- **The workbench redesign as a whole.** The audit's target — a machine-owned task
+  record with an immutable id, materialised inputs, applicability conditions, and
+  separate accounting for assignment, construction, execution and adjudication —
+  is a good design and I have not built it. What is here now is the counting that
+  stops the conflation (F-A) and the identity and rendering that stop the payload
+  being invisible (F-C). The binding of a task to the execution that discharges it
+  remains missing, and the register says so.
+- **A per-invocation ledger.** Deferred, as before.
+- **The decisive comparison.** Not run, as above.
+- **Any change to the standing rule.** For the reason in F-B.
+
+## What this audit does not establish, and I am not claiming
+
+It did not run the suite, install the package, or rerun an experiment, and it says
+so. It offers no model ranking and this response makes none. The seven probes
+demonstrate mechanisms with adapted fragments; the regressions here are the same
+claims put to the package, which is the only form in which I would rely on them.

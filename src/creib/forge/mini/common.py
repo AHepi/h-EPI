@@ -36,7 +36,10 @@ EVENT_DOMAIN = "creib.mini.event.v2"
 EVENT_DOMAIN_V1 = "creib.mini.event.v1"
 RUN_HEADER_DOMAIN = "creib.mini.run-header.v1"
 BLOCK_DOMAIN = "creib.mini.evidence-block.v1"
-ARTIFACT_DOMAIN = "creib.mini.artifact.v1"
+#: The artifact identity's payload: stage, kind, sequence, body, commitments, and the kind's
+#: own optional fields, which carry what a machine seat will execute (audit F-C). Version 1
+#: omitted those fields; ids written under it stay as they are.
+ARTIFACT_DOMAIN = "creib.mini.artifact.v2"
 STATE_DOMAIN = "creib.mini.state.v1"
 
 #: The two fields every artifact must carry, whatever its kind (R7, R9).

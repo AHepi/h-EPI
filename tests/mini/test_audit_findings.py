@@ -21,7 +21,11 @@ from creib.forge.mini.log import ARTIFACT_SUBMITTED, REFUSED, RUN_ENDED, BlobSto
 from creib.forge.mini.manifest import Stage, VERDICT_KIND_ID
 from creib.forge.mini.runner import _offered
 
+from pathlib import Path
+
 from .helpers import CONJECTURE_KIND, MiniTestCase, base_manifest, submission
+
+ROOT = Path(__file__).resolve().parents[2]
 
 KEYWORD = {"body": {"all_of": [{"check": "keywords", "keywords": ["BECAUSE"]}]}}
 
@@ -305,3 +309,111 @@ class F6TheRecordedRequestIsTheOneThatWasSentTests(MiniTestCase):
         _, outcome = self.run_manifest(self._manifest(), script)
         dropped = [e for e in self.events_of(outcome, "SUBMISSION_DROPPED") if e["kind_id"] == "k.conjecture"][0]
         self.assertEqual([item["attempt"] for item in dropped["payload"]["usage"]], [0, 1])
+
+
+class FAudit20260910Tests(MiniTestCase):
+    """The audit of 10 September 2026, one regression per finding it established.
+
+    Each of these fails on the behaviour it repairs. The audit's own probes ran adapted
+    fragments against doubles; these run the package.
+    """
+
+    def _two_call_manifest(self):
+        manifest = base_manifest()
+        manifest["kinds"][0]["commitment_call"] = "two"
+        return manifest
+
+    def test_f_g_a_successful_body_call_keeps_its_record_when_the_commitments_fail(self) -> None:
+        """F-G: the drop path admitted no artifact, so the body call it had paid for vanished."""
+
+        script = {
+            "c1": [submission("a body", "unused")] * 2,
+            "c1@commitments": ["not a submission at all"] * 2,
+            "x1": [submission("b", "c")],
+        }
+        _, outcome = self.run_manifest(self._two_call_manifest(), script)
+        dropped = [e for e in self.events_of(outcome, "SUBMISSION_DROPPED") if e["kind_id"] == "k.conjecture"]
+        self.assertEqual(len(dropped), 1)
+        calls = dropped[0]["payload"]["calls"]
+        self.assertEqual([item["phase"] for item in calls], ["body"], "the body call that succeeded is on the record")
+        self.assertTrue(calls[0]["reply_ref"], "with the reply it was answered with")
+        self.assertEqual(calls[0]["invocations"], 1)
+        self.assertEqual(dropped[0]["payload"]["phase"], "commitments", "and the phase that failed is named")
+
+    def test_f_f_a_cycle_that_runs_out_of_steps_is_not_counted_as_completed(self) -> None:
+        """F-F: the step limit ended a cycle silently and the outer counter called it done."""
+
+        from unittest.mock import patch
+
+        import creib.forge.mini.runner as runner
+
+        manifest = base_manifest()
+        manifest["cycles"] = {"max_cycles": 3}
+        script = {"c1": {str(cycle): [submission("a body", "c")] for cycle in (1, 2, 3)}, "x1": {str(cycle): [submission("b", "c")] for cycle in (1, 2, 3)}}
+        with patch.object(runner, "MAX_STEPS", 1):
+            plan, outcome = self.run_manifest(manifest, script)
+        ended = self.events_of(outcome, RUN_ENDED)[0]["payload"]
+        self.assertEqual(ended["stop_reason"], "steps_exhausted")
+        self.assertEqual(ended["cycles_completed"], 0, "the cycle that never reached its verdict is not one of them")
+        self.assertEqual(outcome.stop_reason, "steps_exhausted")
+
+    def test_f_c_two_artifacts_that_would_execute_differently_have_different_identities(self) -> None:
+        """F-C: identity was body and commitments, so the executable fields could differ freely."""
+
+        from creib.forge.mini.kinds import Submission
+        from creib.forge.mini.log import BlobStore as Store
+        from creib.forge.mini.runner import _store_artifact
+
+        blobs = Store(self.tmp / "blobs")
+        stage = Stage(stage_id="propose", kind_id="k.conjecture", ports=(), seat="model", end=False)
+
+        def stored(rewritten: str) -> str:
+            submitted = Submission(body="a body", commitments="a commitment", citations=(), about=(), answers=(), extra={"input": "x", "rewritten": rewritten})
+            return _store_artifact(blobs, stage, submitted, 3)[0]
+
+        self.assertNotEqual(stored('{"a": 1}'), stored('{"b": 2}'))
+        self.assertEqual(stored('{"a": 1}'), stored('{"a": 1}'), "and the identity is still of the content")
+
+    def test_f_c_a_seat_shown_an_artifact_is_shown_what_will_be_executed(self) -> None:
+        """F-C: a port rendered body and commitments, never the fields a machine seat runs."""
+
+        from creib.forge.mini.log import replay
+        from creib.forge.mini.runner import render_brief
+
+        manifest = base_manifest()
+        manifest["kinds"][0]["optional_fields"] = ["input", "rewritten"]
+        script = {"c1": [submission("a body", "a commitment", input='{"a": 1}', rewritten='```\n{"a": 1}\n```')], "x1": [submission("b", "c")]}
+        plan, outcome = self.run_manifest(manifest, script)
+        state = replay(outcome.root / "log.jsonl", plan.genesis)
+        brief, _ = render_brief(plan, state, BlobStore(outcome.root / "blobs"), plan.stage("x1"), 1)
+        self.assertIn('input: {"a": 1}', brief)
+        self.assertIn("rewritten: ```", brief, "the critic sees the text that will be run, not only the prose about it")
+
+    def test_f_e_the_comparison_says_only_what_its_gate_checked(self) -> None:
+        """F-E: it announced that both roots were asked the same way, having checked neither."""
+
+        from creib.forge.mini.compare import compare_roots
+
+        manifest = base_manifest()
+        script = {"c1": [submission("a body", "c")], "x1": [submission("b", "c")]}
+        plan, first = self.run_manifest(manifest, script, name="left")
+        asked_otherwise = copy.deepcopy(manifest)
+        asked_otherwise["problem"] = "A different question entirely, put to the same model."
+        _, second = self.run_manifest(asked_otherwise, script, name="right")
+        rendered = compare_roots(first.root, second.root)
+        self.assertIn("answered by the same responder", rendered)
+        self.assertIn("Their manifests differ", rendered, "the report does not claim they were asked the same question")
+        self.assertNotIn("asked the same way", rendered)
+
+    def test_f_e_the_ledger_reads_both_executor_kinds_and_carries_its_witness(self) -> None:
+        """F-E: it read only the transform executor, so every later experiment's ledger was empty."""
+
+        from creib.forge.mini.compare import read_root
+        from creib.forge.mini.report import read_run
+
+        root = ROOT / "forge" / "mini" / "runs" / "experiments" / "round-5" / "r5-3-skeletons-fields-gemma"
+        self.assertTrue(read_run(root).executions, "this run executed pairs, not transforms")
+        reading = read_root(root)
+        self.assertTrue(reading.ledger, "and its unchanged pairs now reach the ledger")
+        self.assertTrue(all(entry["input"] for entry in reading.ledger), "each row carries the input it was run on")
+        self.assertTrue(reading.manifest_digest)

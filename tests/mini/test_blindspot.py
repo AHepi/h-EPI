@@ -224,8 +224,10 @@ class CompareTests(MiniTestCase):
         first = run_mini(plan, self.tmp / "a", ScriptedResponder(_script()), "script:same")
         second = run_mini(self.compile(manifest), self.tmp / "b", ScriptedResponder(_script()), "script:same")
         rendered = compare_roots(first.root, second.root)
-        self.assertEqual(rendered.count("### executed-invariance ledger"), 2)
-        self.assertIn("is invariant under", rendered)
+        self.assertEqual(rendered.count("### executed-unchanged ledger"), 2)
+        self.assertIn("unchanged under", rendered)
+        self.assertIn("Each row is one result on one input, not a property of the kernel.", rendered)
+        self.assertIn("on 'One paragraph here.", rendered, "the row carries the input it was run on (audit F-E)")
         self.assertEqual(rendered.count("### verdicts"), 2)
 
     def test_compare_names_no_winner_and_totals_nothing(self) -> None:

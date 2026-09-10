@@ -436,6 +436,9 @@ def reading_for(executed: str, expect: str, predicted: str | None) -> str:
 
 
 NEXT_CELL_KIND = "mini.next-cell.v1"
+#: Every kind whose artifact is an assignment rather than an attempt at one. A reader counts
+#: them apart, because handing a cell out is not testing it (audit F-A).
+NEXT_CELL_PREFIX = "mini.next-cell."
 GRID_SOURCE = "grid"
 
 
@@ -456,6 +459,9 @@ def grid_cells(state: Any, blobs: Any) -> tuple[str, ...]:
 def cells_named(context: MachineContext) -> dict[str, int]:
     """How many times each cell has been named in any artifact's commitments so far, its own kind's included."""
 
+    # Assignments count here on purpose: three seats in one cycle must be handed three
+    # different cells. It is a balancing rule and never a measure of coverage, which
+    # ``report.RunReading`` counts apart (audit F-A).
     counts: dict[str, int] = {}
     for key in context.state.artifact_order:
         parsed = _proposal_of(context, context.state.artifacts[key])

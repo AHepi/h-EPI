@@ -252,6 +252,15 @@ than by blank lines, which reopens a settled decision. Or give the template a
 port that renders the registry directly, and leave evidence cutting alone. The
 second is smaller and does not disturb a decision the operator has made.
 
+**Added 10 September 2026 (audit F-D).** The mismatch is wider than the excerpt:
+the legend reports the block as exposed and the citation checker resolves a quote
+against the block's *full* text, so a quote can be verified against words the seat
+was never shown, and a citation with no quote can still resolve. The remedy is to
+separate preview, full-span exposure and fetched access, and is not built. A
+machine seat that emits a full artifact — the rules seat, the source seat, the
+grid — bypasses the preview path entirely, which is why the experiments are not
+reading 160-character rules.
+
 ## M7 — A string field whose rendered format demands JSON
 
 **Seen at** events 8 and 26 (event ids 447d7dd781dd51a9 and 9e0af2e9ba78127b); six

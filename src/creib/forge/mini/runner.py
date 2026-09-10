@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 from creib.canonical import canonical_bytes
 
@@ -196,6 +196,12 @@ def _artifact_lines(blobs: BlobStore, records: tuple[Mapping[str, Any], ...], ru
         body = blobs.get(str(record["body_ref"])).decode("utf-8")
         lines.append(f"[{str(record['artifact_id'])[:16]}] ({record['kind_id']})")
         lines.append(body)
+        # A kind's own optional fields are part of the artifact and are what a machine seat
+        # runs, so a seat shown the artifact is shown them; hiding them let a critic review a
+        # proposal without seeing the input under test (audit F-C).
+        extra = {name: value for name, value in dict(record.get("extra") or {}).items() if type(value) is str}
+        for name in sorted(extra):
+            lines.append(f"{name}: {extra[name]}")
         if rule == "list_bodies_and_commitments":
             lines.append("commitments: " + blobs.get(str(record["commitments_ref"])).decode("utf-8"))
     return lines
@@ -390,6 +396,11 @@ def _store_artifact(blobs: BlobStore, stage: Stage, submission: Submission, seq:
             "seq": seq,
             "body_ref": body_ref,
             "commitments_ref": commitments_ref,
+            # A kind's own optional fields carry the input a machine seat will run (SPEC 17),
+            # so two artifacts that differ in what will be executed must not share an identity
+            # (audit F-C). The domain names this payload, so ids written under the earlier one
+            # stay as they are and are read by the code that wrote them.
+            "extra": {name: submission.extra[name] for name in sorted(submission.extra)},
         },
     )
     return artifact_id, body_ref, commitments_ref
@@ -505,6 +516,7 @@ def _attempt_submission(
     blobs: BlobStore,
     cycle: int = 0,
     phase: str = PHASE_BOTH,
+    earlier_calls: Sequence[Mapping[str, Any]] = (),
 ) -> AttemptOutcome | None:
     """Ask the seat, and keep every reply — the refused ones included.
 
@@ -593,6 +605,10 @@ def _attempt_submission(
             "refused_refs": refused_refs,
             "phase": phase,
             "usage": usage,
+            # Calls that succeeded before this phase failed. No artifact is admitted on this
+            # path, so without them a body call that was made, paid for and answered would
+            # leave no structured record at all (audit F-G).
+            "calls": [dict(item) for item in earlier_calls],
         },
         stage_id=stage.stage_id,
         kind_id=kind.kind_id,
@@ -769,7 +785,7 @@ def run_mini(
                     plan, kind, attempt.submission.body, state, blobs, stage, cycle
                 )
                 second = _attempt_submission(
-                    plan, recorder, seat_responder, stage, kind, second_brief, blobs, cycle, PHASE_COMMITMENTS
+                    plan, recorder, seat_responder, stage, kind, second_brief, blobs, cycle, PHASE_COMMITMENTS, calls_made
                 )
                 calls += second.invocations if second is not None else kind.failure_policy.retries + 1
                 if second is None:
@@ -818,6 +834,13 @@ def run_mini(
                 commitments_ref=commitments_ref,
             )
             _route_output(plan, state, blobs, recorder, stage, artifact_id, body_ref)
+        if remaining and not halted:
+            # The step limit is a backstop against a schedule that cannot finish, not a way of
+            # finishing one. A cycle that ran out of steps with stages left never reached its
+            # verdict, so the run stops here and says why, and that cycle is not counted among
+            # the completed ones (audit F-F).
+            stop_reason = "steps_exhausted"
+            halted = True
         if halted:
             break
 
