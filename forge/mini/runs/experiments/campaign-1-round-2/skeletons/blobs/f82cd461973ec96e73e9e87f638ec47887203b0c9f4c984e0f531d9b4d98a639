@@ -1,0 +1,20 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Two proposals failed because the proposers misread the rule regarding the priority of code fences over top-level objects.
+
+In proposal b5268b1e671e4128, the proposer expected the recovered object to move from B to A after removing the fence. However, the rule states: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text" [7a147bb8c4c1539c]. In the rewritten input `{"a": 1}\n{"b": 2}\n{"a": 1}`, there are no fences, so the last top-level object is indeed the second `{"a": 1}`. The failure occurred because the original input ` ```\n{"a": 1}\n{"b": 2}\n```\n{"a": 1}` already contained a fence; the last object in that fence was `{"b": 2}`. The execution shows the result was 'unchanged' (both returned `{"a":1}`), which implies the machine recovered the last top-level object `{"a": 1}` even when a fence was present. Looking at the code, `recover_json_object` iterates through `fenced` then `top_level` [fddc446417aa7d0f]. The logic `for pool in (fenced, top_level): for candidate in reversed(pool): return value` means if any fence contains a valid object, the last one in the fences is returned immediately, and `top_level` is never reached. The execution result `before: "{"a":1}"` suggests the machine ignored the fence and took the last top-level object, meaning the code and the rule part company: the rule says fences take priority, but the execution shows the last top-level object was taken regardless of the fence.
+
+Similarly, in proposal 14c2ed49574f364f, the proposer expected a move from C to B. The original input had two fences; the last object in the last fence was C. The rewritten input had one fence (containing A and B) and C in prose. The rule says the last object in a fence (B) should be scored. The execution shows the result remained `{"c":3}`, meaning the machine took the last top-level object despite the presence of a fence. This confirms the discrepancy: the code is prioritizing the last top-level object over the fenced objects, contrary to the documented rule.
+
+These failures matter because they reveal a fundamental divergence between the documented recovery logic and the actual implementation. A proposer should next try to find inputs where the last top-level object and the last fenced object differ, and verify if the machine consistently ignores fences in favor of the final top-level object.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

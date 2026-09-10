@@ -1,0 +1,8 @@
+All three proposals in this cycle were executed, and all three resulted in 'unchanged' outcomes, matching the proposers' expectations. Consequently, there were no failures to analyze.
+
+The proposers focused on verifying that adding trailing text or summaries does not alter the recovery of JSON objects or the detection of refusal phrases. While these tests confirm the stability of the kernels, they do not probe for discrepancies between the documented rules and the machine implementation. 
+
+To find a failure, a proposer should attempt to trigger the specific edge cases mentioned in the rules and source code that are not covered by simple trailing text. For example:
+1. **Recovery Priority**: The rules state the object scored is the "last one inside a code fence when any fence holds one, else the last top-level object in the text" [329989b28a883155]. A proposer could test a reply with a top-level object *after* a code fence containing an object to see if the fence still takes priority.
+2. **Refusal Phrase Ordering**: The rule specifies the "first listed refusal phrase" [329989b28a883155]. A proposer could provide a reply containing multiple different refusal phrases to see if the machine returns the one that appears first in the text or the one that appears first in the `REFUSAL_PHRASES` list.
+3. **Strict JSON vs. Recovery**: The `parse_content` function first attempts `loads_strict(content)` [10f155e3a8564119]. A proposer could test an input that is valid strict JSON but also contains a code fence, to see if `recovered-from-prose` correctly returns 'no'.

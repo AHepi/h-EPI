@@ -360,3 +360,12 @@ and three addenda, each round pre-registered in
 What they corrected in mini is `FAILURE_MODES.md` M11 to M16; what they found in
 the harness is `docs/failure-modes.md` H43 and `docs/kernel.md` P-09, P-10, R-03,
 R-04 and G-09; `SPEC.md` §22 is the machinery, written from the code.
+
+## Autonomy (Amendment 6)
+
+`AUTONOMY.md` states what runs without a person and what does not. Running a
+campaign of rounds unattended and refuting a written claim are both mechanical
+and both now done; deciding that a disagreement nobody wrote down is a blind
+spot is refused, for three independent reasons the document sets out, and the
+useful remedy is to write each check's rule down once as a claim an execution
+can contradict. The machinery is `SPEC.md` §23.

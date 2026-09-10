@@ -216,6 +216,17 @@ python tools/run_mini.py replay --root forge/mini/runs/<root>
 python tools/run_mini.py compare --root <one> --root <another>   # refuses --score
 ```
 
+To run a campaign of rounds to its end without watching it:
+
+```sh
+python tools/mini_campaign.py run --plan forge/mini/manifests/experiments/campaign-1.plan.json \
+    --output-dir /tmp/campaign --manifest-dir forge/mini/manifests/experiments \
+    --rounds 3 --concurrency 5 --commit      # decides and commits each round before running it; never pushes
+python tools/mini_campaign.py read --root forge/mini/runs/experiments/round-5/r5-3-skeletons-fields-gemma
+```
+
+A plan names each shape's starting manifest directory and its model. Every round writes a reading beside each record and a note saying which rule fired on which measurement. Read `docs/mini/AUTONOMY.md` before expecting more of it than it does: it finds and lays out disagreements, and it does not decide that one is a blind spot.
+
 The experiments under `forge/mini/manifests/experiments/` are run the same way (`live --manifest forge/mini/manifests/experiments/round-3/r3-7-grid-skeletons/manifest.json --model gemma4:31b --output-dir …`), and their README is the pre-registration to extend before a new round and the reading to extend after. A manifest may declare `endpoint` in exactly the shape a pilot's endpoint has; absent, the shipped default applies. For a local Ollama set `"auth": "none"` and no key is needed. Read a run from its record: the first event carries the endpoint actually sent to, every artifact says which seat made it and how many calls it took, and the last verdict artifact of a blind-spot run is the deliverable a person turns into boundary points. `docs/mini/SPEC.md` is the reference and `docs/mini/FAILURE_MODES.md` the register.
 
 ## What not to expect

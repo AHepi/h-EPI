@@ -615,3 +615,28 @@ nothing dropped. Mini's design was not the problem and did not change: the
 artifact template, kinds as records, ports and windows, cycles, the permission
 layer and the record are as they were.
 
+## Campaign 1: the rounds decided by the runner
+
+A person wrote the first round: two shapes on gemma4:31b, three cycles each —
+the skeleton grid, which the fourth round showed finds the control, and the
+replies shape, whose pairs had changed four things at once. Everything after
+that was `tools/mini_campaign.py`.
+
+It ran both shapes, replayed both records, wrote both readings, and decided:
+`cover-the-grid` fired on the skeleton grid, which had ended on its cycle cap
+with nine of twenty cells named, and raised its cycles to seven; no rule fired
+on the replies shape, whose pairs this time were within the measure. It wrote
+the second round's manifests and the note saying so, committed them, and ran
+them.
+
+The second round, which no person wrote, holds nine contradictions, all in the
+control's family: the control's own cell `fence[ S A ] B` in cycle 3, and
+`fence[ S A ]`, `fence[ A S ]`, `fence[ A S ] B`, both second-fence cells,
+`fence[ A B ] C`, `fence[ A B ] A` and `fence[ A B ] fence[ C ]`. Twenty-one
+proposals, nothing dropped, nothing refused, no pair changing more than one
+part, every cell named.
+
+What that shows is the loop closing without anybody in it, up to the line
+`docs/mini/AUTONOMY.md` draws: the campaign found and laid out the
+disagreements, and it did not decide that any of them is a blind spot.
+

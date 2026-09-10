@@ -1,0 +1,63 @@
+# Execution
+
+## Proposals so far (proposals)
+[6efcb04411e5d392] (mini.pair-proposal.reply.v1)
+The rule for `conformance.kernel.recovered-from-prose` states that the answer should be 'yes' if the harness had to recover the object from prose or a fence, and 'no' if it read it as strict JSON [a70c2e9bc362b532: "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)."].
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "input": "Here is the requested data:\n\n```json\n{\n  \"name\": \"John Doe\",\n  \"age\": 30\n}\n```", "rewritten": "Here is the requested data:\n\n```json\n{\n  \"name\": \"John Doe\",\n  \"age\": 30\n}\n```\n\nI hope this helps!", "expect": "unchanged", "rewrite": "Added a closing remark after the code fence."}
+[f17a849ad1b6da04] (mini.pair-proposal.reply.v1)
+The rule for `conformance.kernel.refusal-phrase` states that it should identify the first listed refusal phrase the reply contains, treating typographic apostrophes as straight ones [c8c80e388572359c: "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE."].
+
+Here is a sample response:
+
+I'm sorry, I cannot fulfill this request.
+
+```json
+{
+  "status": "refused"
+}
+```
+
+Wait, I can actually do that. Here is the data:
+
+```json
+{
+  "status": "success",
+  "data": "example"
+}
+```
+
+Actually, looking at the draft "I'm sorry, I cannot fulfill this request", I should just provide the final JSON.
+
+```json
+{
+  "status": "success",
+  "data": "example"
+}
+```
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "input": "I'm sorry, I cannot fulfill this request.\n\n```json\n{\n  \"status\": \"refused\"\n}\n```\n\nWait, I can actually do that. Here is the data:\n\n```json\n{\n  \"status\": \"success\",\n  \"data\": \"example\"\n}\n```\n\nActually, looking at the draft \"I'm sorry, I cannot fulfill this request\", I should just provide the final JSON.\n\n```json\n{\n  \"status\": \"success\",\n  \"data\": \"example\"\n}\n```", "rewritten": "I'm sorry, I cannot fulfill this request.\n\n```json\n{\n  \"status\": \"refused\"\n}\n```\n\nWait, I can actually do that. Here is the data:\n\n```json\n{\n  \"status\": \"success\",\n  \"data\": \"example\"\n}\n```\n\nActually, looking at the draft \"I'm sorry, I cannot fulfill this request\", I should just provide the final JSON.\n\n```json\n{\n  \"status\": \"success\",\n  \"data\": \"example\"\n}\n```\n\n(Note: The first refusal phrase is 'I'm sorry')", "expect": "unchanged", "rewrite": "Added a note at the end of the reply."}
+[1d5f9aaa22a06555] (mini.pair-proposal.reply.v1)
+The rule for `conformance.kernel.recovery` states that the harness recovers the last top-level balanced object in the text, and specifically that if a reply quotes a previous answer and then gives a corrected one, it is scored on the correction [329989b28a883155: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction."].
+
+I'll prepare the JSON form now.
+
+Draft: `{"user": "alice"}`
+
+Actually, I should use the full name.
+
+```json
+{
+  "user": "Alice Smith"
+}
+```
+
+Here is the final result:
+
+```json
+{
+  "user": "Alice Smith"
+}
+```
+commitments: {"kernel": "conformance.kernel.recovery", "input": "I'll prepare the JSON form now.\n\nDraft: `{\"user\": \"alice\"}`\n\nActually, I should use the full name.\n\n```json\n{\n  \"user\": \"Alice Smith\"\n}\n```\n\nHere is the final result:\n\n```json\n{\n  \"user\": \"Alice Smith\"\n}\n```", "rewritten": "I'll prepare the JSON form now.\n\nDraft: `{\"user\": \"alice\"}`\n\nActually, I should use the full name.\n\n```json\n{\n  \"user\": \"Alice Smith\"\n}\n```\n\nHere is the final result:\n\n```json\n{\n  \"user\": \"Alice Smith\"\n}\n```\n\n(The final object is the one with Alice Smith)", "expect": "unchanged", "rewrite": "Added a trailing summary that repeats a field value."}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

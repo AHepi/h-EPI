@@ -1,0 +1,191 @@
+# Verdict
+
+## Executions (executions)
+[b9ed10b45c9b12b1] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+b5268b1e671e4128: conformance.kernel.recovery -> unchanged, expected moves
+14c2ed49574f364f: conformance.kernel.recovery -> unchanged, expected moves
+e1e0fcb87a859aa9: conformance.kernel.response-verdict -> moved, expected moves
+commitments: {"executions": [{"after": "{\"a\":1}", "as_expected": false, "before": "{\"a\":1}", "executed": "unchanged", "expect": "moves", "input": "```\n{\"a\": 1}\n{\"b\": 2}\n```\n{\"a\": 1}", "kernel": "conformance.kernel.recovery", "proposal": "b5268b1e671e4128", "rewrite": "I removed the code fence surrounding the first two JSON objects.", "rewritten": "{\"a\": 1}\n{\"b\": 2}\n{\"a\": 1}"}, {"after": "{\"c\":3}", "as_expected": false, "before": "{\"c\":3}", "executed": "unchanged", "expect": "moves", "input": "```\n{\"a\": 1}\n{\"b\": 2}\n```\n```\n{\"c\": 3}\n```", "kernel": "conformance.kernel.recovery", "proposal": "14c2ed49574f364f", "rewrite": "I removed the code fence surrounding the third JSON object.", "rewritten": "```\n{\"a\": 1}\n{\"b\": 2}\n```\n{\"c\": 3}"}, {"after": "INVALID_JSON", "as_expected": true, "before": "JSON_OBJECT", "executed": "moved", "expect": "moves", "input": "```\n{\"a\": 1}\n```", "kernel": "conformance.kernel.response-verdict", "proposal": "e1e0fcb87a859aa9", "rewrite": "I replaced the JSON object with a float.", "rewritten": "```\n1.23\n```"}]}
+
+## Criticisms (criticisms)
+[498b3f0bfc2a75fc] (mini.criticism.v1)
+Two proposals failed because the proposers misread the rule regarding the priority of code fences over top-level objects.
+
+In proposal b5268b1e671e4128, the proposer expected the recovered object to move from B to A after removing the fence. However, the rule states: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text" [7a147bb8c4c1539c]. In the rewritten input `{"a": 1}\n{"b": 2}\n{"a": 1}`, there are no fences, so the last top-level object is indeed the second `{"a": 1}`. The failure occurred because the original input ` ```\n{"a": 1}\n{"b": 2}\n```\n{"a": 1}` already contained a fence; the last object in that fence was `{"b": 2}`. The execution shows the result was 'unchanged' (both returned `{"a":1}`), which implies the machine recovered the last top-level object `{"a": 1}` even when a fence was present. Looking at the code, `recover_json_object` iterates through `fenced` then `top_level` [fddc446417aa7d0f]. The logic `for pool in (fenced, top_level): for candidate in reversed(pool): return value` means if any fence contains a valid object, the last one in the fences is returned immediately, and `top_level` is never reached. The execution result `before: "{"a":1}"` suggests the machine ignored the fence and took the last top-level object, meaning the code and the rule part company: the rule says fences take priority, but the execution shows the last top-level object was taken regardless of the fence.
+
+Similarly, in proposal 14c2ed49574f364f, the proposer expected a move from C to B. The original input had two fences; the last object in the last fence was C. The rewritten input had one fence (containing A and B) and C in prose. The rule says the last object in a fence (B) should be scored. The execution shows the result remained `{"c":3}`, meaning the machine took the last top-level object despite the presence of a fence. This confirms the discrepancy: the code is prioritizing the last top-level object over the fenced objects, contrary to the documented rule.
+
+These failures matter because they reveal a fundamental divergence between the documented recovery logic and the actual implementation. A proposer should next try to find inputs where the last top-level object and the last fenced object differ, and verify if the machine consistently ignores fences in favor of the final top-level object.
+
+## Verdicts so far (verdicts)
+[bae5f54e00e068c7] (mini.verdict.v1)
+Verdict on this cycle's executions.
+17f361e0674a8fd2: conformance.kernel.recovered-from-prose under proposer's own rewrite: I removed the code fence surrounding the JSON object. moved, expected moves -> rejected; no prediction
+93e5f96c428ed3ac: conformance.kernel.recovery under proposer's own rewrite: I removed the code fence surrounding the JSON object. unchanged, expected unchanged -> rejected; no prediction
+3a5dc420f50589e7: conformance.kernel.recovery under proposer's own rewrite: I removed the code fence surrounding the first JSON object. moved, expected moves -> rejected; no prediction
+commitments: {"verdicts": [{"catalogue_moves": false, "catalogued": false, "column": null, "executed": "moved", "expected": "moves", "kernel": "conformance.kernel.recovered-from-prose", "predicted": null, "proposal": "17f361e0674a8fd2", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I removed the code fence surrounding the JSON object."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "93e5f96c428ed3ac", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I removed the code fence surrounding the JSON object."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "moved", "expected": "moves", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "3a5dc420f50589e7", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I removed the code fence surrounding the first JSON object."}]}
+[d9519d55cb67dbde] (mini.verdict.v1)
+Verdict on this cycle's executions.
+199db62c7f180d14: conformance.kernel.recovery under proposer's own rewrite: I removed the code fence surrounding the first JSON object. unchanged, expected unchanged -> rejected; no prediction
+7500cab845e24f26: conformance.kernel.recovery under proposer's own rewrite: I removed the code fence surrounding the second JSON object. moved, expected moves -> rejected; no prediction
+2c601d56d60026a4: conformance.kernel.recovered-from-prose under proposer's own rewrite: I removed the code fence surrounding the sentence and the JSON object. unchanged, expected moves -> candidate point (unchanged); no prediction
+commitments: {"verdicts": [{"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "199db62c7f180d14", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I removed the code fence surrounding the first JSON object."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "moved", "expected": "moves", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "7500cab845e24f26", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I removed the code fence surrounding the second JSON object."}, {"catalogue_moves": false, "catalogued": false, "column": "unchanged", "executed": "unchanged", "expected": "moves", "kernel": "conformance.kernel.recovered-from-prose", "predicted": null, "proposal": "2c601d56d60026a4", "reading": "no prediction", "same_input": null, "standing": "candidate point", "transform": "proposer's own rewrite: I removed the code fence surrounding the sentence and the JSON object."}]}
+[50015882eab5ec0e] (mini.verdict.v1)
+Verdict on this cycle's executions.
+b7e9b55bb7e994e2: conformance.kernel.recovery under proposer's own rewrite: I removed the trailing plain sentence. unchanged, expected unchanged -> rejected; no prediction
+0a32c450a9eafdb0: conformance.kernel.recovery under proposer's own rewrite: I removed the code fence surrounding the sentence and the first JSON object. unchanged, expected moves -> candidate point (unchanged); no prediction
+93416dd6bb7739fd: conformance.kernel.recovery under proposer's own rewrite: I removed the code fence surrounding the sentence and the first JSON object. unchanged, expected unchanged -> rejected; no prediction
+commitments: {"verdicts": [{"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "b7e9b55bb7e994e2", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I removed the trailing plain sentence."}, {"catalogue_moves": false, "catalogued": false, "column": "unchanged", "executed": "unchanged", "expected": "moves", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "0a32c450a9eafdb0", "reading": "no prediction", "same_input": null, "standing": "candidate point", "transform": "proposer's own rewrite: I removed the code fence surrounding the sentence and the first JSON object."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "93416dd6bb7739fd", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I removed the code fence surrounding the sentence and the first JSON object."}]}
+[f40ef7b303b0bf21] (mini.verdict.v1)
+Verdict on this cycle's executions.
+447b030ec43b11f5: conformance.kernel.recovery under proposer's own rewrite: I removed the code fence surrounding the second JSON object. unchanged, expected moves -> candidate point (unchanged); no prediction
+11681bf3a07f18e9: conformance.kernel.recovered-from-prose under proposer's own rewrite: I removed the code fence surrounding the JSON object and the sentence. unchanged, expected moves -> candidate point (unchanged); no prediction
+92f650b6c6a70acc: conformance.kernel.recovery under proposer's own rewrite: I removed the code fence surrounding the JSON object and the first sentence. unchanged, expected unchanged -> rejected; no prediction
+commitments: {"verdicts": [{"catalogue_moves": false, "catalogued": false, "column": "unchanged", "executed": "unchanged", "expected": "moves", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "447b030ec43b11f5", "reading": "no prediction", "same_input": null, "standing": "candidate point", "transform": "proposer's own rewrite: I removed the code fence surrounding the second JSON object."}, {"catalogue_moves": false, "catalogued": false, "column": "unchanged", "executed": "unchanged", "expected": "moves", "kernel": "conformance.kernel.recovered-from-prose", "predicted": null, "proposal": "11681bf3a07f18e9", "reading": "no prediction", "same_input": null, "standing": "candidate point", "transform": "proposer's own rewrite: I removed the code fence surrounding the JSON object and the sentence."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "92f650b6c6a70acc", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I removed the code fence surrounding the JSON object and the first sentence."}]}
+[4d0615b10922cc68] (mini.verdict.v1)
+Verdict on this cycle's executions.
+5e2fc3d9ffd328c7: conformance.kernel.recovery under proposer's own rewrite: I removed the code fence surrounding the first JSON object and the sentence. unchanged, expected moves -> candidate point (unchanged); no prediction
+440de6210dce1842: conformance.kernel.recovery under proposer's own rewrite: I removed the code fence surrounding the first JSON object and the sentence. unchanged, expected unchanged -> rejected; no prediction
+47eea02590072f93: conformance.kernel.recovery under proposer's own rewrite: I removed the code fence surrounding the second JSON object. unchanged, expected moves -> candidate point (unchanged); no prediction
+commitments: {"verdicts": [{"catalogue_moves": false, "catalogued": false, "column": "unchanged", "executed": "unchanged", "expected": "moves", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "5e2fc3d9ffd328c7", "reading": "no prediction", "same_input": null, "standing": "candidate point", "transform": "proposer's own rewrite: I removed the code fence surrounding the first JSON object and the sentence."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "440de6210dce1842", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I removed the code fence surrounding the first JSON object and the sentence."}, {"catalogue_moves": false, "catalogued": false, "column": "unchanged", "executed": "unchanged", "expected": "moves", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "47eea02590072f93", "reading": "no prediction", "same_input": null, "standing": "candidate point", "transform": "proposer's own rewrite: I removed the code fence surrounding the second JSON object."}]}
+[f88bbc422af44c9a] (mini.verdict.v1)
+Verdict on this cycle's executions.
+fabffc382d973a12: conformance.kernel.recovery under proposer's own rewrite: I removed the code fence surrounding the JSON objects. unchanged, expected unchanged -> rejected; no prediction
+c7d8b268fbf2506f: conformance.kernel.recovery under proposer's own rewrite: I removed the code fence surrounding the JSON objects. unchanged, expected unchanged -> rejected; no prediction
+8f9ab6a16e1d2c1a: conformance.kernel.recovery under proposer's own rewrite: I removed the code fence surrounding the first two JSON objects. unchanged, expected moves -> candidate point (unchanged); no prediction
+commitments: {"verdicts": [{"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "fabffc382d973a12", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I removed the code fence surrounding the JSON objects."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "c7d8b268fbf2506f", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I removed the code fence surrounding the JSON objects."}, {"catalogue_moves": false, "catalogued": false, "column": "unchanged", "executed": "unchanged", "expected": "moves", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "8f9ab6a16e1d2c1a", "reading": "no prediction", "same_input": null, "standing": "candidate point", "transform": "proposer's own rewrite: I removed the code fence surrounding the first two JSON objects."}]}
+
+## Evidence (catalogue)
+To ground a claim in one of these, name its id in this artifact's citations; a quote must reproduce the block's own words.
+[638a6360b40e8b8a] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fence", "moves": false, "input": "{\"claimant_name\": \"amara okoro\",…
+[e847048a8c7847a8] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.fence", "moves": true, "input": "{\"claimant_name\": \"ama…
+[b0a010d1115d82a4] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.prose-before", "moves": false, "input": "{\"claimant_name\": \"amara o…
+[33b4e316004d90cc] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.prose-before", "moves": true, "input": "{\"claimant_name\"…
+[1c12ef186483bd0d] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.indent", "moves": false, "input": "{\"claimant_name\": \"amara okoro\"…
+[910693c99ba3c6da] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.indent", "moves": false, "input": "{\"claimant_name\": \"a…
+[706dbfa18782a310] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fold-whitespace", "moves": false, "input": "{\"claimant_name\": \"amar…
+[45929a4e30072bb7] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.fold-whitespace", "moves": false, "input": "{\"claimant_na…
+[7a60de6ecc4dd6e3] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.bare-after", "moves": true, "input": "{\"claimant_name\": \"amara okor…
+[1c84027e761c6f99] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.draft-before", "moves": false, "input": "{\"claimant_name\": \"amara o…
+[55dd56154fb39a87] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fence-then-bare-after", "moves": false, "input": "{\"claimant_name\": …
+[47cbc7b41aaf5c8f] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fence-with-prose", "moves": false, "input": "{\"claimant_name\": \"ama…
+[791e3ba34ce7d357] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.float-after", "moves": false, "input": "{\"claimant_name\": \"amara ok…
+[a0e68e5c468b7070] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.float-after", "moves": true, "input": "{\"claimant_name\":…
+[fece6100f6ea7485] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.fence", "moves": false, "input": "{\"claimant_name\": \"amara …
+[bea451e84fa483a5] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.prose-before", "moves": false, "input": "{\"claimant_name\": \…
+[1a9cd8bb407e62f8] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.bare-after", "moves": false, "input": "{\"claimant_name\": \"a…
+[9c839bd675122bb9] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.upper-case", "moves": false, "input": "{\"claimant_name\": \"a…
+[d4ded569665ba70d] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.upper-case", "moves": true, "input": "{\"claimant_name\": \"amara okor…
+[6e346a638ffdff8b] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.typographic-quotes", "moves": false, "input": "I'm sorry, no."}]…
+[478f1f02c67c06c4] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.upper-case", "moves": false, "input": "I'm sorry, no."}]}
+[42f90dc7e6a15965] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.fence", "moves": false, "input": "I'm sorry, no."}]}
+[3c0719eda3e180c6] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.prose-before", "moves": false, "input": "I'm sorry, no."}]}
+[56ed413d078ac9c2] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.refusal-prose-before", "moves": true, "input": "{\"claimant_name…
+[8bfbf8b9bdcd2a4c] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.refusal-prose-before", "moves": false, "input": "{\"claimant_n…
+[6ab8417a77f3b613] (registry, evidence) kernel conformance.kernel.grounding: The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked: the inp…
+[a70c2e9bc362b532] (registry, evidence) kernel conformance.kernel.recovered-from-prose: Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no).
+[65ae18af7a738b26] (registry, evidence) kernel conformance.kernel.recovery: The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT.
+[c8c80e388572359c] (registry, evidence) kernel conformance.kernel.refusal-phrase: The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE.
+[22dc5cbedaff143d] (registry, evidence) kernel conformance.kernel.response-verdict: The harness's response verdict for the reply: JSON_OBJECT, INVALID_JSON, REFUSAL_SUSPECTED, or another of its verdic…
+[966be5d711930718] (registry, evidence) kernel conformance.kernel.span-occurs: Whether a cited span occurs in a document, whitespace-normalised, no relaxation: the input is one JSON object {"span", "d…
+[f3cc0eb6088a166b] (grid, evidence) fence[ A ]
+[fa1a61eab2eebf73] (grid, evidence) fence[ A ] S
+[1367c669e3d5463f] (grid, evidence) fence[ A ] B
+[77335a502d2920bc] (grid, evidence) fence[ A ] A
+[ce275ea1972395f1] (grid, evidence) fence[ A ] fence[ B ]
+[3ad384d2543b8df1] (grid, evidence) fence[ S A ]
+[cec930d8051f7f0e] (grid, evidence) fence[ S A ] S
+[87780449a3237f8c] (grid, evidence) fence[ S A ] B
+[e3d821bf38a8814a] (grid, evidence) fence[ S A ] A
+[e4e8f25ea6c76092] (grid, evidence) fence[ S A ] fence[ B ]
+[128d422753b6ba2b] (grid, evidence) fence[ A S ]
+[d35bcaa49d705c85] (grid, evidence) fence[ A S ] S
+[426c58ea31cf5e9b] (grid, evidence) fence[ A S ] B
+[64e2cd6959f6103a] (grid, evidence) fence[ A S ] A
+[c2593f8183475176] (grid, evidence) fence[ A S ] fence[ B ]
+[19d2650843ce00cf] (grid, evidence) fence[ A B ]
+[506312386b9bd440] (grid, evidence) fence[ A B ] S
+[3c551f9dfa885462] (grid, evidence) fence[ A B ] C
+[0e2943a6f5157c85] (grid, evidence) fence[ A B ] A
+[8cf1e40dd6411a40] (grid, evidence) fence[ A B ] fence[ C ]
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+
+To ground a claim, add a citation naming a block and quoting its own words, like this:
+  "citations": [{"block": "0e2943a6f5157c85", "quote": "<words copied from that block>"}]
+
+## The shape this answer must take
+`commitments` must be a STRING whose content is JSON text fitting exactly this schema (the field itself is a string, not an object):
+{
+  "properties": {
+    "verdicts": {
+      "items": {
+        "properties": {
+          "catalogued": {
+            "type": "boolean"
+          },
+          "column": {
+            "enum": [
+              "moves",
+              "unchanged",
+              null
+            ]
+          },
+          "executed": {
+            "type": "string"
+          },
+          "expected": {
+            "type": "string"
+          },
+          "kernel": {
+            "type": "string"
+          },
+          "predicted": {
+            "enum": [
+              "moves",
+              "unchanged",
+              "?",
+              null
+            ]
+          },
+          "proposal": {
+            "type": "string"
+          },
+          "reading": {
+            "type": "string"
+          },
+          "same_input": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "standing": {
+            "enum": [
+              "candidate point",
+              "defect",
+              "rejected"
+            ]
+          },
+          "transform": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "proposal",
+          "executed",
+          "catalogued",
+          "standing"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "verdicts"
+  ],
+  "type": "object"
+}

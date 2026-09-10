@@ -641,6 +641,33 @@ not its choice. `NextCellTests` holds the walk.
 reading of the thirty runs that used these, in order, with what each shape
 found and did not; `FAILURE_MODES.md` carries what they corrected.
 
+### 23. Reading a run, and running a campaign (R46)
+
+**Modules** `report.py`, `campaign.py`. **Command** `tools/mini_campaign.py`.
+**Tests** `test_campaign.py`. **Statement** `AUTONOMY.md`.
+
+`report.read_run` replays a run root and returns what it holds: the proposals,
+the executions the kernel could run, every execution whose answer contradicted
+the proposal with both texts beside it, the cells of a grid named and not named
+and named off it, and the pairs whose two texts differ in more than one line
+(M14). It calls no model. `report.render` writes that out for a person.
+
+`campaign.RULES` states the rewrites a round makes to the next as rules, each
+naming its register entry and firing on one of those measurements: `fields-form`
+(M13), `real-line-breaks` (M16), `one-change-per-pair` (M14), `cover-the-grid`,
+and `space-exhausted` (M10), the last of which stops a shape rather than
+changing it. `campaign.decide` applies every rule that fires and returns the
+next manifest with the reasons; `render_decisions` writes the note.
+
+`tools/mini_campaign.py run` takes a campaign to its end: rounds of shapes run
+live at a set concurrency, each record read and its reading written beside it,
+the next round decided, its manifests and note written and, with `--commit`,
+committed before that round runs, so a conjecture is on the record before the
+records it is about. It stops when the rounds are spent, when every shape has
+nothing left to run, or when a round contradicts nothing and changes nothing. It
+never pushes, and it never decides that a disagreement is a blind spot:
+`AUTONOMY.md` says why, and what would have to change for it to.
+
 ---
 
 ## Part three: decisions, and what is genuinely still unbuilt

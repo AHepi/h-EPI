@@ -1,0 +1,26 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Proposal 8f9ab6a16e1d2c1a failed because the proposer misread the rule regarding the priority of code fences. The rule states: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text" [cfb66510a6ca9655]. 
+
+In the input `"```\n{"a": 1}\n{"b": 2}\n```\n{"c": 3}"`, there is a code fence containing objects A and B. Because a fence holds objects, the harness scores the last one inside that fence (object B), ignoring the top-level object C. 
+
+In the rewritten input `"{"a": 1}\n{"b": 2}\n{"c": 3}"`, there are no code fences. The harness then falls back to the second part of the rule: "the last top-level object in the text". In this case, object C is the last top-level object. 
+
+However, the execution record [51fe44d44347c47a] shows that for both the input and the rewritten text, the result was `{"c":3}` (the execution log lists `"before": "{"c":3}", "after": "{"c":3}"`). This indicates that the code actually prioritizes the last top-level object regardless of whether a fence exists, or that the fence logic is not behaving as documented. 
+
+Looking at the source [5cf1f38daafcce6b], `recover_json_object` collects `fenced` candidates and `top_level` candidates, then iterates: `for pool in (fenced, top_level): for candidate in reversed(pool):`. This means it checks all fenced candidates (last to first) before checking any top-level candidates. If a fence exists and contains a valid object, it should return that object and never reach the `top_level` pool. 
+
+The failure in execution 8f9ab6a16e1d2c1a is highly unusual: the execution log says the result was `{"c":3}` for the *input* (which had a fence containing B). This suggests the machine is ignoring the fence and taking the last top-level object C, which contradicts the rule "The object scored is the last one inside a code fence when any fence holds one". 
+
+This failure matters because it reveals a discrepancy between the documented priority (Fence > Top-level) and the machine's behavior. A proposer should next try to isolate whether the fence is being ignored entirely or if the `top_level` search is somehow overriding the `fenced` search.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

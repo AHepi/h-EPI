@@ -1,0 +1,6 @@
+```json
+{
+ "body": "For the cell `fence[ A ]`, I will test the `conformance.kernel.response-verdict` kernel. The input consists of a single JSON object A inside a code fence. According to the rules, the harness recovers this object, and since it is a valid JSON object, the response verdict should be `JSON_OBJECT`. If I rewrite the input by replacing the JSON object with a float (which is not a JSON object), the rule for `recover_json_object` states that a candidate that does not parse as strict JSON (such as a float) is \"passed over\". With no other candidates available, the harness will fail to recover any object. According to the `parse_content` rule, the refusal heuristic only decides the verdict when no object can be recovered; however, since there are no refusal phrases, the verdict will move from `JSON_OBJECT` to `INVALID_JSON`. The rule for `conformance.kernel.response-verdict` lists `JSON_OBJECT` and `INVALID_JSON` as possible verdicts.",
+ "commitments": "{\"kernel\": \"conformance.kernel.response-verdict\", \"input\": \"```\\n{\\\"a\\\": 1}\\n```\", \"rewritten\": \"```\\n1.23\\n```\", \"expect\": \"moves\", \"rewrite\": \"I replaced the JSON object with a float.\", \"cell\": \"fence[ A ]\"}"
+}
+```

@@ -1,0 +1,63 @@
+# Execution
+
+## Proposals so far (proposals)
+[43f3e8fe69027354] (mini.pair-proposal.reply.v1)
+The rule for `conformance.kernel.recovered-from-prose` states that the answer should be 'yes' if the harness had to recover the object from prose or a fence, and 'no' if it read it as strict JSON [a70c2e9bc362b532: "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)."].
+
+I will provide a response that is strict JSON, and then a rewrite that adds a small amount of prose, which should trigger a change from 'no' to 'yes'.
+
+Draft: `{"status": "ok"}`
+
+```json
+{
+  "status": "ok"
+}
+```
+
+Wait, I should just provide the JSON directly.
+
+{"status": "ok"}
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "input": "{\n  \"status\": \"ok\"\n}", "rewritten": "Here is the result:\n\n{\n  \"status\": \"ok\"\n}", "expect": "moves", "rewrite": "Added a sentence of prose before the JSON object."}
+[bb6ca8f15c7c1091] (mini.pair-proposal.reply.v1)
+The rule for `conformance.kernel.recovered-from-prose` states that the answer should be 'no' if the harness read the reply as strict JSON, and 'yes' if it had to recover the object from prose or a fence [a70c2e9bc362b532: "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)."].
+
+I will provide a reply that is a single JSON object, which should be read as strict JSON, and then a rewrite that adds a label line inside the code fence, which should force the harness to recover the object from a fence.
+
+Draft: `{"status": "ok"}`
+
+```json
+{
+  "status": "ok"
+}
+```
+
+Wait, I'll just provide the JSON directly.
+
+{"status": "ok"}
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "input": "{\n  \"status\": \"ok\"\n}", "rewritten": "```json\n// Final Answer\n{\n  \"status\": \"ok\"\n}\n```", "expect": "moves", "rewrite": "Wrapped the JSON in a code fence and added a label line inside the fence."}
+[0c7ed291b3bad630] (mini.pair-proposal.reply.v1)
+The rule for `conformance.kernel.recovered-from-prose` states that the answer should be 'no' if the harness read the reply as strict JSON, and 'yes' if it had to recover the object from prose or a fence [a70c2e9bc362b532: "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)."].
+
+I will provide a reply that is a single JSON object, which should be read as strict JSON, and then a rewrite that adds a small apology before the form, which should trigger a change from 'no' to 'yes'.
+
+Draft: `{"status": "ok"}`
+
+```json
+{
+  "status": "ok"
+}
+```
+
+Wait, I should just provide the JSON directly.
+
+{"status": "ok"}
+
+Actually, I'll add a polite note.
+
+I'm sorry for the delay. Here is the JSON:
+
+{"status": "ok"}
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "input": "{\n  \"status\": \"ok\"\n}", "rewritten": "I'm sorry for the delay. Here is the JSON:\n\n{\n  \"status\": \"ok\"\n}", "expect": "moves", "rewrite": "Added an apology before the JSON object."}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

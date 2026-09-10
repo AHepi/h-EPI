@@ -1,0 +1,18 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Proposal 2c601d56d60026a4 failed because the proposer misread the rule regarding the `recovered-from-prose` kernel. The proposer expected the value to move from 'no' to 'yes' when removing a code fence from a reply containing a sentence and a JSON object. However, the execution shows the value was 'yes' in both cases.
+
+The rule states that `recovered-from-prose` is 'no' only when the harness could "read it as strict JSON" [4756991799bcd6c4]. In the input "```\nHere is the result:\n{"a": 1}\n```", the presence of the sentence "Here is the result:" inside the fence prevents the entire content from being read as strict JSON, forcing the harness to recover the object from the fence (which counts as 'yes' for `recovered-from-prose`).
+
+This failure matters because it reveals a misunderstanding of what constitutes "strict JSON" versus "recovery from a fence". A proposer should next try an input that is *only* a JSON object (no prose, no fences) to establish the 'no' baseline, and then add a fence or prose to trigger the 'yes' state.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.
