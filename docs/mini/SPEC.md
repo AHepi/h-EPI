@@ -501,6 +501,15 @@ a field's own JSON is read against a declared schema (`json_schema`), which is
 the case that cost one live run forty-one of its forty-two calls
 (`FAILURE_MODES.md` M13).
 
+A kind's own **optional fields** are now offered rather than merely admitted: the
+brief names them, the live contract carries each as a string beside `body` and
+`commitments`, and the blind commitments call is still entitled to one field and
+nothing else. A kind that wants a long text written out declares it there, where
+one level of escaping serves, instead of nesting it in the commitments string,
+where three levels are needed and where the register's oldest open failure lives
+(M9, M13). The blind-spot seats read a kind's optional fields over the
+commitments, so the same proposal can be written either way.
+
 ### 18. An empty input port (R32)
 
 **Module** `runner.py`. **Tests** `test_failures.py::EmptyPortTests`.

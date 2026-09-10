@@ -1,0 +1,40 @@
+# Execution
+
+## Proposals so far (proposals)
+[3b08b65f9f4e34c6] (mini.pair-proposal.grid-1.v1)
+The documented rule for `conformance.kernel.recovery` states that the object scored is the last one inside a code fence when any fence holds one. In the given cell `fence[ S A ] fence[ B ]`, the input contains a plain sentence `S` followed by a JSON object `A` within the first code fence, and another JSON object `B` within a second code fence. The rule specifies that if a fence holds an object, the last object inside the last fence is scored. Thus, the object `B` inside the second fence is the one scored. If we remove the second fence (the part `fence[ B ]`), the object `A` inside the first fence becomes the last object inside the last remaining fence. According to the rule, the object scored should move from `B` to `A`. The object scored before the rewrite is `B`, and after the rewrite, it is `A`.
+commitments: {"kernel": "conformance.kernel.recovery", "input": "```
+Here is the result:\n{\"a\": 1}
+```
+```
+{\"b\": 2}
+```", "rewritten": "```
+Here is the result:\n{\"a\": 1}
+```", "expect": "moves", "rewrite": "Removed the second code fence containing JSON object B.", "cell": "fence[ S A ] fence[ B ]"}
+[384b7340bd6ecd62] (mini.pair-proposal.grid-2.v1)
+The documented rule for `conformance.kernel.recovery` states that the object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. In the given cell `fence[ A S ]`, the input contains a JSON object `A` followed by a plain sentence `S` within a code fence. The rule specifies that the entire content inside the fence is treated as a candidate for parsing, but only valid JSON objects are scored. If the plain sentence `S` makes the fenced content invalid JSON, the fence is ignored, and the rule falls back to the last top-level object in the text (though none exists in this case). However, if the fenced content is parsed as a valid JSON object despite the prose, the object `A` (or the combined content) would be scored. 
+
+If we remove the plain sentence `S` (the part after the JSON object inside the fence), the fenced content becomes a valid JSON object `A`. According to the rule, the object scored should move to `A` because the fence now holds a valid JSON object, and no other fences or top-level objects are present. The object scored before the rewrite is ambiguous (either invalid or `A` with prose), and after the rewrite, it is clearly `A`.
+commitments: {"kernel": "conformance.kernel.recovery", "input": "```
+{\"a\": 1}
+Here is the result:
+```", "rewritten": "```
+{\"a\": 1}
+```", "expect": "moves", "rewrite": "Removed the plain sentence S inside the code fence after the JSON object.", "cell": "fence[ A S ]"}
+[de843a6553b2a3f1] (mini.pair-proposal.grid-3.v1)
+The documented rule for `conformance.kernel.recovery` states that the object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. In the given cell `fence[ A S ] S`, the input contains a JSON object `A` followed by a plain sentence `S` within a code fence, and another plain sentence `S` after the fence. The rule specifies that if a fence holds an object, that object is scored, provided the fenced content is a valid JSON object. However, the presence of the plain sentence `S` inside the fence may invalidate the JSON parsing of the fenced content, causing the rule to fall back to the last top-level object in the text (though none exists in this case). 
+
+If we remove the plain sentence `S` after the fence (the part after the closing fence line), the fenced content remains `A S`, which may still be invalid JSON due to the prose inside the fence. However, if the fenced content is parsed as a valid JSON object (e.g., if `A` is treated as the primary object and `S` is ignored or considered part of a string), the object scored would remain `A`. If the fenced content is invalid, the rule would fall back to the last top-level object, but since none exists, the recovery would fail (NO_OBJECT). 
+
+Given the ambiguity, the most conservative interpretation is that the object scored before and after the rewrite is `A` (assuming the fenced content is parsed as valid JSON). However, if the fenced content is invalid, the object scored would move to NO_OBJECT. For this proposal, we assume the fenced content is parsed as valid JSON, so the object scored should remain unchanged. The object scored before and after the rewrite is `A`.
+commitments: {"kernel": "conformance.kernel.recovery", "input": "```
+{\"a\": 1}
+Here is the result:
+```
+Here is the result:", "rewritten": "```
+{\"a\": 1}
+Here is the result:
+```", "expect": "unchanged", "rewrite": "Removed the plain sentence after the code fence.", "cell": "fence[ A S ] S"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

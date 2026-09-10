@@ -1,0 +1,20 @@
+```json
+{
+  "body": "The cell `fence[ A S ]` presents a JSON object inside a code fence followed by a plain sentence. According to the documented rule for `conformance.kernel.recovery`, the object scored is the last one inside a code fence when any fence holds one. Here, the JSON object `A` is inside the fence, so it is the scored object. The rule also states that the object is the last top-level object in the text if no fence holds one, but since a fence is present, the object inside it takes precedence.\n\nThe rule for `conformance.kernel.recovered-from-prose` implies that if a JSON object is found inside a fence, it should *not* be marked as recovered from prose. However, the criticism in [5f78c972097d1612] suggests the code may not align with this rule, as it marks all recovered objects as recovered from prose regardless of fencing.\n\nFor this proposal, I will focus on `conformance.kernel.recovered-from-prose` and test whether the rule's implication holds: the object inside the fence should not be marked as recovered from prose. The input is the cell `fence[ A S ]`, and the rewrite removes the sentence `S` after the fence. The rule implies the object should remain unchanged (still inside the fence, not recovered from prose), so the `recovered-from-prose` flag should stay `false`. If the code marks it as `true`, this would contradict the rule.",
+  "commitments": "{\"kernel\": \"conformance.kernel.recovered-from-prose\", \"input\": \"```\n{\"a\": 1}\nHere is the result:\n```\", \"rewritten\": \"```\n{\"a\": 1}\n```\", \"expect\": \"unchanged\", \"rewrite\": \"Removed the plain sentence after the fence.\", \"cell\": \"fence[ A S ]\"}",
+  "citations": [
+    {
+      "block": "b0338a28a62f0879",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it"
+    },
+    {
+      "block": "5f78c972097d1612",
+      "quote": "The rule states: \"The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text\"\nThis implies that if a JSON object is found inside a fence, the harness should *not* mark it as recovered from prose."
+    },
+    {
+      "block": "a70c2e9bc362b532",
+      "quote": "kernel conformance.kernel.recovered-from-prose: Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)."
+    }
+  ]
+}
+```

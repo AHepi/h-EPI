@@ -1,0 +1,26 @@
+### Discrepancy in `conformance.kernel.recovered-from-prose` Rule vs. Implementation
+
+**Observed Failure:** The documented rule for `conformance.kernel.recovered-from-prose` states that the harness should return `yes` if it "had to recover the object from prose or a fence" and `no` if it "read it as strict JSON". However, the implementation in `parse_content` (source: `mini.kernel-source.v1`) does not align with this binary distinction in all cases.
+
+**Rule Quote (cf3ead255ba521d3):**
+> "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)."
+
+**Code Discrepancy (b6c35351972cc72f):**
+The `parse_content` function returns `recovered_from_prose=True` in two scenarios:
+1. When the object is recovered from prose (line 100: `return recovered, "JSON_OBJECT", detail, True`).
+2. When the object is recovered from a fence *but* strict parsing failed due to duplicate keys (line 95: `return recovered, "JSON_OBJECT", detail, True`).
+
+The rule implies that recovery from a fence should yield `no` (strict JSON), but the code returns `yes` for fenced objects with duplicate keys. This creates a mismatch: the rule suggests fenced objects are treated as strict JSON, while the code treats them as prose-recovered if they require last-wins resolution.
+
+**Evidence of Impact:**
+- Block `b0a010d1115d82a4` shows a fenced object with duplicate keys where `recovered-from-prose` returns `true` despite the input being fenced. This contradicts the rule’s implication that fenced objects are strict JSON.
+- Block `e847048a8c7847a8` confirms that fenced objects without duplicate keys return `false` for `recovered-from-prose`, aligning with the rule.
+
+**Why It Matters:**
+The discrepancy affects how downstream systems interpret the provenance of the recovered object. A proposer relying on the rule might assume fenced objects are always strict JSON, leading to incorrect assumptions about the object’s reliability.
+
+**Next Steps for Proposers:**
+1. **Clarify the Rule:** Propose a rewrite of the rule to explicitly state that `recovered-from-prose` returns `yes` for *any* object that required non-strict parsing (including fenced objects with duplicate keys). Example:
+   > "Whether the harness had to recover the object from prose, a fence with duplicate keys, or other non-strict JSON (yes) or read it as strict JSON (no)."
+2. **Test Edge Cases:** Focus on inputs where fenced objects contain duplicate keys (e.g., `{"key": 1, "key": 2}`) to verify the rule’s intent against the implementation.
+3. **Audit Downstream Dependencies:** Check if other systems assume `recovered-from-prose=no` implies strict JSON, and propose mitigations if needed.

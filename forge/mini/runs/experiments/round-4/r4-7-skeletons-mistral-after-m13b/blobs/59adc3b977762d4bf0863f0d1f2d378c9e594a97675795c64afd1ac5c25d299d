@@ -1,0 +1,20 @@
+```json
+{
+  "body": "### Discrepancy in `conformance.kernel.recovery` and `conformance.kernel.recovered-from-prose`\n\nThe documented rule for `recover_json_object` states:\n> The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.\n\nHowever, the implementation in the source code reveals a critical deviation. The rule implies that *any* fenced object should take precedence over *any* top-level object, but the code prioritizes **all fenced objects** over **all top-level objects**, regardless of their order in the text. Specifically:\n\n1. The code first collects all fenced objects (`fenced: list[str]`) and all top-level objects (`top_level: list[str]`).\n2. It then iterates over `fenced` in reverse order, returning the first valid JSON object it finds.\n3. Only if no valid object is found in `fenced` does it proceed to `top_level`.\n\nThis means that if a fenced object appears *earlier* in the text but a top-level object appears *later*, the fenced object will still be selected, contradicting the rule's implication that the *last* object (whether fenced or top-level) should be chosen. The rule does not explicitly state that fenced objects are prioritized over top-level objects, only that the last object (in the text) is chosen.\n\n#### Evidence of Failure\n- **Rule Misinterpretation**: The rule does not state that fenced objects are prioritized over top-level objects, only that the last object (in the text) is chosen. The code, however, prioritizes fenced objects regardless of their position.\n- **Code-rule Parting**: The code’s behavior is inconsistent with the rule’s phrasing, which suggests that the *last object in the text* (whether fenced or top-level) should be selected.\n\n#### Example from Executions\nThe evidence block `55dd56154fb39a87` (fence-then-bare-after) demonstrates this issue:\n- The input contains a fenced object followed by a bare (top-level) object later in the text.\n- The rule, as written, would imply that the *last* object (the bare one) should be selected.\n- The code, however, selects the fenced object, even though it appears earlier.\n\n#### What Proposers Should Try Next\nProposers should test inputs where:\n1. A fenced object appears *before* a top-level object in the text.\n2. The top-level object is the *last* object in the text.\n\nThe expected outcome, per the rule, is that the top-level object should be selected. The actual outcome, per the code, is that the fenced object is selected. This discrepancy matters because it affects how the harness interprets replies that mix fenced and top-level objects.\n\n#### Citations\nThe following evidence blocks demonstrate the issue:\n- The rule’s phrasing (from `32729f13bc4fd245`):\n  > \"The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.\"\n- The code’s behavior (from `ec5a234f60c0eb70`):\n  ```python\n  for pool in (fenced, top_level):\n      for candidate in reversed(pool):\n          # ... returns first valid object in fenced, even if top_level has a later one\n  ```\n- The execution case (from `55dd56154fb39a87`):\n  > `{\"kernel\": \"conformance.kernel.recovery\", \"transform\": \"conformance.transform.fence-then-bare-after\", \"moves\": false, \"input\": \"...\"}`",
+
+  "citations": [
+    {
+      "block": "32729f13bc4fd245",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it"
+    },
+    {
+      "block": "ec5a234f60c0eb70",
+      "quote": "    for pool in (fenced, top_level):\n        for candidate in reversed(pool):"
+    },
+    {
+      "block": "55dd56154fb39a87",
+      "quote": "{\"points\": [{\"kernel\": \"conformance.kernel.recovery\", \"transform\": \"conformance.transform.fence-then-bare-after\", \"moves\": false, \"input\": \"{\"claimant_name\": \"amara okoro\""
+    }
+  ]
+}
+```

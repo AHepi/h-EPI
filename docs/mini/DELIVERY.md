@@ -232,7 +232,7 @@ In one line each:
 | A standing an artifact can gain or lose | `changes: "nothing"` is the only implemented value; the slot and its refusal exist so the shape is visible |
 | A command that pairs two runs | the record supports it — same plan and script give byte-identical logs — but no command does it |
 | Cutting evidence by anything but blank lines | tables, lists and headings are cut as prose |
-| A structured optional field on a kind | `optional_fields` admit strings; structure goes in `commitments` under a JSON-schema format |
+| A structured optional field on a kind | `optional_fields` admit strings, now offered in the brief and the live contract as well as admitted; structure goes in `commitments` under a JSON-schema format |
 | Concurrency | one writer, one root, no lock; a second writer is detected on the next read, not prevented |
 
 ## Refusal sites

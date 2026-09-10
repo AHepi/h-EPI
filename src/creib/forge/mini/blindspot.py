@@ -244,8 +244,13 @@ def _proposal_of(context: MachineContext, record: Mapping[str, Any]) -> dict[str
     try:
         parsed, _recovered = loads_admitting_control(context.commitments(record))
     except RecordError:
-        return None
-    return parsed if type(parsed) is dict else None
+        parsed = {}
+    fields = dict(parsed) if type(parsed) is dict else {}
+    # A kind may carry the long fields as its own optional fields instead of nesting them in
+    # the commitments string, where they would need a second level of escaping (M13). They are
+    # read here as if they had been written there, and they win where both are present.
+    fields.update({name: value for name, value in dict(record.get("extra") or {}).items() if type(value) is str})
+    return fields or None
 
 
 # --- the machine seats ---

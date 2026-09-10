@@ -302,9 +302,18 @@ def render_brief(
         if example
         else ""
     )
+    # A kind's own optional fields are named here and offered in the wire contract, so a long
+    # text it wants written out is written once, as a string of the reply, rather than escaped
+    # again inside the commitments string (register M13).
+    optional = (
+        "\nThis artifact also carries " + ", ".join(f'"{name}"' for name in kind.optional_fields) + ", each a string."
+        if kind.optional_fields
+        else ""
+    )
     sections.append(
         "## What to return\n"
         'A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.'
+        + optional
         + worked
     )
     if not compiled.freeform:
@@ -517,6 +526,7 @@ def _attempt_submission(
         shown = brief if attempt == 0 else brief + "\n\n## The last reply was refused, for these reasons\n" + "\n".join(reasons)
         reply = responder.reply(
             Request(
+                optional_fields=kind.optional_fields,
                 stage_id=stage.stage_id,
                 kind_id=kind.kind_id,
                 attempt=attempt,

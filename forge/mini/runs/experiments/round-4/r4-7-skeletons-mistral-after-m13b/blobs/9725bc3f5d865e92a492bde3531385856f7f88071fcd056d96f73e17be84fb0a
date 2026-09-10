@@ -1,0 +1,45 @@
+### Analysis of Proposal `4f37c44fc9d617d4` (fence[ A B ] A)
+
+The proposal misreads the documented rule for `conformance.kernel.recovery`. The rule states:
+
+> "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text."
+
+The proposer argues that the last object inside the fence (`B`) should be prioritized over the identical object (`A`) outside the fence, and thus removing the outside `A` should leave the recovered object `unchanged`. However, the execution shows the recovered object **moved** from `{"a": 1}` to `{"b": 2}`, contradicting the expectation.
+
+#### Where the Rule and Code Part Company
+The rule’s phrasing suggests that the *last object inside a fence* is prioritized, but the **implementation** in `recover_json_object` (source line 25-45) does not strictly enforce this. The code:
+
+1. Collects all fenced objects (`fenced`) and top-level objects (`top_level`).
+2. Iterates over both pools in **reverse order** (`for pool in (fenced, top_level)` and `for candidate in reversed(pool)`).
+3. Returns the **first valid object** encountered during this reverse iteration.
+
+In the input `fence[ A B ] A`:
+- The fenced pool contains `[A, B]` (in order of appearance).
+- The top-level pool contains `[A]` (the outside `A`).
+- The reverse iteration checks `B` (last fenced), then `A` (first fenced), then `A` (top-level).
+- The **first valid object** in this order is `B`, so it is returned.
+
+However, in the rewritten input `fence[ A B ]` (no outside `A`):
+- The top-level pool is empty.
+- The reverse iteration checks `B` (last fenced), then `A` (first fenced).
+- The first valid object is still `B`.
+
+But the execution shows the recovered object changed from `{"a": 1}` to `{"b": 2}`. This implies the **original input’s recovered object was `A`**, not `B`. This discrepancy arises because:
+- The rule’s phrasing does not account for the **order of iteration** in the code. The code’s reverse iteration over `fenced` and `top_level` means the *last fenced object* (`B`) is checked first, but if it fails parsing (e.g., due to duplicate keys or invalid JSON), the code falls back to earlier fenced objects or top-level objects.
+- The proposer assumed `B` was always the recovered object, but the code’s behavior depends on **parsing validity**, not just position.
+
+#### Why This Matters
+The failure reveals a **gap between the rule’s intent and the implementation**. The rule implies that the last fenced object is *always* prioritized, but the code’s behavior depends on parsing success. This ambiguity could lead to unexpected results when:
+- A later fenced object is invalid (e.g., malformed JSON), causing the code to fall back to an earlier object.
+- A top-level object appears after a fence and is valid, but the rule’s phrasing suggests it should be ignored.
+
+#### What the Proposer Should Try Next
+1. **Clarify the rule’s intent**: Should the last fenced object *always* be prioritized, even if it fails parsing? Or should the code fall back to earlier objects?
+2. **Test edge cases**: Propose inputs where the last fenced object is invalid (e.g., `fence[ A {invalid} ]`) to see if the code falls back to `A`.
+3. **Revise the rule’s phrasing**: The rule should explicitly state whether parsing validity overrides positional priority.
+4. **Check the grid evidence**: The grid cell `fence[ A B ] A` ([0e2943a6f5157c85]) shows the recovered object is `A`, not `B`, contradicting the proposer’s assumption. This suggests the rule’s phrasing is misleading or incomplete.
+
+### Key Citations
+- Rule: "The object scored is the last one inside a code fence when any fence holds one" ([fc170c8d46f9b2f3]).
+- Code: The reverse iteration over `fenced` and `top_level` (source lines 35-45).
+- Evidence: Grid cell `fence[ A B ] A` shows the recovered object is `A` ([0e2943a6f5157c85]).

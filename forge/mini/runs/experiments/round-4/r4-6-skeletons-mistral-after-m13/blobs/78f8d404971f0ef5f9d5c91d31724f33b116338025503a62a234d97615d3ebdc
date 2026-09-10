@@ -1,0 +1,28 @@
+```json
+{
+  "body": "### Analysis of Failed Proposals and Rule-Code Alignment\n\nAll three proposals in this cycle (`1ef22807fecab0e9`, `b69853ab971f21b1`, `c5c24dbfccfda9db`) failed due to **unreadable commitments**, not because of a misalignment between the documented rules and the code. The executor's report (`3c10556693ace47b`) indicates that the commitments were not parseable as JSON, which is a procedural failure rather than a substantive one. However, this critique will address the *potential* misreadings of the `conformance.kernel.recovery` rule that the proposals reveal, as well as the rule's fidelity to the code.\n\n---\n\n#### 1. **Rule Misreading in Proposal `1ef22807fecab0e9`**\n**Claim**: The proposal asserts that in `fence[ A B ]`, removing `B` (the second JSON object inside the fence) should cause the harness to score `A` instead. This is **correct as written in the rule** but **incomplete in its interpretation of the code's behavior**.\n\n**Rule (b02ccb322122e4d0)**:\n> \"The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.\"\n\n**Code (e76ccc2a347e8e03, `recover_json_object` function)**:\nThe code iterates over fenced content in reverse order (`for candidate in reversed(pool)`) and returns the first valid JSON object it encounters. This means:\n- If a fence contains multiple JSON objects (e.g., `A` and `B`), the **last one in the fence** (`B`) is scored, as the rule states.\n- If `B` is removed, the next object in reverse order (`A`) is scored. This aligns with the rule.\n\n**Why the failure matters**: The proposal's *commitments* were unreadable, but its *logic* is sound. The rule and code agree here. The proposer should **reformat the commitments as valid JSON** and resubmit.\n\n---\n\n#### 2. **Rule-Code Alignment in Proposals `b69853ab971f21b1` and `c5c24dbfccfda9db`**\nBoth proposals argue that removing content *outside* the fence (e.g., `S` in `fence[ A B ] S` or `C` in `fence[ A B ] C`) should leave the scored object unchanged. This is **correct per the rule and the code**.\n\n**Rule (b02ccb322122e4d0)**:\n> \"The object scored is the last one inside a code fence when any fence holds one.\"\n\n**Code (e76ccc2a347e8e03)**:\nThe code prioritizes fenced content over top-level objects. If a fence exists, it ignores all top-level objects (e.g., `C` in `fence[ A B ] C`), even if they appear after the fence. This matches the rule.\n\n**Why the failure matters**: Again, the proposals' *commitments* were unreadable, but their *logic* is correct. The rule and code agree. The proposer should **reformat the commitments** and resubmit.\n\n---\n\n#### 3. **Key Takeaway for Proposers**\nThe `conformance.kernel.recovery` rule and its implementation are **aligned**, but proposers must:\n1. **Validate JSON commitments**: Ensure commitments are parseable as JSON (e.g., escape quotes, avoid trailing commas).\n2. **Test edge cases**: The rule specifies that *only* the last object in a fence is scored, even if other objects exist outside the fence. Proposals should test:\n   - Multiple objects in a fence (`fence[ A B ]` → `B` is scored).\n   - Objects outside the fence (`fence[ A ] B` → `A` is scored, not `B`).\n   - Prose after the fence (`fence[ A ] S` → `A` is scored).\n\n**Next Steps**:\n- Resubmit the proposals with **valid JSON commitments**.\n- Add test cases for `fence[ A ] B` and `fence[ A ] S` to confirm the rule's behavior.\n\n---\n\n#### Citations\nThe following evidence blocks support the alignment of the rule and code:\n- **Rule**: The documented behavior for fenced content (`b02ccb322122e4d0`).\n- **Code**: The `recover_json_object` function's reverse iteration over fenced content (`e76ccc2a347e8e03`).\n- **Evidence**: The grid cell `fence[ A B ]` (`19d2650843ce00cf`) and its variants (`506312386b9bd440`, `3c551f9dfa885462`).",
+
+  "citations": [
+    {
+      "block": "b02ccb322122e4d0",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text."
+    },
+    {
+      "block": "e76ccc2a347e8e03",
+      "quote": "for pool in (fenced, top_level):\n        for candidate in reversed(pool):\n            duplicates: tuple[str, ...] = ()\n            try:\n                value = loads_strict(candidate.strip())\n            except (RecordError, ValueError, RecursionError):\n                parsed = _loads_last_wins(candidate.strip())\n                if parsed is None:\n                    continue\n                value, duplicates = parsed\n            if type(value) is dict:\n                return value, duplicates"
+    },
+    {
+      "block": "19d2650843ce00cf",
+      "quote": "fence[ A B ]"
+    },
+    {
+      "block": "506312386b9bd440",
+      "quote": "fence[ A B ] S"
+    },
+    {
+      "block": "3c551f9dfa885462",
+      "quote": "fence[ A B ] C"
+    }
+  ]
+}
+```

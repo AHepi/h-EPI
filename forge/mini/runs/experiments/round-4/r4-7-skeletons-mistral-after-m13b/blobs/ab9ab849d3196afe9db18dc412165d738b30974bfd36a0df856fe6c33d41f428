@@ -1,0 +1,12 @@
+```json
+{
+  "body": "The cell `fence[ S A ] S` presents a case where a code fence contains a sentence followed by a JSON object, and another sentence follows the fence. According to the documented rule for `conformance.kernel.recovery`, the object scored is the last one inside a code fence when any fence holds one. Here, the last object inside the fence is `A`. The rule does not prioritize objects outside the fence over those inside it, so the object `A` should remain the scored object even if another object appears later in the text (e.g., in prose).\n\nTo test this, I will remove the sentence after the fence (`S` after the closing fence) and observe whether the scored object changes. The rule states that the last object *inside* the fence is scored, so removing the trailing sentence should leave the scored object unchanged. The object `A` (inside the fence) is the one the rule says is scored before and after the rewrite.",
+  "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"input\": \"```\nHere is the result:\n{\"a\": 1}\n```\nHere is the result:\", \"rewritten\": \"```\nHere is the result:\n{\"a\": 1}\n```\", \"expect\": \"unchanged\", \"rewrite\": \"Removed the sentence after the closing fence.\", \"cell\": \"fence[ S A ] S\"}",
+  "citations": [
+    {
+      "block": "40d9dcf4892ea5fa",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it"
+    }
+  ]
+}
+```

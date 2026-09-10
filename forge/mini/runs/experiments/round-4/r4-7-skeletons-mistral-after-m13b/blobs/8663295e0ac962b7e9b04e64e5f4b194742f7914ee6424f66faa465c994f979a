@@ -1,0 +1,46 @@
+# Execution
+
+## Proposals so far (proposals)
+[f949a2a095085a9a] (mini.pair-proposal.grid-1.v1)
+The cell `fence[ A B ]` presents two JSON objects inside a single code fence. According to the rule for `conformance.kernel.recovery`, the object scored is the last top-level balanced object in the text, not nested objects. Here, the JSON objects `A` and `B` are both top-level candidates inside the fence. The rule states: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." Since both `A` and `B` are inside the fence, the last one (`B`) should be the scored object. Removing the second JSON object `B` inside the fence should change the scored object to `A`. The expectation is that the recovered object `moves` from `B` to `A`. The object scored before the rewrite is `B`, and after the rewrite, it is `A`.
+
+Citations:
+- The rule states: "The object scored is the last one inside a code fence when any fence holds one" ([1fa7da2e210cb18e]).
+- Evidence from the grid cell `fence[ A B ]` suggests that the last object inside the fence is prioritized ([19d2650843ce00cf]).
+commitments: {"kernel": "conformance.kernel.recovery", "input": "```
+{\"a\": 1}
+{\"b\": 2}
+```", "rewritten": "```
+{\"a\": 1}
+```", "expect": "moves", "rewrite": "Removed the second JSON object inside the fence.", "cell": "fence[ A B ]"}
+[acfd622bb8699b07] (mini.pair-proposal.grid-2.v1)
+The cell `fence[ A B ] S` presents two JSON objects inside a single code fence followed by a plain sentence. According to the rule for `conformance.kernel.recovery`, the object scored is the last top-level balanced object inside the fence when any fence holds one. Here, the JSON objects `A` and `B` are both top-level candidates inside the fence. The rule states: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." Since both `A` and `B` are inside the fence, the last one (`B`) should be the scored object. Removing the plain sentence `S` after the fence should not change the scored object, as the rule prioritizes objects inside the fence over prose. The expectation is that the recovered object remains `unchanged`. The object scored before and after the rewrite is `B`.
+
+Citations:
+- The rule states: "The object scored is the last one inside a code fence when any fence holds one" ([1fa7da2e210cb18e]).
+- Evidence from the grid cell `fence[ A B ]` suggests that the last object inside the fence is prioritized ([19d2650843ce00cf]).
+commitments: {"kernel": "conformance.kernel.recovery", "input": "```
+{\"a\": 1}
+{\"b\": 2}
+```
+Here is the result:", "rewritten": "```
+{\"a\": 1}
+{\"b\": 2}
+```", "expect": "unchanged", "rewrite": "Removed the plain sentence after the fence.", "cell": "fence[ A B ] S"}
+[744b028aa6121acf] (mini.pair-proposal.grid-3.v1)
+The cell `fence[ A B ] C` presents two JSON objects inside a single code fence followed by a third JSON object outside the fence. According to the rule for `conformance.kernel.recovery`, the object scored is the last top-level balanced object inside the fence when any fence holds one. Here, the JSON objects `A` and `B` are both top-level candidates inside the fence, and the rule states: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." Since both `A` and `B` are inside the fence, the last one (`B`) should be the scored object. The JSON object `C` outside the fence is not prioritized over the fenced objects. Thus, removing the JSON object `C` after the fence should not change the scored object. The expectation is that the recovered object remains `unchanged`. The object scored before and after the rewrite is `B`.
+
+Citations:
+- The rule states: "The object scored is the last one inside a code fence when any fence holds one" ([1fa7da2e210cb18e]).
+- Evidence from the grid cell `fence[ A B ]` suggests that the last object inside the fence is prioritized ([19d2650843ce00cf]).
+commitments: {"kernel": "conformance.kernel.recovery", "input": "```
+{\"a\": 1}
+{\"b\": 2}
+```
+{\"c\": 3}", "rewritten": "```
+{\"a\": 1}
+{\"b\": 2}
+```", "expect": "unchanged", "rewrite": "Removed the JSON object after the fence.", "cell": "fence[ A B ] C"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

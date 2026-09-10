@@ -1,0 +1,15 @@
+# Execution
+
+## Proposals so far (proposals)
+[96228cf96035490e] (mini.pair-proposal.grid-1.v1)
+The rule for conformance.kernel.recovery states: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". In the input constructed from cell fence[ A ], object A is inside a code fence, so the rule says A is scored. In the rewritten text, the fence markers are removed, leaving A as plain text. The rule then falls to the else clause: "the last top-level object in the text", which is still A. Therefore, the recovered object stays unchanged.
+commitments: {"kernel": "conformance.kernel.recovery", "input": "```\n{\"a\": 1}\n```", "rewritten": "{\"a\": 1}", "expect": "unchanged", "rewrite": "Removed the code fence markers surrounding the object.", "cell": "fence[ A ]"}
+[16efa85c2f33e3a0] (mini.pair-proposal.grid-2.v1)
+The rule for conformance.kernel.recovery states: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". In the input constructed from cell fence[ A ] S, object A is inside a code fence, so the rule says A is scored. In the rewritten text, the sentence S following the fence is removed, leaving fence[ A ]. The object A remains inside the code fence. Therefore, the recovered object stays unchanged.
+commitments: {"kernel": "conformance.kernel.recovery", "input": "```\n{\"a\": 1}\n```\nHere is the result:", "rewritten": "```\n{\"a\": 1}\n```", "expect": "unchanged", "rewrite": "Removed the sentence following the code fence.", "cell": "fence[ A ] S"}
+[ad502e61e81598e1] (mini.pair-proposal.grid-3.v1)
+The rule for conformance.kernel.recovery states: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text" [cf3ead255ba521d3]. In the input constructed from cell fence[ A ] B [1367c669e3d5463f], object A is inside a code fence, so the rule says A is scored. In the rewritten text, the fence block containing A is removed, leaving only B. The rule then falls to the else clause: "the last top-level object in the text", which is B. Therefore, the recovered object moves from A to B.
+commitments: {"kernel": "conformance.kernel.recovery", "input": "```\n{\"a\": 1}\n```\n{\"b\": 2}", "rewritten": "{\"b\": 2}", "expect": "moves", "rewrite": "Removed the code fence block preceding the second object.", "cell": "fence[ A ] B"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

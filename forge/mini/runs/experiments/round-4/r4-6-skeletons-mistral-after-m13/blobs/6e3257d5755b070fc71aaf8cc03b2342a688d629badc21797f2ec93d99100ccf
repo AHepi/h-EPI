@@ -1,0 +1,74 @@
+```json
+{
+  "body": "### Analysis of Failed Proposals for `conformance.kernel.recovery`
+
+All three proposals this cycle (2c28d01a45463415, 5d215bc559f1fc5f, 7a7711bdb4ef366b) failed due to **unreadable commitments**, not because of a misalignment between the documented rules and the code. The executor reports that the proposals' commitments were not readable as JSON (execution block `8e5b538b1f24f8e6`). This is a procedural failure, not a substantive one: the proposals correctly interpreted the rule but were not formatted in a way the harness could parse.
+
+#### Rule vs. Code Alignment
+The documented rule for `conformance.kernel.recovery` states:
+> \"The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.\" (rules block `b994a1369275e407`)
+
+The source code implements this rule faithfully:
+- It first extracts all fenced content (lines 15-17 in `recover_json_object`, source block `e3bbfe6282b35418`):
+  ```python
+  for match in _FENCE.finditer(content):
+      fenced.append(match.group(1))
+  ```
+- It then iterates over fenced candidates in reverse order (lines 28-30):
+  ```python
+  for pool in (fenced, top_level):
+      for candidate in reversed(pool):
+  ```
+- The first valid JSON object found in this reverse iteration is returned (lines 31-38).
+
+The rule and code agree: **the last object in a fence is prioritized over any top-level object outside it**, and the proposals correctly predicted this behavior. The failures do not reflect a misreading of the rule or a divergence between rule and code.
+
+#### Why the Failures Matter
+The failures are **procedural**, not substantive. The proposals correctly identified that removing content outside a fence (e.g., `S` or `B` in `fence[ S A ] S` or `fence[ S A ] B`) would not change the recovered object, as the rule and code both prioritize the fenced object. However, the harness could not execute the proposals because their commitments were not machine-readable. This is a critical issue: **a proposal that cannot be parsed cannot be tested**, even if its reasoning is sound.
+
+#### Next Steps for Proposers
+1. **Validate JSON formatting**: Ensure commitments are valid JSON. The harness expects commitments like:
+   ```json
+   {
+     "kernel": "conformance.kernel.recovery",
+     "input": "<input text>",
+     "rewritten": "<rewritten text>",
+     "expect": "unchanged"
+   }
+   ```
+   The proposals' commitments were likely malformed (e.g., unescaped newlines or quotes).
+
+2. **Test locally**: Use a JSON validator to confirm commitments parse before submission.
+
+3. **Focus on edge cases**: The proposals tested straightforward cases where the rule and code align. Future proposals should target edge cases where the rule might be ambiguous, such as:
+   - Multiple fenced objects (e.g., `fence[ A ] fence[ B ]`).
+   - Nested objects inside fences (e.g., `fence[ { \"a\": { \"b\": 1 } } ]`).
+   - Objects with duplicate keys (e.g., `fence[ { \"a\": 1, \"a\": 2 } ]`).
+
+4. **Leverage evidence**: The catalogue (e.g., block `7a60de6ecc4dd6e3`) shows that `conformance.kernel.recovery` can change when content is removed *inside* a fence (e.g., `fence[ A ]` → `fence[ ]`). Proposals should explore such cases to stress-test the rule.
+
+#### Citations
+The rule and code agree on the priority of fenced objects:
+- Rule: \"The object scored is the last one inside a code fence when any fence holds one\" (rules block `b994a1369275e407`).
+- Code: Iterates over fenced candidates in reverse order (source block `e3bbfe6282b35418`, lines 28-30).",
+
+  "citations": [
+    {
+      "block": "b994a1369275e407",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text."
+    },
+    {
+      "block": "e3bbfe6282b35418",
+      "quote": "for pool in (fenced, top_level):\n    for candidate in reversed(pool):"
+    },
+    {
+      "block": "8e5b538b1f24f8e6",
+      "quote": "the proposal's commitments are not readable as JSON"
+    },
+    {
+      "block": "7a60de6ecc4dd6e3",
+      "quote": "{\"points\": [{\"kernel\": \"conformance.kernel.recovery\", \"transform\": \"conformance.transform.bare-after\", \"moves\": true, \"input\": \"{\\\"claimant_name\\\": \\\"amara okor…"
+    }
+  ]
+}
+```

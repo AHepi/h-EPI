@@ -1,0 +1,7 @@
+All three executed proposals met their expectations: 96228cf96035490e (fence markers removed, object unchanged), 16efa85c2f33e3a0 (trailing prose removed, object unchanged), and ad502e61e81598e1 (fence block removed, object moved from A to B). No failures occurred in this cycle.
+
+The proposers correctly read the rule for conformance.kernel.recovery: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text" [cf3ead255ba521d3]. The source code implements this by iterating `for pool in (fenced, top_level)` and checking candidates in `reversed` order [b6c35351972cc72f], which matches the documented behavior.
+
+However, several grid cells remain untested that could reveal divergence between rule and code. The evidence catalogue shows transforms like `fence[ A ] fence[ B ]` [ce275ea1972395f1] (two fenced objects, which should score B), `fence[ A ] A` [64e2cd6959f6103a] (fenced object plus bare object, should score the fenced one), and `fence[ S A ] B` [87780449a3237f8c] (fenced object with prose inside plus bare object after). These would test whether the fenced-pool preference truly dominates the top-level pool, and whether prose inside fences is handled correctly.
+
+Proposers should next target cells where the rule's priority order could be ambiguous: multiple fences, mixed fence-and-bare objects, or objects with internal prose that might confuse the fence regex `_FENCE = re.compile('```(?:json|JSON)?\s*(.*?)```', re.DOTALL)` [b6c35351972cc72f].

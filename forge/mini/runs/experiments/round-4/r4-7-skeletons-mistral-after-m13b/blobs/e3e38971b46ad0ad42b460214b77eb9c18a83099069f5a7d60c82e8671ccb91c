@@ -1,0 +1,20 @@
+### Failure Analysis: Proposal `744b028aa6121acf` (grid-3.v1)
+
+**Failure**: The proposal expected the recovered object to remain `unchanged` after removing the JSON object `C` outside the fence, but the execution showed the recovered object `moved` from `{"c": 3}` to `{"b": 2}`. This indicates a misalignment between the documented rule and the implementation.
+
+**Rule vs. Code**:
+- **Rule** ([1fa7da2e210cb18e]): "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text."
+- **Code** ([f637c8c74d67043a], `recover_json_object`): The implementation prioritizes the last top-level object *inside* a fence, but the execution shows it also considers top-level objects *outside* the fence when no valid object is found inside. Specifically, the code iterates over `fenced` and `top_level` pools, and if no valid object is found in `fenced`, it falls back to `top_level` (lines 30-40). This contradicts the rule’s explicit prioritization of fenced objects.
+
+**Why It Matters**: The rule implies that objects outside fences are irrelevant if a fence exists, but the code treats them as a fallback. This discrepancy could lead to unexpected behavior in edge cases where fenced objects are malformed or unparseable.
+
+**Next Steps for Proposers**:
+1. **Clarify the Rule**: The rule should explicitly state whether top-level objects outside fences are considered when no valid object is found inside a fence. For example:
+   > "If no valid JSON object is found inside a code fence, the last top-level object in the text is scored."
+2. **Test Edge Cases**: Propose inputs where fenced objects are invalid (e.g., malformed JSON, floats) to verify whether the fallback to top-level objects outside fences is intentional.
+3. **Align Code with Rule**: If the rule’s intent is to *only* score fenced objects, the code should raise `RecordError` when no valid object is found in a fence, rather than falling back to `top_level`.
+
+**Citations**:
+- Rule: "The object scored is the last one inside a code fence when any fence holds one" ([1fa7da2e210cb18e]).
+- Code: The `recover_json_object` function iterates over `fenced` and `top_level` pools, falling back to `top_level` if no valid object is found in `fenced` ([f637c8c74d67043a], lines 30-40).
+- Evidence: The grid cell `fence[ A B ] C` shows the last object inside the fence (`B`) is prioritized, but the execution reveals `C` (outside the fence) is scored when no valid object is found in the fence ([3c551f9dfa885462]).

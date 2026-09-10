@@ -455,6 +455,19 @@ commitments string the way the format layer read it. The rule this leaves is
 worth stating: wherever mini reads the same text twice, the two readings are the
 same reading.
 
+A third run said leniency is not the fix at all.
+`runs/experiments/round-4/r4-7-skeletons-mistral-after-m13b/` ran the same shape
+on the same model with both readings repaired, and the model still lost every
+call: it had written `"input": "```\n{"a": 1}\n```"`, leaving the inner quotes
+unescaped as well as the breaks, and no reader should guess where a string ends.
+The requirement itself was wrong. A JSON instance inside a JSON string inside a
+JSON reply is three levels of escaping; a kind that declares the long fields as
+its own optional fields needs one, the same level at which every model already
+writes `body`. Those fields are now named in the brief and carried in the live
+contract (`SPEC.md` §17), and the blind-spot seats read them over the
+commitments. The manifests of round 5 use that form, and the register will say
+whether it worked.
+
 The template half — a pattern written for one shape refusing another — stays
 open, and is a manifest's business rather than the machine's.
 
@@ -474,6 +487,22 @@ removal), which is a template's answer, not the machine's. A check that
 diffed the two texts and refused a pair whose difference is not one part would
 be a template decision with a real cost: it would need a notion of "part", which
 the machine does not have and should not acquire for one family of manifests.
+
+## M15 — A grid whose cells name differences biases the expectation
+
+**Seen on** `runs/experiments/round-4/r4-4-grounding-grid/`: ten of twenty-one
+proposals expected the answer to move, all ten for the same reason, and all ten
+were wrong in the same way. The cells were named "span differing from the
+document by a run of spaces", "by a line break", "value differing from the span
+by case", and a seat handed a cell named after a difference reads the difference
+as the point of the cell, although the rules it was shown say those differences
+are normalised. **Status: OPEN.**
+
+A cell that names a shape (`fence[ S A ] B`) says what to build and nothing
+about what should happen; a cell that names a difference says both. The second
+kind is easier to write and produces candidates that are all the same
+misreading. What a grid's cells should name is the input's shape, leaving the
+expectation entirely to the seat's reading of the rule.
 
 ## What the eighteen runs show, and do not
 

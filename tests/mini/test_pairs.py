@@ -238,6 +238,41 @@ class _PredictingResponder:
         self.assertEqual(executions[0]["rewritten"], "```\n" + OBJECT + "\n```")
 
 
+    def test_a_kind_may_carry_the_long_fields_beside_the_commitments(self) -> None:
+        """M13: three levels of escaping become one when the kind declares the fields itself."""
+
+        from creib.forge.mini.executor import contract_for
+        from creib.forge.mini.runner import render_brief
+
+        manifest = _pair_manifest()
+        proposal = next(k for k in manifest["kinds"] if k["kind_id"] == "mini.pair-proposal.recovery.v1")
+        proposal["optional_fields"] = ["input", "rewritten"]
+        schema = proposal["format"]["commitments"]["all_of"][0]["schema"]
+        schema["required"] = ["kernel", "expect", "rewrite"]
+        for name in ("input", "rewritten"):
+            schema["properties"].pop(name)
+        reply = submission(
+            "a body",
+            json.dumps({"kernel": kernels.KERNEL_RECOVERY, "expect": "unchanged", "rewrite": "wrapped it in a fence"}),
+            input=OBJECT,
+            rewritten="```json\n" + OBJECT + "\n```",
+        )
+        plan, outcome = self.run_manifest(manifest, {"propose": [reply]})
+        state = replay(outcome.root / "log.jsonl", plan.genesis)
+        blobs = BlobStore(outcome.root / "blobs")
+        executions = [e for r in state.artifacts.values() if r["kind_id"] == PAIR_EXECUTION_KIND for e in json.loads(blobs.get(r["commitments_ref"]).decode("utf-8"))["executions"]]
+        self.assertEqual(executions[0]["executed"], "unchanged", "the pair ran from the artifact's own fields")
+        self.assertEqual((executions[0]["input"], executions[0]["expect"]), (OBJECT, "unchanged"))
+
+        brief, _ = render_brief(plan, state, blobs, plan.stage("propose"), 1)
+        self.assertIn('This artifact also carries "input", "rewritten", each a string.', brief)
+        _system, wire = contract_for("both", ("input", "rewritten"))
+        self.assertEqual(wire["properties"]["input"], {"type": "string"})
+        self.assertEqual(wire["required"], ["body", "commitments"], "an optional field is offered, never required")
+        _blind_system, blind = contract_for("commitments", ("input",))
+        self.assertNotIn("input", blind["properties"], "the blind commitments call is entitled to one field")
+
+
 class NextCellTests(MiniTestCase):
     """The grid is enumerated by machine: each next-cell seat names the cell named least often."""
 

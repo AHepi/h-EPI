@@ -1,0 +1,44 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+### Misalignment in `conformance.kernel.recovery` and `conformance.kernel.recovered-from-prose`
+
+The documented rules and the source code for `recover_json_object` and `parse_content` part company on how the harness determines whether an object was *recovered from prose*. The rule states:
+
+> "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text"
+
+This implies that if a JSON object is found inside a fence, the harness should *not* mark it as recovered from prose. However, the source code in `parse_content` (lines 80-95) sets `recovered_from_prose=True` whenever `recover_json_object` is called, regardless of whether the object was fenced or not. This is a direct contradiction: the rule suggests fenced objects are *not* recovered from prose, but the code treats all recovered objects as such.
+
+#### Evidence of the failure:
+1. **Rule vs. Code**: The rule explicitly distinguishes between fenced and prose recovery, but the code does not. The `recovered_from_prose` flag is set to `True` in `parse_content` (line 90) for *all* objects recovered by `recover_json_object`, even if they were fenced.
+2. **Execution results**: In the evidence blocks, `recovered-from-prose` is `true` for fenced inputs (e.g., [e847048a8c7847a8]), which contradicts the rule's implication that fenced objects should not be marked as recovered from prose.
+
+#### Why this matters:
+- The distinction between fenced and prose recovery is critical for scoring. A model that provides a well-formed JSON object in a fence should be treated differently from one that embeds JSON in prose, but the current implementation collapses this distinction.
+- Proposers should focus on inputs where a JSON object is provided in a fence but the harness incorrectly marks it as `recovered-from-prose`. For example, the input in [e847048a8c7847a8] should have `recovered-from-prose=false` per the rule, but the code returns `true`.
+
+#### Next steps for proposers:
+1. **Test fenced inputs**: Propose pairs where a JSON object is provided in a fence (e.g., ````json\n{...}\n````) and verify whether `recovered-from-prose` is `false` as the rule implies. The current code will fail this test.
+2. **Test prose inputs**: Propose pairs where a JSON object is embedded in prose (no fence) and verify that `recovered-from-prose` is `true`. This aligns with both the rule and the code.
+3. **Clarify the rule**: If the rule is correct, the code must be fixed to distinguish between fenced and prose recovery. If the code is correct, the rule must be updated to reflect that *all* recovered objects are treated as prose-recovered.
+
+### Secondary issue: `refusal-phrase` and typographic quotes
+
+The rule and code align on the handling of typographic quotes in refusal phrases, but the rule does not explicitly state that the input text is normalized before checking for refusal phrases. The code in `_plain_quotes` (lines 50-55) folds typographic quotes to ASCII, which is critical for matching phrases like "I’m sorry" (with a typographic apostrophe). While this is a minor gap, proposers should test inputs with typographic quotes to ensure the rule's silence on normalization does not lead to misinterpretation.
+
+#### Evidence of alignment:
+- The rule states: "typographic apostrophes read as straight", and the code implements this in `_plain_quotes` (lines 50-55).
+- Execution results (e.g., [6e346a638ffdff8b]) confirm that typographic quotes are normalized before refusal-phrase checks.
+
+#### Next steps for proposers:
+- Propose inputs with typographic quotes (e.g., "I’m sorry") to confirm the harness matches them as refusal phrases. This is already working, but the rule should explicitly mention normalization for clarity.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

@@ -1,0 +1,18 @@
+```json
+{
+  "body": "The cell `fence[ A ]` presents a single JSON object inside a code fence. According to the rule for `conformance.kernel.recovery`, the object scored is the last one inside a code fence when any fence holds one. Here, the JSON object `A` is the only object inside the fence, so it should be the scored object. The rule does not mention any requirement for additional content outside the fence to retain the scored object. Thus, removing the entire fence (including the JSON object `A`) should result in no object being scored, as there would be no valid JSON object left in the text. However, the rule explicitly states that the object scored is the last one inside a code fence when any fence holds one, implying that if no fence exists, the behavior is undefined or defaults to `NO_OBJECT`. For the purpose of this proposal, we interpret the rule as requiring the scored object to `move` (i.e., disappear) when the fence and its contents are removed, as no valid object remains. The object scored before the rewrite is `A`, and after the rewrite, there is no object to score, so the expectation is that the recovered object `moves` (to `NO_OBJECT`).",
+
+  "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"input\": \"```\n{\"a\": 1}\n```\", \"rewritten\": \"\", \"expect\": \"moves\", \"rewrite\": \"Removed the entire fence and its JSON object.\", \"cell\": \"fence[ A ]\"}",
+
+  "citations": [
+    {
+      "block": "fc170c8d46f9b2f3",
+      "quote": "\"The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it\""
+    },
+    {
+      "block": "c0a21f89083a15a3",
+      "quote": "The cell to cover: fence[ A ]"
+    }
+  ]
+}
+```

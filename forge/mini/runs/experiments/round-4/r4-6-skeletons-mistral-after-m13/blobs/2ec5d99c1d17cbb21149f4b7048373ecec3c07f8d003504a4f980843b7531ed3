@@ -1,0 +1,66 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+### Analysis of Failed Proposals and Rule-Code Alignment
+
+All three proposals in this cycle (`1ef22807fecab0e9`, `b69853ab971f21b1`, `c5c24dbfccfda9db`) failed due to **unreadable commitments**, not because of a misalignment between the documented rules and the code. The executor's report (`3c10556693ace47b`) indicates that the commitments were not parseable as JSON, which is a procedural failure rather than a substantive one. However, this critique will address the *potential* misreadings of the `conformance.kernel.recovery` rule that the proposals reveal, as well as the rule's fidelity to the code.
+
+---
+
+#### 1. **Rule Misreading in Proposal `1ef22807fecab0e9`**
+**Claim**: The proposal asserts that in `fence[ A B ]`, removing `B` (the second JSON object inside the fence) should cause the harness to score `A` instead. This is **correct as written in the rule** but **incomplete in its interpretation of the code's behavior**.
+
+**Rule (b02ccb322122e4d0)**:
+> "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text."
+
+**Code (e76ccc2a347e8e03, `recover_json_object` function)**:
+The code iterates over fenced content in reverse order (`for candidate in reversed(pool)`) and returns the first valid JSON object it encounters. This means:
+- If a fence contains multiple JSON objects (e.g., `A` and `B`), the **last one in the fence** (`B`) is scored, as the rule states.
+- If `B` is removed, the next object in reverse order (`A`) is scored. This aligns with the rule.
+
+**Why the failure matters**: The proposal's *commitments* were unreadable, but its *logic* is sound. The rule and code agree here. The proposer should **reformat the commitments as valid JSON** and resubmit.
+
+---
+
+#### 2. **Rule-Code Alignment in Proposals `b69853ab971f21b1` and `c5c24dbfccfda9db`**
+Both proposals argue that removing content *outside* the fence (e.g., `S` in `fence[ A B ] S` or `C` in `fence[ A B ] C`) should leave the scored object unchanged. This is **correct per the rule and the code**.
+
+**Rule (b02ccb322122e4d0)**:
+> "The object scored is the last one inside a code fence when any fence holds one."
+
+**Code (e76ccc2a347e8e03)**:
+The code prioritizes fenced content over top-level objects. If a fence exists, it ignores all top-level objects (e.g., `C` in `fence[ A B ] C`), even if they appear after the fence. This matches the rule.
+
+**Why the failure matters**: Again, the proposals' *commitments* were unreadable, but their *logic* is correct. The rule and code agree. The proposer should **reformat the commitments** and resubmit.
+
+---
+
+#### 3. **Key Takeaway for Proposers**
+The `conformance.kernel.recovery` rule and its implementation are **aligned**, but proposers must:
+1. **Validate JSON commitments**: Ensure commitments are parseable as JSON (e.g., escape quotes, avoid trailing commas).
+2. **Test edge cases**: The rule specifies that *only* the last object in a fence is scored, even if other objects exist outside the fence. Proposals should test:
+   - Multiple objects in a fence (`fence[ A B ]` → `B` is scored).
+   - Objects outside the fence (`fence[ A ] B` → `A` is scored, not `B`).
+   - Prose after the fence (`fence[ A ] S` → `A` is scored).
+
+**Next Steps**:
+- Resubmit the proposals with **valid JSON commitments**.
+- Add test cases for `fence[ A ] B` and `fence[ A ] S` to confirm the rule's behavior.
+
+---
+
+#### Citations
+The following evidence blocks support the alignment of the rule and code:
+- **Rule**: The documented behavior for fenced content (`b02ccb322122e4d0`).
+- **Code**: The `recover_json_object` function's reverse iteration over fenced content (`e76ccc2a347e8e03`).
+- **Evidence**: The grid cell `fence[ A B ]` (`19d2650843ce00cf`) and its variants (`506312386b9bd440`, `3c551f9dfa885462`).
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

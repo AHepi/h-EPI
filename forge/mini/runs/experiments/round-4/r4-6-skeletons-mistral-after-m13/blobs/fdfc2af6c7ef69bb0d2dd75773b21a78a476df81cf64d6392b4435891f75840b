@@ -1,0 +1,51 @@
+### Analysis of Proposal Failures in `conformance.kernel.recovery`
+
+All three proposals this cycle failed because their commitments were unreadable as JSON, not because of a misreading of the rule or a divergence between the rule and the code. However, the proposals themselves reveal a misunderstanding of the rule's handling of invalid JSON within fences. Below, I clarify the rule's behavior and suggest how proposers should refine their approach.
+
+#### The Rule and the Code Agree
+The documented rule for `conformance.kernel.recovery` states:
+> "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text... A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over."
+
+The source code implements this logic precisely:
+1. It first checks for JSON objects inside fences (`_FENCE.finditer(content)`), iterating in reverse order (lines 30-32 in the source).
+2. For each candidate (fenced or top-level), it attempts to parse the content as strict JSON or with last-wins resolution for duplicate keys (lines 38-50).
+3. If no valid JSON object is found in any fence, it falls back to the last top-level object in the text (lines 33-36).
+
+The rule and the code part company **only in edge cases not covered by the proposals**, such as:
+- A fence containing a valid JSON object followed by non-JSON prose (e.g., `fence[ {"a": 1} S ]`). The code will parse `{"a": 1}` as the object, while the rule implies the entire fenced content must be valid JSON to be scored. This is a **documentation gap**: the rule should clarify whether the *entire* fenced content must parse or just the last valid JSON object within it.
+- A fence with invalid JSON (e.g., `fence[ {"a": 1, "a": 2} S ]`), where the code resolves the duplicate key but the rule does not explicitly address prose mixed with JSON.
+
+#### Why the Proposals Failed
+The proposals assumed that the presence of non-JSON prose (`S`) in a fence would invalidate the entire fenced content, causing the harness to fall back to top-level objects. However, the code **does not require the entire fenced content to be valid JSON**. It only requires that a valid JSON object exists within the fence. For example:
+- In `fence[ A S ] B`, the code will score `A` (the valid JSON object inside the fence) and ignore `S` and `B`. The proposals incorrectly predicted the harness would fall back to `B` or `NO_OBJECT`.
+
+#### What the Proposers Should Try Next
+1. **Test the rule's handling of mixed JSON and prose in fences**:
+   - Input: `fence[ {"a": 1} Here is the result: ]`
+   - Rewritten: `fence[ {"a": 1} ]`
+   - Expectation: The object scored should **not move** (remains `{"a": 1}`), because the code ignores the prose and scores the valid JSON object.
+   - This would confirm whether the rule and code agree on ignoring non-JSON prose in fences.
+
+2. **Test the rule's handling of invalid JSON in fences**:
+   - Input: `fence[ {"a": 1, "a": 2} ]`
+   - Rewritten: `fence[ {"a": 1} ]`
+   - Expectation: The object scored should **move** from `{"a": 2}` (last-wins resolution) to `{"a": 1}` (strict JSON).
+   - This would test whether the rule's "last-wins" behavior aligns with the code.
+
+3. **Test the rule's fallback to top-level objects**:
+   - Input: `fence[ S ] {"b": 2}`
+   - Rewritten: `fence[ S ]`
+   - Expectation: The object scored should **move** from `{"b": 2}` (top-level object) to `NO_OBJECT` (no valid JSON in fence or top-level).
+   - This would confirm the rule's fallback behavior.
+
+#### Evidence of Rule-Code Alignment
+The evidence block `47cbc7b41aaf5c8f` shows that the harness correctly ignores prose in fences and scores the valid JSON object:
+> "points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fence-with-prose", "moves": false, "input": "{\"claimant_name\": \"ama..."}]
+
+This confirms that the code does not require the entire fenced content to be valid JSON, contradicting the proposals' assumptions.
+
+#### Key Takeaway
+Proposers should:
+1. Assume the code will **ignore non-JSON prose in fences** and score the last valid JSON object within them.
+2. Focus on testing the rule's handling of **invalid JSON** (e.g., floats, duplicate keys) and **fallback behavior** when no valid JSON exists in fences or top-level text.
+3. Avoid assuming that mixed JSON/prose in fences will invalidate the entire fenced content.

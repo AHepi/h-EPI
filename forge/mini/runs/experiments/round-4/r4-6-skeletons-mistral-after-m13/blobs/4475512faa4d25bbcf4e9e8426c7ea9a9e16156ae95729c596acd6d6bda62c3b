@@ -1,0 +1,20 @@
+```json
+{
+  "body": "The documented rule for `conformance.kernel.recovery` states that the object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. In the given cell `fence[ A S ] fence[ B ]`, the input contains a JSON object `A` followed by a plain sentence `S` within the first code fence, and another JSON object `B` within a second code fence. The rule specifies that if a fence holds an object, the last object inside the last fence is scored, provided the fenced content is a valid JSON object. \n\nAssuming the first fence's content (`A S`) is invalid JSON due to the presence of the plain sentence `S`, the harness would skip the first fence and score the object `B` inside the second fence. If we remove the second fence (the part `fence[ B ]`), the harness would have no valid object to score from the remaining fence (`A S`), as it is invalid JSON, and no top-level objects exist outside the fences. Thus, the object scored should move from `B` to `NO_OBJECT`. The object scored before the rewrite is `B`, and after the rewrite, it is `NO_OBJECT`.\n\nThis aligns with the rule's behavior as described in the documented rules: \"A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over.\"",
+  "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"input\": \"```\n{\\\"a\\\": 1}\nHere is the result:\n```\n```\n{\\\"b\\\": 2}\n```\", \"rewritten\": \"```\n{\\\"a\\\": 1}\nHere is the result:\n```\", \"expect\": \"moves\", \"rewrite\": \"Removed the second code fence containing JSON object B.\", \"cell\": \"fence[ A S ] fence[ B ]\"}",
+  "citations": [
+    {
+      "block": "718880d428ec0b61",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction."
+    },
+    {
+      "block": "718880d428ec0b61",
+      "quote": "A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over, so a final answer refused for a float loses to an earlier draft that parsed (``docs/kernel.md``, P-06)."
+    },
+    {
+      "block": "47cbc7b41aaf5c8f",
+      "quote": "{\"points\": [{\"kernel\": \"conformance.kernel.recovery\", \"transform\": \"conformance.transform.fence-with-prose\", \"moves\": false, \"input\": \"{\\\"claimant_name\\\": \\\"amara okoro\\\", \\\"claim_date\\\": \\\"2023-05-01\\\"} Here is the result:\"}]}"
+    }
+  ]
+}
+```

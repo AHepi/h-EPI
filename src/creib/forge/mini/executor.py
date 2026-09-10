@@ -79,6 +79,8 @@ class Request:
     brief: str
     cycle: int = 0
     phase: str = "body"
+    #: The kind's own optional fields, offered to a live seat beside the template's own.
+    optional_fields: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -148,8 +150,10 @@ class ScriptedResponder:
         return Reply(text=body, prompt_tokens=len(request.brief.split()), completion_tokens=len(body.split()))
 
 
-#: What a live model is asked to return: the template's own fields, and nothing
-#: a kind must add. A kind's further optional fields are not offered here.
+#: What a live model is asked to return: the template's own fields. A kind's own
+#: optional fields are added to the contract for the call that writes the body
+#: (``contract_for``), so a long text a kind wants written out reaches the record
+#: at one level of escaping rather than three (register M13).
 WIRE_SCHEMA: dict[str, Any] = {
     "type": "object",
     "required": ["body", "commitments"],
@@ -220,16 +224,27 @@ _CONTRACTS: Mapping[str, tuple[str, dict[str, Any]]] = {
 }
 
 
-def contract_for(phase: str) -> tuple[str, dict[str, Any]]:
-    """The system instruction and response schema one phase is entitled to."""
+def contract_for(phase: str, optional_fields: Sequence[str] = ()) -> tuple[str, dict[str, Any]]:
+    """The system instruction and response schema one phase is entitled to.
+
+    A kind's declared optional fields are offered as strings on the calls that write the body,
+    never on the blind commitments call, which is entitled to one field and nothing else.
+    """
 
     try:
-        return _CONTRACTS[phase]
+        system, schema = _CONTRACTS[phase]
     except KeyError as error:
         raise MiniError(
             "MINI_LIVE_CALL_FAILED",
             f"no live contract for the phase {phase!r}; known: {sorted(_CONTRACTS)}",
         ) from error
+    offered = [name for name in optional_fields if name not in schema["properties"]]
+    if not offered or phase == "commitments":
+        return system, schema
+    return (
+        system + " This artifact also carries " + ", ".join(f'"{name}"' for name in offered) + ", each a string.",
+        {**schema, "properties": {**schema["properties"], **{name: {"type": "string"} for name in offered}}},
+    )
 
 
 class LiveResponder:
@@ -273,7 +288,7 @@ class LiveResponder:
 
     def reply(self, request: Request) -> Reply:
         self._calls += 1
-        system, schema = contract_for(request.phase)
+        system, schema = contract_for(request.phase, request.optional_fields)
         response = self._executor.complete(
             ChatRequest(
                 model=self.model,

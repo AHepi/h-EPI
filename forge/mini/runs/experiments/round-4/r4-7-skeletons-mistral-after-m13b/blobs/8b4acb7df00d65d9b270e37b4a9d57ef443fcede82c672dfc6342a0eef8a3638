@@ -1,0 +1,68 @@
+### Analysis of Proposals and Executions for `conformance.kernel.recovery`
+
+The proposals and executions for `conformance.kernel.recovery` in this cycle did not reveal any divergence between the documented rules and the implementation. However, the broader evidence catalogue suggests potential areas where the rule and code *could* part company, warranting further scrutiny. Below, I outline key observations and propose next steps for the proposer.
+
+---
+
+#### 1. **Rule vs. Code Alignment in Executed Proposals**
+The two executed proposals (`ec4b8b6080505da4` and `b98ff3924efeb379`) targeted the rule’s statement:
+> "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text."
+
+Both proposals tested whether removing prose *after* a fenced JSON object (`A`) would alter the recovered object. The executions confirmed the rule’s intent: the fenced object `A` was recovered unchanged, as expected. The code’s behavior aligns with the rule here, as the `recover_json_object` function explicitly prioritizes fenced objects over prose (see `source`, lines 30–35 in `recover_json_object`).
+
+**Citation**:
+- Rule: "The object scored is the last one inside a code fence when any fence holds one" ([b0338a28a62f0879]).
+- Code: `for pool in (fenced, top_level): ... if type(value) is dict: return value, duplicates` ([5a19374fa9036729], lines 30–35).
+
+---
+
+#### 2. **Potential Divergences: Edge Cases Not Yet Tested**
+While the executed proposals passed, the evidence catalogue reveals untested edge cases where the rule and code *might* diverge. These are high-priority targets for future proposals:
+
+##### a) **Nested Objects in Fences**
+**Rule**: "An object nested inside another is not a candidate of its own."
+**Code**: The `recover_json_object` function uses `json.JSONDecoder.raw_decode` to extract top-level objects, which *should* exclude nested objects. However, the rule’s phrasing is ambiguous about whether nested objects in fences are ignored. For example:
+- Input: `fence[ { "a": { "b": 1 } } ]`
+- Question: Is `{ "b": 1 }` a candidate? The rule says "no," but the code’s behavior is untested.
+
+**Evidence**: The grid cell `fence[ A B ]` ([19d2650843ce00cf]) suggests nested objects (e.g., `A` containing `B`) are not explicitly tested.
+
+**Next Step**: Propose a test where a fenced object contains a nested object, and verify whether the nested object is ignored (as the rule implies).
+
+##### b) **Prose *Before* Fenced Objects**
+**Rule**: "The object scored is the last one inside a code fence when any fence holds one."
+**Code**: The rule does not explicitly address whether prose *before* a fenced object could influence recovery. For example:
+- Input: `Prose before fence[ { "a": 1 } ]`
+- The code’s `fenced` pool is populated first, so prose before the fence should not matter. However, the rule’s silence on this could mislead proposers.
+
+**Evidence**: The catalogue’s `prose-before` transform ([b0a010d1115d82a4]) shows the recovered object remains unchanged, but this is not yet tied to a proposal.
+
+**Next Step**: Propose a test where prose before a fenced object is altered or removed, and verify the recovered object remains unchanged.
+
+##### c) **Multiple Fenced Objects**
+**Rule**: "The object scored is the last one inside a code fence when any fence holds one."
+**Code**: The `recover_json_object` function iterates over `fenced` in reverse order, so the *last* fenced object is prioritized. However, the rule does not clarify whether earlier fenced objects are ignored entirely.
+
+**Evidence**: The grid cell `fence[ A ] fence[ B ]` ([ce275ea1972395f1]) suggests multiple fenced objects are possible, but the rule’s behavior here is untested.
+
+**Next Step**: Propose a test with multiple fenced objects (e.g., `fence[ A ] fence[ B ]`) and verify that `B` is recovered, not `A`.
+
+---
+
+#### 3. **Critical Failures: What Matters**
+The following failures would matter most, as they would indicate a *systematic* misalignment between the rule and code:
+1. **Fenced Object Ignored**: If the code recovers a prose object when a fenced object exists, the rule’s core promise is broken.
+2. **Nested Objects Recovered**: If the code recovers a nested object from a fence, the rule’s definition of "candidate" is violated.
+3. **Prose Before Fence Affects Recovery**: If altering prose before a fence changes the recovered object, the rule’s silence on this is misleading.
+
+---
+
+#### 4. **Recommendations for the Proposer**
+1. **Test Nested Objects in Fences**: Propose inputs where a fenced object contains a nested object (e.g., `fence[ { "a": { "b": 1 } } ]`) and verify that only the top-level object is recovered.
+2. **Test Prose Before Fences**: Propose inputs with prose before a fenced object (e.g., `Prose before fence[ { "a": 1 } ]`) and verify that the fenced object is recovered unchanged.
+3. **Test Multiple Fenced Objects**: Propose inputs with multiple fenced objects (e.g., `fence[ A ] fence[ B ]`) and verify that the *last* fenced object is recovered.
+4. **Test Fenced Objects with Prose After**: While the executed proposals covered this, the catalogue’s `fence[ A S ] S` ([d35bcaa49d705c85]) suggests further variations (e.g., `fence[ A ] S fence[ B ]`) could be tested.
+
+**Citations**:
+- Rule: "An object nested inside another is not a candidate of its own" ([b0338a28a62f0879]).
+- Evidence: `fence[ A B ]` ([19d2650843ce00cf]), `prose-before` transform ([b0a010d1115d82a4]), `fence[ A ] fence[ B ]` ([ce275ea1972395f1]).

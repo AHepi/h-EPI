@@ -1,0 +1,18 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+All three proposals in this cycle passed their expectations: each correctly predicted that conformance.kernel.recovery would move from one object to another under the specified rewrites. The proposers accurately read the rule-as-implemented: when fence content contains multiple separate JSON objects that do not parse as a single unit, recovery falls back to top-level object scanning.
+
+The documented rule states: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text" [65ae18af7a738b26]. The source code clarifies what "inside a code fence" means in practice: fenced content is collected via regex, then each candidate is attempted with strict JSON parsing, and only if that fails does the code try last-wins resolution for duplicate keys [5cf1f38daafcce6b]. A fence containing two separate objects on separate lines does not parse as one JSON object, so it is skipped and top-level scanning proceeds.
+
+No failures occurred this cycle, so there is no rule-code divergence to report. However, the documented rule could be more precise: it should state that fence content must parse as a single scoreable JSON object to qualify, otherwise top-level scanning applies. A proposer testing next should examine edge cases the catalogue shows remain untested: fence[ A B ] fence[ C ] [8cf1e40dd6411a40] where two fences exist and the second is valid, or fence[ S A ] where prose precedes the object inside the fence [3ad384d2543b8df1]. These would clarify whether "last fence" or "last parseable object in any fence" governs when multiple fences are present.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

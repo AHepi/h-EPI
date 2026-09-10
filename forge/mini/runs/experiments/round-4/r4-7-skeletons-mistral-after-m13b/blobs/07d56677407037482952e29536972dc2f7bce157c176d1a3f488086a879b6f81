@@ -1,0 +1,7 @@
+```json
+{
+  "body": "The rule for `conformance.kernel.recovery` states that the object scored is the last one inside a code fence when any fence holds one. In the cell `fence[ S A ] fence[ B ]`, the input contains two fences: the first holds a sentence `S` and a JSON object `A`, and the second holds a JSON object `B`. The rule specifies that the last object *inside a fence* is the one scored, so the object `B` should be scored. If we remove the second fence (containing `B`), the last object inside a fence would then be `A`. Thus, the rule expects the scored object to *move* from `B` to `A` when the second fence is removed.\n\nThe `recovered-from-prose` rule is not directly tested here, as the focus is on which object is scored, not whether it was recovered from prose or a fence. The rule implies that fenced objects are not marked as recovered from prose, but this proposal tests the recovery logic itself.\n\nThe object scored before the rewrite is `B`, and after the rewrite, it should be `A`. The rule's words alone expect the scored object to *move*.",
+
+  "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"input\": \"```\nHere is the result:\n{\"a\": 1}\n```\n```\n{\"b\": 2}\n```\", \"rewritten\": \"```\nHere is the result:\n{\"a\": 1}\n```\", \"expect\": \"moves\", \"rewrite\": \"Removed the second fence containing the JSON object B.\", \"cell\": \"fence[ S A ] fence[ B ]\"}"
+}
+```

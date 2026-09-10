@@ -1,0 +1,20 @@
+```json
+{
+  "body": "The documented rule for `conformance.kernel.recovery` states that the object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. In the given cell `fence[ A S ] A`, the input contains a JSON object `A` followed by a plain sentence `S` within a code fence, and another JSON object `A` outside the fence. The rule specifies that if a fence holds an object, that object is scored, provided the fenced content is a valid JSON object. However, the presence of the plain sentence `S` inside the fence may invalidate the JSON parsing of the fenced content, causing the rule to fall back to the last top-level object in the text (`A` outside the fence). \n\nIf we remove the JSON object `A` outside the fence (the part after the fence), the fenced content `A S` may still be invalid JSON, but if it is, the rule would have no valid object to score, resulting in `NO_OBJECT`. However, if the fenced content `A S` is parsed as a valid JSON object (e.g., if `S` is treated as a string or ignored), the object scored would remain `A`. Given the ambiguity, the most revealing test is to assume the fenced content `A S` is invalid JSON. In this case, the object scored before the rewrite is `A` (the last top-level object outside the fence), and after the rewrite, it moves to `NO_OBJECT`. Thus, the object scored should move from `A` to `NO_OBJECT`. The object scored before the rewrite is `A` (outside the fence), and after the rewrite, it is `NO_OBJECT`.",
+  "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"input\": \"```\n{\\\"a\\\": 1}\nHere is the result:\n```\n{\\\"a\\\": 1}\", \"rewritten\": \"```\n{\\\"a\\\": 1}\nHere is the result:\n```\", \"expect\": \"moves\", \"rewrite\": \"Removed the JSON object A outside the code fence.\", \"cell\": \"fence[ A S ] A\"}",
+  "citations": [
+    {
+      "block": "718880d428ec0b61",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction."
+    },
+    {
+      "block": "47cbc7b41aaf5c8f",
+      "quote": "{\"points\": [{\"kernel\": \"conformance.kernel.recovery\", \"transform\": \"conformance.transform.fence-with-prose\", \"moves\": false, \"input\": \"{\\\"claimant_name\\\": \\\"amara okoro\\\", \\\"claim_date\\\": \\\"2024-03-01\\\"} Here is the result:\"}]}"
+    },
+    {
+      "block": "068b92340fc99ca7",
+      "quote": "The object scored before the rewrite is `B`, and after the rewrite, it is `NO_OBJECT`."
+    }
+  ]
+}
+```

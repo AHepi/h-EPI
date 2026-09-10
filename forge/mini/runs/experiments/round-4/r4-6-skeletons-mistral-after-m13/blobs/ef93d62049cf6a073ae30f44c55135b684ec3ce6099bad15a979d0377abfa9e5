@@ -1,0 +1,68 @@
+### Analysis of Proposal Failures in `conformance.kernel.recovery`
+
+All three proposals this cycle failed because their commitments were unreadable as JSON, not because of a substantive mismatch between the documented rules and the code. However, the proposals also reveal misunderstandings of the `recover_json_object` rule, particularly around how the harness handles fenced content and prose. Below, I address the specific failures and suggest corrections.
+
+#### 1. **Proposal `3b08b65f9f4e34c6` (cell `fence[ S A ] fence[ B ]`)**
+**Misreading of the rule:** The proposal assumes that the harness scores the *last object inside the last fence* unconditionally, but the rule and code prioritize *valid JSON objects* within fences. The documented rule states:
+> "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text."
+
+The code enforces this by:
+- Iterating over fenced content in reverse order (`for candidate in reversed(pool)`).
+- Skipping candidates that fail strict JSON parsing or `_loads_last_wins` (lines 30–45 in `recover_json_object`).
+
+**Key line of code:**
+```python
+if type(value) is dict:
+    return value, duplicates
+```
+*(Source: `recover_json_object`, lines 44–45)*
+
+**Why it matters:** The proposal’s rewrite (removing the second fence) would only change the outcome if the first fence’s content (`S A`) were invalid JSON. If `A` is a valid object, it would be scored regardless of the prose `S` inside the fence. The proposer should test whether `S A` parses as valid JSON (e.g., if `S` is treated as a string or ignored). If not, the harness would fall back to top-level objects, which are absent in this case, resulting in `NO_OBJECT`.
+
+**Suggested next step:** Propose a rewrite where the first fence’s content is *invalid* JSON (e.g., `fence[ {invalid} A ] fence[ B ]`), then remove the second fence. The object scored should move from `B` to `NO_OBJECT`.
+
+---
+
+#### 2. **Proposal `384b7340bd6ecd62` (cell `fence[ A S ]`)**
+**Misreading of the rule:** The proposal assumes that prose `S` inside a fence invalidates the JSON object `A`, but the rule and code treat the *entire fenced content* as a candidate. The harness attempts to parse the entire fence as JSON, including prose, and only skips it if parsing fails.
+
+**Key line of code:**
+```python
+parsed = _loads_last_wins(candidate.strip())
+```
+*(Source: `recover_json_object`, line 35)*
+
+**Why it matters:** If `A S` parses as valid JSON (e.g., if `S` is a string value or ignored), the object scored would be `A` (or a merged object) *before and after* removing `S`. The proposer should test whether `A S` is valid JSON. If not, the harness would return `NO_OBJECT` in both cases, making the rewrite’s effect moot.
+
+**Suggested next step:** Propose a rewrite where `A S` is *invalid* JSON (e.g., `fence[ {"a": 1} invalid ]`), then remove `S`. The object scored should move from `NO_OBJECT` to `A`.
+
+---
+
+#### 3. **Proposal `de843a6553b2a3f1` (cell `fence[ A S ] S`)**
+**Misreading of the rule:** The proposal assumes that prose `S` *after* the fence might influence the object scored, but the rule and code only consider fenced content or top-level objects. Prose outside fences is irrelevant unless it contains a top-level JSON object.
+
+**Key line of code:**
+```python
+for pool in (fenced, top_level):
+```
+*(Source: `recover_json_object`, line 28)*
+
+**Why it matters:** The harness ignores prose outside fences unless it contains a top-level JSON object. Removing `S` after the fence should have no effect on the object scored, as the proposal correctly notes. However, the proposer’s ambiguity about whether `A S` is valid JSON undermines the test. The rewrite’s effect is only meaningful if `A S` is invalid JSON, in which case the harness would return `NO_OBJECT` in both cases.
+
+**Suggested next step:** Propose a rewrite where `A S` is *valid* JSON (e.g., `fence[ {"a": 1, "prose": "S"} ] S`), then remove `S` after the fence. The object scored should remain unchanged (`A` with the `prose` key).
+
+---
+
+### General Recommendations for Proposers
+1. **Test JSON validity:** Before proposing a rewrite, verify whether the fenced content (including prose) parses as valid JSON. Use tools like `json.loads()` or the harness’s `_loads_last_wins` to confirm.
+2. **Focus on edge cases:** The most revealing tests involve:
+   - Fenced content with invalid JSON (e.g., prose that breaks parsing).
+   - Multiple fences with valid/invalid objects.
+   - Top-level objects outside fences.
+3. **Clarify expectations:** State explicitly whether the fenced content is valid JSON in the proposal’s `expect` field (e.g., `expect: "moves (invalid JSON in fence)"`).
+
+### Evidence Supporting Analysis
+The following evidence blocks demonstrate how the harness handles fenced content and prose:
+- **Fenced content with prose:** The harness ignores fences if their content is invalid JSON, falling back to top-level objects (see [47cbc7b41aaf5c8f]).
+- **Multiple fences:** The last valid object in the last fence is scored (see [ce275ea1972395f1]).
+- **Prose outside fences:** Prose after a fence does not affect the object scored (see [7a60de6ecc4dd6e3]).

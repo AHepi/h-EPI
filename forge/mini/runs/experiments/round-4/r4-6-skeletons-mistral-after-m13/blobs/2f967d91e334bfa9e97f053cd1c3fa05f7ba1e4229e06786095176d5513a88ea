@@ -1,0 +1,74 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+### Analysis of Failed Proposals
+
+All three proposals this cycle failed because their commitments were unreadable as JSON (execution [9df60d6539098afd]). This is not a misreading of the rules or a divergence between the documented rules and the code, but a technical failure in proposal formatting. The proposer should ensure that the `commitments` field in each proposal is valid JSON before resubmission.
+
+However, the proposals also reveal a potential misunderstanding of the `conformance.kernel.recovery` rule that warrants clarification. Below, I address each proposal’s core claim and where the rule’s wording and the code’s behavior align or diverge.
+
+---
+
+#### Proposal [04ff935042bff61c] (`fence[ A B ] A` → `fence[ A B ]`)
+**Claim**: The object scored should remain `B` because the rule states: "The object scored is the last one inside a code fence when any fence holds one."
+
+**Rule vs. Code**:
+- The **rule** ([256baba0ec538293]) states: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text."
+- The **code** ([8688e2cf0c5a081d], `recover_json_object`):
+  - Iterates over all fences (`_FENCE.finditer`) and collects their contents in `fenced`.
+  - Iterates over `fenced` in **reverse order** and returns the first valid JSON object found.
+  - If no fenced object is valid, it falls back to the last top-level object in the text.
+
+**Issue**: The proposal assumes that the rule prioritizes the *last object inside the last fence*, but the code prioritizes the *last fence* (i.e., the most recently occurring fence in the text) and then the *last object inside that fence*. In the input `fence[ A B ] A`, the last fence contains `A` and `B`, so the last object inside it is `B`. When the rewrite removes the trailing `A` (outside the fence), the last fence and its last object (`B`) remain unchanged. **The rule and code agree here**, but the proposal’s phrasing suggests a misunderstanding of how fences are prioritized.
+
+**What to try next**: Test cases where multiple fences exist (e.g., `fence[ A ] fence[ B ]`) to confirm that the *last fence* (not the last object across all fences) is prioritized. The rule’s wording could be clarified to emphasize that the *last fence* is checked first, then the last object within it.
+
+---
+
+#### Proposal [66d21e821def9f2f] (`fence[ A B ] fence[ C ]` → `fence[ A B ]`)
+**Claim**: The object scored should move from `C` to `B` because the rule states: "The object scored is the last one inside a code fence when any fence holds one."
+
+**Rule vs. Code**:
+- The **rule** does not explicitly state that the *last fence* is prioritized, but the **code** does:
+  - The `for pool in (fenced, top_level)` loop checks `fenced` first, and `fenced` is populated in the order fences appear in the text.
+  - The `for candidate in reversed(pool)` loop checks the last fence first (because `fenced` is in order of appearance, and `reversed` processes it from last to first).
+  - Thus, the last fence (`fence[ C ]`) is checked before the earlier fence (`fence[ A B ]`), and `C` is returned.
+  - When the rewrite removes `fence[ C ]`, the last fence becomes `fence[ A B ]`, and `B` is returned.
+
+**Issue**: The rule’s wording is ambiguous about whether the *last fence* or the *last object across all fences* is prioritized. The code resolves this by prioritizing the last fence, then the last object within it. **The rule and code agree in outcome**, but the rule’s phrasing could mislead proposers into expecting the last object across all fences to be prioritized.
+
+**What to try next**: Test cases with nested fences or fences containing multiple objects to confirm the code’s behavior. Clarify the rule to state: "The object scored is the last one inside the *last code fence* when any fence holds one, else the last top-level object in the text."
+
+---
+
+#### Proposal [6cee799011ef3feb] (`fence[ A ] S` → `fence[ A ]`)
+**Claim**: The object scored should remain `A` because the rule states: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text."
+
+**Rule vs. Code**:
+- The **rule** and **code** agree entirely here. The code checks the fence first, finds `A`, and returns it. Removing the prose `S` does not affect the fence or its contents. **No divergence exists.**
+
+**Issue**: The proposal is correct, but the unreadable JSON commitments prevented execution. The proposer should resubmit with valid JSON.
+
+---
+
+### Key Takeaways for Proposers
+1. **Fence Prioritization**: The code prioritizes the *last fence* in the text, then the last object within that fence. The rule’s wording should be updated to reflect this (e.g., "the last one inside the *last code fence*" instead of "a code fence").
+2. **JSON Validity**: Ensure all commitments are valid JSON. The executor’s error message ([9df60d6539098afd]) explicitly states this requirement.
+3. **Test Edge Cases**: Propose inputs with multiple fences or nested objects to confirm the code’s behavior matches the rule’s intent.
+4. **Prose vs. Fences**: The rule and code agree that prose outside fences does not affect the scored object if a fence holds a valid object. This is already well-documented.
+
+### Citations
+The following evidence blocks support the analysis:
+- The rule’s wording on fence prioritization: [256baba0ec538293] "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text."
+- The code’s fence iteration logic: [8688e2cf0c5a081d] `for pool in (fenced, top_level)` and `for candidate in reversed(pool)`.
+- Execution failure due to unreadable JSON: [9df60d6539098afd] "the proposal's commitments are not readable as JSON".
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

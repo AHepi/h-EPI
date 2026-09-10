@@ -1,0 +1,16 @@
+```json
+{
+  "body": "The documented rule for `conformance.kernel.recovery` states that the object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. In the given cell `fence[ A S ]`, the input contains a JSON object `A` followed by a plain sentence `S` within a code fence. The rule specifies that the entire content inside the fence is treated as a candidate for parsing, but only valid JSON objects are scored. If the plain sentence `S` makes the fenced content invalid JSON, the fence is ignored, and the rule falls back to the last top-level object in the text (though none exists in this case). However, if the fenced content is parsed as a valid JSON object despite the prose, the object `A` (or the combined content) would be scored. \n\nIf we remove the plain sentence `S` (the part after the JSON object inside the fence), the fenced content becomes a valid JSON object `A`. According to the rule, the object scored should move to `A` because the fence now holds a valid JSON object, and no other fences or top-level objects are present. The object scored before the rewrite is ambiguous (either invalid or `A` with prose), and after the rewrite, it is clearly `A`.",
+  "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"input\": \"```\n{\\\"a\\\": 1}\nHere is the result:\n```\", \"rewritten\": \"```\n{\\\"a\\\": 1}\n```\", \"expect\": \"moves\", \"rewrite\": \"Removed the plain sentence S inside the code fence after the JSON object.\", \"cell\": \"fence[ A S ]\"}",
+  "citations": [
+    {
+      "block": "5b6e19f3f354dae3",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction."
+    },
+    {
+      "block": "5b6e19f3f354dae3",
+      "quote": "A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over, so a final answer refused for a float loses to an earlier draft that parsed"
+    }
+  ]
+}
+```

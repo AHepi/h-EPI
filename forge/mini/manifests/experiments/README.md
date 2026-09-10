@@ -378,3 +378,85 @@ admitted the line break and the executor seat still refused it, and its record
 is kept as the evidence for the second half of M13. The clean replication is
 `r4-7-skeletons-mistral-after-m13b`, the same manifest, model, seat and cycles
 again, with both readings the same reading.
+
+### Round 4, read: the three new families
+
+Written when the refusal, grounding and verdict grids had ended and the two
+replications were still running.
+
+- **`r4-3-refusal-grid`** (gemma4:31b): sixteen cells, eighteen proposals,
+  fifteen moved, one unchanged, two duplicates, one candidate. The candidate is
+  the proposer expecting an upper-case phrase not to count, which R-01 already
+  says it does: a misreading, not a point. Everything else agreed. The row that
+  came out of this run came out of an **agreement**: the cell that put a line
+  break inside the phrase recorded `NONE` on both sides, meaning the scan never
+  saw the phrase, and the proposer had read the rule the same way. The standing
+  rule called it `rejected` and the candidate list does not hold it; it is in
+  the record's own `before` and `after` values, and it is now `docs/kernel.md`
+  R-04. The grid also showed the phrase is seen in a string value, in a key, and
+  inside a fence, which is R-03's neighbourhood.
+- **`r4-4-grounding-grid`** (gemma4:31b): twenty cells, twenty-one proposals,
+  none dropped, ten candidates and no point. All ten are the same two rows the
+  table already holds — the span check normalises whitespace (G-01) and the
+  containment check folds case (G-09) — expected to matter by a proposer that
+  had both rules in front of it. The cause is in the grid, not the model: a cell
+  named "span differing from the document by a run of spaces" tells the seat the
+  difference is the point of the cell, and it wrote `moves` ten times for that
+  reason. A grid whose cells name differences biases the expectation toward
+  `moves` (register M15).
+- **`r4-5-verdict-grid`** (gemma4:31b): twenty-one cells, twenty-one proposals,
+  three candidates and no point. One is the proposer choosing the recovery
+  kernel, whose answer is the recovered object itself, so replacing the object
+  necessarily moves it; two are an object holding a float, which is recovered by
+  nothing and so is not "recovered from prose" however much prose surrounds it,
+  which P-07 and P-01 hold between them.
+
+So on three families never probed before, the loop's own standing rule produced
+fourteen candidates and no point. The two rows this round added came from
+somewhere else: R-04 from reading a record the rule had rejected, and P-10 from
+the prediction written into this file before the runs, which no run tested
+because the proposer handed that cell chose a different kernel. Both were
+verified by evaluation before they were written, and both say so.
+
+That is the round's finding, and it is about the method rather than the checks:
+**a pair shape can only surface a disagreement, so a boundary both readers get
+right stays invisible, and a person reading the record finds what the standing
+rule cannot.** The transform-and-catalogue shape (`s3-refute-invariances`) does
+not have this blind spot, because it sets an execution against a written row
+rather than against a reader; it has the opposite one, that it can only test
+rows someone already wrote. The two shapes are complements, and a round that
+runs only one of them will miss what the other sees.
+
+### Round 4, read: the replications, and the answer to the round's question
+
+- **`r4-2-skeletons-qwen`** (qwen3.5:397b): twenty cells, twenty-one proposals,
+  none dropped, two disagreements. One is the control, at the control's own
+  cell: `fence[ S A ] B` in cycle 3, a fence holding a sentence and one object
+  with a bare second object after it, scored on the bare one where the docstring
+  says the fenced one; the proposer expected removing the bare object to change
+  nothing, and it changed the answer. The other is P-01 misread.
+- **`r4-6-skeletons-mistral-after-m13`** (mistral-large-3:675b, the
+  intermediate machine): twenty proposals reached the executor and nineteen were
+  named `unreadable`, because the format layer admitted the raw line break and
+  the seat that read the string back did not. Evidence for the second half of
+  M13 and for nothing else.
+- **`r4-7-skeletons-mistral-after-m13b`** (mistral-large-3:675b, both readings
+  repaired): eleven drops and twenty-nine format failures still, ten proposals
+  through, four disagreements. Three are the control's class: `fence[ A S ] B`,
+  `fence[ A B ] C` and `fence[ A B ] A`, each scored on the bare object after
+  the fence where the docstring says the fenced one.
+
+**The round's question is answered: the control was found by the method, not by
+the model.** Three models, gemma4:31b, qwen3.5:397b and mistral-large-3:675b,
+each shown the docstring and not the code, each handed the cells of the same
+enumerated grid in the same notation, each wrote the docstring's expectation and
+each was contradicted by the machine on the same class of reply. That is the
+strongest thing in this file, and it is a claim about a way of arranging seats,
+not about any model.
+
+What it cost to get there is the round's other finding. Mistral lost forty-one
+of forty-two calls in `r4-1`, nineteen of twenty executions in `r4-6`, and
+eleven more proposals in `r4-7`, all to the requirement that a JSON instance be
+written inside a JSON string inside a JSON reply. The machine now offers a
+kind's own optional fields for exactly this (`docs/mini/SPEC.md` §17, register
+M13), and round 5 is these grids written that way.

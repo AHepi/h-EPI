@@ -1,0 +1,22 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+All three proposals executed as expected—no failures occurred. Each proposer correctly read both the rule and the code.
+
+Proposal 2e4c744573ae26b6 correctly identified that when multiple fences exist, the harness scores 'the last one inside a code fence when any fence holds one' [65ae18af7a738b26], but only if that fence's content parses as JSON. The source confirms fenced candidates are tried first, in reverse order, and must parse as dict [1a49f5929bf26106]. Removing the second parseable fence correctly shifted recovery to the first fence's top-level object.
+
+Proposal 8b71be030ea2aff0 correctly understood that a fence containing prose plus JSON fails strict parsing, causing fallback to top-level object recovery within the fence content. Removing the trailing prose made the fence itself parseable, but the same object A was recovered either way—unchanged, as expected.
+
+Proposal c1f4a5b915740efd correctly reasoned that removing prose outside the fence does not change recovery when the fence content itself remains unparseable. The recovered object stayed A in both cases.
+
+No divergence between rule-as-written and code-as-run was found in this cycle. The rule 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text' [65ae18af7a738b26] matches the source's two-pool iteration order [1a49f5929bf26106]. Future proposers should test cases where the rule's wording might ambiguity—e.g., what 'inside a code fence' means when the fence contains multiple objects, or whether 'last top-level object' includes objects nested in prose after an unparseable fence.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

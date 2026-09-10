@@ -1,0 +1,96 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+### Analysis of Failed Expectations in `conformance.kernel.recovery`
+
+Two of the three proposals for `conformance.kernel.recovery` failed to match the documented rules with the actual behavior of the code. Below is a breakdown of the misalignments, their significance, and suggested next steps for the proposer.
+
+---
+
+#### 1. **Proposal `47c353022f3c6663` (Cell `fence[ A S ] B`)**
+**Expectation:** `unchanged` (recovered object remains `A` after removing `B`).
+**Execution:** `moved` (recovered object changed from `{"b": 2}` to `{"a": 1}`).
+**Issue:** *Misreading of the rule.*
+
+**Rule Quote:**
+> "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." ([86845570a93ac34c])
+
+**Code Behavior:**
+The code prioritizes the *last top-level object in the text* when no fence holds a valid JSON object, or when the last fenced object is invalid. In the input:
+```
+```
+{"a": 1}
+Here is the result:
+```
+{"b": 2}
+```
+The fenced object `A` is valid, but the *last top-level object* in the text is `B` (after the fence). The code’s `recover_json_object` function iterates over `top_level` candidates in reverse order (line 35 in [5dad18be38e69c03]), so `B` is scored over `A` despite `A` being fenced. This contradicts the proposer’s assumption that the fenced object is always prioritized.
+
+**Why It Matters:**
+The rule’s phrasing is ambiguous about whether the *last fenced object* or the *last top-level object* takes precedence when both exist. The code resolves this by favoring the last top-level object, which is not explicitly stated in the rule. This ambiguity led to the proposer’s incorrect expectation.
+
+**Next Steps:**
+- Clarify the rule to state that the *last top-level object* is prioritized over fenced objects if it appears *after* the last fence. For example:
+  > "The object scored is the last top-level object in the text, unless a valid JSON object appears inside a code fence *after* the last top-level object, in which case the fenced object is scored."
+- Propose a new test case where the fenced object appears *after* the last top-level object to confirm this behavior.
+
+---
+
+#### 2. **Proposal `d47e56d40ec1fabf` (Cell `fence[ A S ] A`)**
+**Expectation:** `moves` (recovered object moves from the second `A` to the fenced `A`).
+**Execution:** `unchanged` (recovered object remains `{"a": 1}`).
+**Issue:** *Rule and code part company.*
+
+**Rule Quote:**
+> "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." ([86845570a93ac34c])
+
+**Code Behavior:**
+The input:
+```
+```
+{"a": 1}
+Here is the result:
+```
+{"a": 1}
+```
+contains two identical objects: one fenced (`A`) and one top-level (`A`). The code’s `recover_json_object` function iterates over `top_level` candidates in reverse order (line 35 in [5dad18be38e69c03]) and returns the first valid object it encounters. Since the top-level `A` is the last candidate in the `top_level` list, it is scored. The fenced `A` is never considered because the top-level `A` is already valid.
+
+**Why It Matters:**
+The rule suggests that fenced objects are prioritized, but the code does not enforce this when a top-level object appears later in the text. This is a *structural mismatch*: the rule implies a hierarchy (fenced > top-level), but the code treats them as a flat list ordered by position. The proposer’s expectation aligns with the rule’s phrasing, but the code’s behavior is more permissive.
+
+**Next Steps:**
+- Decide whether the rule or the code is correct. If the rule is correct, the code must be updated to prioritize fenced objects over top-level ones. If the code is correct, the rule must be revised to reflect the flat ordering:
+  > "The object scored is the last valid JSON object in the text, whether it appears inside a code fence or as a top-level object."
+- Propose a test case where the fenced object and top-level object differ (e.g., `fence[ A ] B`) to confirm the resolution.
+
+---
+
+#### 3. **Proposal `780ae6df25aff461` (Cell `fence[ A S ] fence[ B ]`)**
+**Expectation:** `moves` (recovered object moves from `B` to `A`).
+**Execution:** `moved` (as expected).
+**Outcome:** *Correct.*
+
+This proposal correctly interpreted the rule and the code’s behavior. The rule states that the *last fenced object* is prioritized, and the code’s `recover_json_object` function iterates over fenced candidates in reverse order (line 34 in [5dad18be38e69c03]), scoring `B` before `A`. Removing `B` causes the code to score `A`, matching the expectation.
+
+---
+
+### Summary of Failures and Recommendations
+| Proposal               | Issue                          | Severity       | Next Steps                                                                                     |
+|------------------------|--------------------------------|----------------|-----------------------------------------------------------------------------------------------|
+| `47c353022f3c6663`     | Misread rule                   | Low            | Clarify rule to address ambiguity about top-level vs. fenced object precedence.              |
+| `d47e56d40ec1fabf`     | Rule and code part company      | High           | Resolve mismatch: either update the code to prioritize fenced objects or revise the rule.     |
+| `780ae6df25aff461`     | None (correct)                  | N/A            | None.                                                                                         |
+
+**Key Takeaway for Proposers:**
+- The rule’s phrasing about fenced vs. top-level objects is ambiguous. Test cases should explicitly probe edge cases where both exist (e.g., `fence[ A ] B` or `B fence[ A ]`).
+- The code’s behavior suggests that the *last valid object in the text* (fenced or top-level) is scored, not necessarily the last fenced object. This should be reflected in the rule or corrected in the code.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

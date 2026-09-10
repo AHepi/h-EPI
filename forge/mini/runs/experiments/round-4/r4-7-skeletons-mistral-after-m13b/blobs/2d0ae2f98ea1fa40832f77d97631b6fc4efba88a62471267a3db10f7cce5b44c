@@ -1,0 +1,14 @@
+```json
+{
+  "body": "The cell `fence[ A ] fence[ B ]` presents two JSON objects in separate code fences. According to the `conformance.kernel.recovery` rule, the object scored is the last one inside a code fence when any fence holds one. Here, the last object is `B` (from the second fence). If we remove the second fence (and its object `B`), the last object inside a fence becomes `A`. The rule specifies that the object scored *moves* from `B` to `A` when the second fence is removed. The expectation is that the recovered object changes, so the verdict is `moves`.",
+
+  "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"input\": \"```\n{\"a\": 1}\n```\n```\n{\"b\": 2}\n```\", \"rewritten\": \"```\n{\"a\": 1}\n```\", \"expect\": \"moves\", \"rewrite\": \"Removed the second code fence containing {\\\"b\\\": 2}\", \"cell\": \"fence[ A ] fence[ B ]\"}",
+
+  "citations": [
+    {
+      "block": "32729f13bc4fd245",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it"
+    }
+  ]
+}
+```
