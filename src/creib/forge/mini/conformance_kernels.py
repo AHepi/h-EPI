@@ -23,11 +23,18 @@ from __future__ import annotations
 
 import re
 
+import hashlib
+import inspect
+import json
+
 from creib.canonical import canonical_bytes
 from creib.errors import RecordError
-from creib.forge.conformance.oracle import parse_content, recover_json_object, refusal_phrase_in
+from creib.forge.conformance import oracle
+from creib.forge.conformance.oracle import _normalise_whitespace, _span_occurs, parse_content, recover_json_object, refusal_phrase_in
+from creib.strict_json import loads_strict
 
 from .blindspot import Kernel, Transform, register_kernel, register_transform
+from .machines import MachineContext, MachineSeat, register_machine_seat
 
 #: The refusal phrases the kernels read with: the travel-claim pilot's list, fixed here so
 #: that a kernel is a function of the text alone.
@@ -62,12 +69,94 @@ def _refusal_phrase(text: str) -> str:
     return refusal_phrase_in(text, REFUSAL_PHRASES) or NO_PHRASE
 
 
+KERNEL_SPAN_OCCURS = "conformance.kernel.span-occurs"
+KERNEL_GROUNDING = "conformance.kernel.grounding"
+UNREADABLE = "UNREADABLE_INPUT"
+
+
+def _fields(text: str, *names: str) -> dict[str, str] | None:
+    """A grounding kernel's input is one JSON object carrying the named string fields."""
+
+    try:
+        parsed = loads_strict(text)
+    except RecordError:
+        return None
+    if type(parsed) is not dict or any(type(parsed.get(name)) is not str for name in names):
+        return None
+    return {name: str(parsed[name]) for name in names}
+
+
+def _span_occurs_kernel(text: str) -> str:
+    fields = _fields(text, "span", "document")
+    if fields is None:
+        return UNREADABLE
+    matched = _span_occurs(fields["span"], fields["document"], ())
+    return "NOT_IN_DOCUMENT" if matched is None else matched
+
+
+def _grounding_kernel(text: str) -> str:
+    """The grounding verdict as the harness gives it, with no relaxation and the value-in-span check on.
+
+    The three lines are the harness's own (``_grounding_verdict`` in ``oracle.py``), read here
+    over one JSON object rather than over a variant and its output.
+    """
+
+    fields = _fields(text, "value", "span", "document")
+    if fields is None:
+        return UNREADABLE
+    if not fields["span"].strip():
+        return "SPAN_MISSING"
+    if _span_occurs(fields["span"], fields["document"], ()) is None:
+        return "SPAN_NOT_IN_DOCUMENT"
+    if _normalise_whitespace(fields["value"]).casefold() not in _normalise_whitespace(fields["span"]).casefold():
+        return "VALUE_NOT_IN_SPAN"
+    return "GROUNDED"
+
+
 KERNELS: tuple[Kernel, ...] = (
     Kernel(KERNEL_RECOVERY, "The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT.", _recovery),
     Kernel(KERNEL_RECOVERED_FROM_PROSE, "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no).", _recovered_from_prose),
     Kernel(KERNEL_RESPONSE_VERDICT, "The harness's response verdict for the reply: JSON_OBJECT, INVALID_JSON, REFUSAL_SUSPECTED, or another of its verdicts.", _response_verdict),
     Kernel(KERNEL_REFUSAL_PHRASE, "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE.", _refusal_phrase),
+    Kernel(KERNEL_SPAN_OCCURS, "Whether a cited span occurs in a document, whitespace-normalised, no relaxation: the input is one JSON object {\"span\", \"document\"}; verbatim or NOT_IN_DOCUMENT.", _span_occurs_kernel),
+    Kernel(KERNEL_GROUNDING, "The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked: the input is one JSON object {\"value\", \"span\", \"document\"}; GROUNDED, SPAN_MISSING, SPAN_NOT_IN_DOCUMENT or VALUE_NOT_IN_SPAN.", _grounding_kernel),
 )
+
+#: The harness functions the kernels call, whose source a proposer may be shown whole.
+SOURCE_FUNCTIONS = tuple(
+    function
+    for function in (
+        getattr(oracle, name, None)
+        for name in ("recover_json_object", "_top_level_objects", "_loads_last_wins", "parse_content", "refusal_phrase_in", "_plain_quotes", "_normalise_whitespace", "_span_occurs")
+    )
+    if function is not None
+) + (_grounding_kernel,)
+KERNEL_SOURCE_KIND = "mini.kernel-source.v1"
+
+
+def kernel_source_text() -> str:
+    """The source of the harness functions behind the kernels, as a seat is shown it."""
+
+    parts = [f"_FENCE = re.compile({oracle._FENCE.pattern!r}, re.DOTALL)", f"REFUSAL_PHRASES = {list(REFUSAL_PHRASES)!r}"]
+    parts.extend(inspect.getsource(function).rstrip() for function in SOURCE_FUNCTIONS)
+    return "\n\n".join(parts) + "\n"
+
+
+def _kernel_source(context: MachineContext) -> str:
+    """A machine seat whose artifact is the source itself, so a proposer reads the check it attacks.
+
+    Evidence reaches a seat as a legend of excerpts; an artifact reaches it whole. The body is
+    the source and the commitments name its digest, so the record says which code was shown.
+    """
+
+    text = kernel_source_text()
+    return json.dumps(
+        {"body": text, "commitments": f"The source of the harness functions behind the kernels, sha256 {hashlib.sha256(text.encode('utf-8')).hexdigest()}."},
+        ensure_ascii=False,
+    )
+
+
+KERNEL_SOURCE_SEAT = register_machine_seat(MachineSeat(KERNEL_SOURCE_KIND, "Emits the kernels' source code as an artifact.", _kernel_source))
 
 _WHITESPACE = re.compile(r"\s+")
 
@@ -156,6 +245,10 @@ def registry_text() -> str:
 
 __all__ = [
     "KERNELS",
+    "KERNEL_GROUNDING",
+    "KERNEL_SOURCE_KIND",
+    "KERNEL_SPAN_OCCURS",
+    "kernel_source_text",
     "KERNEL_RECOVERED_FROM_PROSE",
     "KERNEL_RECOVERY",
     "KERNEL_REFUSAL_PHRASE",

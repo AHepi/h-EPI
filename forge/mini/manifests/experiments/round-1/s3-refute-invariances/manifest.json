@@ -1,0 +1,415 @@
+{
+  "schema_version": "creib.mini.manifest.v1",
+  "manifest_id": "mini.experiment.r1.s3-refute-invariances",
+  "problem": "The checks under test are the conformance harness's own functions, shown to you as source: how it recovers a JSON object from a reply, whether it had to recover it from prose, its response verdict, its refusal-phrase check, and its grounding matcher. The question for every seat: is there a rewrite of an input under which a check's answer ought to change and does not, or changes where nobody would expect it to? The executor runs the check by machine on what you give it and records what its answer did; nothing here decides anything, the record shows what moved. The transforms are registered rewrites, listed in the registry; the catalogue rows name the pairs already checked and on which input.",
+  "cycles": {
+    "max_cycles": 3
+  },
+  "port_types": [
+    {
+      "port_type": "kernel_source",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.kernel-source.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies",
+        "header": "The source of the checks"
+      }
+    },
+    {
+      "port_type": "earlier_proposals",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.proposal.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies_and_commitments",
+        "header": "Proposals so far"
+      }
+    },
+    {
+      "port_type": "executions",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.execution.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies_and_commitments",
+        "header": "Executions"
+      }
+    },
+    {
+      "port_type": "criticisms",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.criticism.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies",
+        "header": "Criticisms"
+      }
+    },
+    {
+      "port_type": "earlier_verdicts",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.verdict.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies_and_commitments",
+        "header": "Verdicts so far"
+      }
+    }
+  ],
+  "kinds": [
+    {
+      "kind_id": "mini.kernel-source.v1",
+      "title": "Source",
+      "input_ports": [],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.kernel-source.v1"
+      }
+    },
+    {
+      "kind_id": "mini.proposal.v1",
+      "title": "Proposal",
+      "input_ports": [
+        {
+          "port_id": "problem",
+          "port_type": "problem",
+          "window": "all"
+        },
+        {
+          "port_id": "source",
+          "port_type": "kernel_source",
+          "window": "this_cycle"
+        },
+        {
+          "port_id": "earlier",
+          "port_type": "earlier_proposals",
+          "window": "all"
+        },
+        {
+          "port_id": "verdicts",
+          "port_type": "earlier_verdicts",
+          "window": "all"
+        },
+        {
+          "port_id": "criticisms",
+          "port_type": "criticisms",
+          "window": "previous_cycle"
+        },
+        {
+          "port_id": "executions",
+          "port_type": "executions",
+          "window": "previous_cycle"
+        },
+        {
+          "port_id": "catalogue",
+          "port_type": "evidence_legend",
+          "window": "all",
+          "params": {
+            "tiers": [
+              "evidence"
+            ]
+          }
+        }
+      ],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.proposal.v1"
+      },
+      "instruction": "Rows of the catalogue that say the pair does not move are universal claims over every input of their class. Pick one such row and write an input of its class on which you predict the answer WILL move under that transform: an input with a feature the row's example lacks, such as a brace or a fence marker inside a string value, a refusal phrase inside a value, unusual whitespace, an apostrophe, a non-ASCII letter, a repeated key. Read the source to see what the transform and the kernel actually do. A moved execution refutes the row. Do not repeat a triple shown among the earlier proposals. The commitments are a STRING whose content is JSON of the form {\"kernel\": \"<id>\", \"transform\": \"<id>\", \"input\": \"<the instance>\"}; the input is a bare JSON object or one prose sentence, written out.",
+      "format": {
+        "commitments": {
+          "all_of": [
+            {
+              "check": "json_schema",
+              "schema": {
+                "type": "object",
+                "required": [
+                  "kernel",
+                  "transform",
+                  "input"
+                ],
+                "properties": {
+                  "kernel": {
+                    "type": "string",
+                    "pattern": "^conformance\\.kernel\\."
+                  },
+                  "transform": {
+                    "type": "string",
+                    "pattern": "^conformance\\.transform\\."
+                  },
+                  "input": {
+                    "type": "string",
+                    "pattern": "^(\\{[\\s\\S]*\\}|[A-Za-z][^{}]{2,160}[.!?])$"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      "commitment_call": "single"
+    },
+    {
+      "kind_id": "mini.execution.v1",
+      "title": "Execution",
+      "input_ports": [
+        {
+          "port_id": "proposals",
+          "port_type": "earlier_proposals",
+          "window": "this_cycle"
+        }
+      ],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.execution.v1"
+      }
+    },
+    {
+      "kind_id": "mini.criticism.v1",
+      "title": "Criticism",
+      "input_ports": [
+        {
+          "port_id": "problem",
+          "port_type": "problem",
+          "window": "all"
+        },
+        {
+          "port_id": "source",
+          "port_type": "kernel_source",
+          "window": "this_cycle"
+        },
+        {
+          "port_id": "proposals",
+          "port_type": "earlier_proposals",
+          "window": "this_cycle"
+        },
+        {
+          "port_id": "executions",
+          "port_type": "executions",
+          "window": "this_cycle"
+        },
+        {
+          "port_id": "catalogue",
+          "port_type": "evidence_legend",
+          "window": "all",
+          "params": {
+            "tiers": [
+              "evidence"
+            ]
+          }
+        }
+      ],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.criticism.v1"
+      },
+      "instruction": "Do not propose. Read this cycle's executions beside the proposals: say which expectations held, which failed, and why, reading the source; say which failures matter, which are trivial, and what a proposer should try next. Cite blocks by id."
+    },
+    {
+      "kind_id": "mini.verdict.v1",
+      "title": "Verdict",
+      "input_ports": [
+        {
+          "port_id": "executions",
+          "port_type": "executions",
+          "window": "this_cycle"
+        },
+        {
+          "port_id": "criticisms",
+          "port_type": "criticisms",
+          "window": "this_cycle"
+        },
+        {
+          "port_id": "verdicts",
+          "port_type": "earlier_verdicts",
+          "window": "all"
+        },
+        {
+          "port_id": "catalogue",
+          "port_type": "evidence_legend",
+          "window": "all",
+          "params": {
+            "tiers": [
+              "evidence"
+            ]
+          }
+        }
+      ],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.verdict.v1"
+      },
+      "format": {
+        "commitments": {
+          "all_of": [
+            {
+              "check": "json_schema",
+              "schema": {
+                "type": "object",
+                "required": [
+                  "verdicts"
+                ],
+                "properties": {
+                  "verdicts": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "proposal",
+                        "executed",
+                        "catalogued",
+                        "standing"
+                      ],
+                      "properties": {
+                        "proposal": {
+                          "type": "string"
+                        },
+                        "kernel": {
+                          "type": "string"
+                        },
+                        "transform": {
+                          "type": "string"
+                        },
+                        "executed": {
+                          "type": "string"
+                        },
+                        "expected": {
+                          "type": "string"
+                        },
+                        "catalogued": {
+                          "type": "boolean"
+                        },
+                        "same_input": {
+                          "type": [
+                            "boolean",
+                            "null"
+                          ]
+                        },
+                        "standing": {
+                          "enum": [
+                            "candidate point",
+                            "defect",
+                            "rejected"
+                          ]
+                        },
+                        "column": {
+                          "enum": [
+                            "moves",
+                            "unchanged",
+                            null
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "stages": [
+    {
+      "stage_id": "source",
+      "kind_id": "mini.kernel-source.v1",
+      "seat": "machine",
+      "ports": []
+    },
+    {
+      "stage_id": "propose-1",
+      "kind_id": "mini.proposal.v1",
+      "ports": [
+        "problem",
+        "source",
+        "earlier",
+        "verdicts",
+        "criticisms",
+        "executions",
+        "catalogue"
+      ]
+    },
+    {
+      "stage_id": "propose-2",
+      "kind_id": "mini.proposal.v1",
+      "ports": [
+        "problem",
+        "source",
+        "earlier",
+        "verdicts",
+        "criticisms",
+        "executions",
+        "catalogue"
+      ]
+    },
+    {
+      "stage_id": "propose-3",
+      "kind_id": "mini.proposal.v1",
+      "ports": [
+        "problem",
+        "source",
+        "earlier",
+        "verdicts",
+        "criticisms",
+        "executions",
+        "catalogue"
+      ]
+    },
+    {
+      "stage_id": "execute",
+      "kind_id": "mini.execution.v1",
+      "seat": "machine",
+      "ports": [
+        "proposals"
+      ]
+    },
+    {
+      "stage_id": "criticise",
+      "kind_id": "mini.criticism.v1",
+      "ports": [
+        "problem",
+        "source",
+        "proposals",
+        "executions",
+        "catalogue"
+      ]
+    },
+    {
+      "stage_id": "verdict",
+      "kind_id": "mini.verdict.v1",
+      "seat": "machine",
+      "ports": [
+        "executions",
+        "criticisms",
+        "verdicts",
+        "catalogue"
+      ]
+    },
+    {
+      "stage_id": "end",
+      "end": true
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "catalogue",
+      "path": "catalogue.json"
+    },
+    {
+      "source_id": "registry",
+      "path": "registry.txt"
+    }
+  ]
+}

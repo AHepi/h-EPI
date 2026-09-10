@@ -37,6 +37,15 @@ from .machines import MachineContext, MachineSeat, register_machine_seat
 
 PROPOSAL_KIND = "mini.proposal.v1"
 EXECUTION_KIND = "mini.execution.v1"
+#: A proposal that carries its own rewrite: {kernel, input, rewritten, expect}. No transform
+#: registry stands between the proposer and the check, so a rewrite nobody registered can be
+#: proposed; the executor runs the kernel on both texts.
+PAIR_PROPOSAL_KIND = "mini.pair-proposal.v1"
+#: Any kind whose id begins so is a pair proposal: a template may declare several, one per
+#: target, each with its own instruction, and the executor reads them all.
+PAIR_PROPOSAL_PREFIX = "mini.pair-proposal."
+PAIR_EXECUTION_KIND = "mini.pair-execution.v1"
+EXPECTATIONS: tuple[str, ...] = ("moves", "unchanged")
 CRITICISM_KIND = "mini.criticism.v1"
 VERDICT_KIND = "mini.verdict.v1"
 CATALOGUE_SOURCE = "catalogue"
@@ -219,11 +228,31 @@ def _proposal_of(context: MachineContext, record: Mapping[str, Any]) -> dict[str
 # --- the machine seats ---
 
 
+def _executed_before(context: MachineContext, execution_kind: str, keys: tuple[str, ...]) -> set[tuple[str, ...]]:
+    """The keys every earlier execution of this kind in the run already ran, so a repeat is named, not re-run."""
+
+    seen: set[tuple[str, ...]] = set()
+    for record in context.artifacts_of_kind(execution_kind):
+        if int(record.get("cycle", 0)) >= context.cycle:
+            continue
+        parsed = _proposal_of(context, record) or {}
+        for entry in parsed.get("executions", []):
+            if all(key in entry for key in keys):
+                seen.add(tuple(str(entry[key]) for key in keys))
+    return seen
+
+
 def _execute(context: MachineContext) -> str:
-    """Run every proposal of this cycle through its kernel, before and after."""
+    """Run every proposal of this cycle through its kernel, before and after.
+
+    A triple the run already executed, in an earlier cycle or earlier in this one, is marked
+    ``duplicate`` and not run again (mini register M10): the record says the proposer repeated
+    itself, and the verdict rejects the repeat.
+    """
 
     executions: list[dict[str, Any]] = []
     lines: list[str] = []
+    seen = _executed_before(context, EXECUTION_KIND, ("kernel", "transform", "input"))
     for record in context.artifacts_of_kind(PROPOSAL_KIND, cycle=context.cycle):
         proposal = _proposal_of(context, record)
         entry: dict[str, Any] = {"proposal": str(record["artifact_id"])[:16]}
@@ -233,6 +262,13 @@ def _execute(context: MachineContext) -> str:
             lines.append(f"{entry['proposal']}: unreadable")
             continue
         kernel_id, transform_id = str(proposal.get("kernel")), str(proposal.get("transform"))
+        triple = (kernel_id, transform_id, str(proposal.get("input", "")))
+        if triple in seen:
+            entry.update({"executed": "duplicate", "kernel": kernel_id, "transform": transform_id, "input": triple[2], "detail": "this run already executed this kernel, transform and input"})
+            executions.append(entry)
+            lines.append(f"{entry['proposal']}: duplicate")
+            continue
+        seen.add(triple)
         try:
             kernel, transform = resolve_kernel(kernel_id), resolve_transform(transform_id)
         except MiniError as error:
@@ -266,6 +302,82 @@ def _execute(context: MachineContext) -> str:
 COLUMN_MOVES = "moves"
 COLUMN_UNCHANGED = "unchanged"
 COLUMNS: tuple[str, ...] = (COLUMN_MOVES, COLUMN_UNCHANGED)
+
+
+def _execute_pairs(context: MachineContext) -> str:
+    """Run every pair proposal of this cycle: the kernel on the input and on the proposer's own rewrite."""
+
+    executions: list[dict[str, Any]] = []
+    lines: list[str] = []
+    seen = _executed_before(context, PAIR_EXECUTION_KIND, ("kernel", "input", "rewritten"))
+    proposals = [
+        context.state.artifacts[key]
+        for key in context.state.artifact_order
+        if str(context.state.artifacts[key]["kind_id"]).startswith(PAIR_PROPOSAL_PREFIX)
+        and int(context.state.artifacts[key].get("cycle", 0)) == context.cycle
+    ]
+    for record in proposals:
+        proposal = _proposal_of(context, record)
+        entry: dict[str, Any] = {"proposal": str(record["artifact_id"])[:16]}
+        if proposal is None:
+            entry.update({"executed": "unreadable", "detail": "the proposal's commitments are not readable as JSON"})
+            executions.append(entry)
+            lines.append(f"{entry['proposal']}: unreadable")
+            continue
+        kernel_id = str(proposal.get("kernel"))
+        source, rewritten = str(proposal.get("input", "")), str(proposal.get("rewritten", ""))
+        expect = str(proposal.get("expect", ""))
+        entry.update({"kernel": kernel_id, "input": source, "rewritten": rewritten, "expect": expect, "rewrite": str(proposal.get("rewrite", ""))})
+        if expect not in EXPECTATIONS:
+            entry.update({"executed": "unrunnable", "detail": f"expect must be one of {list(EXPECTATIONS)}"})
+            executions.append(entry)
+            lines.append(f"{entry['proposal']}: unrunnable")
+            continue
+        try:
+            kernel = resolve_kernel(kernel_id)
+        except MiniError as error:
+            entry.update({"executed": "unrunnable", "detail": str(error)})
+            executions.append(entry)
+            lines.append(f"{entry['proposal']}: unrunnable")
+            continue
+        if (kernel_id, source, rewritten) in seen:
+            entry.update({"executed": "duplicate", "detail": "this run already executed this kernel on this pair"})
+            executions.append(entry)
+            lines.append(f"{entry['proposal']}: duplicate")
+            continue
+        if source == rewritten:
+            entry.update({"executed": "unrunnable", "detail": "the rewritten text is the input unchanged"})
+            executions.append(entry)
+            lines.append(f"{entry['proposal']}: unrunnable")
+            continue
+        seen.add((kernel_id, source, rewritten))
+        before, after = kernel.verdict(source), kernel.verdict(rewritten)
+        executed = "moved" if before != after else "unchanged"
+        entry.update({"before": before, "after": after, "executed": executed, "as_expected": (executed == "moved") == (expect == "moves")})
+        executions.append(entry)
+        lines.append(f"{entry['proposal']}: {kernel_id} -> {executed}, expected {expect}")
+    return json.dumps(
+        {
+            "body": "Executed this cycle's pair proposals.\n" + ("\n".join(lines) or "(no proposal to run)"),
+            "commitments": json.dumps({"executions": executions}, ensure_ascii=False, sort_keys=True),
+        },
+        ensure_ascii=False,
+    )
+
+
+def standing_for_pair(executed: str, expect: str) -> str:
+    """The rule for a proposer's own rewrite, where no catalogue row applies.
+
+    The proposer said what it expected. A rewrite it expected to move the verdict that did
+    not is a candidate point for the unchanged column: a rewrite the proposer judged material
+    that the check cannot see. A rewrite it expected to leave the verdict alone that moved it
+    is a candidate for the moves column: a sensitivity nobody asked for. Agreement adds no
+    row, and a pair that could not run or was a repeat is rejected.
+    """
+
+    if executed not in ("moved", "unchanged") or expect not in EXPECTATIONS:
+        return STANDING_REJECTED
+    return STANDING_REJECTED if (executed == "moved") == (expect == "moves") else STANDING_CANDIDATE
 
 
 def standing_for(
@@ -355,6 +467,28 @@ def _verdict(context: MachineContext) -> str:
         f" -> {item['standing']}{'' if item['column'] is None else ' (' + item['column'] + ')'}"
         for item in verdicts
     ]
+    for record in context.artifacts_of_kind(PAIR_EXECUTION_KIND, cycle=context.cycle):
+        parsed = _proposal_of(context, record) or {}
+        for entry in parsed.get("executions", []):
+            executed, expect = str(entry.get("executed")), str(entry.get("expect", ""))
+            standing = standing_for_pair(executed, expect)
+            item = {
+                "proposal": str(entry.get("proposal")),
+                "kernel": str(entry.get("kernel")),
+                "transform": "proposer's own rewrite: " + str(entry.get("rewrite", ""))[:120],
+                "executed": executed,
+                "expected": expect,
+                "catalogued": False,
+                "catalogue_moves": False,
+                "same_input": None,
+                "standing": standing,
+                "column": column_for(executed, standing),
+            }
+            verdicts.append(item)
+            lines.append(
+                f"{item['proposal']}: {item['kernel']} under {item['transform']} {executed}, expected {expect or 'nothing'}"
+                f" -> {standing}{'' if item['column'] is None else ' (' + item['column'] + ')'}"
+            )
     return json.dumps(
         {
             "body": "Verdict on this cycle's executions.\n" + ("\n".join(lines) or "(nothing executed)"),
@@ -366,6 +500,9 @@ def _verdict(context: MachineContext) -> str:
 
 EXECUTOR_SEAT = register_machine_seat(
     MachineSeat(EXECUTION_KIND, "Runs this cycle's proposals through their kernels.", _execute)
+)
+PAIR_EXECUTOR_SEAT = register_machine_seat(
+    MachineSeat(PAIR_EXECUTION_KIND, "Runs this cycle's pair proposals: the kernel on the input and on the proposer's own rewrite.", _execute_pairs)
 )
 VERDICT_SEAT = register_machine_seat(
     MachineSeat(VERDICT_KIND, "Sets this cycle's executions against the catalogue.", _verdict)
@@ -389,6 +526,7 @@ VERDICT_SCHEMA: dict[str, Any] = {
                     "catalogued": {"type": "boolean"},
                     "standing": {"enum": list(STANDINGS)},
                     "column": {"enum": [*COLUMNS, None]},
+                    "expected": {"type": "string"},
                 },
             },
         }
