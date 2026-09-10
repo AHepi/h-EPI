@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown the documented rules and the complete source of the checks. Read this cycle's executions beside the proposals: say which expectations held, which failed, which inputs the validator threw away and why, and for each failure whether the proposer misread the rule or the rule as written and the code part company — quote the rule's words and name the line of code. Say what a proposer should build next. Cite nothing you were not shown.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The expectation failed: recovery moved from {"a":1} to {"b":2}, not unchanged. No inputs were thrown away; the single pair was validated against its cell and executed. The proposer did not misread the rule. The rule as written says 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' For the input, the only fence holds S and A, so the last object inside the fence is A; for the rewritten text the fence still holds S and A, so the rule's answer is A both times. The code parts company with that rule. In recover_json_object, the fenced pool is built by `fenced.append(match.group(1))`, which captures the entire fence content 'Here is the result:\n{"a":1}' as one candidate, not the objects inside it. The loop `for pool in ((fenced if len(fenced) == 1 else []), top_level):` then tries that whole string as JSON; it fails strict parsing and last-wins parsing, so the code falls through to the top-level pool. The top-level scan finds both A and B, and `for candidate in reversed(pool)` picks B, the last top-level object overall. Thus the code ignores the fence preference whenever the fence contains prose around the object, and scores the last top-level object instead of the last object inside the fence. The proposer should build next a pair with two code fences, or a fence containing two JSON objects, to expose the same divergence: the rule's 'when any fence holds one' is not implemented by the code's `len(fenced) == 1` condition and whole-fence candidate.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

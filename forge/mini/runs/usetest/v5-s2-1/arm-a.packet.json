@@ -1,0 +1,41 @@
+{
+  "arm": "A",
+  "ceiling_breached": false,
+  "cost": {
+    "completion_tokens": 9754,
+    "completion_tokens_allowed": 1312000,
+    "completion_tokens_per_call": 32000,
+    "invocations": 1,
+    "invocations_allowed": 41,
+    "machine_executions": 0,
+    "prompt_tokens": 3876,
+    "refusals": [],
+    "wall_ms": 54362
+  },
+  "endpoint": {
+    "base_url": "https://ollama.com",
+    "kind": "ollama-chat",
+    "options": {
+      "seed": 7,
+      "temperature": 0
+    },
+    "think": true,
+    "timeout_seconds": 900
+  },
+  "instance": "v5-s2-1",
+  "leaks": [],
+  "method_version": 5,
+  "model": "deepseek-v4-pro:0813",
+  "packet": {
+    "claim": "recover_json_object only considers fenced objects when there is exactly one code fence, so with multiple fences it ignores the documented rule to score the last object inside a code fence.",
+    "execution_evidence": "none: no executable oracle",
+    "expected": "For content with multiple code fences, the last object inside a code fence should be returned; for the reproducer, {\"b\":2}.",
+    "observed": "The code uses an empty fenced pool when len(fenced) != 1, so it falls through to top_level and returns the last top-level object; for the reproducer, {\"c\":3}.",
+    "reproducer": "```json\n{\"a\":1}\n```\n```json\n{\"b\":2}\n```\n{\"c\":3}",
+    "scope": "Inputs with at least two code fences containing JSON objects and a top-level JSON object after the last fence",
+    "source_basis": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text",
+    "uncertainty": "The phrase 'when any fence holds one' could be read as 'when there is exactly one fence', but the natural reading and the rest of the sentence support at least one fence."
+  },
+  "protocol": "mini-use-test-1",
+  "stopped_on": null
+}

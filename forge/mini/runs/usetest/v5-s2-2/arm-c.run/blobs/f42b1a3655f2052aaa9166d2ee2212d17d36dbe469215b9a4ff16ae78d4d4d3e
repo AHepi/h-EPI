@@ -1,0 +1,18 @@
+{
+  "body": "Rule as written: recover_json_object says 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text' and 'A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable'. For the input fence[ A ] with A = {'a': 1, 'a': 2}, the fence holds A; A is scoreable by last-wins, so the scored object is A (last value a=2). For the rewritten fence[ A ] B, the fence still holds A and A is still scoreable by last-wins, so the scored object remains A. Therefore the rule says recovery is unchanged. The code, however, skips fenced candidates that fail strict parse and falls through to the last top-level object, so it moves to B.",
+  "commitments": "{\"kernel\":\"recovery\",\"expect\":\"unchanged\"}",
+  "input": "```\n{\"a\": 1, \"a\": 2}\n```",
+  "rewritten": "```\n{\"a\": 1, \"a\": 2}\n```\n{\"b\": 2}",
+  "rewrite": "added B after the fence",
+  "cell": "fence[ A ]",
+  "citations": [
+    {
+      "block": "8876734b576e5ecd",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text"
+    },
+    {
+      "block": "8876734b576e5ecd",
+      "quote": "A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable"
+    }
+  ]
+}

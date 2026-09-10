@@ -1,0 +1,18 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown the documented rules and the complete source of the checks. Read this cycle's executions beside the proposals: say which expectations held, which failed, which inputs the validator threw away and why, and for each failure whether the proposer misread the rule or the rule as written and the code part company — quote the rule's words and name the line of code. Say what a proposer should build next. Cite nothing you were not shown.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Expectation held: recovery moved, as expected. Execution before was {"a":1}, after was {"b":2}, executed moved, as_expected true. No inputs were thrown away; the pair was valid and executed.
+
+However, the proposal's reasoning is wrong. It predicted the scored object would be C, but the actual after is B. The proposer misread the rule. The rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." The code does not split a fence's content into separate objects. The line `fenced.append(match.group(1))` captures the entire fence content as one candidate, and the line `for pool in ((fenced if len(fenced) == 1 else []), top_level):` uses that whole content only when there is exactly one fence. Then `value = loads_strict(candidate.strip())` tries to parse the whole fence content as one JSON object. With two objects in one fence, that candidate fails, so the code falls through to `top_level`, reversed, and scores the last top-level object, which is B. Thus the rule as written and the code part company for a fence containing multiple objects: the rule's phrase "last one inside a code fence" suggests C, but the code scores B.
+
+What the proposer should build next: commit to the specific after value C (expect moves to C) to make the failure visible, or build a pair where the fence contains exactly one object and the top-level last object differs, and commit to the fence object to test the intended rule. The current pair only committed to "moves", so the discrepancy was hidden.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

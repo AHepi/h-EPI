@@ -1,0 +1,20 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown the documented rules and the complete source of the checks. Read this cycle's executions beside the proposals: say which expectations held, which failed, which inputs the validator threw away and why, and for each failure whether the proposer misread the rule or the rule as written and the code part company — quote the rule's words and name the line of code. Say what a proposer should build next. Cite nothing you were not shown.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Execution 563a0fd60a7e2ecc expected recovery to move from A to B, but the actual result was unchanged: before and after both returned `{"a":1}`. The rewritten text has one code fence containing two JSON objects. The code's `_FENCE` regex captures the entire fenced content as a single string, not individual objects. `recover_json_object` then tries to parse that whole fenced string as one JSON object; it fails, so the code falls through to the top-level pool. The top-level scan finds three objects: `{"a":1}`, `{"b":2}`, `{"a":1}`; reversed, the last is `{"a":1}`, so recovery returns A.
+
+The rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." The code line `for pool in ((fenced if len(fenced) == 1 else []), top_level):` only uses the fenced pool when there is exactly one fence match, and even then treats the entire fenced content as one candidate. It does not split a fence's contents into individual objects. Thus the rule as written and the code part company. The proposer did not misread the rule; they read it literally and expected the last object inside the fence (B). The code's implementation does not honor that.
+
+No inputs were thrown away by the validator; both the original and rewritten texts matched their cells and were executed.
+
+What to build next: a pair that isolates the fallback further. Keep one fence with multiple objects and make the top-level last object different from the last fenced object, as done here, but also add a second fence to show that when `len(fenced) != 1` the code ignores fenced entirely. Alternatively, build a pair where the fence contains a single object but the top-level last object differs, to confirm the code uses fenced only when exactly one fence match exists.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

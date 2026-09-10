@@ -1,0 +1,36 @@
+[
+  {
+    "phase": "tests",
+    "reply": "{\n  \"tests\": [\n    {\n      \"kernel\": \"recovery\",\n      \"input\": \"```json\\n{\\\"a\\\":1}\\n```\\n```json\\n{\\\"b\\\":2}\\n```\\n{\\\"c\\\":3}\",\n      \"expected\": \"{\\\"b\\\":2}\"\n    },\n    {\n      \"kernel\": \"response-verdict\",\n      \"input\": \"[1,2]\",\n      \"expected\": \"INVALID_JSON\"\n    },\n    {\n      \"kernel\": \"recovery\",\n      \"input\": \"```text\\n{\\\"a\\\":1}\\n```\\n{\\\"b\\\":2}\",\n      \"expected\": \"{\\\"a\\\":1}\"\n    },\n    {\n      \"kernel\": \"response-verdict\",\n      \"input\": \"\\\"hello\\\"\",\n      \"expected\": \"INVALID_JSON\"\n    }\n  ]\n}",
+    "results": [
+      {
+        "kernel": "recovery",
+        "input": "```json\n{\"a\":1}\n```\n```json\n{\"b\":2}\n```\n{\"c\":3}",
+        "expected": "{\"b\":2}",
+        "answer": "{\"c\":3}"
+      },
+      {
+        "kernel": "response-verdict",
+        "input": "[1,2]",
+        "expected": "INVALID_JSON",
+        "answer": "JSON_OBJECT"
+      },
+      {
+        "kernel": "recovery",
+        "input": "```text\n{\"a\":1}\n```\n{\"b\":2}",
+        "expected": "{\"a\":1}",
+        "answer": "{\"b\":2}"
+      },
+      {
+        "kernel": "response-verdict",
+        "input": "\"hello\"",
+        "expected": "INVALID_JSON",
+        "answer": "JSON_OBJECT"
+      }
+    ]
+  },
+  {
+    "phase": "report",
+    "reply": "{\n  \"claim\": \"recover_json_object ignores fenced objects when more than one code fence is present, contrary to the documented rule that the object scored is the last one inside a code fence when any fence holds one.\",\n  \"expected\": \"{\\\"b\\\":2}\",\n  \"observed\": \"{\\\"c\\\":3}\",\n  \"reproducer\": \"```json\\n{\\\"a\\\":1}\\n```\\n```json\\n{\\\"b\\\":2}\\n```\\n{\\\"c\\\":3}\",\n  \"source_basis\": \"The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text\",\n  \"execution_evidence\": \"kernel recovery returned {\\\"c\\\":3} for the reproducer\",\n  \"scope\": \"inputs with more than one code fence containing JSON objects and at least one top-level object after the last fence\",\n  \"uncertainty\": \"The phrase 'any fence holds one' could be read as 'at least one fence' or 'exactly one fence'; the code only handles exactly one fence, but the documented wording suggests at least one.\"\n}"
+  }
+]

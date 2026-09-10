@@ -1,0 +1,18 @@
+# Execution
+
+## Proposals so far (proposals)
+[8513404aa72e8e06] (mini.pair-proposal.usetest.v1)
+Rule says recovery should be unchanged: for both texts, the last object inside a code fence is A, and A is scoreable as JSON with repeated keys resolved last-wins, so recovery should return A's last-wins object. Source moves from B to A because it skips the fenced duplicate-key object and falls back to the last top-level object.
+cell: fence[ A ] B
+input: ```
+{"a":1,"a":2}
+```
+{"b":2}
+rewrite: removed B after fence
+rewritten: ```
+{"a":1,"a":2}
+```
+commitments: {"kernel":"recovery","expect":"unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

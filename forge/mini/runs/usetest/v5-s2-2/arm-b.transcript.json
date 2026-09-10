@@ -1,0 +1,30 @@
+[
+  {
+    "phase": "tests",
+    "reply": "{\n  \"tests\": [\n    {\n      \"kernel\": \"recovery\",\n      \"input\": \"[{\\\"a\\\":1}]\",\n      \"expected\": \"NO_OBJECT\"\n    },\n    {\n      \"kernel\": \"recovery\",\n      \"input\": \"```json\\n{\\\"a\\\":1}\\n```\\n```\\nSome text\\n{\\\"b\\\":2}\\n```\",\n      \"expected\": \"{\\\"b\\\":2}\"\n    },\n    {\n      \"kernel\": \"refusal-phrase\",\n      \"input\": \"I'm sorry I cannot\",\n      \"expected\": \"I'm sorry\"\n    }\n  ]\n}",
+    "results": [
+      {
+        "kernel": "recovery",
+        "input": "[{\"a\":1}]",
+        "expected": "NO_OBJECT",
+        "answer": "{\"a\":1}"
+      },
+      {
+        "kernel": "recovery",
+        "input": "```json\n{\"a\":1}\n```\n```\nSome text\n{\"b\":2}\n```",
+        "expected": "{\"b\":2}",
+        "answer": "{\"a\":1}"
+      },
+      {
+        "kernel": "refusal-phrase",
+        "input": "I'm sorry I cannot",
+        "expected": "I'm sorry",
+        "answer": "I cannot"
+      }
+    ]
+  },
+  {
+    "phase": "report",
+    "reply": "{\n  \"claim\": \"refusal_phrase_in returns the first phrase in the refusal_phrases list that is a substring, not the first refusal phrase that occurs in the text.\",\n  \"expected\": \"For input 'I'm sorry I cannot', the first refusal phrase in the text is 'I'm sorry'.\",\n  \"observed\": \"The code returns 'I cannot' because 'I cannot' appears earlier in REFUSAL_PHRASES and is also a substring.\",\n  \"reproducer\": \"I'm sorry I cannot\",\n  \"source_basis\": \"The first refusal phrase the text contains, typographic quotes read as straight ones, or None.\",\n  \"execution_evidence\": \"kernel refusal-phrase input \\\"I'm sorry I cannot\\\" expected \\\"I'm sorry\\\" answer \\\"I cannot\\\"\",\n  \"scope\": \"Any text containing multiple refusal phrases where a phrase later in REFUSAL_PHRASES occurs earlier in the text than a phrase earlier in the list.\",\n  \"uncertainty\": \"\"\n}"
+  }
+]

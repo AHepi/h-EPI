@@ -1,0 +1,8 @@
+{
+  "body": "Rule: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' For the input, the only code fence holds S and A, so the last object inside the fence is A, and the rule says recovery is A. For the rewritten text, adding B after the final S does not change what the fence holds; the last object inside the fence is still A, so the rule says recovery is A. Therefore the rule's answer is unchanged. However, the code's fenced pool contains the whole fence content 'Here is the result:\\n{\\\"a\\\":1}', which fails strict parsing, so the code falls through to the top-level pool; the top-level scan includes A and B, and reversed it picks B, so the code moves from A to B.",
+  "commitments": "{\"kernel\":\"recovery\",\"expect\":\"unchanged\"}",
+  "input": "```\nHere is the result:\n{\"a\":1}\n```\nHere is the result:",
+  "rewritten": "```\nHere is the result:\n{\"a\":1}\n```\nHere is the result:\n{\"b\":2}",
+  "rewrite": "fence[ S A ] S B",
+  "cell": "fence[ S A ] S"
+}

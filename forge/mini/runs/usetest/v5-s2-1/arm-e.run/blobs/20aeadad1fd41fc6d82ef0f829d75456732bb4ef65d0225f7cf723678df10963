@@ -1,0 +1,17 @@
+{
+  "body": "The expectation failed: the proposal expected recovery to stay unchanged, but the execution moved from {\"b\":2} to {\"a\":1}. The validator threw nothing away; both texts matched the cell. The proposer did not misread the rule. The rule says 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' Under that rule, the only fence holds S and A, so the last object inside the fence is A both before and after removing B; the rule's answer is unchanged. The code parts company with the rule at `fenced.append(match.group(1))` and `for pool in ((fenced if len(fenced) == 1 else []), top_level):`: it puts the whole fence content, including the prose 'Here is the result:', into the fenced pool as a single candidate. That candidate fails strict parsing and last-wins parsing, so the code falls through to the top-level pool, where reversed order picks B before the edit and A after it. Thus the code's answer moves even though the rule's answer does not. Next, build a pair that isolates this: one fence containing prose plus two JSON objects, and no top-level object after the fence, to see whether recovery returns the last object inside the fence or NO_OBJECT; or a pair where the whole fence content is itself a valid JSON object to test the fenced pool's intended path.",
+  "citations": [
+    {
+      "block": "5f31938ef5c2ab85",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text"
+    },
+    {
+      "block": "5d4b8857cebbe121",
+      "quote": "fenced.append(match.group(1))"
+    },
+    {
+      "block": "5d4b8857cebbe121",
+      "quote": "for pool in ((fenced if len(fenced) == 1 else []), top_level):"
+    }
+  ]
+}

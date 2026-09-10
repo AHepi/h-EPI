@@ -1,0 +1,6 @@
+[
+  {
+    "phase": "report",
+    "reply": "{\n  \"claim\": \"recover_json_object only considers fenced objects when there is exactly one code fence, so with multiple fences it ignores the documented rule to score the last object inside a code fence.\",\n  \"expected\": \"For content with multiple code fences, the last object inside a code fence should be returned; for the reproducer, {\\\"b\\\":2}.\",\n  \"observed\": \"The code uses an empty fenced pool when len(fenced) != 1, so it falls through to top_level and returns the last top-level object; for the reproducer, {\\\"c\\\":3}.\",\n  \"reproducer\": \"```json\\n{\\\"a\\\":1}\\n```\\n```json\\n{\\\"b\\\":2}\\n```\\n{\\\"c\\\":3}\",\n  \"source_basis\": \"The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text\",\n  \"execution_evidence\": \"none: no executable oracle\",\n  \"scope\": \"Inputs with at least two code fences containing JSON objects and a top-level JSON object after the last fence\",\n  \"uncertainty\": \"The phrase 'when any fence holds one' could be read as 'when there is exactly one fence', but the natural reading and the rest of the sentence support at least one fence.\"\n}"
+  }
+]

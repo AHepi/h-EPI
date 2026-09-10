@@ -1,0 +1,24 @@
+# Execution
+
+## Proposals so far (proposals)
+[60d297a40d9f267b] (mini.pair-proposal.usetest.v1)
+Under the rule 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text', the original reply has two code fences, each holding one object; the last one inside a code fence is B, so the rule says the scored object is B. The rewritten reply adds A after the second fence, but the last one inside a code fence is still B, so the rule says the scored object is B. Therefore the recovery answer is unchanged.
+cell: fence[ A ] fence[ B ]
+input: ```
+{"a": 1}
+```
+```
+{"b": 2}
+```
+rewrite: fence[ A ] fence[ B ] A
+rewritten: ```
+{"a": 1}
+```
+```
+{"b": 2}
+```
+{"a": 1}
+commitments: {"kernel": "recovery", "expect": "unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

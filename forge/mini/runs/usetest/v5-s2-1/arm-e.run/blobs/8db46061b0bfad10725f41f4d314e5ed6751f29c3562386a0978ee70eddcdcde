@@ -1,0 +1,18 @@
+# Execution
+
+## Proposals so far (proposals)
+[83362c6d5649bcf5] (mini.pair-proposal.usetest.v1)
+Rule: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' For the input, the only code fence holds A, so the rule says recovery is A. For the rewritten text, adding B after the fence does not change what the fence holds, so the rule still says recovery is A. Therefore the rule's answer is unchanged. However, the code's fence regex is non-greedy and stops at the triple backticks inside A's string, so it falls through to top-level objects and recovers B, moving from A to B.
+cell: fence[ A ]
+input: ```
+{"s": "```"}
+```
+rewrite: fence[ A ] B
+rewritten: ```
+{"s": "```"}
+```
+{"b": 2}
+commitments: {"kernel":"recovery","expect":"moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

@@ -1,0 +1,17 @@
+{
+  "body": "No proposals were submitted and no executions were recorded this cycle, so there are no expectations to mark held or failed, no validator inputs to account for, and no failures to attribute to a misreading or to a rule/code split. The only thing to report is where the next proposal should look.\n\nA proposer should next build a reply and a single edit that target the fence-selection rule. The documented rule says the object scored is 'the last one inside a code fence when any fence holds one' (rules, recover_json_object), but the source only uses fenced candidates when exactly one fence was found: `for pool in ((fenced if len(fenced) == 1 else []), top_level):` (source, recover_json_object). A reply with two fenced objects, or with a fenced object in a non-json/non-plain fence, would therefore be scored on the last top-level object instead of the last fenced object, contrary to the rule as written. A second area is the fence matcher itself: the rule says 'code fence' without qualification, but `_FENCE = re.compile(r\"```(?:json|JSON)?\\s*(.*?)```\", re.DOTALL)` only captures fences with no language tag or with json/JSON, so a fenced object in a ```python fence is invisible to the fenced pool. These are the clearest places where the rule as written and the code part company, and a proposal that exercises them would give the validator something to throw away or a check answer to contradict.",
+  "citations": [
+    {
+      "block_id": "8876734b576e5ecd",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text"
+    },
+    {
+      "block_id": "2626d63e41267531",
+      "quote": "for pool in ((fenced if len(fenced) == 1 else []), top_level):"
+    },
+    {
+      "block_id": "2626d63e41267531",
+      "quote": "_FENCE = re.compile(r\"```(?:json|JSON)?\\s*(.*?)```\", re.DOTALL)"
+    }
+  ]
+}

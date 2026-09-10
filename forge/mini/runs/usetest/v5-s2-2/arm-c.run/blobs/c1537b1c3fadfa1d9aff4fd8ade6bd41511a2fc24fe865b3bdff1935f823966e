@@ -1,0 +1,22 @@
+# Execution
+
+## Proposals so far (proposals)
+[d1e8e40764adf6cf] (mini.pair-proposal.usetest.v1)
+Rule: 'The object scored is the last one inside a code fence when any fence holds one' and 'A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable'. For the original text, the only fenced object is A, so recovery should be A. For the rewritten text, the last fenced object is B, which has repeated keys and is scoreable, so recovery should be B. Therefore the rule says recovery moves from A to B.
+cell: fence[ S A ] S
+input: ```
+Here is the result:
+{"a": 1}
+```
+Here is the result:
+rewrite: added B inside fence after A
+rewritten: ```
+Here is the result:
+{"a": 1}
+{"a": 2, "a": 3}
+```
+Here is the result:
+commitments: {"kernel": "recovery", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

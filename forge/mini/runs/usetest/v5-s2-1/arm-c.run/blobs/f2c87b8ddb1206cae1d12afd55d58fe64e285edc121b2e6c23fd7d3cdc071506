@@ -1,0 +1,20 @@
+# Execution
+
+## Proposals so far (proposals)
+[623c062f30017459] (mini.pair-proposal.usetest.v1)
+The rule says: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' For the original text, the fence holds {\"a\": \"```\"}, so recovery should be that object. For the rewritten text, the fence still holds the same object, so recovery should be unchanged. The check's answer ought to stay unchanged.
+cell: fence[ A ] S
+input: ```
+{"a": "```"}
+```
+Here is the result:
+rewrite: added B after S
+rewritten: ```
+{"a": "```"}
+```
+Here is the result:
+{"b": 2}
+commitments: {"kernel": "recovery", "expect": "unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

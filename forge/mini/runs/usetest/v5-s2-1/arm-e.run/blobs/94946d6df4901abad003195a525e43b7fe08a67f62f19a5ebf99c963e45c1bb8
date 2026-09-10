@@ -1,0 +1,20 @@
+# Execution
+
+## Proposals so far (proposals)
+[5030894e41abe5c3] (mini.pair-proposal.usetest.v1)
+Rule: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' For the input, the only code fence holds S and A, so the last object inside the fence is A; the rule says recovery is A. For the rewritten text, removing B after the fence does not change what the fence holds; the last object inside the fence is still A, so the rule says recovery is A. Therefore the rule's answer is unchanged. However, the code's fenced pool contains the whole fence content 'Here is the result:\n{\"a\":1}', which fails strict parsing, so the code falls through to the top-level pool; the top-level scan includes A and B, and reversed it picks B for the input, but after removing B it picks A, so the code moves from B to A.
+cell: fence[ S A ] B
+input: ```
+Here is the result:
+{"a":1}
+```
+{"b":2}
+rewrite: fence[ S A ]
+rewritten: ```
+Here is the result:
+{"a":1}
+```
+commitments: {"kernel":"recovery","expect":"unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

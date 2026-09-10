@@ -1,0 +1,8 @@
+{
+  "body": "Rule: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' The only fence holds A, so for the input the rule says recovery is A. Adding B after the fence does not change what the fence holds, so for the rewritten text the rule still says recovery is A. Therefore the rule's answer is unchanged. However, the code's fence regex `_FENCE = re.compile(r\"```(?:json|JSON)?\\s*(.*?)```\", re.DOTALL)` is non-greedy and stops at the first ```, which is inside A's string value, so the fenced candidate is truncated and invalid. The code then falls back to top-level objects; after the rewrite, the last top-level object is B, so recovery moves. Thus the code moves while the rule says unchanged, so expect moved.",
+  "commitments": "{\"kernel\":\"recovery\",\"expect\":\"moved\"}",
+  "input": "```\n{\"s\": \"```\"}\n```",
+  "rewritten": "```\n{\"s\": \"```\"}\n```\n{\"b\": 2}",
+  "rewrite": "fence[ A ] B",
+  "cell": "fence[ A ]"
+}
