@@ -1,0 +1,12 @@
+```json
+{
+ "body": "For the cell 'an object that does not close / a sentence after it', I use the kernel `conformance.kernel.recovery`. The rule for this kernel states that 'A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not... is passed over' [4adba2f4da302fee]. An object that does not close (e.g., `{\"z\": 1`) does not parse as strict JSON and is therefore passed over, regardless of whether it is followed by a sentence. This results in the answer `NO_OBJECT`. Replacing the unclosed object with a well-formed object `{\"z\": 0}` creates a candidate that parses as strict JSON and is thus scoreable. The answer changes from `NO_OBJECT` to `{\"z\": 0}`. Therefore, the result moves.",
+ "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"input\": \"{\\\"z\\\": 1 This is a sentence.\", \"rewritten\": \"{\\\"z\\\": 0} This is a sentence.\", \"expect\": \"moves\", \"rewrite\": \"I replaced the unclosed object {\\\"z\\\": 1 with the well-formed object {\\\"z\\\": 0}.\", \"cell\": \"an object that does not close / a sentence after it\"}",
+ "citations": [
+  {
+   "block": "4adba2f4da302fee",
+   "quote": "A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over"
+  }
+ ]
+}
+```

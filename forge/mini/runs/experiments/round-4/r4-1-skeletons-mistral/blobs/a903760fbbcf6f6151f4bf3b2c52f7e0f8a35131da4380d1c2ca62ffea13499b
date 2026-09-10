@@ -1,0 +1,20 @@
+```json
+{
+  "body": "The documented rule for `conformance.kernel.recovery` states that the object scored is the last one inside a code fence when any fence holds one. In the given cell `fence[ S A ]`, the input contains a sentence `S` followed by a JSON object `A` within a single code fence. The rule specifies that if a fence holds an object, the last object *inside that fence* is scored. Here, the fence contains two parts: a sentence and a JSON object. The JSON object `A` is the last *object* inside the fence, so it is the one scored. If we remove the JSON object `A` from the fence, the remaining content is just the sentence `S`, which is not a valid JSON object. According to the rule, no object can be recovered from the rewritten text, so the recovered object should move from `A` to `NO_OBJECT`. Thus, the rule expects the recovered object to change.\n\nThe object scored before the rewrite is `A`, and after the rewrite, it should be `NO_OBJECT`.",
+  "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"input\": \"```\nHere is the result:\n{\"a\": 1}\n```\", \"rewritten\": \"```\nHere is the result:\n```\", \"expect\": \"moves\", \"rewrite\": \"Removed the JSON object from the code fence, leaving only the sentence.\", \"cell\": \"fence[ S A ]\"}",
+  "citations": [
+    {
+      "block": "dd31e637647a413a",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction."
+    },
+    {
+      "block": "65ae18af7a738b26",
+      "quote": "kernel conformance.kernel.recovery: The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT."
+    },
+    {
+      "block": "ce275ea1972395f1",
+      "quote": "fence[ A ] fence[ B ]"
+    }
+  ]
+}
+```

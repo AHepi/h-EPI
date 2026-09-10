@@ -1,0 +1,11 @@
+```json
+{
+ "body": "The proposer for fe27d80e6a88f225 correctly identified that the machine treats an object containing a float as scoreable, whereas the rule's phrasing is ambiguous. The rule states: 'A candidate that parses as strict JSON... is scoreable; one that does not (a float, for instance) is passed over' [a84bcb8e1134b8b4]. The proposer interpreted this as meaning a top-level float is passed over, but an object containing a float is not. The execution confirms this: `{\"z\": 1.0}` resulted in `NO_OBJECT` (before) and `{\"z\": 0}` resulted in `{\"z\":0}` (after), meaning the machine actually passed over the object containing the float. Thus, the rule and the code part company: the code's `_refuse_float` (called via `json.loads` in `_loads_last_wins` and presumably in `loads_strict`) causes any object containing a float to be unscoreable, while the rule suggests only a float as the candidate itself is passed over.\n\nProposers for 8bc9e680968ea57c and 2a3b9260c16d9e2b misread the rule and the code. They expected the result of `conformance.kernel.recovered-from-prose` to be 'unchanged' (yes) when replacing `{\"z\": 1.0}` with `{\"z\": 0}`. However, because the machine refuses any object containing a float (as seen in the first execution), the 'before' state for both was 'no' (because no object was recovered at all, and the kernel returns 'no' or the verdict logic defaults). When the float was removed, an object was recovered from prose/fence, changing the result to 'yes'.\n\nThese failures matter because they reveal that the harness's float-refusal is more aggressive than the documentation implies. A proposer should next try to verify if any JSON value (not just top-level) containing a float triggers this refusal across different kernels.",
+ "citations": [
+  {
+   "block": "a84bcb8e1134b8b4",
+   "quote": "A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over"
+  }
+ ]
+}
+```

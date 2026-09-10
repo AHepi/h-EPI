@@ -28,7 +28,7 @@ from .common import (
     text,
 )
 from .failures import FailurePolicy, failure_policy_from_dict
-from .formats import CompiledFormat
+from .formats import RECOVERED_CONTROL, CompiledFormat, loads_admitting_control
 from .windows import ALL, Window, window_from_dict
 
 
@@ -253,7 +253,7 @@ def read_submission(reply: str, kind: ArtifactKind, phase: str = PHASE_BOTH) -> 
 
     unfenced, fenced = strip_fence(reply)
     try:
-        parsed = loads_strict(unfenced)
+        parsed, control = loads_admitting_control(unfenced)
     except RecordError as error:
         raise MiniError("MINI_SUBMISSION_NOT_JSON", f"the reply is not readable as JSON: {error}") from error
     if type(parsed) is not dict:
@@ -305,5 +305,5 @@ def read_submission(reply: str, kind: ArtifactKind, phase: str = PHASE_BOTH) -> 
         extra=extra,
         recovered=tuple(
             [RECOVERED_FENCE] if fenced else []
-        ) + ((RECOVERED_PROSE,) if recovered_citations else ()),
+        ) + ((RECOVERED_PROSE,) if recovered_citations else ()) + ((RECOVERED_CONTROL,) if control else ()),
     )

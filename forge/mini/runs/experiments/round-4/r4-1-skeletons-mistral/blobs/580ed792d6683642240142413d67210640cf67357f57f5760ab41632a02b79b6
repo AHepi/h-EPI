@@ -1,0 +1,36 @@
+```json
+{
+  "body": "### Discrepancy in `conformance.kernel.recovered-from-prose` Rule vs. Implementation\n\n**Failure observed:** The documented rule for `conformance.kernel.recovered-from-prose` states that the harness returns `yes` if it \"had to recover the object from prose or a fence\" and `no` if it \"read it as strict JSON\". However, the implementation in `parse_content` (source lines 80-100) does not align with this description in cases where the JSON object is recovered from a *fence* but parses as strict JSON.\n\n**Rule quote (b02ccb322122e4d0):**\n> \"Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no).\"\n\n**Code discrepancy (e76ccc2a347e8e03, lines 80-100):**\nThe `recovered_from_prose` flag is set to `True` *only* when the strict JSON parse fails and `recover_json_object` succeeds (i.e., recovery from prose or a fence). However, if the object is recovered from a fence but parses as strict JSON (e.g., a well-formed JSON object in a fence with no duplicate keys), the flag is incorrectly set to `False` (line 83), implying no recovery was needed. This contradicts the rule, which groups *both* prose and fence recovery under `yes`.\n\n**Evidence of failure (e847048a8c7847a8):**\n> `{\"points\": [{\"kernel\": \"conformance.kernel.recovered-from-prose\", \"transform\": \"conformance.transform.fence\", \"moves\": true, \"input\": \"{\\\"claimant_name\\\": \\\"amara okoro\\\"}\"}}`\nHere, the input is a well-formed JSON object in a fence, but the rule expects `yes` (recovery from fence), while the code returns `no` (strict JSON).\n\n**Why it matters:**\nThe rule’s wording implies that *any* recovery (prose or fence) should return `yes`, but the code treats fence recovery as `no` if the JSON is strict. This could mislead proposers into assuming fence recovery is indistinguishable from strict JSON parsing, when the rule explicitly separates them.\n\n**Next steps for proposers:**\n1. **Test fence recovery with strict JSON:** Propose inputs where a well-formed JSON object is enclosed in a fence (e.g., ````json\\n{\"key\": \"value\"}\\n````). The rule says `yes`; the code says `no`.\n2. **Test fence recovery with non-strict JSON:** Propose inputs where the fence contains JSON with duplicate keys (e.g., ````json\\n{\"key\": 1, \"key\": 2}\\n````). Both rule and code agree on `yes`.\n3. **Clarify the rule:** If the rule is correct, the code should be patched to return `yes` for *all* fence recoveries, regardless of strictness. If the code is correct, the rule should be revised to say `yes` only for prose recovery or non-strict JSON in fences.\n\n---\n### Discrepancy in `conformance.kernel.refusal-phrase` Case Sensitivity\n\n**Failure observed:** The documented rule for `conformance.kernel.refusal-phrase` states that refusal phrases are matched with typographic apostrophes \"read as straight\", but the implementation does not explicitly handle case insensitivity for the phrases themselves.\n\n**Rule quote (b02ccb322122e4d0):**\n> \"The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE.\"\n\n**Code discrepancy (e76ccc2a347e8e03, lines 65-72):**\nThe `refusal_phrase_in` function converts the *input content* to lowercase (line 66) but does not normalize the *refusal phrases* themselves. This means phrases like \"I cannot\" will match \"I CANNOT\" in the input, but phrases with internal case (e.g., \"as an AI\") may fail if the input uses different casing (e.g., \"As an ai\"). The rule does not specify case insensitivity, but the code’s behavior implies it.\n\n**Evidence of failure (478f1f02c67c06c4):**\n> `{\"points\": [{\"kernel\": \"conformance.kernel.refusal-phrase\", \"transform\": \"conformance.transform.upper-case\", \"moves\": false, \"input\": \"I'M SORRY, NO.\"}}]`\nThe input is an uppercase refusal phrase, and the code returns `None` (no match) because the phrase list uses title case (\"I'm sorry\"). The rule is silent on case, but the code’s behavior suggests a mismatch.\n\n**Why it matters:**\nProposers may assume case insensitivity (given the lowercase conversion of input) and propose uppercase refusals, only to find the check fails. The rule should clarify whether case matters, or the code should normalize phrase casing.\n\n**Next steps for proposers:**\n1. **Test case variations:** Propose inputs with refusal phrases in different cases (e.g., \"I CANNOT\", \"AS AN AI\") to see if the code matches them.\n2. **Propose a rule clarification:** If case insensitivity is intended, the rule should state it explicitly. If not, the code should be patched to match phrases case-sensitively.\n\n---\n### Priority for Proposers\nFocus on the `recovered-from-prose` discrepancy first, as it directly contradicts the rule’s wording and affects core recovery logic. The `refusal-phrase` case sensitivity issue is secondary but may reveal further ambiguities.",
+
+  "citations": [
+    {
+      "block": "b02ccb322122e4d0",
+      "quote": "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)."
+    },
+    {
+      "block": "e76ccc2a347e8e03",
+      "quote": "        return loads_strict(content), \"JSON_OBJECT\", None, False"
+    },
+    {
+      "block": "e76ccc2a347e8e03",
+      "quote": "        return recovered, \"JSON_OBJECT\", detail, True"
+    },
+    {
+      "block": "e847048a8c7847a8",
+      "quote": "{\"points\": [{\"kernel\": \"conformance.kernel.recovered-from-prose\", \"transform\": \"conformance.transform.fence\", \"moves\": true, \"input\": \"{\\\"claimant_name\\\": \\\"amara okoro\\\"}\"}}"
+    },
+    {
+      "block": "b02ccb322122e4d0",
+      "quote": "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE."
+    },
+    {
+      "block": "e76ccc2a347e8e03",
+      "quote": "    lowered = _plain_quotes(content).lower()"
+    },
+    {
+      "block": "478f1f02c67c06c4",
+      "quote": "{\"points\": [{\"kernel\": \"conformance.kernel.refusal-phrase\", \"transform\": \"conformance.transform.upper-case\", \"moves\": false, \"input\": \"I'M SORRY, NO.\"}}]"
+    }
+  ]
+}
+```

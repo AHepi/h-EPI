@@ -1,0 +1,16 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Proposal e34635589d1b6659 failed because the proposer misread the rule regarding case sensitivity in the value-in-span check. The proposer argued that because the rule specifies "no relaxation" [7a147bb8c4c1539c], a value differing from the span by case would result in VALUE_NOT_IN_SPAN. However, the code implements the value-in-span check using `.casefold()` on both the value and the span (line 158: `if _normalise_whitespace(fields["value"]).casefold() not in _normalise_whitespace(fields["span"]).casefold():`), meaning the check is actually case-insensitive. Consequently, the input `{"value": "the cat", "span": "The Cat", ...}` was already GROUNDED, and changing it to `"The Cat"` left the verdict unchanged.
+
+This failure matters because it reveals a contradiction between the documented rule ("no relaxation") and the actual implementation (case-insensitive matching). A proposer should next look for other grounding scenarios where the rule's "no relaxation" claim is contradicted by the code's use of `.casefold()` or `_normalise_whitespace()`, or target the `_span_occurs` logic where relaxations are explicitly handled.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

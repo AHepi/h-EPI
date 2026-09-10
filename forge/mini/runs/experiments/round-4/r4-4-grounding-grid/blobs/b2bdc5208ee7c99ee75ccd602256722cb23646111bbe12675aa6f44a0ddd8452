@@ -1,0 +1,11 @@
+```json
+{
+ "body": "Proposal b865c3420d46f491 failed because the proposer misread the rule regarding whitespace. The proposer expected a span differing by a run of spaces to result in SPAN_NOT_IN_DOCUMENT, but the machine returned GROUNDED for both the input and the rewrite. \n\nThe rule for `conformance.kernel.grounding` specifies \"no relaxation\" [a84bcb8e1134b8b4], but the underlying implementation of `_span_occurs` (which the grounding kernel uses) explicitly calls `_normalise_whitespace` on both the span and the document before checking for containment (line 138: `normal_span, normal_document = _normalise_whitespace(span), _normalise_whitespace(document)`). This means that differences in runs of spaces are ignored by the machine, contradicting the proposer's reading of \"no relaxation\".\n\nThis failure matters because it reveals that \"no relaxation\" in the grounding kernel does not extend to whitespace normalization. A proposer should next try to find a difference that is not normalized by `_normalise_whitespace` (which uses `.split()`), such as a case difference or a missing character, to trigger a SPAN_NOT_IN_DOCUMENT verdict.",
+ "citations": [
+  {
+   "block": "a84bcb8e1134b8b4",
+   "quote": "conformance.kernel.grounding: The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked"
+  }
+ ]
+}
+```

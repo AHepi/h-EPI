@@ -1,0 +1,11 @@
+```json
+{
+ "body": "Proposal 444a6473d98d2e1c failed because the proposer misread the rule regarding the 'value-in-span' check. The proposer expected that a value differing from the span by case would result in VALUE_NOT_IN_SPAN because 'no relaxation' was specified. However, the code implements the value-in-span check using `.casefold()`, making it case-insensitive regardless of the 'no relaxation' setting for the span-in-document check.\n\nSpecifically, the rule states the kernel provides the verdict with \"no relaxation, value-in-span checked\" [cf3ead255ba521d3]. The proposer interpreted \"no relaxation\" as applying to the value-in-span check. But in the source, while `_span_occurs` respects the `relaxations` tuple (which is empty in `_grounding_kernel`), the value-in-span check is hardcoded as: `if _normalise_whitespace(fields[\"value\"]).casefold() not in _normalise_whitespace(fields[\"span\"]).casefold():` (line 168 of [b6c35351972cc72f]).\n\nThis failure matters because it reveals a discrepancy between the documented 'no relaxation' phrasing and the actual case-insensitive implementation of the value-in-span check. A proposer should next attempt to find a difference that is not case-related, or target the span-in-document check where 'no relaxation' is actually enforced.",
+ "citations": [
+  {
+   "block": "cf3ead255ba521d3",
+   "quote": "The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked"
+  }
+ ]
+}
+```

@@ -1,0 +1,12 @@
+```json
+{
+  "body": "The documented rule for `conformance.kernel.recovery` states that the object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. In the given cell `fence[ A ] A`, the input contains a JSON object `A` within a code fence and another identical object `A` as a top-level object after the fence. The rule specifies that if a fence holds an object, the last object *inside* the fence is scored, not the last top-level object in the entire text. Thus, the object scored before the rewrite is the one inside the fence (`A`). If we remove the top-level object `A` after the fence, the last object inside the fence remains `A`, and no other top-level object is present to compete. According to the rule, the object scored should remain unchanged because the last object inside the fence is still `A`. The evidence block `ce275ea1972395f1` confirms this behavior: when multiple fenced objects exist, the last one is scored, ignoring top-level objects entirely.",
+  "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"input\": \"```\n{\"a\": 1}\n```\n{\"a\": 1}\", \"rewritten\": \"```\n{\"a\": 1}\n```\", \"expect\": \"unchanged\", \"rewrite\": \"Removed the top-level JSON object after the code fence.\", \"cell\": \"fence[ A ] A\"}",
+  "citations": [
+    {
+      "block": "ce275ea1972395f1",
+      "quote": "fence[ A ] fence[ B ]"
+    }
+  ]
+}
+```

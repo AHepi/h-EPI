@@ -31,6 +31,28 @@ FORMAT_FIELDS: tuple[str, ...] = ("body", "commitments")
 
 _INVALID = "MINI_FORMAT_SPEC_INVALID"
 
+#: What a reader had to do before a field could be read: a control character a model wrote raw
+#: inside a JSON string, read as the character it meant (register M13). The strict reading is
+#: tried first and every other refusal of the strict reader stands.
+RECOVERED_CONTROL = "control-characters"
+
+
+def loads_admitting_control(value: str) -> tuple[Any, bool]:
+    """Read JSON strictly; on a control character alone, read it again admitting that.
+
+    Returns the value and whether the second reading was needed. A duplicate key, a float, a
+    surrogate or text that is not JSON is refused as before, with the strict reader's own
+    reason, so nothing but the raw line break a model wrote is admitted here.
+    """
+
+    try:
+        return loads_strict(value), False
+    except RecordError as strict_error:
+        try:
+            return loads_strict(value, control_characters=True), True
+        except RecordError:
+            raise strict_error from None
+
 
 @dataclass(frozen=True)
 class CompiledCheck:
@@ -47,6 +69,8 @@ class CompiledCheck:
     describe: str
     rendered: str
     run: Callable[[str], str | None]
+    #: True when this check reads its field as JSON, so a recovery of the reading can be reported.
+    recovers: bool = False
 
 
 @dataclass(frozen=True)
@@ -73,6 +97,25 @@ class CompiledFormat:
 
     def freeform_for(self, field: str) -> bool:
         return not self.checks.get(field, ())
+
+    def recoveries(self, submission: dict[str, Any], fields: tuple[str, ...] = FORMAT_FIELDS) -> tuple[str, ...]:
+        """What a reader had to do before a field could be read; empty when the strict reading served."""
+
+        found: list[str] = []
+        for field in fields:
+            value = submission.get(field)
+            if type(value) is not str:
+                continue
+            for item in self.checks.get(field, ()):
+                if not item.recovers:
+                    continue
+                try:
+                    _parsed, recovered = loads_admitting_control(value)
+                except RecordError:
+                    continue
+                if recovered and RECOVERED_CONTROL not in found:
+                    found.append(RECOVERED_CONTROL)
+        return tuple(found)
 
     def failures(self, submission: dict[str, Any], fields: tuple[str, ...] = FORMAT_FIELDS) -> tuple[str, ...]:
         """Return one reason per failing check; empty means the format held."""
@@ -224,7 +267,7 @@ def _json_schema(spec: dict[str, Any], where: str) -> CompiledCheck:
 
     def run(value: str) -> str | None:
         try:
-            parsed = loads_strict(value)
+            parsed, _recovered = loads_admitting_control(value)
         except RecordError as error:
             return f"it is not readable as JSON: {error}"
         errors = sorted(validator.iter_errors(parsed), key=lambda item: (list(item.absolute_path), item.message))
@@ -238,6 +281,7 @@ def _json_schema(spec: dict[str, Any], where: str) -> CompiledCheck:
         "must be JSON fitting the declared shape",
         f"must be a STRING whose content is JSON text fitting exactly this schema (the field itself is a string, not an object):\n{as_text}",
         run,
+        recovers=True,
     )
 
 

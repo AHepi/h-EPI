@@ -1,0 +1,16 @@
+```json
+{
+  "body": "The documented rule for `conformance.kernel.recovery` states that the object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. In the given cell `fence[ S A ] S`, the input contains a sentence `S` followed by a JSON object `A` within a code fence, and then another sentence `S` after the fence. The rule specifies that if a fence holds an object, that object is scored. Here, the last object inside the fence is `A`, so it is the scored object. If we remove the second sentence `S` (the part after the closing fence), the last object inside the fence remains `A`, and no other fences or objects are present. Thus, the recovered object should remain unchanged because the last object inside the fence is still `A`. The rule explicitly names the object inside the fence as the one to be scored, not the prose after it.",
+  "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"input\": \"```\nHere is the result:\\n{\\\"a\\\": 1}\n```\nHere is the result:\", \"rewritten\": \"```\nHere is the result:\\n{\\\"a\\\": 1}\n```\", \"expect\": \"unchanged\", \"rewrite\": \"Removed the sentence after the closing fence.\", \"cell\": \"fence[ S A ] S\"}",
+  "citations": [
+    {
+      "block": "941a53cd89615846",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction."
+    },
+    {
+      "block": "e0dde330d29baf27",
+      "quote": "fence[ S A ] S"
+    }
+  ]
+}
+```

@@ -273,7 +273,7 @@ the control was found without being named.
 
 ## What the three rounds show
 
-Seventeen runs, five models, seven shapes and their mutations. What the
+Eighteen runs, five models, seven shapes and their mutations. What the
 records say, in order of what it cost to learn:
 
 1. **The expectation has to come from the rule, not the code.** Every run
@@ -282,7 +282,8 @@ records say, in order of what it cost to learn:
    only a reader of the rule can write the expectation the code fails.
 2. **The proposer must not choose the input's shape.** Left to choose, it
    chooses shapes the rule and the code agree on (C, r3-2, r3-5: thirty-three
-   proposals in the control's neighbourhood, none on it). Enumerated by
+   proposals in the control's neighbourhood, none on it), or changes several
+   things at once so that no pair is a probe (E, M14). Enumerated by
    machine and handed one cell in a notation, it built the control's cell and
    wrote the rule's expectation (r3-7). The machine chooses what to test; the
    model instantiates and reads; the machine executes; a person reads the

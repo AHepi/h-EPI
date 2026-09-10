@@ -1,0 +1,40 @@
+```json
+{
+  "body": "### Discrepancy in `conformance.kernel.recovered-from-prose` Rule vs. Implementation\n\n**Failure observed:** The documented rule for `conformance.kernel.recovered-from-prose` states that the harness returns `yes` if it \"had to recover the object from prose or a fence\" and `no` if it \"read it as strict JSON\". However, the implementation in `parse_content` (lines 80-100 in `mini.kernel-source.v1`) does not align with this binary distinction in all cases. Specifically:\n\n1. **Rule Misinterpretation (Matters):**\n   - The rule implies that *any* recovery from prose or a fence (even if the JSON is otherwise strict) should return `yes`. However, the implementation returns `recovered_from_prose=True` *only* when strict JSON parsing fails and recovery is attempted (lines 88-99). If the input is strict JSON *inside a fence*, the implementation returns `recovered_from_prose=False` (line 83), contradicting the rule’s phrasing that recovery from a fence should yield `yes`.\n   - **Rule quote:** \"Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no).\"\n   - **Code discrepancy:** Line 83 (`return loads_strict(content), \"JSON_OBJECT\", None, False`) assumes strict JSON in fences is not \"recovered\", but the rule does not exempt fenced strict JSON.\n\n2. **Evidence of Impact:**\n   - In execution block `b0a010d1115d82a4`, the input `{\"claimant_name\": \"amara okoro\"...}` is wrapped in prose but parses as strict JSON. The rule suggests `recovered-from-prose` should be `yes` (recovered from prose), but the code would return `no` (strict JSON).\n   - In block `e847048a8c7847a8`, a fenced input with strict JSON would similarly return `no` despite the rule’s implication.\n\n**Proposer’s Next Steps:**\n- **Clarify the rule:** The rule should explicitly state whether fenced strict JSON counts as \"recovered\" or \"read as strict JSON\". If the intent is to distinguish *only* between strict JSON and non-strict recovery (regardless of fences/prose), the rule’s wording must be revised to avoid ambiguity.\n- **Test edge cases:** Propose inputs where strict JSON appears in fences, prose, or both, and verify whether the rule’s intent matches the implementation’s behavior. For example:\n  - Fenced strict JSON (e.g., ````json\\n{\"key\": \"value\"}\\n````).\n  - Prose-wrapped strict JSON (e.g., \"Here is the answer: {\\\"key\\\": \\\"value\\\"}\").\n\n**Why it matters:** This discrepancy could lead to incorrect conformance judgments for replies that use fences or prose but are otherwise strict JSON. The harness’s behavior (returning `no` for fenced strict JSON) may be correct, but the rule’s wording does not reflect this.\n\n---\n### Secondary Issue: `conformance.kernel.refusal-phrase` Case Sensitivity\n\n**Failure observed:** The rule for `conformance.kernel.refusal-phrase` states that the check is case-insensitive (via `_plain_quotes(content).lower()` in `refusal_phrase_in`, line 68), but the documented rule does not mention this. The implementation’s behavior is correct, but the rule’s silence on case sensitivity could mislead proposers.\n\n- **Rule quote:** \"The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE.\"\n- **Code behavior:** Line 68 (`lowered = _plain_quotes(content).lower()`) normalizes case before matching.\n\n**Evidence:** Block `478f1f02c67c06c4` (uppercase refusal phrase) would pass despite the rule’s silence on case.\n\n**Proposer’s Next Steps:**\n- Propose a test for case-insensitive matching (e.g., \"I CANNOT assist\") to confirm the implementation’s behavior.\n- Suggest adding \"case-insensitive\" to the rule’s description if the behavior is intended.\n\n**Why it matters:** While the implementation is correct, the rule’s omission could lead to false negatives in conformance checks if proposers assume case sensitivity.",
+
+  "citations": [
+    {
+      "block": "a70c2e9bc362b532",
+      "quote": "kernel conformance.kernel.recovered-from-prose: Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)."
+    },
+    {
+      "block": "d73a87bfe80adf12",
+      "quote": "    try:\n        return loads_strict(content), \"JSON_OBJECT\", None, False\n    except (RecordError, ValueError, RecursionError) as strict_error:"
+    },
+    {
+      "block": "d73a87bfe80adf12",
+      "quote": "        return recovered, \"JSON_OBJECT\", detail, True"
+    },
+    {
+      "block": "b0a010d1115d82a4",
+      "quote": "{\"points\": [{\"kernel\": \"conformance.kernel.recovery\", \"transform\": \"conformance.transform.prose-before\", \"moves\": false, \"input\": \"{\\\"claimant_name\\\": \\\"amara okoro\\\"...\"}]}"
+    },
+    {
+      "block": "e847048a8c7847a8",
+      "quote": "{\"points\": [{\"kernel\": \"conformance.kernel.recovered-from-prose\", \"transform\": \"conformance.transform.fence\", \"moves\": true, \"input\": \"{\\\"claimant_name\\\": \\\"amara okoro\\\"...\"}]}"
+    },
+    {
+      "block": "c8c80e388572359c",
+      "quote": "kernel conformance.kernel.refusal-phrase: The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE."
+    },
+    {
+      "block": "d73a87bfe80adf12",
+      "quote": "    lowered = _plain_quotes(content).lower()"
+    },
+    {
+      "block": "478f1f02c67c06c4",
+      "quote": "{\"points\": [{\"kernel\": \"conformance.kernel.refusal-phrase\", \"transform\": \"conformance.transform.upper-case\", \"moves\": false, \"input\": \"I'm sorry, no.\"}]}"
+    }
+  ]
+}
+```

@@ -553,6 +553,11 @@ def _attempt_submission(
             continue
         reasons = compiled.failures(submission.as_fields(), checked)
         if not reasons:
+            # A field whose JSON needed the lenient reading says so on the artifact, beside a
+            # fence stripped or a citation recovered from prose (SPEC §17).
+            recovered = tuple(item for item in compiled.recoveries(submission.as_fields(), checked) if item not in submission.recovered)
+            if recovered:
+                submission = replace(submission, recovered=submission.recovered + recovered)
             return AttemptOutcome(
                 submission=submission,
                 prompt_tokens=sum(int(item["prompt_tokens"]) for item in usage),

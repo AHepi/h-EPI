@@ -6,11 +6,13 @@ import copy
 import json
 from pathlib import Path
 
+from creib.errors import RecordError
 from creib.forge.mini.evidence import (
     CITATION_VERIFIED,
     check_citations,
     cut_source,
 )
+from creib.forge.mini.formats import RECOVERED_CONTROL, compile_format_spec, loads_admitting_control
 from creib.forge.mini.kinds import (
     RECOVERED_FENCE,
     RECOVERED_PROSE,
@@ -28,6 +30,54 @@ GPT_RUN = Path(__file__).resolve().parents[2] / "forge" / "mini" / "runs" / "def
 
 def _kind():
     return kind_from_dict(copy.deepcopy(CONJECTURE_KIND), "kind")
+
+
+class ControlCharacterTests(MiniTestCase):
+    """M13: a model that writes a raw line break inside a JSON string meant the line break.
+
+    The strict reading is tried first, the lenient one admits a control character and nothing
+    else, and the artifact says which reading served.
+    """
+
+    #: The outer reply's own JSON carries a raw line break inside a string, where a model
+    #: should have written the two characters backslash and n.
+    RAW = '{"body": "a body", "commitments": "line one\nline two"}'
+
+    def test_the_strict_reading_is_tried_first_and_every_other_refusal_stands(self) -> None:
+        self.assertEqual(loads_admitting_control('{"a": 1}'), ({"a": 1}, False))
+        self.assertEqual(loads_admitting_control('{"a": "x\ny"}'), ({"a": "x\ny"}, True))
+        for refused in ('{"a": 1, "a": 2}', '{"a": 1.5}', "not json at all"):
+            with self.assertRaises(RecordError):
+                loads_admitting_control(refused)
+
+    def test_a_reply_whose_own_json_carries_a_raw_line_break_is_read_and_says_so(self) -> None:
+        read = read_submission(self.RAW, _kind())
+        self.assertEqual((read.body, read.commitments), ("a body", "line one\nline two"))
+        self.assertIn(RECOVERED_CONTROL, read.recovered)
+        self.assertNotIn(RECOVERED_CONTROL, read_submission(submission("a body", "c"), _kind()).recovered)
+
+    def test_a_commitments_string_whose_json_carries_a_raw_line_break_fits_its_schema_and_says_so(self) -> None:
+        spec = {"commitments": {"all_of": [{"check": "json_schema", "schema": {"type": "object", "required": ["input"], "properties": {"input": {"type": "string"}}}}]}}
+        compiled = compile_format_spec(spec, "kind.format")
+        fields = {"body": "a body", "commitments": '{"input": "line one\nline two"}'}
+        self.assertEqual(compiled.failures(fields), ())
+        self.assertEqual(compiled.recoveries(fields), (RECOVERED_CONTROL,))
+        strict = {"body": "a body", "commitments": '{"input": "line one"}'}
+        self.assertEqual((compiled.failures(strict), compiled.recoveries(strict)), ((), ()))
+        broken = {"body": "a body", "commitments": '{"input": 1, "input": 2}'}
+        self.assertTrue(compiled.failures(broken))
+        self.assertEqual(compiled.recoveries(broken), (), "a field that cannot be read at all recovered nothing")
+
+    def test_the_artifact_records_the_reading(self) -> None:
+        manifest = base_manifest()
+        kind = next(k for k in manifest["kinds"] if k["kind_id"] == "k.conjecture")
+        kind["format"] = {"commitments": {"all_of": [{"check": "json_schema", "schema": {"type": "object", "required": ["input"], "properties": {"input": {"type": "string"}}}}]}}
+        stage = next(item for item in manifest["stages"] if item.get("kind_id") == "k.conjecture")
+        script = {stage["stage_id"]: [submission("a body", '{"input": "line one\nline two"}')], "x1": [submission("a criticism", "c")]}
+        plan, outcome = self.run_manifest(manifest, script)
+        events = [json.loads(line) for line in (outcome.root / "log.jsonl").read_text(encoding="utf-8").splitlines()]
+        submitted = next(e for e in events if e["type"] == ARTIFACT_SUBMITTED and e["kind_id"] == "k.conjecture")
+        self.assertEqual(submitted["payload"]["recovered"], [RECOVERED_CONTROL])
 
 
 class FencedRepliesTests(MiniTestCase):

@@ -510,6 +510,9 @@ def _parse_points() -> list[Boundary]:
                  lambda: (_response(ord_v, '{"total_days": 5}')[0], _response(ord_v, '{"total_days": 5.0}')[0], _response(ord_v, '{\n  "total_days": 5\n}')[0])),
         Boundary("An array reply", "P-05", "one stray character before the array: `[{…}]` is `NOT_AN_OBJECT`, `x [{…}]` recovers the object inside", "how many objects the array holds",
                  lambda: (_response(ord_v, '[{"a": 1}]')[0], _response(ord_v, 'x [{"a": 1}]')[0], _response(ord_v, '[{"a": 1}, {"b": 2}]')[0])),
+        Boundary("JSON recovery: the prose flag without prose", "P-10", "a repeated key in a bare object (`{\"z\": 1, \"z\": 2}`): strict parsing fails, the object is recovered last-wins, and `recovered_from_prose` is true although no prose and no fence is present", "indentation and blank lines around the same bare object",
+                 lambda: (_response(ord_v, '{"z": 1}'), _response(ord_v, '{"z": 1, "z": 2}'), _response(ord_v, '\n\n  {"z": 1}\n')),
+                 "the flag records that the strict reader was not used, which its name does not say; written down as a prediction in `forge/mini/manifests/experiments/README.md` before round 4 and not produced by any run, since the proposer handed that cell chose the recovery kernel instead"),
         Boundary("JSON literals under a change of case", "P-09", "upper case on a reply that holds a literal (`\"injury_reported\": TRUE` is `INVALID_JSON`)", "upper case on a reply whose values are all strings",
                  lambda: (_response(ord_v, body), _response(ord_v, body.upper()), _response(ord_v, json.dumps({k: v for k, v in _ord_output().items() if isinstance(v, str)}).upper())),
                  "found by mini (`forge/mini/runs/experiments/round-1/s3-refute-invariances/`, cycle 2): a catalogue row said the response verdict does not move under upper case, written on a reply of strings"),
@@ -530,6 +533,9 @@ def _refusal_points() -> list[Boundary]:
         Boundary("Refusal phrase inside a value", "R-03", "a listed phrase inside a string value of the form itself (`\"summary\": \"I cannot say how Tom hurt his wrist\"`), which raises `REFUSAL_SUSPECTED` as prose around the object does", "the same value in words the list does not hold (`Nobody could say how`)",
                  lambda: (_triggers(ord_v, body, phrases=phrases), _triggers(ord_v, json.dumps({**_ord_output(), "summary": "I cannot say how Tom hurt his wrist"}), phrases=phrases), _triggers(ord_v, json.dumps({**_ord_output(), "summary": "Nobody could say how Tom hurt his wrist"}), phrases=phrases)),
                  "the scan reads the whole reply and cannot see whether the phrase is the model's or the form's; found by mini (`forge/mini/runs/experiments/round-2/b-two-readers/`, cycle 2), where a reader of the rules expected the phrase inside a value not to count"),
+        Boundary("Refusal phrase: whitespace", "R-04", "a break inside the phrase: a second space, or a line break with `I` at the end of one line and `cannot` at the start of the next, neither of which the scan normalises where the span check does (G-01)", "the case of the phrase (`I CANNOT`), and its apostrophes (R-01)",
+                 lambda: (_triggers(ord_v, "I cannot do this.\n" + body, phrases=phrases), _triggers(ord_v, "I\ncannot do this.\n" + body, phrases=phrases), _triggers(ord_v, "I CANNOT do this.\n" + body, phrases=phrases)),
+                 "shown by mini (`forge/mini/runs/experiments/round-4/r4-3-refusal-grid/`, cycle 5) on a cell that named the split phrase; the proposer read the rule the same way the code behaves, so the standing was `rejected` and only the recorded verdicts show it"),
     ]
 
 

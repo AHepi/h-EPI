@@ -1,0 +1,60 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+### Discrepancy in `conformance.kernel.recovered-from-prose` Rule vs. Implementation
+
+**Failure observed:** The documented rule for `conformance.kernel.recovered-from-prose` states that the harness returns `yes` if it "had to recover the object from prose or a fence" and `no` if it "read it as strict JSON". However, the implementation in `parse_content` (source lines 80-100) does not align with this description in cases where the JSON object is recovered from a *fence* but parses as strict JSON.
+
+**Rule quote (b02ccb322122e4d0):**
+> "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)."
+
+**Code discrepancy (e76ccc2a347e8e03, lines 80-100):**
+The `recovered_from_prose` flag is set to `True` *only* when the strict JSON parse fails and `recover_json_object` succeeds (i.e., recovery from prose or a fence). However, if the object is recovered from a fence but parses as strict JSON (e.g., a well-formed JSON object in a fence with no duplicate keys), the flag is incorrectly set to `False` (line 83), implying no recovery was needed. This contradicts the rule, which groups *both* prose and fence recovery under `yes`.
+
+**Evidence of failure (e847048a8c7847a8):**
+> `{"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.fence", "moves": true, "input": "{\"claimant_name\": \"amara okoro\"}"}}`
+Here, the input is a well-formed JSON object in a fence, but the rule expects `yes` (recovery from fence), while the code returns `no` (strict JSON).
+
+**Why it matters:**
+The rule’s wording implies that *any* recovery (prose or fence) should return `yes`, but the code treats fence recovery as `no` if the JSON is strict. This could mislead proposers into assuming fence recovery is indistinguishable from strict JSON parsing, when the rule explicitly separates them.
+
+**Next steps for proposers:**
+1. **Test fence recovery with strict JSON:** Propose inputs where a well-formed JSON object is enclosed in a fence (e.g., ````json\n{"key": "value"}\n````). The rule says `yes`; the code says `no`.
+2. **Test fence recovery with non-strict JSON:** Propose inputs where the fence contains JSON with duplicate keys (e.g., ````json\n{"key": 1, "key": 2}\n````). Both rule and code agree on `yes`.
+3. **Clarify the rule:** If the rule is correct, the code should be patched to return `yes` for *all* fence recoveries, regardless of strictness. If the code is correct, the rule should be revised to say `yes` only for prose recovery or non-strict JSON in fences.
+
+---
+### Discrepancy in `conformance.kernel.refusal-phrase` Case Sensitivity
+
+**Failure observed:** The documented rule for `conformance.kernel.refusal-phrase` states that refusal phrases are matched with typographic apostrophes "read as straight", but the implementation does not explicitly handle case insensitivity for the phrases themselves.
+
+**Rule quote (b02ccb322122e4d0):**
+> "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE."
+
+**Code discrepancy (e76ccc2a347e8e03, lines 65-72):**
+The `refusal_phrase_in` function converts the *input content* to lowercase (line 66) but does not normalize the *refusal phrases* themselves. This means phrases like "I cannot" will match "I CANNOT" in the input, but phrases with internal case (e.g., "as an AI") may fail if the input uses different casing (e.g., "As an ai"). The rule does not specify case insensitivity, but the code’s behavior implies it.
+
+**Evidence of failure (478f1f02c67c06c4):**
+> `{"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.upper-case", "moves": false, "input": "I'M SORRY, NO."}}]`
+The input is an uppercase refusal phrase, and the code returns `None` (no match) because the phrase list uses title case ("I'm sorry"). The rule is silent on case, but the code’s behavior suggests a mismatch.
+
+**Why it matters:**
+Proposers may assume case insensitivity (given the lowercase conversion of input) and propose uppercase refusals, only to find the check fails. The rule should clarify whether case matters, or the code should normalize phrase casing.
+
+**Next steps for proposers:**
+1. **Test case variations:** Propose inputs with refusal phrases in different cases (e.g., "I CANNOT", "AS AN AI") to see if the code matches them.
+2. **Propose a rule clarification:** If case insensitivity is intended, the rule should state it explicitly. If not, the code should be patched to match phrases case-sensitively.
+
+---
+### Priority for Proposers
+Focus on the `recovered-from-prose` discrepancy first, as it directly contradicts the rule’s wording and affects core recovery logic. The `refusal-phrase` case sensitivity issue is secondary but may reveal further ambiguities.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

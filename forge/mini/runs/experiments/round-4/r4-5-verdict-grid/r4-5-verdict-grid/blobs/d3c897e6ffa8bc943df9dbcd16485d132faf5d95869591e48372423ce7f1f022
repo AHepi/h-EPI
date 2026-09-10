@@ -1,0 +1,15 @@
+# Execution
+
+## Proposals so far (proposals)
+[13da2c7d693c422d] (mini.pair-proposal.grid-1.v1)
+For the cell 'a well-formed object / nothing around it', I use the kernel `conformance.kernel.recovered-from-prose`. The rule for this kernel states it returns 'Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)' [a70c2e9bc362b532]. For an input consisting solely of a well-formed JSON object with nothing around it, the harness reads it as strict JSON, so the answer is 'no'. Replacing the object with another well-formed object `{"z": 0}` does not change the fact that it is read as strict JSON; the answer remains 'no'. Therefore, the result is unchanged.
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "input": "{\"z\": 1}", "rewritten": "{\"z\": 0}", "expect": "unchanged", "rewrite": "I replaced the object {\"z\": 1} with {\"z\": 0}.", "cell": "a well-formed object / nothing around it"}
+[48f97d52ec0fc180] (mini.pair-proposal.grid-2.v1)
+For the cell 'a well-formed object / a sentence after it', I use the kernel `conformance.kernel.recovered-from-prose`. The rule for this kernel states it returns 'Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)' [a70c2e9bc362b532]. Because the input contains a sentence after the object, it is not strict JSON and the harness must recover the object from prose, so the answer is 'yes'. Replacing the object with another well-formed object `{"z": 0}` does not change the fact that the reply contains trailing prose; the answer remains 'yes'. Therefore, the result is unchanged.
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "input": "{\"z\": 1} This is a sentence.", "rewritten": "{\"z\": 0} This is a sentence.", "expect": "unchanged", "rewrite": "I replaced the object {\"z\": 1} with {\"z\": 0}.", "cell": "a well-formed object / a sentence after it"}
+[25537a26a621c62c] (mini.pair-proposal.grid-3.v1)
+For the cell 'a well-formed object / a code fence around it', I use the kernel `conformance.kernel.recovered-from-prose`. The rule for this kernel states it returns 'Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)' [a70c2e9bc362b532]. Because the object is enclosed in a code fence, the harness must recover it from a fence, so the answer is 'yes'. Replacing the object with another well-formed object `{"z": 0}` does not change the fact that it is enclosed in a code fence; the answer remains 'yes'. Therefore, the result is unchanged.
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "input": "```\n{\"z\": 1}\n```", "rewritten": "```\n{\"z\": 0}\n```", "expect": "unchanged", "rewrite": "I replaced the object {\"z\": 1} with {\"z\": 0}.", "cell": "a well-formed object / a code fence around it"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

@@ -1,0 +1,12 @@
+```json
+{
+  "body": "The documented rule for `conformance.kernel.recovery` states that the object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. In the given cell `fence[ A B ] A`, the input contains two JSON objects: `A` and `B` within a code fence, followed by `A` outside the fence. According to the rule, the last object inside a code fence (`B`) is scored when a fence holds an object. If we remove the final `A` (the part outside the fence), the last object inside the fence remains `B`, and no other fences or objects outside the fence are present. Thus, the recovered object should remain unchanged (`B`). The rule specifies that the object scored is the last one inside a fence when any fence holds one, and removing the trailing `A` does not affect this.",
+  "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"input\": \"```\n{\"a\": 1}\n{\"b\": 2}\n```\n{\"a\": 1}\", \"rewritten\": \"```\n{\"a\": 1}\n{\"b\": 2}\n```\", \"expect\": \"unchanged\", \"rewrite\": \"Removed the trailing JSON object outside the code fence.\", \"cell\": \"fence[ A B ] A\"}",
+  "citations": [
+    {
+      "block": "a981d46d596c077e",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction."
+    }
+  ]
+}
+```

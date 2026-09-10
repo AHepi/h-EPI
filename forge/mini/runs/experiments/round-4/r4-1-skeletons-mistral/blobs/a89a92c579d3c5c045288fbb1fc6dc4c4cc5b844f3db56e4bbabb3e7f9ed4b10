@@ -1,0 +1,39 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The proposal `c47807f93e193512` for `conformance.kernel.recovery` did not fail in this execution cycle, as the execution result matched the expectation (`unchanged`). However, the proposer’s reasoning reveals a potential misreading of the documented rule for `recover_json_object`.
+
+### Misreading of the Rule
+The proposer states: *"If we remove the code fence (the part that defines the fence structure), the object `A` remains as the last top-level object in the text. According to the rule, the object scored should remain unchanged because the last top-level object is still `A`.*"
+
+This interpretation overlooks a critical distinction in the rule’s wording:
+- **Rule (recovery)**: *"The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text."* ([cf3ead255ba521d3])
+- **Code (recovery)**: The harness first checks for fenced objects (`fenced` pool) and only falls back to top-level objects (`top_level` pool) if no fenced object is found (lines 20–40 in [b6c35351972cc72f]).
+
+The rule prioritizes fenced objects *unconditionally* when they exist, not merely as a tiebreaker. The proposer’s rewrite (removing the fence) changes the *pool* from which the object is selected, not just its position. This is a misreading of the rule’s conditional logic.
+
+### Why This Matters
+While the execution result was correct for this input (`fence[ A ]` → `A`), the misreading would lead to incorrect expectations for inputs where fenced and top-level objects coexist. For example:
+- **Input**: `fence[ A ] { "b": 2 }` (fenced `A` + top-level `B`)
+- **Proposer’s expectation**: `A` (last top-level object after fence removal)
+- **Actual behavior**: `A` (last fenced object, *ignoring* top-level objects)
+- **Input**: `{ "b": 2 } fence[ A ]` (top-level `B` + fenced `A`)
+- **Proposer’s expectation**: `A` (last top-level object after fence removal)
+- **Actual behavior**: `A` (last fenced object, *ignoring* top-level objects)
+
+The rule’s *priority* for fenced objects is absolute, not positional. The proposer should test inputs where fenced and top-level objects compete (e.g., `fence[ A ] B` or `B fence[ A ]`) to observe the divergence.
+
+### Next Steps
+1. **Test competing objects**: Propose rewrites where a fenced object and a top-level object coexist, and observe whether the harness selects the fenced object regardless of position.
+2. **Clarify the rule’s priority**: The rule’s wording could emphasize that fenced objects are *always* preferred when present, not just when they are the last object in the text.
+3. **Cite evidence**: The execution for `fence[ A ] fence[ B ]` ([ce275ea1972395f1]) would show the harness selecting `B` (last fenced object), not the last top-level object, confirming the rule’s priority.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

@@ -905,7 +905,7 @@ them. Nothing in this changes what a verdict is: a disagreement is a candidate a
 person reads, never a defect on a reader's word.
 
 **D11.** Sixteen runs in which the proposer chose the input's shape chose shapes
-the rule and the code agree on; the seventeenth, in which a machine seat
+the rule and the code agree on; the one in which a machine seat
 enumerated a grid and handed the proposer one cell in a notation, built the
 control's cell and found it. The division that worked: the machine chooses
 what to test, the model instantiates it and reads the rule, the machine

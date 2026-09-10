@@ -1,0 +1,12 @@
+```json
+{
+ "body": "For the cell 'an object holding a float / nothing around it', I use the kernel `conformance.kernel.recovery`. The rule for this kernel states that 'A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over' [a84bcb8e1134b8b4]. In the input `{\"z\": 1.0}`, the object contains a float. While the object itself is a JSON object, the rule explicitly mentions that a float is 'passed over'. However, the rule says 'one that does not [parse as strict JSON...], (a float, for instance) is passed over'. A JSON object containing a float is still a valid JSON object. But if the input were just a float, it would be passed over. Here, the input is an object. If I replace the object `{\"z\": 1.0}` with `{\"z\": 0}`, both are valid JSON objects and thus scoreable. The kernel `conformance.kernel.recovery` returns the recovered object. Since the recovered object changes from `{\"z\": 1.0}` to `{\"z\": 0}`, the answer moves.",
+ "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"input\": \"{\\\"z\\\": 1.0}\", \"rewritten\": \"{\\\"z\\\": 0}\", \"expect\": \"moves\", \"rewrite\": \"I replaced the object {\\\"z\\\": 1.0} with {\\\"z\\\": 0}.\", \"cell\": \"an object holding a float / nothing around it\"}",
+ "citations": [
+  {
+   "block": "a84bcb8e1134b8b4",
+   "quote": "A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over"
+  }
+ ]
+}
+```

@@ -1,0 +1,20 @@
+### Discrepancy in `conformance.kernel.recovered-from-prose` Rule vs. Implementation
+
+**Failure observed**: The documented rule for `conformance.kernel.recovered-from-prose` states that the harness returns `yes` if it "had to recover the object from prose or a fence" and `no` if it "read it as strict JSON". However, the implementation in `parse_content` (lines 80-100 in the source) does not align with this binary distinction. Specifically:
+
+1. **Rule Misinterpretation**: The rule implies that recovery from *any* non-strict JSON (including fenced content) should return `yes`, but the code treats fenced content as `recovered_from_prose=False` if the JSON is strictly parsable (lines 82-84). This contradicts the rule’s phrasing, which groups fences and prose together as non-strict sources.
+
+   - **Rule quote**: "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)".
+   - **Code discrepancy**: Fenced content that parses strictly (e.g., ````json\n{...}\n````) returns `recovered_from_prose=False` (line 84), while the rule suggests it should return `yes`.
+
+2. **Evidence of Impact**:
+   - In block `e847048a8c7847a8`, the input is fenced JSON (`{"claimant_name": "ama..."`), and the harness returns `recovered-from-prose=True` only if the JSON is *not* strictly parsable. This matches the code but violates the rule’s grouping of fences/prose.
+   - Block `910693c99ba3c6da` shows `recovered-from-prose=False` for indented JSON, which aligns with the rule (strict JSON) but not with the rule’s phrasing about fences.
+
+**Why it matters**: The rule’s wording misleads proposers into expecting `yes` for *all* fenced content, while the code only returns `yes` for fenced content that fails strict parsing. This could cause proposers to mispredict the harness’s behavior for valid fenced JSON.
+
+**Next steps for proposers**:
+- Clarify the rule to distinguish between:
+  - `recovered_from_prose=True`: Object was recovered from *non-strict* sources (prose *or* fenced content with parsing errors).
+  - `recovered_from_prose=False`: Object was read as strict JSON (whether fenced or not).
+- Propose test cases for fenced content that parses strictly (should return `False`) and fenced content with errors (should return `True`).

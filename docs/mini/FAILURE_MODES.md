@@ -435,6 +435,18 @@ written for one shape (a bare object or one sentence) refusing the input the
 mirror shape needed. Neither is a defect against a requirement; both cost a
 run its proposals, and the records say so.
 
+**The escaping half is now fixed, after round 4 showed its size.**
+`runs/experiments/round-4/r4-1-skeletons-mistral/` is the same shape that found
+the control, on mistral-large-3:675b: forty-one format failures, twenty drops
+and one surviving proposal in seven cycles, every failure the same one — a raw
+line break inside the commitments string, where the model should have written
+the two characters backslash and n. A reply is now read strictly first and, if
+that fails on a control character alone, again admitting it, and the artifact
+records `control-characters` beside `fence` and `prose` (`SPEC.md` §17). Nothing
+else the strict reader refuses is admitted. The template half — a pattern
+written for one shape refusing another — stays open, and is a manifest's
+business rather than the machine's.
+
 ## M14 — A pair whose two texts differ in more than one thing
 
 **Seen on** `runs/experiments/round-2/e-replies-as-written/`, all three cycles:

@@ -1,0 +1,69 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+### Discrepancy in `conformance.kernel.recovered-from-prose` Rule vs. Implementation
+
+The documented rule for `conformance.kernel.recovered-from-prose` states:
+> Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no).
+
+However, the implementation in `parse_content` (source lines 60-85) reveals a critical ambiguity: **the rule does not specify how the harness distinguishes between "strict JSON" and "recovered from prose" when the input is a well-formed JSON object *without* a fence**. The code defaults to `recovered_from_prose=True` in all cases where `recover_json_object` is called (i.e., when strict parsing fails), even if the object was *not* embedded in prose (e.g., a bare JSON object with no surrounding text).
+
+#### Key Failure:
+1. **Rule Misinterpretation**: The rule implies that `recovered_from_prose` should be `False` for any input that parses as strict JSON *without recovery*. However, the code *never* sets `recovered_from_prose=False` for recovered objects, even when they are bare JSON (e.g., `{"key": "value"}` with no prose/fence). This creates a false positive for "recovered from prose" when the input is actually strict JSON.
+
+2. **Code-Rule Divergence**: The implementation conflates *recovery* (invoking `recover_json_object`) with *prose recovery*. The rule’s wording suggests a binary distinction between "strict JSON" and "recovered from prose/fence," but the code treats all recovered objects as prose-recovered, regardless of context.
+
+#### Evidence of Impact:
+- **Block [910693c99ba3c6da]**: Shows `recovered-from-prose=False` for an indented JSON object (no fence/prose), but the code would return `True` if strict parsing failed (e.g., due to duplicate keys).
+  > Input: `{"claimant_name": "amara okoro", "claimant_name": "duplicate"}` (strict parse fails, recovered with duplicates resolved).
+  > Rule expectation: `recovered_from_prose=False` (bare JSON, no prose).
+  > Code behavior: `recovered_from_prose=True` (incorrectly labeled as prose-recovered).
+
+- **Block [a0e68e5c468b7070]**: Demonstrates `recovered-from-prose=True` for a JSON object *after* a float (e.g., `3.14 {"key": "value"}`). The rule’s silence on mixed content (non-JSON + JSON) leaves ambiguity, but the code’s behavior is inconsistent with the rule’s implied intent.
+
+#### Proposer’s Next Steps:
+1. **Clarify the Rule**: Explicitly define `recovered_from_prose` for bare JSON objects (e.g., "`False` if the object is the entire input and parses as strict JSON").
+2. **Test Edge Cases**: Propose inputs where strict parsing fails but the object is not in prose (e.g., duplicate keys in bare JSON, or JSON after a float).
+3. **Audit `parse_content`**: The function should distinguish between:
+   - Strict JSON (no recovery needed).
+   - Bare JSON with recovery (e.g., duplicate keys).
+   - Prose/fence recovery.
+
+#### Why This Matters:
+The discrepancy undermines the harness’s ability to distinguish between *syntactic* recovery (e.g., duplicate keys) and *contextual* recovery (prose/fence). This could misclassify valid JSON objects as "prose-recovered," skewing metrics for model compliance.
+
+### Discrepancy in `conformance.kernel.refusal-phrase` Typographic Apostrophe Handling
+
+The rule states:
+> The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE.
+
+The implementation in `_plain_quotes` (source lines 100-108) correctly folds typographic apostrophes (e.g., `’` → `'`), but **the rule does not specify whether the check is case-sensitive**. The code’s use of `.lower()` (line 95) makes the check case-insensitive, which is not documented.
+
+#### Key Failure:
+- **Block [478f1f02c67c06c4]**: Input `"I'M SORRY, NO."` (uppercase refusal phrase).
+  > Rule expectation: Ambiguous (case sensitivity not specified).
+  > Code behavior: Matches `"I'm sorry"` (case-insensitive).
+  > Impact: False positives for uppercase refusals (e.g., `"AS AN AI..."`).
+
+#### Proposer’s Next Steps:
+1. **Clarify Case Sensitivity**: Update the rule to specify whether refusal phrases are case-sensitive.
+2. **Test Case Variants**: Propose inputs with uppercase refusals (e.g., `"I CANNOT ASSIST"`) to expose the ambiguity.
+
+#### Why This Matters:
+Case sensitivity affects refusal detection in models that use uppercase for emphasis. The rule’s silence could lead to inconsistent verdicts.
+
+### Summary of Critical Failures:
+| Kernel                     | Rule Misread/Code Divergence | Impact                          | Next Steps                                  |
+|----------------------------|-------------------------------|----------------------------------|---------------------------------------------|
+| `recovered-from-prose`     | Code diverges (prose conflation) | Misclassifies bare JSON as prose | Clarify rule, test bare JSON recovery       |
+| `refusal-phrase`           | Rule misread (case sensitivity) | False positives for uppercase   | Specify case sensitivity, test variants     |
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

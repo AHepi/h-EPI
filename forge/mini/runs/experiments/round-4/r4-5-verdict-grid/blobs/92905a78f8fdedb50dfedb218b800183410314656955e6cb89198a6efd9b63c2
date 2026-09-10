@@ -1,0 +1,20 @@
+```json
+{
+ "body": "For the cell 'an object nested inside another object / a code fence around it', I use the kernel `conformance.kernel.recovery`. The rule for this kernel states that it returns 'The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT' [65ae18af7a738b26]. The `recover_json_object` function specifies that 'Every top-level balanced object in the text is a candidate' [7a147bb8c4c1539c] and that 'an object nested inside another is not a candidate of its own' [7a147bb8c4c1539c]. In an input where a nested object is enclosed in a code fence, such as ```\\n{\"z\": {\"a\": 1}}\\n```, the only top-level balanced object is the outer object `{\"z\": {\"a\": 1}}`. The harness recovers this outer object. Replacing the nested object `{\"a\": 1}` with `{\"z\": 0}` (resulting in ```\\n{\"z\": {\"z\": 0}}\\n```) changes the recovered top-level object from `{\"z\": {\"a\": 1}}` to `{\"z\": {\"z\": 0}}`. Therefore, the answer moves.",
+ "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"input\": \"```\\n{\\\"z\\\": {\\\"a\\\": 1}}\\n```\", \"rewritten\": \"```\\n{\\\"z\\\": {\\\"z\\\": 0}}\\n```\", \"expect\": \"moves\", \"rewrite\": \"I replaced the nested object {\\\"a\\\": 1} with {\\\"z\\\": 0}.\", \"cell\": \"an object nested inside another object / a code fence around it\"}",
+ "citations": [
+  {
+   "block": "65ae18af7a738b26",
+   "quote": "The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT."
+  },
+  {
+   "block": "7a147bb8c4c1539c",
+   "quote": "Every top-level balanced object in the text is a candidate, not only the span from the first ``{`` to the last ``}``"
+  },
+  {
+   "block": "7a147bb8c4c1539c",
+   "quote": "an object nested inside another is not a candidate of its own"
+  }
+ ]
+}
+```

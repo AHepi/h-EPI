@@ -1,0 +1,16 @@
+```json
+{
+  "body": "The documented rule for `conformance.kernel.recovery` states that the object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. In the given cell `fence[ S A ] A`, the input contains a sentence `S` and a JSON object `A` inside a code fence, followed by another JSON object `A` outside the fence. The rule specifies that if a fence holds an object, the last object *inside the fence* is scored. However, the second `A` (outside the fence) is the last top-level object in the text. If we remove the second `A` (the part outside the fence), the last object inside the fence (`A`) becomes the last top-level object in the text. According to the rule, the object scored should move from the second `A` (outside the fence) to the `A` inside the fence. Thus, the recovered object should change, as the last top-level object is no longer the same.\n\nThe rule explicitly states: \"The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.\" Before the rewrite, the last top-level object is the second `A` (outside the fence). After the rewrite, the last object inside the fence (`A`) becomes the last top-level object, so the scored object should move to it.",
+  "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"input\": \"```\nHere is the result:\\n{\\\"a\\\": 1}\n```\n{\\\"a\\\": 1}\", \"rewritten\": \"```\nHere is the result:\\n{\\\"a\\\": 1}\n```\", \"expect\": \"moves\", \"rewrite\": \"Removed the JSON object outside the code fence.\", \"cell\": \"fence[ S A ] A\"}",
+  "citations": [
+    {
+      "block": "941a53cd89615846",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction."
+    },
+    {
+      "block": "db17140090398af1",
+      "quote": "fence[ S A ] A"
+    }
+  ]
+}
+```

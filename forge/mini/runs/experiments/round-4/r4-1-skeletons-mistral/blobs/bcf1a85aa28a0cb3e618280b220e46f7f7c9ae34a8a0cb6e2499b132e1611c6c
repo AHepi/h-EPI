@@ -1,0 +1,12 @@
+```json
+{
+  "body": "The documented rule for `conformance.kernel.recovery` states that the object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. In the given cell `fence[ A B ] C`, the input contains two JSON objects `A` and `B` within a code fence, followed by a third JSON object `C` outside the fence. The rule specifies that if a fence holds an object, the last object inside the fence is scored. Here, the last object inside the fence is `B`. If we remove the JSON object `C` (the part outside the fence), the last object inside the fence remains `B`. Thus, the recovered object should stay unchanged because the last object inside the fence is still `B`. The rule explicitly prioritizes the last object inside a fence over any objects outside it, so the removal of `C` should not affect the scored object.",
+  "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"input\": \"```\n{\"a\": 1}\n{\"b\": 2}\n```\n{\"c\": 3}\", \"rewritten\": \"```\n{\"a\": 1}\n{\"b\": 2}\n```\", \"expect\": \"unchanged\", \"rewrite\": \"Removed the JSON object outside the code fence.\", \"cell\": \"fence[ A B ] C\"}",
+  "citations": [
+    {
+      "block": "81c2e3bee26a1c0e",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction."
+    }
+  ]
+}
+```

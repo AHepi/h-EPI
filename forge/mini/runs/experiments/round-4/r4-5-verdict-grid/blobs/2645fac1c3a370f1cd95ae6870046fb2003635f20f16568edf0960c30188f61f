@@ -1,0 +1,16 @@
+```json
+{
+ "body": "For the cell 'an array holding an object / nothing around it', I use the kernel `conformance.kernel.recovery`. The rule for this kernel states that it returns 'The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT' [65ae18af7a738b26]. Additionally, the `recover_json_object` function specifies that 'Every top-level balanced object in the text is a candidate' [cfb66510a6ca9655]. An array is not a JSON object; it is a JSON array. If the input consists solely of an array `[{\"z\": 1}]`, there is no top-level balanced object to recover, so the harness returns `NO_OBJECT`. Replacing the array with a well-formed object `{\"z\": 0}` creates a top-level balanced object that is scoreable. The answer changes from `NO_OBJECT` to `{\"z\": 0}`. Therefore, the result moves.",
+ "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"input\": \"[{\\\"z\\\": 1}]\", \"rewritten\": \"{\\\"z\\\": 0}\", \"expect\": \"moves\", \"rewrite\": \"I replaced the array holding an object [{\\\"z\\\": 1}] with the well-formed object {\\\"z\\\": 0}.\", \"cell\": \"an array holding an object / nothing around it\"}",
+ "citations": [
+  {
+   "block": "65ae18af7a738b26",
+   "quote": "The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT."
+  },
+  {
+   "block": "cfb66510a6ca9655",
+   "quote": "Every top-level balanced object in the text is a candidate, not only the span from the first ``{`` to the last ``}``"
+  }
+ ]
+}
+```

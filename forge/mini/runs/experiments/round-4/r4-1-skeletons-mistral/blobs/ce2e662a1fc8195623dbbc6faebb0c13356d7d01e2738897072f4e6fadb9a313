@@ -1,0 +1,41 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+### Discrepancy in `conformance.kernel.recovered-from-prose` and `conformance.kernel.recovery`
+
+**Rule Misinterpretation vs. Code Divergence**
+The documented rule for `conformance.kernel.recovered-from-prose` states:
+> Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no).
+
+However, the implementation in `parse_content` (source, lines 80-100) reveals a critical divergence. The rule implies that `recovered-from-prose` is `True` only when the object is extracted from *prose* (i.e., not from a fence), but the code sets `recovered_from_prose = True` in **all cases** where `recover_json_object` is called, even if the object was recovered from a fence. This includes:
+1. When the object is recovered from a fence (e.g., `fenced` pool in `recover_json_object`, lines 25-30).
+2. When the object is recovered from top-level prose (e.g., `top_level` pool, lines 31-40).
+
+**Key Failure**
+The rule’s phrasing suggests `recovered-from-prose` should be `False` for fenced objects, but the code treats *all* non-strict-JSON recoveries as `True`. This matters because the harness’s downstream logic (e.g., refusal heuristics) may rely on this flag to distinguish between fenced and prose recoveries. A proposer should test inputs where:
+- A JSON object is embedded in a fence (e.g., ```json {"key": "value"} ```).
+- The same object appears in prose (e.g., "Here is the answer: {\"key\": \"value\"}").
+
+**Proposed Next Steps**
+1. **Clarify the rule**: The documented rule should explicitly state that `recovered-from-prose` is `True` for *any* non-strict-JSON recovery, regardless of fence/prose context.
+2. **Test edge cases**: Propose inputs where the object is recovered from a fence but the rule’s phrasing might mislead a reader into expecting `recovered-from-prose = False`.
+
+**Evidence of Code Behavior**
+The code’s logic in `parse_content` (lines 85-95) shows that `recovered_from_prose` is set to `True` unconditionally when `recover_json_object` is invoked, even for fenced objects:
+```python
+recovered, duplicates = recover_json_object(content)
+# ...
+return recovered, "JSON_OBJECT", detail, True  # Always True here
+```
+
+This contradicts the rule’s implication that fenced objects should yield `False`.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

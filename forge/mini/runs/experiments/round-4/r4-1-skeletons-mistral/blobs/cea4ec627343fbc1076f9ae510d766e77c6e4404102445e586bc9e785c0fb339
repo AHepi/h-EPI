@@ -1,0 +1,16 @@
+```json
+{
+  "body": "The documented rule for `conformance.kernel.recovery` states that the object scored is the last one inside a code fence when any fence holds one. In the given cell `fence[ A ] fence[ B ]`, the input contains two JSON objects (`A` and `B`) within separate code fences. The rule specifies that the last object inside a code fence is scored. If we remove the second code fence (the part holding `B`), the last fenced object becomes `A`. According to the rule, the object scored should move from `B` to `A` because the last fenced object is now `A`. The rule explicitly prioritizes fenced objects over top-level objects, and the last fenced object is the one scored when multiple fences are present. Evidence from the catalogue ([ce275ea1972395f1]) confirms this behavior: the harness selects the last fenced object (`B`) when both fences are present.",
+  "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"input\": \"```\n{\"a\": 1}\n```\n```\n{\"b\": 2}\n```\", \"rewritten\": \"```\n{\"a\": 1}\n```\n{\"b\": 2}\", \"expect\": \"moves\", \"rewrite\": \"Removed the second code fence around the JSON object B.\", \"cell\": \"fence[ A ] fence[ B ]\"}",
+  "citations": [
+    {
+      "block": "ce275ea1972395f1",
+      "quote": "fence[ A ] fence[ B ]"
+    },
+    {
+      "block": "dd31e637647a413a",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it"
+    }
+  ]
+}
+```

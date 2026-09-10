@@ -490,6 +490,17 @@ recovered citations, every one verified**.
 The brief shows one worked example of a declared citation, built from a block
 the stage can actually see.
 
+A third recovery is of the reading rather than of the reply: a model that writes a
+raw line break inside a JSON string, where the two characters backslash and n
+belong, is read as having meant the line break. The strict reading is always
+tried first, the second reading admits a control character and nothing else — a
+duplicate key, a float, a surrogate and text that is not JSON are refused as
+before — and the artifact records `control-characters` beside `fence` and
+`prose`. It applies where the reply itself is read (`read_submission`) and where
+a field's own JSON is read against a declared schema (`json_schema`), which is
+the case that cost one live run forty-one of its forty-two calls
+(`FAILURE_MODES.md` M13).
+
 ### 18. An empty input port (R32)
 
 **Module** `runner.py`. **Tests** `test_failures.py::EmptyPortTests`.

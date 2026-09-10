@@ -1,0 +1,11 @@
+```json
+{
+ "body": "Proposal 08113c525ab2374c failed because the proposer misread the rule regarding whitespace. The proposer argued that a span containing a line break where the document does not would lead to a verdict of SPAN_NOT_IN_DOCUMENT because of the 'no relaxation' clause [6ab8417a77f3b613]. However, the code implements `_span_occurs` by first calling `_normalise_whitespace` on both the span and the document (line 138: `normal_span, normal_document = _normalise_whitespace(span), _normalise_whitespace(document)`), and `_normalise_whitespace` is defined as `\" \".join(value.split())` (line 135), which collapses all whitespace, including line breaks. Consequently, the machine saw the span as occurring in the document in both the input and the rewrite, resulting in VALUE_NOT_IN_SPAN for both and an 'unchanged' result.\n\nThis failure matters because it reveals a discrepancy between the high-level rule 'no relaxation' and the internal implementation of whitespace normalization. A proposer should next look for cases where the rule's 'no relaxation' is contradicted by the code's normalization, or target other kernels where the rules and code are more closely aligned.",
+ "citations": [
+  {
+   "block": "6ab8417a77f3b613",
+   "quote": "The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked"
+  }
+ ]
+}
+```

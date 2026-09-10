@@ -1,0 +1,20 @@
+```json
+{
+  "body": "The documented rule for `conformance.kernel.recovered-from-prose` states that the harness had to recover the object from prose (yes) or read it as strict JSON (no). In the given cell `fence[ S A ] B`, the input contains a sentence `S` and a JSON object `A` within a code fence, followed by another JSON object `B` outside the fence. The rule specifies that the object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. Here, the last object inside the fence is `A`, but the last top-level object in the text is `B`. \n\nThe `recovered-from-prose` flag should indicate whether the harness had to recover the object from prose (not a fence). If we remove the JSON object `B` (the last top-level object outside the fence), the last object in the text becomes `A`, which is inside the fence. According to the rule, the object scored should move from `B` to `A`, and `recovered-from-prose` should change from `True` (since `B` was recovered from prose) to `False` (since `A` is recovered from a fence). Thus, the `recovered-from-prose` flag should move from `True` to `False`.\n\nThe object scored before the rewrite is `B`, and after the rewrite, it is `A`.",
+  "commitments": "{\"kernel\": \"conformance.kernel.recovered-from-prose\", \"input\": \"```\nHere is the result:\\n{\\\"a\\\": 1}\n```\n{\\\"b\\\": 2}\", \"rewritten\": \"```\nHere is the result:\\n{\\\"a\\\": 1}\n```\", \"expect\": \"moves\", \"rewrite\": \"Removed the last top-level JSON object outside the fence.\", \"cell\": \"fence[ S A ] B\"}",
+  "citations": [
+    {
+      "block": "941a53cd89615846",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it"
+    },
+    {
+      "block": "a70c2e9bc362b532",
+      "quote": "kernel conformance.kernel.recovered-from-prose: Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)."
+    },
+    {
+      "block": "b0a010d1115d82a4",
+      "quote": "{\"points\": [{\"kernel\": \"conformance.kernel.recovery\", \"transform\": \"conformance.transform.prose-before\", \"moves\": false, \"input\": \"{\\\"claimant_name\\\": \\\"amara o...\"}]}"
+    }
+  ]
+}
+```

@@ -1,0 +1,18 @@
+```json
+{
+  "body": "The documented rule for `conformance.kernel.recovery` states that the object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. In the given cell `fence[ A S ] A`, the input contains a JSON object `A` inside a code fence and another `A` outside the fence. The rule specifies that if a fence holds an object, the last object *inside the fence* is scored. Here, the last object inside the fence is `A`, and the object outside the fence is also `A`. If we remove the JSON object `A` outside the fence, the last object inside the fence remains `A`, and there are no other top-level objects. Thus, the recovered object should remain unchanged because the last object inside the fence is still `A`. The rule explicitly names the object inside the fence as the one to be scored when a fence is present, so the object outside the fence does not affect the outcome in this case.",
+
+  "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"input\": \"```\n{\"a\": 1}\nHere is the result:\n```\n{\"a\": 1}\", \"rewritten\": \"```\n{\"a\": 1}\nHere is the result:\n```\", \"expect\": \"unchanged\", \"rewrite\": \"Removed the JSON object outside the code fence.\", \"cell\": \"fence[ A S ] A\"}",
+
+  "citations": [
+    {
+      "block": "b02ccb322122e4d0",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it"
+    },
+    {
+      "block": "97db581226c8eb78",
+      "quote": "fence[ A S ] A"
+    }
+  ]
+}
+```

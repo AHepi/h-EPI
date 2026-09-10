@@ -1,0 +1,15 @@
+```json
+{
+ "body": "All three proposals failed because the proposers misread the rule. They assumed that \"no relaxation\" [6ab8417a77f3b613] meant that whitespace differences between the span and the document would result in a `SPAN_NOT_IN_DOCUMENT` verdict. However, the code for `_span_occurs` (which is called by `_grounding_kernel`) explicitly normalises whitespace for both the span and the document before checking for containment: `normal_span, normal_document = _normalise_whitespace(span), _normalise_whitespace(document)` [1a49f5929bf26106].\n\nBecause the machine normalises whitespace, a span differing from the document only by a run of spaces is treated as occurring verbatim. Consequently, the verdict did not move when the proposers \"fixed\" the whitespace, as the machine had already ignored it. \n\nThese failures matter because they reveal a fundamental misunderstanding of how \"no relaxation\" is implemented in the grounding kernel. A proposer should next look for relaxations that are *actually* disabled, such as case-insensitivity for the span-in-document check, as the code only applies `.casefold()` if `\"case_insensitive\"` is in the relaxations list [1a49f5929bf26106], and the grounding kernel passes an empty tuple `()` for relaxations [1a49f5929bf26106].",
+ "citations": [
+  {
+   "block": "6ab8417a77f3b613",
+   "quote": "The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked"
+  },
+  {
+   "block": "1a49f5929bf26106",
+   "quote": "normal_span, normal_document = _normalise_whitespace(span), _normalise_whitespace(document)"
+  }
+ ]
+}
+```

@@ -1,0 +1,303 @@
+# Proposal: a grid cell
+
+You are shown the documented rules of the checks, not their code, and ONE cell of a grid under 'The cell to cover'. The cell says where a listed refusal phrase stands in a reply. The notation: P is one phrase from the list shown at the top of the rules, written exactly as the list has it; A is a small JSON object such as {"a": 1}; fence[ ... ] is a code fence, a line of three backticks before and after, holding what is named, one part per line; value(P) means P is the whole of a string value inside the object, as {"note": "P"}; key(P) means P is a key of the object, as {"P": 1}; 'then' means the next part goes on its own line below. Build the input exactly from the cell, nothing added. The rewritten text is the same reply with every occurrence of P replaced by words that are NOT on the list (for example 'I am not able to' in place of 'I cannot'), everything else identical character for character. Say what the rule, read as written, says the check's answer ought to do: move ('moves') if the phrase in that place counts, stay ('unchanged') if it does not. Your expectation comes from the rule's words alone: name in the body the words you read it from. Your kernel is conformance.kernel.refusal-phrase or conformance.kernel.response-verdict. The commitments are a STRING whose content is JSON of the form {"kernel": "<id>", "input": "<the input text>", "rewritten": "<your rewritten text>", "expect": "moves" or "unchanged", "rewrite": "<one sentence naming what you changed>", "cell": "<the cell exactly as named>"}. The input and the rewritten text are instances written out in full, never descriptions. Do not repeat a pair shown among the earlier proposals.
+
+## The problem (problem)
+The checks under test are the conformance harness's own functions. Most seats are shown only their documented rules, not their code: how the harness recovers a JSON object from a reply, whether it had to recover it from prose, its response verdict, its refusal-phrase check, and its grounding matcher. The question: is there an input and a rewrite of it on which the rule, read as written, says one thing and the check, run by machine, does another? The executor runs the check on both texts and records what its answer did; nothing here decides anything, the record shows where a reading and the machine parted.
+
+## The documented rules of the checks (rules)
+[cfb66510a6ca9655] (mini.kernel-rules.v1)
+REFUSAL_PHRASES = ['I cannot', "I can't", "I'm sorry", 'I am unable', 'as an AI', 'cannot assist']
+
+The kernels:
+
+- conformance.kernel.recovery: The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT.
+
+- conformance.kernel.recovered-from-prose: Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no).
+
+- conformance.kernel.response-verdict: The harness's response verdict for the reply: JSON_OBJECT, INVALID_JSON, REFUSAL_SUSPECTED, or another of its verdicts.
+
+- conformance.kernel.refusal-phrase: The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE.
+
+- conformance.kernel.span-occurs: Whether a cited span occurs in a document, whitespace-normalised, no relaxation: the input is one JSON object {"span", "document"}; verbatim or NOT_IN_DOCUMENT.
+
+- conformance.kernel.grounding: The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked: the input is one JSON object {"value", "span", "document"}; GROUNDED, SPAN_MISSING, SPAN_NOT_IN_DOCUMENT or VALUE_NOT_IN_SPAN.
+
+def recover_json_object(content: 'str') -> 'Any':
+    Project import: extract a JSON object from fences or surrounding prose.
+
+    Every top-level balanced object in the text is a candidate, not only the span from the
+    first ``{`` to the last ``}``: reasoning prose before or after the answer frequently
+    contains stray braces, and an object nested inside another is not a candidate of its own.
+    The object scored is the last one inside a code fence when any fence holds one, else the
+    last top-level object in the text, because a model places its final answer last and marks
+    it: a reply that quotes its previous answer and then gives a corrected one is scored on the
+    correction. Until 9 September 2026 the object with the most keys was taken, ties to the
+    last, and nine cycle replies that dropped a criticised key were scored on the draft that
+    still carried it (``docs/failure-modes.md``, H40). A candidate that parses as strict JSON,
+    or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float,
+    for instance) is passed over, so a final answer refused for a float loses to an earlier
+    draft that parsed (``docs/kernel.md``, P-06).
+
+def _loads_last_wins(candidate: 'str') -> 'tuple[Any, tuple[str, ...]] | None':
+    Parse JSON that strict parsing refused only because of repeated keys; last value wins.
+
+def parse_content(content: 'str', refusal_phrases: 'tuple[str, ...]') -> 'tuple[Any, str, str | None, bool]':
+    Return (parsed, response_verdict, detail, recovered_from_prose).
+
+    The refusal heuristic decides the verdict only when no object can be recovered; whether a
+    phrase occurred at all is a separate fact, :func:`refusal_phrase_in`, recorded beside a
+    recovered object (H36: a refusal followed by a form is a refusal and a form).
+
+def refusal_phrase_in(content: 'str', refusal_phrases: 'tuple[str, ...]') -> 'str | None':
+    The first refusal phrase the text contains, typographic quotes read as straight ones, or None.
+
+def _plain_quotes(text: 'str') -> 'str':
+    Fold typographic apostrophes and quotation marks to their ASCII forms.
+
+    The refusal phrase list is written with straight apostrophes; a model that writes
+    "I’m sorry" is refusing all the same, and the first live refusal in these
+    records was missed for exactly that reason (H22).
+
+def _normalise_whitespace(value: 'str') -> 'str':
+    (no docstring)
+
+def _span_occurs(span: 'str', document: 'str', relaxations: 'tuple[str, ...]') -> 'str | None':
+    Return None when the span is not in the document, else how it was matched ("verbatim" or a relaxation).
+
+def _grounding_kernel(text: 'str') -> 'str':
+    The grounding verdict as the harness gives it, with no relaxation and the value-in-span check on.
+
+    The three lines are the harness's own (``_grounding_verdict`` in ``oracle.py``), read here
+    over one JSON object rather than over a variant and its output.
+
+
+## Proposals so far (earlier)
+[679716fea671c2aa] (mini.pair-proposal.grid-1.v1)
+For the cell 'P alone', I use the refusal phrase 'I cannot'. The kernel is conformance.kernel.refusal-phrase. According to the rule for this kernel, it returns 'The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE' [cf3ead255ba521d3]. Since the input contains 'I cannot', the check should return that phrase. In the rewritten text, 'I cannot' is replaced by 'I am not able to', which is not on the list; therefore, the check should return 'NONE'. Because the result changes from 'I cannot' to 'NONE', the answer moves.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "input": "I cannot", "rewritten": "I am not able to", "expect": "moves", "rewrite": "I replaced 'I cannot' with 'I am not able to'.", "cell": "P alone"}
+[14c1968f0d489c94] (mini.pair-proposal.grid-2.v1)
+For the cell 'P then A', I use the refusal phrase 'I cannot' and the JSON object {"a": 1}. The kernel is conformance.kernel.refusal-phrase. According to the rule for this kernel, it returns 'The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE' [cf3ead255ba521d3]. The input consists of 'I cannot' followed by a newline and '{"a": 1}', so the check should return 'I cannot'. In the rewritten text, 'I cannot' is replaced by 'I am not able to', which is not on the list; therefore, the check should return 'NONE'. Because the result changes from 'I cannot' to 'NONE', the answer moves.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "input": "I cannot\n{\"a\": 1}", "rewritten": "I am not able to\n{\"a\": 1}", "expect": "moves", "rewrite": "I replaced 'I cannot' with 'I am not able to'.", "cell": "P then A"}
+[f05b1943397f1766] (mini.pair-proposal.grid-3.v1)
+For the cell 'A then P', I use the JSON object {"a": 1} and the refusal phrase 'I cannot'. The kernel is conformance.kernel.refusal-phrase. According to the rule for this kernel, it returns 'The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE' [cf3ead255ba521d3]. The input consists of '{"a": 1}' followed by a newline and 'I cannot', so the check should return 'I cannot'. In the rewritten text, 'I cannot' is replaced by 'I am not able to', which is not on the list; therefore, the check should return 'NONE'. Because the result changes from 'I cannot' to 'NONE', the answer moves.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "input": "{\"a\": 1}\nI cannot", "rewritten": "{\"a\": 1}\nI am not able to", "expect": "moves", "rewrite": "I replaced 'I cannot' with 'I am not able to'.", "cell": "A then P"}
+[21336bec8bb94c51] (mini.pair-proposal.grid-1.v1)
+For the cell 'P then fence[ A ]', I use the refusal phrase 'I cannot' and the JSON object {"a": 1}. The kernel is conformance.kernel.refusal-phrase. According to the rule for this kernel, it returns 'The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE' [c8c80e388572359c]. The input consists of 'I cannot' followed by a newline and a code fence containing '{"a": 1}', so the check should return 'I cannot'. In the rewritten text, 'I cannot' is replaced by 'I am not able to', which is not on the list; therefore, the check should return 'NONE'. Because the result changes from 'I cannot' to 'NONE', the answer moves.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "input": "I cannot\n\n```json\n{\"a\": 1}\n```", "rewritten": "I am not able to\n\n```json\n{\"a\": 1}\n```", "expect": "moves", "rewrite": "I replaced 'I cannot' with 'I am not able to'.", "cell": "P then fence[ A ]"}
+[203fbb974d319c08] (mini.pair-proposal.grid-2.v1)
+For the cell 'fence[ A ] then P', I use the JSON object A = {"a": 1} and the refusal phrase P = 'I cannot'. The kernel is conformance.kernel.refusal-phrase. According to the rule for this kernel, it returns 'The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE' [c8c80e388572359c]. The input consists of a code fence containing '{"a": 1}' followed by a newline and 'I cannot', so the check should return 'I cannot'. In the rewritten text, 'I cannot' is replaced by 'I am not able to', which is not on the list; therefore, the check should return 'NONE'. Because the result changes from 'I cannot' to 'NONE', the answer moves.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "input": "```json\n{\"a\": 1}\n```\nI cannot", "rewritten": "```json\n{\"a\": 1}\n```\nI am not able to", "expect": "moves", "rewrite": "I replaced 'I cannot' with 'I am not able to'.", "cell": "fence[ A ] then P"}
+[03df8bc3272356ff] (mini.pair-proposal.grid-3.v1)
+For the cell 'fence[ P A ]', I use the refusal phrase P = 'I cannot' and the JSON object A = {"a": 1}. The kernel is conformance.kernel.refusal-phrase. According to the rule for this kernel, it returns 'The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE' [c8c80e388572359c]. The input consists of a code fence containing the refusal phrase followed by the JSON object: '```\nI cannot\n{"a": 1}\n```'. Since the text contains 'I cannot', the check should return 'I cannot'. In the rewritten text, 'I cannot' is replaced by 'I am not able to', which is not on the list; therefore, the check should return 'NONE'. Because the result changes from 'I cannot' to 'NONE', the answer moves.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "input": "```\nI cannot\n{\"a\": 1}\n```", "rewritten": "```\nI am not able to\n{\"a\": 1}\n```", "expect": "moves", "rewrite": "I replaced 'I cannot' with 'I am not able to'.", "cell": "fence[ P A ]"}
+[33466ad7ee66b265] (mini.pair-proposal.grid-1.v1)
+For the cell 'A with value(P)', I use the refusal phrase P = 'I cannot' and the JSON object A = {"note": "I cannot"}. The kernel is conformance.kernel.refusal-phrase. According to the rule for this kernel, it returns 'The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE' [c8c80e388572359c]. The input is '{"note": "I cannot"}', which contains the listed phrase 'I cannot', so the check should return 'I cannot'. In the rewritten text, 'I cannot' is replaced by 'I am not able to', which is not on the list; therefore, the check should return 'NONE'. Because the result changes from 'I cannot' to 'NONE', the answer moves.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "input": "{\"note\": \"I cannot\"}", "rewritten": "{\"note\": \"I am not able to\"}", "expect": "moves", "rewrite": "I replaced 'I cannot' with 'I am not able to'.", "cell": "A with value(P)"}
+[d915b775a57730c1] (mini.pair-proposal.grid-2.v1)
+For the cell 'A with key(P)', I use the refusal phrase P = 'I cannot' and the JSON object A = {"I cannot": 1}. The kernel is conformance.kernel.refusal-phrase. According to the rule for this kernel, it returns 'The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE' [c8c80e388572359c]. The input is '{"I cannot": 1}', which contains the listed phrase 'I cannot' as a key, so the check should return 'I cannot'. In the rewritten text, 'I cannot' is replaced by 'I am not able to', which is not on the list; therefore, the check should return 'NONE'. Because the result changes from 'I cannot' to 'NONE', the answer moves.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "input": "{\"I cannot\": 1}", "rewritten": "{\"I am not able to\": 1}", "expect": "moves", "rewrite": "I replaced the key 'I cannot' with 'I am not able to'.", "cell": "A with key(P)"}
+[6a883329c308936c] (mini.pair-proposal.grid-3.v1)
+For the cell 'fence[ A with value(P) ]', I use the refusal phrase P = 'I cannot' and the JSON object A = {"note": "I cannot"}. The kernel is conformance.kernel.refusal-phrase. According to the rule for this kernel, it returns 'The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE' [c8c80e388572359c]. The input consists of a code fence containing the JSON object: '```\n{"note": "I cannot"}\n```'. Since the text contains the listed phrase 'I cannot', the check should return 'I cannot'. In the rewritten text, 'I cannot' is replaced by 'I am not able to', which is not on the list; therefore, the check should return 'NONE'. Because the result changes from 'I cannot' to 'NONE', the answer moves.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "input": "```\n{\"note\": \"I cannot\"}\n```", "rewritten": "```\n{\"note\": \"I am not able to\"}\n```", "expect": "moves", "rewrite": "I replaced 'I cannot' with 'I am not able to'.", "cell": "fence[ A with value(P) ]"}
+[6bd1017232b5feeb] (mini.pair-proposal.grid-1.v1)
+For the cell 'P then A with value(P)', I use the refusal phrase P = 'I cannot' and the JSON object A = {"note": "I cannot"}. The kernel is conformance.kernel.refusal-phrase. According to the rule for this kernel, it returns 'The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE' [c8c80e388572359c]. The input consists of the phrase 'I cannot' followed by a newline and the JSON object '{"note": "I cannot"}', so the check should return 'I cannot' as it is the first occurrence. In the rewritten text, every occurrence of 'I cannot' is replaced by 'I am not able to', which is not on the list; therefore, the check should return 'NONE'. Because the result changes from 'I cannot' to 'NONE', the answer moves.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "input": "I cannot\n{\"note\": \"I cannot\"}", "rewritten": "I am not able to\n{\"note\": \"I am not able to\"}", "expect": "moves", "rewrite": "I replaced all occurrences of 'I cannot' with 'I am not able to'.", "cell": "P then A with value(P)"}
+[9717344befc475ed] (mini.pair-proposal.grid-2.v1)
+For the cell 'P inside a longer sentence that is not a refusal, then A', I use the refusal phrase P = 'I cannot' and the JSON object A = {"a": 1}. The kernel is conformance.kernel.refusal-phrase. According to the rule for this kernel, it returns 'The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE' [c8c80e388572359c]. The input consists of a sentence containing the phrase 'I cannot' (e.g., 'I cannot believe it') followed by a newline and the JSON object '{"a": 1}'. Since the text contains the listed phrase 'I cannot', the check should return 'I cannot'. In the rewritten text, 'I cannot' is replaced by 'I am not able to', which is not on the list; therefore, the check should return 'NONE'. Because the result changes from 'I cannot' to 'NONE', the answer moves.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "input": "I cannot believe it\n{\"a\": 1}", "rewritten": "I am not able to believe it\n{\"a\": 1}", "expect": "moves", "rewrite": "I replaced 'I cannot' with 'I am not able to'.", "cell": "P inside a longer sentence that is not a refusal, then A"}
+[81c636981fe601fb] (mini.pair-proposal.grid-3.v1)
+For the cell 'P in upper case, then A', I use the refusal phrase P = 'I cannot' and the JSON object A = {"a": 1}. The kernel is conformance.kernel.refusal-phrase. According to the rule for this kernel, it returns 'The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE' [c8c80e388572359c]. The input consists of 'I CANNOT' followed by a newline and '{"a": 1}'. Because the rule does not specify that the check is case-insensitive, and 'I CANNOT' is not exactly 'I cannot' as listed in REFUSAL_PHRASES, the check should return 'NONE'. In the rewritten text, 'I CANNOT' is replaced by 'I am not able to', which is also not on the list; therefore, the check should return 'NONE'. Because the result remains 'NONE', the answer is unchanged.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "input": "I CANNOT\n{\"a\": 1}", "rewritten": "I am not able to\n{\"a\": 1}", "expect": "unchanged", "rewrite": "I replaced 'I CANNOT' with 'I am not able to'.", "cell": "P in upper case, then A"}
+[71b28ab4ea1e549f] (mini.pair-proposal.grid-1.v1)
+For the cell 'P with a typographic apostrophe, then A', I use the refusal phrase P = "I'm sorry" and the JSON object A = {"a": 1}. The kernel is conformance.kernel.refusal-phrase. According to the rule for this kernel, it returns 'The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE' [c8c80e388572359c]. The input consists of 'I’m sorry' (using a typographic apostrophe) followed by a newline and '{"a": 1}'. Because the rule specifies that typographic apostrophes are read as straight, 'I’m sorry' is treated as 'I'm sorry', which is on the list; therefore, the check should return "I'm sorry". In the rewritten text, 'I’m sorry' is replaced by 'I am sorry', which is not on the list; therefore, the check should return 'NONE'. Because the result changes from "I'm sorry" to 'NONE', the answer moves.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "input": "I’m sorry\n{\"a\": 1}", "rewritten": "I am sorry\n{\"a\": 1}", "expect": "moves", "rewrite": "I replaced 'I’m sorry' with 'I am sorry'.", "cell": "P with a typographic apostrophe, then A"}
+[445dbe9bf3abbfd8] (mini.pair-proposal.grid-2.v1)
+For the cell 'P split across a line break, then A', I use the refusal phrase P = 'I cannot' and the JSON object A = {"a": 1}. The kernel is conformance.kernel.refusal-phrase. According to the rule for this kernel, it returns 'The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE' [c8c80e388572359c]. The input consists of the phrase 'I cannot' split by a newline ('I
+cannot') followed by a newline and the JSON object '{"a": 1}'. Because the phrase is split across a line break, it is no longer the exact string 'I cannot' as listed in REFUSAL_PHRASES, and the rule does not specify any whitespace normalization for the refusal phrase check. Therefore, the check should return 'NONE'. In the rewritten text, 'I
+cannot' is replaced by 'I am not able to', which is also not on the list; therefore, the check should return 'NONE'. Because the result remains 'NONE', the answer is unchanged.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "input": "I\ncannot\n{\"a\": 1}", "rewritten": "I am not able to\n{\"a\": 1}", "expect": "unchanged", "rewrite": "I replaced 'I\ncannot' with 'I am not able to'.", "cell": "P split across a line break, then A"}
+[45083c1d7585c665] (mini.pair-proposal.grid-3.v1)
+For the cell 'P then A then P', I use the refusal phrase P = 'I cannot' and the JSON object A = {"a": 1}. The kernel is conformance.kernel.refusal-phrase. According to the rule for this kernel, it returns 'The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE' [c8c80e388572359c]. The input consists of 'I cannot' followed by a newline, the JSON object '{"a": 1}', and another newline followed by 'I cannot'. Since the first occurrence of a listed phrase is 'I cannot', the check should return 'I cannot'. In the rewritten text, every occurrence of 'I cannot' is replaced by 'I am not able to', which is not on the list; therefore, the check should return 'NONE'. Because the result changes from 'I cannot' to 'NONE', the answer moves.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "input": "I cannot\n{\"a\": 1}\nI cannot", "rewritten": "I am not able to\n{\"a\": 1}\nI am not able to", "expect": "moves", "rewrite": "I replaced all occurrences of 'I cannot' with 'I am not able to'.", "cell": "P then A then P"}
+[0e9fef03b7cd5be8] (mini.pair-proposal.grid-1.v1)
+For the cell 'a listed phrase that stands later in the list than P, then P, then A', I use P = 'I cannot' (the first phrase in the list) and a phrase that stands later, 'as an AI'. The JSON object A is {"a": 1}. The kernel is conformance.kernel.refusal-phrase. According to the rule for this kernel, it returns 'The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE' [c8c80e388572359c]. In the input 'as an AI\nI cannot\n{"a": 1}', both 'as an AI' and 'I cannot' are present. Since 'I cannot' appears first in the REFUSAL_PHRASES list, the check should return 'I cannot' regardless of the order of appearance in the text. In the rewritten text, every occurrence of 'I cannot' is replaced by 'I am not able to', which is not on the list. The text now contains 'as an AI', which is the first (and only) listed phrase remaining. Therefore, the check should return 'as an AI'. Because the result changes from 'I cannot' to 'as an AI', the answer moves.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "input": "as an AI\nI cannot\n{\"a\": 1}", "rewritten": "as an AI\nI am not able to\n{\"a\": 1}", "expect": "moves", "rewrite": "I replaced 'I cannot' with 'I am not able to'.", "cell": "a listed phrase that stands later in the list than P, then P, then A"}
+
+## Verdicts so far (verdicts)
+[a392d4705bdc69f7] (mini.verdict.v1)
+Verdict on this cycle's executions.
+679716fea671c2aa: conformance.kernel.refusal-phrase under proposer's own rewrite: I replaced 'I cannot' with 'I am not able to'. moved, expected moves -> rejected; no prediction
+14c1968f0d489c94: conformance.kernel.refusal-phrase under proposer's own rewrite: I replaced 'I cannot' with 'I am not able to'. moved, expected moves -> rejected; no prediction
+f05b1943397f1766: conformance.kernel.refusal-phrase under proposer's own rewrite: I replaced 'I cannot' with 'I am not able to'. moved, expected moves -> rejected; no prediction
+commitments: {"verdicts": [{"catalogue_moves": false, "catalogued": false, "column": null, "executed": "moved", "expected": "moves", "kernel": "conformance.kernel.refusal-phrase", "predicted": null, "proposal": "679716fea671c2aa", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I replaced 'I cannot' with 'I am not able to'."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "moved", "expected": "moves", "kernel": "conformance.kernel.refusal-phrase", "predicted": null, "proposal": "14c1968f0d489c94", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I replaced 'I cannot' with 'I am not able to'."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "moved", "expected": "moves", "kernel": "conformance.kernel.refusal-phrase", "predicted": null, "proposal": "f05b1943397f1766", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I replaced 'I cannot' with 'I am not able to'."}]}
+[e1f84d67fd76a399] (mini.verdict.v1)
+Verdict on this cycle's executions.
+21336bec8bb94c51: conformance.kernel.refusal-phrase under proposer's own rewrite: I replaced 'I cannot' with 'I am not able to'. moved, expected moves -> rejected; no prediction
+203fbb974d319c08: conformance.kernel.refusal-phrase under proposer's own rewrite: I replaced 'I cannot' with 'I am not able to'. moved, expected moves -> rejected; no prediction
+03df8bc3272356ff: conformance.kernel.refusal-phrase under proposer's own rewrite: I replaced 'I cannot' with 'I am not able to'. moved, expected moves -> rejected; no prediction
+commitments: {"verdicts": [{"catalogue_moves": false, "catalogued": false, "column": null, "executed": "moved", "expected": "moves", "kernel": "conformance.kernel.refusal-phrase", "predicted": null, "proposal": "21336bec8bb94c51", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I replaced 'I cannot' with 'I am not able to'."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "moved", "expected": "moves", "kernel": "conformance.kernel.refusal-phrase", "predicted": null, "proposal": "203fbb974d319c08", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I replaced 'I cannot' with 'I am not able to'."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "moved", "expected": "moves", "kernel": "conformance.kernel.refusal-phrase", "predicted": null, "proposal": "03df8bc3272356ff", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I replaced 'I cannot' with 'I am not able to'."}]}
+[860af3093ae22ffa] (mini.verdict.v1)
+Verdict on this cycle's executions.
+33466ad7ee66b265: conformance.kernel.refusal-phrase under proposer's own rewrite: I replaced 'I cannot' with 'I am not able to'. moved, expected moves -> rejected; no prediction
+d915b775a57730c1: conformance.kernel.refusal-phrase under proposer's own rewrite: I replaced the key 'I cannot' with 'I am not able to'. moved, expected moves -> rejected; no prediction
+6a883329c308936c: conformance.kernel.refusal-phrase under proposer's own rewrite: I replaced 'I cannot' with 'I am not able to'. moved, expected moves -> rejected; no prediction
+commitments: {"verdicts": [{"catalogue_moves": false, "catalogued": false, "column": null, "executed": "moved", "expected": "moves", "kernel": "conformance.kernel.refusal-phrase", "predicted": null, "proposal": "33466ad7ee66b265", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I replaced 'I cannot' with 'I am not able to'."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "moved", "expected": "moves", "kernel": "conformance.kernel.refusal-phrase", "predicted": null, "proposal": "d915b775a57730c1", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I replaced the key 'I cannot' with 'I am not able to'."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "moved", "expected": "moves", "kernel": "conformance.kernel.refusal-phrase", "predicted": null, "proposal": "6a883329c308936c", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I replaced 'I cannot' with 'I am not able to'."}]}
+[c84fe87e0ba33763] (mini.verdict.v1)
+Verdict on this cycle's executions.
+6bd1017232b5feeb: conformance.kernel.refusal-phrase under proposer's own rewrite: I replaced all occurrences of 'I cannot' with 'I am not able to'. moved, expected moves -> rejected; no prediction
+9717344befc475ed: conformance.kernel.refusal-phrase under proposer's own rewrite: I replaced 'I cannot' with 'I am not able to'. moved, expected moves -> rejected; no prediction
+81c636981fe601fb: conformance.kernel.refusal-phrase under proposer's own rewrite: I replaced 'I CANNOT' with 'I am not able to'. moved, expected unchanged -> candidate point (moves); no prediction
+commitments: {"verdicts": [{"catalogue_moves": false, "catalogued": false, "column": null, "executed": "moved", "expected": "moves", "kernel": "conformance.kernel.refusal-phrase", "predicted": null, "proposal": "6bd1017232b5feeb", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I replaced all occurrences of 'I cannot' with 'I am not able to'."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "moved", "expected": "moves", "kernel": "conformance.kernel.refusal-phrase", "predicted": null, "proposal": "9717344befc475ed", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I replaced 'I cannot' with 'I am not able to'."}, {"catalogue_moves": false, "catalogued": false, "column": "moves", "executed": "moved", "expected": "unchanged", "kernel": "conformance.kernel.refusal-phrase", "predicted": null, "proposal": "81c636981fe601fb", "reading": "no prediction", "same_input": null, "standing": "candidate point", "transform": "proposer's own rewrite: I replaced 'I CANNOT' with 'I am not able to'."}]}
+[a457fcddfc4852df] (mini.verdict.v1)
+Verdict on this cycle's executions.
+71b28ab4ea1e549f: conformance.kernel.refusal-phrase under proposer's own rewrite: I replaced 'I’m sorry' with 'I am sorry'. moved, expected moves -> rejected; no prediction
+445dbe9bf3abbfd8: conformance.kernel.refusal-phrase under proposer's own rewrite: I replaced 'I
+cannot' with 'I am not able to'. unchanged, expected unchanged -> rejected; no prediction
+45083c1d7585c665: conformance.kernel.refusal-phrase under proposer's own rewrite: I replaced all occurrences of 'I cannot' with 'I am not able to'. moved, expected moves -> rejected; no prediction
+commitments: {"verdicts": [{"catalogue_moves": false, "catalogued": false, "column": null, "executed": "moved", "expected": "moves", "kernel": "conformance.kernel.refusal-phrase", "predicted": null, "proposal": "71b28ab4ea1e549f", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I replaced 'I’m sorry' with 'I am sorry'."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.refusal-phrase", "predicted": null, "proposal": "445dbe9bf3abbfd8", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I replaced 'I\ncannot' with 'I am not able to'."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "moved", "expected": "moves", "kernel": "conformance.kernel.refusal-phrase", "predicted": null, "proposal": "45083c1d7585c665", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I replaced all occurrences of 'I cannot' with 'I am not able to'."}]}
+
+## Criticisms (criticisms)
+[3ae97b8a31008d03] (mini.criticism.v1)
+All three proposals in this cycle were executed successfully, and the machine results matched the proposers' expectations. There were no failures to analyze.
+
+- Proposal 71b28ab4ea1e549f correctly identified that typographic apostrophes are normalized to straight ones, causing 'I’m sorry' to match the refusal phrase 'I'm sorry' [f8b7dbf88099a402].
+- Proposal 445dbe9bf3abbfd8 correctly identified that the refusal check does not perform whitespace normalization, so a phrase split by a newline ('I\ncannot') does not match 'I cannot' [f8b7dbf88099a402].
+- Proposal 45083c1d7585c665 correctly identified that the kernel returns the first listed refusal phrase found in the text [f8b7dbf88099a402].
+
+Since these cells are now resolved, the proposer should move to the remaining cells in the grid, such as 'a listed phrase that stands later in the list than P, then P, then A' [8ddacf55ee433ad7], to test the 'first listed' priority logic.
+
+## Executions (executions)
+[20fa4053ac0a135e] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+679716fea671c2aa: conformance.kernel.refusal-phrase -> moved, expected moves
+14c1968f0d489c94: conformance.kernel.refusal-phrase -> moved, expected moves
+f05b1943397f1766: conformance.kernel.refusal-phrase -> moved, expected moves
+commitments: {"executions": [{"after": "NONE", "as_expected": true, "before": "I cannot", "executed": "moved", "expect": "moves", "input": "I cannot", "kernel": "conformance.kernel.refusal-phrase", "proposal": "679716fea671c2aa", "rewrite": "I replaced 'I cannot' with 'I am not able to'.", "rewritten": "I am not able to"}, {"after": "NONE", "as_expected": true, "before": "I cannot", "executed": "moved", "expect": "moves", "input": "I cannot\n{\"a\": 1}", "kernel": "conformance.kernel.refusal-phrase", "proposal": "14c1968f0d489c94", "rewrite": "I replaced 'I cannot' with 'I am not able to'.", "rewritten": "I am not able to\n{\"a\": 1}"}, {"after": "NONE", "as_expected": true, "before": "I cannot", "executed": "moved", "expect": "moves", "input": "{\"a\": 1}\nI cannot", "kernel": "conformance.kernel.refusal-phrase", "proposal": "f05b1943397f1766", "rewrite": "I replaced 'I cannot' with 'I am not able to'.", "rewritten": "{\"a\": 1}\nI am not able to"}]}
+[9eb052e110e4c2c4] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+21336bec8bb94c51: conformance.kernel.refusal-phrase -> moved, expected moves
+203fbb974d319c08: conformance.kernel.refusal-phrase -> moved, expected moves
+03df8bc3272356ff: conformance.kernel.refusal-phrase -> moved, expected moves
+commitments: {"executions": [{"after": "NONE", "as_expected": true, "before": "I cannot", "executed": "moved", "expect": "moves", "input": "I cannot\n\n```json\n{\"a\": 1}\n```", "kernel": "conformance.kernel.refusal-phrase", "proposal": "21336bec8bb94c51", "rewrite": "I replaced 'I cannot' with 'I am not able to'.", "rewritten": "I am not able to\n\n```json\n{\"a\": 1}\n```"}, {"after": "NONE", "as_expected": true, "before": "I cannot", "executed": "moved", "expect": "moves", "input": "```json\n{\"a\": 1}\n```\nI cannot", "kernel": "conformance.kernel.refusal-phrase", "proposal": "203fbb974d319c08", "rewrite": "I replaced 'I cannot' with 'I am not able to'.", "rewritten": "```json\n{\"a\": 1}\n```\nI am not able to"}, {"after": "NONE", "as_expected": true, "before": "I cannot", "executed": "moved", "expect": "moves", "input": "```\nI cannot\n{\"a\": 1}\n```", "kernel": "conformance.kernel.refusal-phrase", "proposal": "03df8bc3272356ff", "rewrite": "I replaced 'I cannot' with 'I am not able to'.", "rewritten": "```\nI am not able to\n{\"a\": 1}\n```"}]}
+[947eeb8070f6eb72] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+33466ad7ee66b265: conformance.kernel.refusal-phrase -> moved, expected moves
+d915b775a57730c1: conformance.kernel.refusal-phrase -> moved, expected moves
+6a883329c308936c: conformance.kernel.refusal-phrase -> moved, expected moves
+commitments: {"executions": [{"after": "NONE", "as_expected": true, "before": "I cannot", "executed": "moved", "expect": "moves", "input": "{\"note\": \"I cannot\"}", "kernel": "conformance.kernel.refusal-phrase", "proposal": "33466ad7ee66b265", "rewrite": "I replaced 'I cannot' with 'I am not able to'.", "rewritten": "{\"note\": \"I am not able to\"}"}, {"after": "NONE", "as_expected": true, "before": "I cannot", "executed": "moved", "expect": "moves", "input": "{\"I cannot\": 1}", "kernel": "conformance.kernel.refusal-phrase", "proposal": "d915b775a57730c1", "rewrite": "I replaced the key 'I cannot' with 'I am not able to'.", "rewritten": "{\"I am not able to\": 1}"}, {"after": "NONE", "as_expected": true, "before": "I cannot", "executed": "moved", "expect": "moves", "input": "```\n{\"note\": \"I cannot\"}\n```", "kernel": "conformance.kernel.refusal-phrase", "proposal": "6a883329c308936c", "rewrite": "I replaced 'I cannot' with 'I am not able to'.", "rewritten": "```\n{\"note\": \"I am not able to\"}\n```"}]}
+[9e799d16cd5027ba] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+6bd1017232b5feeb: conformance.kernel.refusal-phrase -> moved, expected moves
+9717344befc475ed: conformance.kernel.refusal-phrase -> moved, expected moves
+81c636981fe601fb: conformance.kernel.refusal-phrase -> moved, expected unchanged
+commitments: {"executions": [{"after": "NONE", "as_expected": true, "before": "I cannot", "executed": "moved", "expect": "moves", "input": "I cannot\n{\"note\": \"I cannot\"}", "kernel": "conformance.kernel.refusal-phrase", "proposal": "6bd1017232b5feeb", "rewrite": "I replaced all occurrences of 'I cannot' with 'I am not able to'.", "rewritten": "I am not able to\n{\"note\": \"I am not able to\"}"}, {"after": "NONE", "as_expected": true, "before": "I cannot", "executed": "moved", "expect": "moves", "input": "I cannot believe it\n{\"a\": 1}", "kernel": "conformance.kernel.refusal-phrase", "proposal": "9717344befc475ed", "rewrite": "I replaced 'I cannot' with 'I am not able to'.", "rewritten": "I am not able to believe it\n{\"a\": 1}"}, {"after": "NONE", "as_expected": false, "before": "I cannot", "executed": "moved", "expect": "unchanged", "input": "I CANNOT\n{\"a\": 1}", "kernel": "conformance.kernel.refusal-phrase", "proposal": "81c636981fe601fb", "rewrite": "I replaced 'I CANNOT' with 'I am not able to'.", "rewritten": "I am not able to\n{\"a\": 1}"}]}
+[84c6258d52a24fd8] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+71b28ab4ea1e549f: conformance.kernel.refusal-phrase -> moved, expected moves
+445dbe9bf3abbfd8: conformance.kernel.refusal-phrase -> unchanged, expected unchanged
+45083c1d7585c665: conformance.kernel.refusal-phrase -> moved, expected moves
+commitments: {"executions": [{"after": "NONE", "as_expected": true, "before": "I'm sorry", "executed": "moved", "expect": "moves", "input": "I’m sorry\n{\"a\": 1}", "kernel": "conformance.kernel.refusal-phrase", "proposal": "71b28ab4ea1e549f", "rewrite": "I replaced 'I’m sorry' with 'I am sorry'.", "rewritten": "I am sorry\n{\"a\": 1}"}, {"after": "NONE", "as_expected": true, "before": "NONE", "executed": "unchanged", "expect": "unchanged", "input": "I\ncannot\n{\"a\": 1}", "kernel": "conformance.kernel.refusal-phrase", "proposal": "445dbe9bf3abbfd8", "rewrite": "I replaced 'I\ncannot' with 'I am not able to'.", "rewritten": "I am not able to\n{\"a\": 1}"}, {"after": "NONE", "as_expected": true, "before": "I cannot", "executed": "moved", "expect": "moves", "input": "I cannot\n{\"a\": 1}\nI cannot", "kernel": "conformance.kernel.refusal-phrase", "proposal": "45083c1d7585c665", "rewrite": "I replaced all occurrences of 'I cannot' with 'I am not able to'.", "rewritten": "I am not able to\n{\"a\": 1}\nI am not able to"}]}
+
+## Evidence (catalogue)
+To ground a claim in one of these, name its id in this artifact's citations; a quote must reproduce the block's own words.
+[638a6360b40e8b8a] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fence", "moves": false, "input": "{\"claimant_name\": \"amara okoro\",…
+[e847048a8c7847a8] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.fence", "moves": true, "input": "{\"claimant_name\": \"ama…
+[b0a010d1115d82a4] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.prose-before", "moves": false, "input": "{\"claimant_name\": \"amara o…
+[33b4e316004d90cc] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.prose-before", "moves": true, "input": "{\"claimant_name\"…
+[1c12ef186483bd0d] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.indent", "moves": false, "input": "{\"claimant_name\": \"amara okoro\"…
+[910693c99ba3c6da] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.indent", "moves": false, "input": "{\"claimant_name\": \"a…
+[706dbfa18782a310] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fold-whitespace", "moves": false, "input": "{\"claimant_name\": \"amar…
+[45929a4e30072bb7] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.fold-whitespace", "moves": false, "input": "{\"claimant_na…
+[7a60de6ecc4dd6e3] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.bare-after", "moves": true, "input": "{\"claimant_name\": \"amara okor…
+[1c84027e761c6f99] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.draft-before", "moves": false, "input": "{\"claimant_name\": \"amara o…
+[55dd56154fb39a87] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fence-then-bare-after", "moves": false, "input": "{\"claimant_name\": …
+[47cbc7b41aaf5c8f] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fence-with-prose", "moves": false, "input": "{\"claimant_name\": \"ama…
+[791e3ba34ce7d357] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.float-after", "moves": false, "input": "{\"claimant_name\": \"amara ok…
+[a0e68e5c468b7070] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.float-after", "moves": true, "input": "{\"claimant_name\":…
+[fece6100f6ea7485] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.fence", "moves": false, "input": "{\"claimant_name\": \"amara …
+[bea451e84fa483a5] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.prose-before", "moves": false, "input": "{\"claimant_name\": \…
+[1a9cd8bb407e62f8] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.bare-after", "moves": false, "input": "{\"claimant_name\": \"a…
+[9c839bd675122bb9] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.upper-case", "moves": false, "input": "{\"claimant_name\": \"a…
+[d4ded569665ba70d] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.upper-case", "moves": true, "input": "{\"claimant_name\": \"amara okor…
+[6e346a638ffdff8b] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.typographic-quotes", "moves": false, "input": "I'm sorry, no."}]…
+[478f1f02c67c06c4] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.upper-case", "moves": false, "input": "I'm sorry, no."}]}
+[42f90dc7e6a15965] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.fence", "moves": false, "input": "I'm sorry, no."}]}
+[3c0719eda3e180c6] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.prose-before", "moves": false, "input": "I'm sorry, no."}]}
+[56ed413d078ac9c2] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.refusal-prose-before", "moves": true, "input": "{\"claimant_name…
+[8bfbf8b9bdcd2a4c] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.refusal-prose-before", "moves": false, "input": "{\"claimant_n…
+[6ab8417a77f3b613] (registry, evidence) kernel conformance.kernel.grounding: The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked: the inp…
+[a70c2e9bc362b532] (registry, evidence) kernel conformance.kernel.recovered-from-prose: Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no).
+[65ae18af7a738b26] (registry, evidence) kernel conformance.kernel.recovery: The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT.
+[c8c80e388572359c] (registry, evidence) kernel conformance.kernel.refusal-phrase: The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE.
+[22dc5cbedaff143d] (registry, evidence) kernel conformance.kernel.response-verdict: The harness's response verdict for the reply: JSON_OBJECT, INVALID_JSON, REFUSAL_SUSPECTED, or another of its verdic…
+[966be5d711930718] (registry, evidence) kernel conformance.kernel.span-occurs: Whether a cited span occurs in a document, whitespace-normalised, no relaxation: the input is one JSON object {"span", "d…
+[290f4e6e748092af] (grid, evidence) P alone
+[f0019c814b29b3e5] (grid, evidence) P then A
+[0c8316637ccc93b5] (grid, evidence) A then P
+[6fa282a96d3dca72] (grid, evidence) P then fence[ A ]
+[53cfe21eaaaf279a] (grid, evidence) fence[ A ] then P
+[6ef24504d36e92c8] (grid, evidence) fence[ P A ]
+[45ed59ecd7346b36] (grid, evidence) A with value(P)
+[0a3ce51f62b60c8a] (grid, evidence) A with key(P)
+[794e4a3e12717ce6] (grid, evidence) fence[ A with value(P) ]
+[be8a27f475605832] (grid, evidence) P then A with value(P)
+[6bce9bd278e35c7f] (grid, evidence) P inside a longer sentence that is not a refusal, then A
+[9627137203496b2d] (grid, evidence) P in upper case, then A
+[f710e40ea12d2cbe] (grid, evidence) P with a typographic apostrophe, then A
+[ceae0b0b8a7004f7] (grid, evidence) P split across a line break, then A
+[f197e9164fba742a] (grid, evidence) P then A then P
+[8ddacf55ee433ad7] (grid, evidence) a listed phrase that stands later in the list than P, then P, then A
+
+## The cell to cover (cell)
+[37daaf73e6b98b0b] (mini.next-cell.2.v1)
+The cell to cover: P alone
+(16 of 16 cells named so far.)
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+
+To ground a claim, add a citation naming a block and quoting its own words, like this:
+  "citations": [{"block": "0a3ce51f62b60c8a", "quote": "<words copied from that block>"}]
+
+## The shape this answer must take
+`commitments` must be a STRING whose content is JSON text fitting exactly this schema (the field itself is a string, not an object):
+{
+  "properties": {
+    "cell": {
+      "minLength": 3,
+      "type": "string"
+    },
+    "expect": {
+      "enum": [
+        "moves",
+        "unchanged"
+      ]
+    },
+    "input": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "kernel": {
+      "pattern": "^conformance\\.kernel\\.(refusal-phrase|response-verdict)$",
+      "type": "string"
+    },
+    "rewrite": {
+      "minLength": 3,
+      "type": "string"
+    },
+    "rewritten": {
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "kernel",
+    "input",
+    "rewritten",
+    "expect",
+    "rewrite",
+    "cell"
+  ],
+  "type": "object"
+}

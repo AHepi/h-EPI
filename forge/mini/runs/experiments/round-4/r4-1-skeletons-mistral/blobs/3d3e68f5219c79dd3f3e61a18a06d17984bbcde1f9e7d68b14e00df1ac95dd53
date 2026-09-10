@@ -1,0 +1,24 @@
+```json
+{
+  "body": "### Discrepancy in `conformance.kernel.recovered-from-prose` Rule vs. Implementation\n\n**Observed Failure:** The documented rule for `conformance.kernel.recovered-from-prose` states that the harness should return `yes` if it \"had to recover the object from prose or a fence\" and `no` if it \"read it as strict JSON.\" However, the implementation in `parse_content` (lines 80-95 of the source) does not align with this description in cases where the JSON object is recovered from a *fence* but is otherwise strict JSON.\n\n**Rule Quote (from [81c2e3bee26a1c0e]):**\n> \"Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no).\"\n\n**Code Discrepancy:**\nThe implementation sets `recovered_from_prose = True` *whenever* `recover_json_object` is called (line 88), even if the object was recovered from a fence and parsed as strict JSON. This contradicts the rule's implication that `no` should apply to strict JSON, regardless of whether it was fenced.\n\n**Evidence of Impact:**\n- In execution [b0a010d1115d82a4], the input `{\"claimant_name\": \"amara okoro\"...}` is wrapped in a fence but is otherwise strict JSON. The harness returns `recovered_from_prose = True`, while the rule suggests it should return `no`.\n- In execution [638a6360b40e8b8a], the same input without a fence returns `recovered_from_prose = False`, which aligns with the rule but highlights the inconsistency for fenced strict JSON.\n\n**Why It Matters:**\nThe rule’s phrasing implies a binary distinction: strict JSON (`no`) vs. non-strict recovery (`yes`). The implementation collapses fenced strict JSON into the `yes` category, which may mislead users who rely on the documented rule to interpret the harness’s behavior. This could affect downstream logic that distinguishes between \"prose recovery\" and \"fenced strict JSON.\"\n\n**Proposer’s Next Steps:**\n1. **Clarify the Rule:** If the current implementation is correct, the rule should explicitly state that *any* recovery (including from fences) counts as `yes`, even for strict JSON. For example:\n   > \"Whether the harness had to recover the object (from prose, a fence, or otherwise) (yes) or read it as strict JSON without recovery (no).\"\n2. **Align the Code:** If the rule is correct as written, modify `parse_content` to return `recovered_from_prose = False` when the object is recovered from a fence but parses as strict JSON. This would require tracking whether the recovery source was a fence or prose.\n\n**Citations:**\nThe discrepancy is evident in the following evidence blocks:\n- The rule’s wording ([81c2e3bee26a1c0e]):\n  > \"Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no).\"\n- The implementation’s behavior ([0e485ad8c94122ed], lines 80-95):\n  > `return recovered, \"JSON_OBJECT\", detail, True` (always `True` when `recover_json_object` is called).\n- Execution results showing the inconsistency ([b0a010d1115d82a4], [638a6360b40e8b8a]).",
+
+  "citations": [
+    {
+      "block": "81c2e3bee26a1c0e",
+      "quote": "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)."
+    },
+    {
+      "block": "0e485ad8c94122ed",
+      "quote": "return recovered, \"JSON_OBJECT\", detail, True"
+    },
+    {
+      "block": "b0a010d1115d82a4",
+      "quote": "{\"points\": [{\"kernel\": \"conformance.kernel.recovered-from-prose\", \"transform\": \"conformance.transform.prose-before\", \"moves\": true, \"input\": \"{\\\"claimant_name\\\": \\\"amara okoro\\\"...\"}]}"
+    },
+    {
+      "block": "638a6360b40e8b8a",
+      "quote": "{\"points\": [{\"kernel\": \"conformance.kernel.recovered-from-prose\", \"transform\": \"conformance.transform.fence\", \"moves\": false, \"input\": \"{\\\"claimant_name\\\": \\\"amara okoro\\\"...\"}]}"
+    }
+  ]
+}
+```
