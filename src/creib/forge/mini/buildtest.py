@@ -115,24 +115,50 @@ class Proposal:
         return {name: getattr(self, name) for name in PROPOSAL_FIELDS}
 
 
-def read_proposal(reply: str) -> Proposal | None:
-    """A reply as a proposal, or nothing. A reply that cannot be read is recorded, never repaired."""
+def unfence(reply: str) -> str:
+    """A reply with one enclosing code fence removed, if it has one.
 
+    A fence around a whole reply is a content-preserving wrapper (mini register M4): the object
+    inside is unchanged, and the fields this protocol measures live inside that object. Refusing
+    a fenced reply would score a model's formatting habit rather than its construction, which is
+    a confound between the instrument and the thing measured, so the fence comes off and the
+    record says it did. Nothing inside the object is touched.
+    """
+
+    text = reply.strip()
+    if not text.startswith("```"):
+        return reply
+    body = text[3:]
+    newline = body.find("\n")
+    if newline == -1:
+        return reply
+    if body[:newline].strip() not in ("", "json", "JSON"):
+        return reply
+    body = body[newline + 1 :]
+    closing = body.rfind("```")
+    return body[:closing] if closing != -1 else body
+
+
+def read_proposal(reply: str) -> tuple[Proposal | None, bool]:
+    """A reply as a proposal and whether a fence had to come off, or nothing and why not."""
+
+    unfenced = unfence(reply)
+    fenced = unfenced != reply
     try:
-        parsed = loads_strict(reply)
+        parsed = loads_strict(unfenced)
     except RecordError:
         try:
-            parsed = loads_strict(reply, control_characters=True)
+            parsed = loads_strict(unfenced, control_characters=True)
         except RecordError:
-            return None
+            return None, fenced
     if type(parsed) is not dict:
-        return None
+        return None, fenced
     values = {name: parsed.get(name) for name in PROPOSAL_FIELDS}
     if any(type(value) is not str for value in values.values()):
-        return None
+        return None, fenced
     if values["kernel"] not in OPEN_KERNELS or values["expect"] not in ("moves", "unchanged"):
-        return None
-    return Proposal(**values)  # type: ignore[arg-type]
+        return None, fenced
+    return Proposal(**values), fenced  # type: ignore[arg-type]
 
 
 #: The one boundary this repository already knows about, as a predicate over a pair rather than a
@@ -388,9 +414,13 @@ def run_condition(condition: Condition, subject: ModuleType, source: str) -> dic
         calls.append({"index": index, **reply.to_dict()})
         if not reply.ok:
             continue
-        proposal = read_proposal(reply.text)
+        proposal, fenced = read_proposal(reply.text)
+        calls[-1]["fenced"] = fenced
         if proposal is None:
+            # A refused reply is kept verbatim, as mini's own H1 requires: the record has to say
+            # what the model actually returned, not only that it was turned away.
             calls[-1]["detail"] = calls[-1]["detail"] or "the reply could not be read as a proposal"
+            calls[-1]["refused_reply"] = reply.text[:8000]
             continue
         seen.append(f"{proposal.kernel}: {proposal.input[:160]!r} -> {proposal.rewritten[:160]!r}")
         executions.append(execute(subject, proposal))

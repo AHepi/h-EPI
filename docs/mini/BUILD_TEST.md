@@ -110,3 +110,26 @@ can establish `Origin`, and none will be reported as doing so.** At most it can 
 the repaired state. Mini's permission layer sets `changes: nothing`; it mints no standing by
 design. So mini cannot satisfy `CreateEK` whatever this test finds, and the safety property and
 the creativity claim are in direct tension. That tension is recorded here, not resolved.
+
+## Amendment 1, before any block ran, after smoke evidence
+
+ECS 2.0 §9.4.3 says a change made after evidence has been examined is a new proposal and must be
+defended as one rather than folded in silently. Two changes were made after four smoke calls on
+scratch instances and before any block ran. Both are defended here.
+
+**A refused reply is kept verbatim.** The first version recorded only that a reply could not be
+read. Mini's own H1 says the record must say what the model actually returned. No measure
+changes; a record that could not explain itself now can.
+
+**An enclosing code fence is removed before a reply is read, and the record says it was.** Smoke
+calls showed `gemma4:31b` returning a correctly-shaped proposal wrapped in a fence, which the
+strict reader refused — mini register M4. Refusing it scores a model's formatting habit, and
+this protocol measures construction; a fence around a whole reply is a content-preserving
+wrapper and the fields being measured are inside the object, untouched by removing it. Leaving
+it in place would have made the cross-model comparison a comparison of output conventions.
+
+The within-arm comparison — R against L on one model — was unaffected either way, since both
+arms of a model share its conventions. The change matters only for reading one model beside
+another, and `fenced` is recorded per call so a reader can see where it applied.
+
+Neither change dissolves a counterexample: nothing had yet been measured to be dissolved.

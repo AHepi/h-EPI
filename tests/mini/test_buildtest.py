@@ -58,19 +58,33 @@ class ReadingTests(MiniTestCase):
         return json.dumps({**base, **overrides})
 
     def test_a_proposal_is_read_when_every_field_is_a_string_of_the_right_kind(self) -> None:
-        parsed = buildtest.read_proposal(self._proposal())
+        parsed, fenced = buildtest.read_proposal(self._proposal())
         self.assertIsNotNone(parsed)
+        self.assertFalse(fenced)
         self.assertEqual((parsed.kernel, parsed.expect), ("recovery", "moves"))
+
+    def test_a_fenced_proposal_is_read_and_the_record_says_the_fence_came_off(self) -> None:
+        """M4: a fence around a whole reply is a wrapper, and refusing it would score format."""
+
+        parsed, fenced = buildtest.read_proposal("```json\n" + self._proposal() + "\n```")
+        self.assertIsNotNone(parsed)
+        self.assertTrue(fenced)
+        self.assertEqual(parsed.kernel, "recovery")
+
+    def test_unfencing_leaves_an_unfenced_reply_byte_for_byte(self) -> None:
+        text = self._proposal()
+        self.assertEqual(buildtest.unfence(text), text)
+        self.assertEqual(buildtest.unfence("not json at all"), "not json at all")
 
     def test_a_reply_that_is_not_a_proposal_is_not_repaired_into_one(self) -> None:
         for reply in ("not json", "[]", json.dumps({"kernel": "recovery"}),
                       self._proposal(kernel="no-such-kernel"), self._proposal(expect="maybe"),
                       json.dumps({"kernel": "recovery", "expect": "moves", "input": 1, "rewritten": "b", "reading": "c"})):
             with self.subTest(reply=reply[:40]):
-                self.assertIsNone(buildtest.read_proposal(reply))
+                self.assertIsNone(buildtest.read_proposal(reply)[0])
 
     def test_a_reply_carrying_control_characters_is_still_read(self) -> None:
-        self.assertIsNotNone(buildtest.read_proposal('{"kernel":"recovery","expect":"moves","input":"a\nb","rewritten":"c","reading":"d"}'))
+        self.assertIsNotNone(buildtest.read_proposal('{"kernel":"recovery","expect":"moves","input":"a\nb","rewritten":"c","reading":"d"}')[0])
 
 
 class ExecutionTests(MiniTestCase):
