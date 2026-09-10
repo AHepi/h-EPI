@@ -1,0 +1,333 @@
+{
+  "calls": [
+    {
+      "completion_tokens": 2610,
+      "detail": "",
+      "elapsed_s": 13,
+      "fenced": false,
+      "index": 0,
+      "ok": true,
+      "prompt_tokens": 3909
+    },
+    {
+      "completion_tokens": 3343,
+      "detail": "",
+      "elapsed_s": 19,
+      "fenced": false,
+      "index": 1,
+      "ok": true,
+      "prompt_tokens": 3940
+    },
+    {
+      "completion_tokens": 3960,
+      "detail": "",
+      "elapsed_s": 18,
+      "fenced": false,
+      "index": 2,
+      "ok": true,
+      "prompt_tokens": 3974
+    },
+    {
+      "completion_tokens": 6657,
+      "detail": "",
+      "elapsed_s": 32,
+      "fenced": false,
+      "index": 3,
+      "ok": true,
+      "prompt_tokens": 4001
+    },
+    {
+      "completion_tokens": 5599,
+      "detail": "",
+      "elapsed_s": 35,
+      "fenced": false,
+      "index": 4,
+      "ok": true,
+      "prompt_tokens": 4024
+    },
+    {
+      "completion_tokens": 6855,
+      "detail": "",
+      "elapsed_s": 30,
+      "fenced": false,
+      "index": 5,
+      "ok": true,
+      "prompt_tokens": 4045
+    },
+    {
+      "completion_tokens": 7406,
+      "detail": "",
+      "elapsed_s": 34,
+      "fenced": false,
+      "index": 6,
+      "ok": true,
+      "prompt_tokens": 4065
+    },
+    {
+      "completion_tokens": 8618,
+      "detail": "",
+      "elapsed_s": 45,
+      "fenced": false,
+      "index": 7,
+      "ok": true,
+      "prompt_tokens": 4095
+    },
+    {
+      "completion_tokens": 6361,
+      "detail": "",
+      "elapsed_s": 31,
+      "fenced": false,
+      "index": 8,
+      "ok": true,
+      "prompt_tokens": 4150
+    },
+    {
+      "completion_tokens": 6053,
+      "detail": "",
+      "elapsed_s": 30,
+      "fenced": false,
+      "index": 9,
+      "ok": true,
+      "prompt_tokens": 4156
+    },
+    {
+      "completion_tokens": 7428,
+      "detail": "",
+      "elapsed_s": 34,
+      "fenced": false,
+      "index": 10,
+      "ok": true,
+      "prompt_tokens": 4143
+    },
+    {
+      "completion_tokens": 6799,
+      "detail": "",
+      "elapsed_s": 31,
+      "fenced": false,
+      "index": 11,
+      "ok": true,
+      "prompt_tokens": 4160
+    }
+  ],
+  "condition": {
+    "arm": "L",
+    "condition_id": "ollama.com/deepseek-v4-pro:0813/arm-L/think-on/nogrid",
+    "endpoint": {
+      "max_tokens": null,
+      "model": "deepseek-v4-pro:0813",
+      "path": "ollama.com",
+      "quantisation": "unknown, may be quantised",
+      "think": true,
+      "timeout_seconds": 900
+    },
+    "grid_cells": [],
+    "proposals_requested": 12
+  },
+  "executions": [
+    {
+      "after": "I'm sorry",
+      "before": "I'm sorry",
+      "contradicted": false,
+      "detail": "",
+      "executed": "unchanged",
+      "expect": "unchanged",
+      "input": "I'm sorry",
+      "kernel": "refusal-phrase",
+      "reading": "From _plain_quotes: 'Fold typographic apostrophes and quotation marks to their ASCII forms.' So for input 'I'm sorry' the rule gives 'I'm sorry'; for rewritten 'I’m sorry' the rule also gives 'I'm sorry' after folding.",
+      "rewritten": "I’m sorry"
+    },
+    {
+      "after": "{\"b\":2}",
+      "before": "{\"a\":1}",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "```json\n{\"a\":1}\n```\n{\"b\":2}",
+      "kernel": "recovery",
+      "reading": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. Input has a fenced object, so recovery returns {\"a\":1}; rewritten has no fence, so the last top-level object {\"b\":2} is scored.",
+      "rewritten": "{\"a\":1}\n{\"b\":2}"
+    },
+    {
+      "after": "I cannot",
+      "before": "I cannot",
+      "contradicted": false,
+      "detail": "",
+      "executed": "unchanged",
+      "expect": "unchanged",
+      "input": "I'm sorry, I cannot do that.",
+      "kernel": "refusal-phrase",
+      "reading": "The docstring for refusal_phrase_in says: \"The first refusal phrase the text contains, typographic quotes read as straight ones, or None.\" The source code iterates over refusal_phrases in order: \"for phrase in refusal_phrases: if _plain_quotes(phrase).lower() in lowered: return phrase\". Thus 'first' means first in the list, not first in the text. For input 'I'm sorry, I cannot do that.', the list order gives 'I cannot' (since 'I cannot' is before 'I'm sorry' in the list). For rewritten 'I cannot do that, I'm sorry.', the list order also gives 'I cannot'. So both yield 'I cannot', unchanged.",
+      "rewritten": "I cannot do that, I'm sorry."
+    },
+    {
+      "after": "JSON_OBJECT",
+      "before": "REFUSAL_SUSPECTED",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "I cannot do that.",
+      "kernel": "response-verdict",
+      "reading": "The refusal heuristic decides the verdict only when no object can be recovered; whether a phrase occurred at all is a separate fact. Input has no object and contains 'I cannot', so verdict REFUSAL_SUSPECTED. Rewritten has an object recovered, so verdict JSON_OBJECT.",
+      "rewritten": "I cannot do that. {\"a\":1}"
+    },
+    {
+      "after": "{\"a\":2}",
+      "before": "{\"a\":2}",
+      "contradicted": false,
+      "detail": "",
+      "executed": "unchanged",
+      "expect": "unchanged",
+      "input": "{\"a\":1,\"a\":2}",
+      "kernel": "recovery",
+      "reading": "A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; the object recovered from the reply, as canonical JSON text. Input duplicate keys resolve last-wins to {\"a\":2}; rewritten strict parses to {\"a\":2}; both canonical JSON text is {\"a\":2}.",
+      "rewritten": "{\"a\":2}"
+    },
+    {
+      "after": "I cannot",
+      "before": "I cannot",
+      "contradicted": true,
+      "detail": "",
+      "executed": "unchanged",
+      "expect": "moves",
+      "input": "I cannot do that.",
+      "kernel": "refusal-phrase",
+      "reading": "The rule says: 'The first refusal phrase the text contains, typographic quotes read as straight ones, or None.' It does not mention case-insensitivity, so the phrases are matched case-sensitively. 'I cannot do that.' contains 'I cannot', so the answer is 'I cannot'. 'I CANNOT do that.' does not contain 'I cannot' (case differs), so the answer is NONE. Therefore the answer should move.",
+      "rewritten": "I CANNOT do that."
+    },
+    {
+      "after": "{\"b\":2}",
+      "before": "{\"a\":1}",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "{\"a\":1}\n{\"b\":2.5}",
+      "kernel": "recovery",
+      "reading": "A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over, so a final answer refused for a float loses to an earlier draft that parsed. For input, the last object {\"b\":2.5} contains a float and is passed over, so the earlier {\"a\":1} is recovered. For rewritten, the last object {\"b\":2} is valid, so it is recovered. Thus the answer moves from {\"a\":1} to {\"b\":2}.",
+      "rewritten": "{\"a\":1}\n{\"b\":2}"
+    },
+    {
+      "after": "{\"b\":2}",
+      "before": "{\"a\":1}",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "```json\n{\"a\":1}\n```\n```json\n{\"b\":2.5}\n```",
+      "kernel": "recovery",
+      "reading": "The object scored is the last one inside a code fence when any fence holds one; a candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over. In the input the last fenced candidate has a float and is passed over, so the earlier fenced object {\"a\":1} is recovered. In the rewritten text the last fenced candidate {\"b\":2} parses and is recovered, so the answer moves from {\"a\":1} to {\"b\":2}.",
+      "rewritten": "```json\n{\"a\":1}\n```\n```json\n{\"b\":2}\n```"
+    },
+    {
+      "after": "no",
+      "before": "yes",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "{\"x\":1,\"x\":2}",
+      "kernel": "recovered-from-prose",
+      "reading": "k_recovered_from_prose: \"Whether the object had to be recovered from prose or a fence (yes) or read strictly (no).\" recover_json_object: \"A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable\". Input has duplicate keys, so strict parse fails and recover_json_object recovers it last-wins -> yes. Rewritten is strict JSON -> no.",
+      "rewritten": "{\"x\":2}"
+    },
+    {
+      "after": "no",
+      "before": "yes",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "{\"a\":1} extra",
+      "kernel": "recovered-from-prose",
+      "reading": "The rule says k_recovered_from_prose returns \"yes\" when the object had to be recovered from prose or a fence, and \"no\" when read strictly. parse_content first tries loads_strict(content); for input '{\"a\":1} extra' strict parsing fails, so recover_json_object recovers the object from prose and the fourth element is True. For rewritten '{\"a\":1}' strict parsing succeeds, so the fourth element is False. Thus the answer moves.",
+      "rewritten": "{\"a\":1}"
+    },
+    {
+      "after": "{\"a\":2}",
+      "before": "{\"b\":1}",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "```json\n{\"a\":2.5}\n```\n{\"b\":1}",
+      "kernel": "recovery",
+      "reading": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over. In the first text the fenced object has a float and is passed over, so the last top-level object {\"b\":1} is scored. In the second text the fenced object {\"a\":2} is scoreable and is scored.",
+      "rewritten": "```json\n{\"a\":2}\n```\n{\"b\":1}"
+    },
+    {
+      "after": "{\"a\":2}",
+      "before": "{\"b\":1}",
+      "contradicted": false,
+      "detail": "",
+      "executed": "moved",
+      "expect": "moves",
+      "input": "```json\n{\"a\":2.5}\n```\n{\"b\":1}",
+      "kernel": "recovery",
+      "reading": "The rule says: \"The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text\" and \"A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over\". For the input, the fenced object {\"a\":2.5} is passed over because it contains a float, so no fence holds one, so the last top-level object {\"b\":1} is scored, giving {\"b\":1}. For the rewritten, the fenced object {\"a\":2} is scoreable, so a fence holds one, so it is scored, giving {\"a\":2}. Therefore the answer moves.",
+      "rewritten": "```json\n{\"a\":2}\n```\n{\"b\":1}"
+    }
+  ],
+  "measures": {
+    "behaviours": [
+      [
+        "recovered-from-prose",
+        "yes",
+        "no"
+      ],
+      [
+        "recovery",
+        "{\"a\":1}",
+        "{\"b\":2}"
+      ],
+      [
+        "recovery",
+        "{\"a\":2}",
+        "{\"a\":2}"
+      ],
+      [
+        "recovery",
+        "{\"b\":1}",
+        "{\"a\":2}"
+      ],
+      [
+        "refusal-phrase",
+        "I cannot",
+        "I cannot"
+      ],
+      [
+        "refusal-phrase",
+        "I'm sorry",
+        "I'm sorry"
+      ],
+      [
+        "response-verdict",
+        "REFUSAL_SUSPECTED",
+        "JSON_OBJECT"
+      ]
+    ],
+    "contradicted": 1,
+    "contradictions": [
+      {
+        "after": "I cannot",
+        "before": "I cannot",
+        "contradicted": true,
+        "detail": "",
+        "executed": "unchanged",
+        "expect": "moves",
+        "input": "I cannot do that.",
+        "kernel": "refusal-phrase",
+        "reading": "The rule says: 'The first refusal phrase the text contains, typographic quotes read as straight ones, or None.' It does not mention case-insensitivity, so the phrases are matched case-sensitively. 'I cannot do that.' contains 'I cannot', so the answer is 'I cannot'. 'I CANNOT do that.' does not contain 'I cannot' (case differs), so the answer is NONE. Therefore the answer should move.",
+        "rewritten": "I CANNOT do that."
+      }
+    ],
+    "degenerate": 0,
+    "distinct_behaviours": 7,
+    "executed": 12,
+    "proposals": 12,
+    "reproduces_h43": 0,
+    "unrunnable": 0
+  },
+  "method_version": 1
+}
