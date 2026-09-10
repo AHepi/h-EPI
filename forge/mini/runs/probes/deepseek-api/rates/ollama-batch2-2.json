@@ -1,0 +1,12 @@
+{
+  "path": "https://ollama.com",
+  "model": "deepseek-v4-pro:0813",
+  "num_predict": 32000,
+  "done": true,
+  "done_reason": "stop",
+  "eval_count": 9877,
+  "prompt_eval_count": 3873,
+  "content": "{\n  \"claim\": \"recover_json_object skips a fenced JSON object with repeated keys instead of resolving them last-wins, so when a later fenced object has duplicate keys and an earlier fenced object is strict-valid, it returns the earlier object rather than the last fenced object.\",\n  \"expected\": \"For the reproducer, recover_json_object should return ({\\\"b\\\": 2}, (\\\"b\\\",)) because the last fenced object is scoreable with repeated keys resolved last-wins.\",\n  \"observed\": \"It returns ({\\\"a\\\": 1}, ()) because the fenced pool sets parsed = None for any fenced candidate that fails strict parsing, skipping the duplicate-key candidate, then returns the earlier strict-valid fenced object.\",\n  \"reproducer\": \"```json\\n{\\\"a\\\": 1}\\n```\\n```json\\n{\\\"b\\\": 1, \\\"b\\\": 2}\\n```\",\n  \"source_basis\": \"The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text ... A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable\",\n  \"execution_evidence\": \"none: no executable oracle\",\n  \"scope\": \"Replies with multiple fenced JSON objects where the last fenced object has repeated keys and an earlier fenced object is strict-valid.\",\n  \"uncertainty\": \"None; the top-level fallback masks the issue when the duplicate-key object is the only fenced object, but the documented last-fenced rule is still violated with multiple fences.\"\n}",
+  "thinking_chars": 40958,
+  "elapsed_s": 71
+}

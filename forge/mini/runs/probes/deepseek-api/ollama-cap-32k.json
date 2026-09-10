@@ -1,0 +1,12 @@
+{
+  "path": "https://ollama.com",
+  "model": "deepseek-v4-pro:0813",
+  "num_predict": 32000,
+  "done": true,
+  "done_reason": "stop",
+  "eval_count": 7096,
+  "prompt_eval_count": 3873,
+  "content": "{\n  \"claim\": \"recover_json_object ignores duplicate-key candidates inside code fences, so it can score a later top-level object outside the fence instead of the last fenced object, contrary to the documented rule that the last object inside a code fence is scored when any fence holds one.\",\n  \"expected\": \"For content with a fenced JSON object containing repeated keys followed by a top-level object outside the fence, recover_json_object should return the fenced object with the repeated key resolved last-wins (e.g. {'b': 2}).\",\n  \"observed\": \"It returns the later top-level object outside the fence (e.g. {'a': 1}) because the fenced candidate is skipped in the fenced pool (duplicate keys are only resolved for top-level candidates) and the top-level pool then selects the later object.\",\n  \"reproducer\": \"```json\\n{\\\"b\\\":1, \\\"b\\\":2}\\n```\\n{\\\"a\\\":1}\",\n  \"source_basis\": \"recover_json_object doc: \\\"The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text\\\" and \\\"A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable\\\".\",\n  \"execution_evidence\": \"none: no executable oracle\",\n  \"scope\": \"Any reply containing a fenced JSON object with duplicate keys and a later top-level object outside the fence that parses as strict JSON.\",\n  \"uncertainty\": \"The doc could be read as making fenced candidates strict-only, but the general 'candidate' sentence and the last-fence rule make the intended behaviour clear.\"\n}",
+  "thinking_chars": 28516,
+  "elapsed_s": 49
+}

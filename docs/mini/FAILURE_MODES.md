@@ -599,36 +599,49 @@ per packet and the block reported them, so the machinery caught it; what it mean
 is that a blind adjudication of these packets is not currently possible, and
 saying the adjudication was blind would be false.
 
-## H4 — The same model finishes on one path and never finishes on another
+## H4 — What the two paths actually do, and what the first version of this entry got wrong
 
-**Found by** three calls with the same brief, the same subject and the same 32,000-token cap,
-recorded side by side in `forge/mini/runs/probes/deepseek-api/`. **Status: OPEN**, and the
-strongest candidate cause of M17.
+**Found by** twenty-two calls with one brief, one subject and one model
+(`deepseek-v4-pro`, reasoning on, `num_predict` 32,000 unless stated, temperature 0, seed 7),
+recorded in `forge/mini/runs/probes/deepseek-api/`. **Status: OPEN.**
 
-| Path | Model | Completion tokens | Of which reasoning | Finished | Content |
-|---|---|---|---|---|---|
-| `ollama.com` | `deepseek-v4-pro:0813` | **32,000**, exactly the cap | not reported separately | no | **empty** |
-| `api.deepseek.com` | `deepseek-flash` | 14,004 | 13,679 | `stop` | a full packet |
-| `api.deepseek.com` | `deepseek-v4-pro` | **11,345** | 10,991 | `stop` | a full packet |
+**The first version of this entry was written from one call and overstated its case.** It said
+the same model "runs to the full 32,000 through ollama.com and emits no content at all", and
+offered a truncating cap as one candidate mechanism. Repeats refuted both parts: the capped call
+succeeded on the next attempt and on many after it, and the empty reply has been seen exactly
+once in fourteen calls on that path. What follows is what twenty-two calls support.
 
-The subject is `forge/mini/runs/usetest/v5-s2-2/subject.py` and the brief is arm A's, in all
-three. The same model that reaches a natural stop in 11,345 tokens against the vendor's own API
-runs to the full 32,000 through `ollama.com` and emits no content at all.
+| Path | How sent | Calls | Returned content | Failed |
+|---|---|---|---|---|
+| `ollama.com` | one at a time | 6 | 6 | 0 |
+| `ollama.com` | five at once | 10 | **4** | **6, all HTTP 500** |
+| `api.deepseek.com` | one at a time | 2 | 2 | 0 |
+| `api.deepseek.com` | five at once | 5 | **5** | **0** |
 
-M17 read this as a model that reasons at length inside any affordable cap, and block 3 was
-registered on that reading: raise the allowance until the reasoning fits. The reading was wrong,
-or at least not the whole of it. The allowance was never the binding constraint — 11,345 was
-enough on one path and 32,000 was not enough on another, for one model and one prompt.
+**What this supports.** Sent one at a time, both paths answer. Sent five at once, `ollama.com`
+returned `HTTP 500 Internal Server Error` on six of ten calls across two batches, and
+`api.deepseek.com` returned none on five. DeepSeek's own documentation says a concurrency limit
+there yields `429`, and the limit for this model is 500 concurrent connections, so five is not
+near it; whatever produces the 500s belongs to the other path.
 
-What this does **not** establish is the mechanism. Two candidates, and nothing here separates
-them: the cap may be applied to reasoning and content together on one path and to content alone
-on the other, so that the same generation is truncated in one and not the other; or the serving
-configuration may differ, so the model reasons far longer on one path than the other for reasons
-that have nothing to do with the cap. Both are consistent with the table and neither is shown.
+**What this does not support, and the caution matters.** That earlier runs were affected. Both
+five-at-once batches were taken in one window today, and mini blocks 2 and 3 ran for hours at
+five concurrent with almost no failed calls — block 2's arm C produced twenty proposals from
+twenty cycles. A six-in-ten failure rate is not compatible with that, so the rate is
+time-varying and these probes measure the path **now** rather than the path as it was when the
+blocks ran. Nothing here licenses reinterpreting an earlier null result as a transport artefact.
 
-The consequence for anything already run is stated rather than repaired: **every mini result in
-this repository was produced through `ollama.com`**, so a null result on a reasoning model is a
-null result on that path, and the arm it belongs to has not been shown to fail anywhere else.
+**What is not the explanation.** `num_predict` was suspected and is cleared: capped calls
+succeeded eleven times. Non-determinism was suspected of being a property of the path and is
+cleared: the same request gave eval counts from 4,089 to 12,869 through `ollama.com` and
+completion counts from 7,580 to 21,307 through `api.deepseek.com`, so a reasoning model at
+temperature 0 with a fixed seed is not reproducible on either. That last fact is the one with
+reach beyond this entry, because a repeat of the same bytes is not a repeat of the same
+computation, and the repeat floor is read as though it were.
+
+**The one unexplained observation** is the single empty reply, at an eval count of exactly the
+cap, in block 3's arm A on `v5-s2-2`. One occurrence in fourteen calls on that path, cause
+unknown, recorded rather than explained.
 
 ## What the thirty runs show, and do not
 

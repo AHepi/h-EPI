@@ -1,0 +1,12 @@
+{
+  "path": "https://ollama.com",
+  "model": "deepseek-v4-pro:0813",
+  "num_predict": 32000,
+  "done": true,
+  "done_reason": "stop",
+  "eval_count": 15504,
+  "prompt_eval_count": 3873,
+  "content": "{\n  \"claim\": \"recover_json_object treats a JSON object nested inside a top-level array as a top-level candidate, even though the documentation says only top-level balanced objects are candidates.\",\n  \"expected\": \"For content `[{\\\"a\\\": 1}]`, recover_json_object should raise RecordError because there is no top-level object; the only object is nested inside a list.\",\n  \"observed\": \"It returns the dict `{\\\"a\\\": 1}` (with an empty duplicates tuple) because the top-level scanner raw-decodes the `{` inside the list and appends it to top_level.\",\n  \"reproducer\": \"[{\\\"a\\\": 1}]\",\n  \"source_basis\": \"The docstring states: \\\"Every top-level balanced object in the text is a candidate\\\" and \\\"an object nested inside another is not a candidate of its own.\\\" The phrase \\\"top-level balanced object\\\" excludes objects nested inside any JSON value, including arrays.\",\n  \"execution_evidence\": \"none: no executable oracle\",\n  \"scope\": \"Any text where the only JSON object(s) are nested inside a top-level JSON array; recover_json_object will incorrectly return one of them instead of raising RecordError.\",\n  \"uncertainty\": \"The docstring explicitly mentions only objects nested inside another object, not arrays; however 'top-level' normally excludes arrays. If the intended meaning of 'top-level' is only not nested inside another object, this may not be a defect.\"\n}",
+  "thinking_chars": 64264,
+  "elapsed_s": 101
+}
