@@ -1,0 +1,27 @@
+# Execution
+
+## Proposals so far (proposals)
+[e02014e3dce09c5d] (mini.pair-proposal.grid-1.v1)
+I am covering the cell 'two different objects / the same object again' using the kernel `conformance.kernel.recovery`.
+
+For the input, I provide two different JSON objects as bare text. For the rewritten version, I append the second object again as bare text at the end.
+
+According to the rule for `recover_json_object`, the object scored is 'the last one inside a code fence when any fence holds one, else the last top-level object in the text' [7a147bb8c4c1539c]. In the input, there are no code fences, so the last top-level object (the second object) is scored. In the rewritten text, there are still no code fences, and the last top-level object is the appended copy of the second object. Since the object itself is the same, the recovered object is unchanged.
+commitments: {"kernel": "conformance.kernel.recovery", "input": "{\"a\": 1}\n{\"b\": 2}", "rewritten": "{\"a\": 1}\n{\"b\": 2}\n{\"b\": 2}", "expect": "unchanged", "rewrite": "Appended the second bare JSON object again at the end.", "cell": "two different objects / the same object again"}
+[780b2ef491edb35c] (mini.pair-proposal.grid-2.v1)
+I am covering the cell 'two different objects / a second fence holding another object' using the kernel `conformance.kernel.recovery`.
+
+For the input, I provide two different JSON objects as bare text. For the rewritten version, I append a code fence containing a third, different JSON object.
+
+According to the rule for `recover_json_object`, the object scored is 'the last one inside a code fence when any fence holds one, else the last top-level object in the text' [7a147bb8c4c1539c]. In the input, there are no code fences, so the last top-level object (the second object) is scored. In the rewritten text, a code fence is introduced; the rule specifies that the last one inside a code fence is scored. Therefore, the recovered object moves from the second bare object to the object inside the fence.
+commitments: {"kernel": "conformance.kernel.recovery", "input": "{\"a\": 1}\n{\"b\": 2}", "rewritten": "{\"a\": 1}\n{\"b\": 2}\n```json\n{\"c\": 3}\n```", "expect": "moves", "rewrite": "Added a code fence holding a different object after two bare objects.", "cell": "two different objects / a second fence holding another object"}
+[2bf6f8cecde48fd2] (mini.pair-proposal.grid-3.v1)
+I am covering the cell 'an object alone / nothing' using the kernel `conformance.kernel.recovery`. 
+
+For the input, I provide a single JSON object as bare text. For the rewritten version, I wrap this object in a code fence.
+
+According to the rule for `recover_json_object`, the object scored is 'the last one inside a code fence when any fence holds one, else the last top-level object in the text' [7a147bb8c4c1539c]. In the input, there are no code fences, so the last top-level object (the single object) is scored. In the rewritten text, the object is now inside a code fence, and since it is the only one, it is the last one inside a code fence. The rule says the same object is scored before and after, so the recovered object is unchanged.
+commitments: {"kernel": "conformance.kernel.recovery", "input": "{\"a\": 1}", "rewritten": "```json\n{\"a\": 1}\n```", "expect": "unchanged", "rewrite": "Wrapped the bare JSON object in a code fence.", "cell": "an object alone / nothing"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

@@ -1,0 +1,21 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+All three proposals in this cycle were executed successfully, and the machine's behavior matched the proposers' expectations. There are no failures to analyze.
+
+Proposers correctly applied the rule for `recover_json_object` stating that the scored object is "the last one inside a code fence when any fence holds one, else the last top-level object in the text" [cf3ead255ba521d3]. 
+
+- In 2a9122523ec866dc, removing the fence shifted the recovery to the "last top-level object," which remained the same object.
+- In 76273e041a1bba23 and 8925999836b6ca83, the presence of a code fence continued to take precedence over any subsequent prose or bare objects, ensuring the object inside the fence was recovered.
+
+Since these cases confirmed the rule's priority of fences over bare objects, a proposer should next try to test the "last one" logic—for example, by providing multiple fences or multiple bare objects to see if the machine correctly selects the final one as specified in the rules.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

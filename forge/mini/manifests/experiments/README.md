@@ -246,3 +246,15 @@ cell it is given. Seven cycles of three, gemma4:31b, so every cell is named
 at least once. This is the one shape whose dimensions were chosen knowing the
 control; what it tests is whether a rule-reading proposer, handed the control's
 cell, writes the rule's expectation and whether the machine then disagrees.
+
+**r3-6 read.** Seven cycles, twenty-one proposals, every cell named, none
+dropped, all rejected. The seat handed the proposer the control's cell in
+cycle 3 ("a sentence then an object / a different bare object") and the
+proposer wrote the sentence before the fence, not inside it, so the reply it
+built was one the rule and the code agree on. The enumeration worked; the
+instantiation of "what the fence holds" did not. One more addendum,
+`r3-7-grid-skeletons`, writes each cell in a notation that leaves no room
+(`fence[ S A ] B`: a fence holding a sentence then object A, and object B
+after it), with the same seat, the same seven cycles and the same model. If
+the proposer builds that cell as written and writes the rule's expectation,
+the machine's answer on it is the control.
