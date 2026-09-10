@@ -39,12 +39,20 @@ def _reject_floats(value: Any, location: str = "$") -> None:
             _reject_floats(item, f"{location}.{key}")
 
 
-def loads_strict(source: str) -> Any:
+def loads_strict(source: str, *, control_characters: bool = False) -> Any:
+    """Load JSON refusing duplicate keys, floats, non-finite numbers and surrogates.
+
+    ``control_characters`` admits a raw control character inside a string (a line break a
+    writer put there instead of ``\\n``); every other refusal stands. It is off by default and
+    no record loader turns it on.
+    """
+
     try:
         value = json.loads(
             source,
             object_pairs_hook=_pairs_no_duplicates,
             parse_constant=_reject_constant,
+            strict=not control_characters,
         )
         _reject_floats(value)
     except RecordError:

@@ -75,12 +75,20 @@ UNREADABLE = "UNREADABLE_INPUT"
 
 
 def _fields(text: str, *names: str) -> dict[str, str] | None:
-    """A grounding kernel's input is one JSON object carrying the named string fields."""
+    """A grounding kernel's input is one JSON object carrying the named string fields.
+
+    A proposer that writes a line break into a document string has written a control character
+    into a JSON string, which strict JSON refuses; it is read as the line break that was meant,
+    with the strict reading tried first (mini register M11).
+    """
 
     try:
         parsed = loads_strict(text)
     except RecordError:
-        return None
+        try:
+            parsed = loads_strict(text, control_characters=True)
+        except RecordError:
+            return None
     if type(parsed) is not dict or any(type(parsed.get(name)) is not str for name in names):
         return None
     return {name: str(parsed[name]) for name in names}
@@ -118,8 +126,8 @@ KERNELS: tuple[Kernel, ...] = (
     Kernel(KERNEL_RECOVERED_FROM_PROSE, "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no).", _recovered_from_prose),
     Kernel(KERNEL_RESPONSE_VERDICT, "The harness's response verdict for the reply: JSON_OBJECT, INVALID_JSON, REFUSAL_SUSPECTED, or another of its verdicts.", _response_verdict),
     Kernel(KERNEL_REFUSAL_PHRASE, "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE.", _refusal_phrase),
-    Kernel(KERNEL_SPAN_OCCURS, "Whether a cited span occurs in a document, whitespace-normalised, no relaxation: the input is one JSON object {\"span\", \"document\"}; verbatim or NOT_IN_DOCUMENT.", _span_occurs_kernel),
-    Kernel(KERNEL_GROUNDING, "The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked: the input is one JSON object {\"value\", \"span\", \"document\"}; GROUNDED, SPAN_MISSING, SPAN_NOT_IN_DOCUMENT or VALUE_NOT_IN_SPAN.", _grounding_kernel),
+    Kernel(KERNEL_SPAN_OCCURS, "Whether a cited span occurs in a document, whitespace-normalised, no relaxation: the input is one JSON object {\"span\", \"document\"}; verbatim or NOT_IN_DOCUMENT.", _span_occurs_kernel, unreadable=UNREADABLE),
+    Kernel(KERNEL_GROUNDING, "The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked: the input is one JSON object {\"value\", \"span\", \"document\"}; GROUNDED, SPAN_MISSING, SPAN_NOT_IN_DOCUMENT or VALUE_NOT_IN_SPAN.", _grounding_kernel, unreadable=UNREADABLE),
 )
 
 #: The harness functions the kernels call, whose source a proposer may be shown whole.
@@ -157,6 +165,39 @@ def _kernel_source(context: MachineContext) -> str:
 
 
 KERNEL_SOURCE_SEAT = register_machine_seat(MachineSeat(KERNEL_SOURCE_KIND, "Emits the kernels' source code as an artifact.", _kernel_source))
+
+KERNEL_RULES_KIND = "mini.kernel-rules.v1"
+
+
+def kernel_rules_text() -> str:
+    """The rules the kernels are documented to follow, and not one line of the code that follows them.
+
+    Each harness function is shown as its signature and its docstring; a function without a
+    docstring is shown as having none. A seat that reads this and not the source writes its
+    expectation from the rule, so that where the rule and the code part, the executed answer
+    can disagree with a reading that was not taken from the code.
+    """
+
+    parts = [f"REFUSAL_PHRASES = {list(REFUSAL_PHRASES)!r}", "The kernels:"]
+    parts.extend(f"- {kernel.kernel_id}: {kernel.description}" for kernel in KERNELS)
+    for function in SOURCE_FUNCTIONS:
+        doc = inspect.getdoc(function)
+        body = "(no docstring)" if not doc else doc
+        parts.append(f"def {function.__name__}{inspect.signature(function)}:\n" + "\n".join(("    " + line).rstrip() for line in body.split("\n")))
+    return "\n\n".join(parts) + "\n"
+
+
+def _kernel_rules(context: MachineContext) -> str:
+    """A machine seat whose artifact is the docstrings alone, so a proposer reads the rule and not the code."""
+
+    text = kernel_rules_text()
+    return json.dumps(
+        {"body": text, "commitments": f"The documented rules of the harness functions behind the kernels, without their code, sha256 {hashlib.sha256(text.encode('utf-8')).hexdigest()}."},
+        ensure_ascii=False,
+    )
+
+
+KERNEL_RULES_SEAT = register_machine_seat(MachineSeat(KERNEL_RULES_KIND, "Emits the kernels' documented rules, without the code, as an artifact.", _kernel_rules))
 
 _WHITESPACE = re.compile(r"\s+")
 
@@ -247,6 +288,8 @@ __all__ = [
     "KERNELS",
     "KERNEL_GROUNDING",
     "KERNEL_SOURCE_KIND",
+    "KERNEL_RULES_KIND",
+    "kernel_rules_text",
     "KERNEL_SPAN_OCCURS",
     "kernel_source_text",
     "KERNEL_RECOVERED_FROM_PROSE",

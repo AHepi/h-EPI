@@ -35,3 +35,13 @@ class StrictJSONTests(unittest.TestCase):
     def test_lone_unicode_surrogate_is_rejected(self) -> None:
         with self.assertRaises(RecordError):
             loads_strict('{"text": "\\ud800"}')
+
+    def test_a_control_character_in_a_string_is_refused_unless_admitted(self) -> None:
+        source = '{"document": "five\ndays"}'
+        with self.assertRaises(RecordError):
+            loads_strict(source)
+        self.assertEqual(loads_strict(source, control_characters=True), {"document": "five\ndays"})
+        with self.assertRaises(RecordError):
+            loads_strict('{"a": 1, "a": 2}', control_characters=True)
+        with self.assertRaises(RecordError):
+            loads_strict('{"a": 1.5}', control_characters=True)

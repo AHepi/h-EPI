@@ -16,9 +16,16 @@ from creib.forge.mini import conformance_kernels as kernels
 from creib.forge.mini.blindspot import (
     EXECUTION_KIND,
     PAIR_EXECUTION_KIND,
+    READING_ABSENT,
+    READING_AGREE,
+    READING_CODE_MISREAD,
+    READING_NEITHER,
+    READING_RULE_DIVERGES,
+    READING_UNREADABLE,
     STANDING_CANDIDATE,
     STANDING_REJECTED,
     VERDICT_KIND,
+    reading_for,
     resolve_kernel,
     standing_for_pair,
 )
@@ -29,7 +36,11 @@ from .helpers import MiniTestCase, submission
 OBJECT = '{"claimant_name": "amara okoro", "total_days": "five"}'
 
 
-def _pair_manifest(cycles: int = 1) -> dict:
+PREDICTION_KIND = "mini.pair-prediction.v1"
+
+
+def _pair_manifest(cycles: int = 1, predict: bool = False, rules: bool = False) -> dict:
+    shown = kernels.KERNEL_RULES_KIND if rules else kernels.KERNEL_SOURCE_KIND
     proposal = {
         "kind_id": "mini.pair-proposal.recovery.v1",
         "title": "Proposal",
@@ -40,30 +51,41 @@ def _pair_manifest(cycles: int = 1) -> dict:
         ],
         "output_port": {"port_id": "out", "produces_kind": "mini.pair-proposal.recovery.v1"},
     }
-    return {
+    prediction = {
+        "kind_id": PREDICTION_KIND,
+        "title": "Prediction",
+        "commitment_call": "single",
+        "input_ports": [{"port_id": "proposals", "port_type": "pair_proposals", "window": "this_cycle"}],
+        "output_port": {"port_id": "out", "produces_kind": PREDICTION_KIND},
+    }
+    manifest = {
         "schema_version": "creib.mini.manifest.v1",
         "manifest_id": "test.pairs",
         "problem": "Find a rewrite the recovery check cannot see.",
         "cycles": {"max_cycles": cycles},
         "port_types": [
-            {"port_type": "kernel_source", "draws_from": {"artifact_kinds": [kernels.KERNEL_SOURCE_KIND]}, "render": {"rule": "list_bodies", "header": "The source"}},
+            {"port_type": "kernel_source", "draws_from": {"artifact_kinds": [shown]}, "render": {"rule": "list_bodies", "header": "The source"}},
             {"port_type": "pair_proposals", "draws_from": {"artifact_kinds": ["mini.pair-proposal.recovery.v1"]}, "render": {"rule": "list_bodies_and_commitments", "header": "Proposals"}},
             {"port_type": "pair_executions", "draws_from": {"artifact_kinds": [PAIR_EXECUTION_KIND]}, "render": {"rule": "list_bodies_and_commitments", "header": "Executions"}},
         ],
         "kinds": [
-            {"kind_id": kernels.KERNEL_SOURCE_KIND, "title": "Source", "input_ports": [], "output_port": {"port_id": "out", "produces_kind": kernels.KERNEL_SOURCE_KIND}},
+            {"kind_id": shown, "title": "Source", "input_ports": [], "output_port": {"port_id": "out", "produces_kind": shown}},
             proposal,
             {"kind_id": PAIR_EXECUTION_KIND, "title": "Execution", "input_ports": [{"port_id": "proposals", "port_type": "pair_proposals", "window": "this_cycle"}], "output_port": {"port_id": "out", "produces_kind": PAIR_EXECUTION_KIND}},
             {"kind_id": VERDICT_KIND, "title": "Verdict", "input_ports": [{"port_id": "executions", "port_type": "pair_executions", "window": "this_cycle"}], "output_port": {"port_id": "out", "produces_kind": VERDICT_KIND}},
         ],
         "stages": [
-            {"stage_id": "source", "kind_id": kernels.KERNEL_SOURCE_KIND, "seat": "machine", "ports": []},
+            {"stage_id": "source", "kind_id": shown, "seat": "machine", "ports": []},
             {"stage_id": "propose", "kind_id": "mini.pair-proposal.recovery.v1", "ports": ["problem", "source"]},
             {"stage_id": "execute", "kind_id": PAIR_EXECUTION_KIND, "seat": "machine", "ports": ["proposals"]},
             {"stage_id": "verdict", "kind_id": VERDICT_KIND, "seat": "machine", "ports": ["executions"]},
             {"stage_id": "end", "end": True},
         ],
     }
+    if predict:
+        manifest["kinds"].insert(2, prediction)
+        manifest["stages"].insert(2, {"stage_id": "predict", "kind_id": PREDICTION_KIND, "ports": ["proposals"]})
+    return manifest
 
 
 def _proposal(kernel: str, source: str, rewritten: str, expect: str) -> str:
@@ -71,8 +93,8 @@ def _proposal(kernel: str, source: str, rewritten: str, expect: str) -> str:
 
 
 class PairExecutionTests(MiniTestCase):
-    def _run(self, replies: dict[str, list[str]], cycles: int = 1, name: str = "run"):
-        plan, outcome = self.run_manifest(_pair_manifest(cycles), replies, name=name)
+    def _run(self, replies: dict[str, list[str]], cycles: int = 1, name: str = "run", predict: bool = False):
+        plan, outcome = self.run_manifest(_pair_manifest(cycles, predict=predict), replies, name=name)
         state = replay(outcome.root / "log.jsonl", plan.genesis)
         blobs = BlobStore(outcome.root / "blobs")
         executions = [json.loads(blobs.get(r["commitments_ref"]).decode("utf-8"))["executions"] for r in state.artifacts.values() if r["kind_id"] == PAIR_EXECUTION_KIND]
@@ -126,6 +148,85 @@ class PairExecutionTests(MiniTestCase):
         self.assertIn("def refusal_phrase_in", brief)
 
 
+    def test_an_input_the_kernel_cannot_read_is_unrunnable_not_a_move(self) -> None:
+        readable = json.dumps({"value": "five", "span": "five days", "document": "away for five days."})
+        state, executions, verdicts = self._run({"propose": [_proposal(kernels.KERNEL_GROUNDING, "not json at all", readable, "moves")]})
+        self.assertEqual(executions[0]["executed"], "unrunnable")
+        self.assertEqual((executions[0]["before"], executions[0]["after"]), (kernels.UNREADABLE, "GROUNDED"))
+        self.assertIn("could not read the input", executions[0]["detail"])
+        self.assertEqual((verdicts[0]["standing"], verdicts[0]["column"]), (STANDING_REJECTED, None))
+        state, executions, verdicts = self._run({"propose": [_proposal(kernels.KERNEL_RECOVERY, "not json at all", readable, "moves")]}, name="recovery")
+        self.assertEqual(executions[0]["executed"], "moved", "a kernel that declares no unreadable verdict moves as before")
+
+    def test_a_prediction_is_read_beside_the_expectation(self) -> None:
+        from creib.forge.mini.runner import run_mini
+
+        h44 = "```json\nthe form:\n" + OBJECT + "\n``` then {\"later\": 1}"
+        proposal = _proposal(kernels.KERNEL_RECOVERY, OBJECT, h44, "unchanged")
+        plan = self.compile(_pair_manifest(predict=True))
+        for expect, shown, reading, name in ((" moves", "?", READING_UNREADABLE, "bad"), ("moves", "moves", READING_RULE_DIVERGES, "code"), ("unchanged", "unchanged", READING_NEITHER, "neither")):
+            outcome = run_mini(plan, self.tmp / name, _PredictingResponder({"propose": [proposal]}, expect))
+            state = replay(outcome.root / "log.jsonl", plan.genesis)
+            blobs = BlobStore(outcome.root / "blobs")
+            verdict = [json.loads(blobs.get(r["commitments_ref"]).decode("utf-8"))["verdicts"] for r in state.artifacts.values() if r["kind_id"] == VERDICT_KIND][0][0]
+            self.assertEqual((verdict["executed"], verdict["expected"], verdict["predicted"], verdict["reading"]), ("moved", "unchanged", shown, reading), name)
+            self.assertEqual(verdict["standing"], STANDING_CANDIDATE, "the standing is the proposer's expectation against the machine; a prediction names a reading, never a standing")
+
+    def test_a_prediction_naming_no_proposal_of_this_cycle_leaves_the_reading_absent(self) -> None:
+        state, executions, verdicts = self._run(
+            {"propose": [_proposal(kernels.KERNEL_RECOVERY, OBJECT, OBJECT.upper(), "moves")], "predict": [submission("p", json.dumps({"proposal": "0000000000000000", "expect": "moves"}))]},
+            predict=True,
+        )
+        self.assertEqual((verdicts[0]["predicted"], verdicts[0]["reading"]), (None, READING_ABSENT))
+
+    def test_the_readings_name_every_pairing(self) -> None:
+        self.assertEqual(reading_for("moved", "moves", None), READING_ABSENT)
+        self.assertEqual(reading_for("moved", "moves", "moves"), READING_AGREE)
+        self.assertEqual(reading_for("moved", "unchanged", "moves"), READING_RULE_DIVERGES)
+        self.assertEqual(reading_for("moved", "moves", "unchanged"), READING_CODE_MISREAD)
+        self.assertEqual(reading_for("unchanged", "moves", "moves"), READING_NEITHER)
+        self.assertEqual(reading_for("unrunnable", "moves", "moves"), READING_UNREADABLE)
+        self.assertEqual(reading_for("moved", "moves", "?"), READING_UNREADABLE)
+
+    def test_the_rules_seat_shows_the_docstrings_and_not_the_code(self) -> None:
+        from creib.forge.mini.runner import render_brief
+
+        plan, outcome = self.run_manifest(_pair_manifest(rules=True), {"propose": [_proposal(kernels.KERNEL_RECOVERY, OBJECT, OBJECT.upper(), "moves")]})
+        state = replay(outcome.root / "log.jsonl", plan.genesis)
+        blobs = BlobStore(outcome.root / "blobs")
+        rules = next(r for r in state.artifacts.values() if r["kind_id"] == kernels.KERNEL_RULES_KIND)
+        body = blobs.get(rules["body_ref"]).decode("utf-8")
+        self.assertEqual(body, kernels.kernel_rules_text())
+        self.assertIn("def recover_json_object", body)
+        self.assertIn("last one inside a code fence", body, "the rule the H44 case is read against")
+        self.assertNotIn("_FENCE.finditer", body)
+        self.assertNotIn("return ", body)
+        brief, _ = render_brief(plan, state, blobs, plan.stage("propose"), 1)
+        self.assertIn("last one inside a code fence", brief)
+        self.assertNotIn("_FENCE.finditer", brief)
+
+
+class _PredictingResponder:
+    """A scripted responder whose prediction names the proposal it was shown, read from the brief."""
+
+    def __init__(self, script: dict, expect: str) -> None:
+        from creib.forge.mini.executor import ScriptedResponder
+
+        self._inner = ScriptedResponder(script)
+        self._expect = expect
+
+    def reply(self, request):
+        import re
+
+        from creib.forge.mini.executor import Reply
+
+        if request.stage_id != "predict":
+            return self._inner.reply(request)
+        found = re.search(r"\b([0-9a-f]{16})\b", request.brief)
+        text = submission("a prediction", json.dumps({"proposal": "" if found is None else found.group(1), "expect": self._expect}))
+        return Reply(text=text, prompt_tokens=1, completion_tokens=1)
+
+
 class TransformDuplicateTests(MiniTestCase):
     def test_a_repeated_triple_is_named_and_not_re_run(self) -> None:
         from pathlib import Path
@@ -147,6 +248,30 @@ class TransformDuplicateTests(MiniTestCase):
         self.assertEqual(executed, ["moved", "duplicate", "duplicate", "duplicate", "duplicate", "duplicate"])
 
 
+class TransformUnreadableTests(MiniTestCase):
+    def test_a_triple_whose_kernel_cannot_read_the_input_is_unrunnable(self) -> None:
+        from pathlib import Path
+        from creib.strict_json import load_strict
+
+        root = Path(__file__).resolve().parents[2]
+        manifest = dict(load_strict(root / "forge" / "mini" / "manifests" / "conformance-blind-spot" / "manifest.json"))
+        manifest["sources"] = [{"source_id": item["source_id"], "text": (root / "forge" / "mini" / "manifests" / "conformance-blind-spot" / item["path"]).read_text(encoding="utf-8")} for item in manifest["sources"]]
+        manifest["cycles"] = {"max_cycles": 1}
+        triple = json.dumps({"kernel": kernels.KERNEL_GROUNDING, "transform": "conformance.transform.upper-case", "input": OBJECT})
+        reply = submission("a reply that is not a grounding input", triple)
+        script = {stage: [reply] for stage in ("propose-1", "propose-2", "propose-3")}
+        script["criticise"] = [submission("c", "c")]
+        script["criticise@commitments"] = [json.dumps({"commitments": "c"})]
+        plan, outcome = self.run_manifest(manifest, script)
+        state = replay(outcome.root / "log.jsonl", plan.genesis)
+        blobs = BlobStore(outcome.root / "blobs")
+        executions = [e for r in state.artifacts.values() if r["kind_id"] == EXECUTION_KIND for e in json.loads(blobs.get(r["commitments_ref"]).decode("utf-8"))["executions"]]
+        self.assertEqual([e["executed"] for e in executions], ["unrunnable", "duplicate", "duplicate"])
+        self.assertEqual((executions[0]["before"], executions[0]["after"]), (kernels.UNREADABLE, kernels.UNREADABLE))
+        verdicts = [v for r in state.artifacts.values() if r["kind_id"] == VERDICT_KIND for v in json.loads(blobs.get(r["commitments_ref"]).decode("utf-8"))["verdicts"]]
+        self.assertEqual([v["standing"] for v in verdicts], [STANDING_REJECTED] * 3)
+
+
 class GroundingKernelTests(MiniTestCase):
     def test_the_grounding_kernels_answer_as_the_harness_does(self) -> None:
         grounding = resolve_kernel(kernels.KERNEL_GROUNDING).verdict
@@ -159,4 +284,6 @@ class GroundingKernelTests(MiniTestCase):
         self.assertEqual(occurs(json.dumps({"span": "five   days", "document": document})), "verbatim")
         self.assertEqual(occurs(json.dumps({"span": "six days", "document": document})), "NOT_IN_DOCUMENT")
         self.assertEqual(grounding("not json"), kernels.UNREADABLE)
+        self.assertEqual(grounding('{"value": "five", "span": "five days", "document": "away for five\ndays."}'), "GROUNDED", "M11: a line break written into the string is the line break meant")
+        self.assertEqual(grounding('{"value": "five", "span": "five days", "document": "away for five\ndays.", "span": "x"}'), kernels.UNREADABLE, "M11 admits a control character and nothing else: a duplicate key is still refused")
         self.assertEqual(occurs(json.dumps({"span": 3, "document": document})), kernels.UNREADABLE)

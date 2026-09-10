@@ -46,6 +46,18 @@ PAIR_PROPOSAL_KIND = "mini.pair-proposal.v1"
 PAIR_PROPOSAL_PREFIX = "mini.pair-proposal."
 PAIR_EXECUTION_KIND = "mini.pair-execution.v1"
 EXPECTATIONS: tuple[str, ...] = ("moves", "unchanged")
+#: A prediction is a second reading of a pair: a seat that read something other than what the
+#: proposer read (the code where the proposer read the rule, or the reverse) commits, for one
+#: proposal, what it expects the executed answer to do. Its kind id carries this prefix and its
+#: commitments are JSON ``{"proposal": <id prefix>, "expect": "moves" | "unchanged"}``.
+PAIR_PREDICTION_PREFIX = "mini.pair-prediction."
+READING_ABSENT = "no prediction"
+READING_AGREE = "expectation and prediction both held"
+READING_RULE_DIVERGES = "expectation failed, prediction held"
+READING_CODE_MISREAD = "expectation held, prediction failed"
+READING_NEITHER = "expectation and prediction both failed"
+READING_UNREADABLE = "prediction unreadable"
+READINGS: tuple[str, ...] = (READING_ABSENT, READING_AGREE, READING_RULE_DIVERGES, READING_CODE_MISREAD, READING_NEITHER, READING_UNREADABLE)
 CRITICISM_KIND = "mini.criticism.v1"
 VERDICT_KIND = "mini.verdict.v1"
 CATALOGUE_SOURCE = "catalogue"
@@ -61,6 +73,9 @@ class Kernel:
     kernel_id: str
     description: str
     verdict: Callable[[str], str]
+    #: The verdict this kernel gives when it cannot read its input at all; an execution on
+    #: which either side is this verdict is ``unrunnable``, not a move (mini register M11).
+    unreadable: str | None = None
 
 
 @dataclass(frozen=True)
@@ -278,16 +293,11 @@ def _execute(context: MachineContext) -> str:
             continue
         source = str(proposal.get("input", ""))
         before, after = kernel.verdict(source), kernel.verdict(transform.rewrite(source))
-        entry.update(
-            {
-                "kernel": kernel_id,
-                "transform": transform_id,
-                "input": source,
-                "before": before,
-                "after": after,
-                "executed": "moved" if before != after else "unchanged",
-            }
-        )
+        entry.update({"kernel": kernel_id, "transform": transform_id, "input": source, "before": before, "after": after})
+        if kernel.unreadable is not None and kernel.unreadable in (before, after):
+            entry.update({"executed": "unrunnable", "detail": _unreadable_detail(kernel, before, after)})
+        else:
+            entry["executed"] = "moved" if before != after else "unchanged"
         executions.append(entry)
         lines.append(f"{entry['proposal']}: {kernel_id} under {transform_id} -> {entry['executed']}")
     return json.dumps(
@@ -352,8 +362,14 @@ def _execute_pairs(context: MachineContext) -> str:
             continue
         seen.add((kernel_id, source, rewritten))
         before, after = kernel.verdict(source), kernel.verdict(rewritten)
+        entry.update({"before": before, "after": after})
+        if kernel.unreadable is not None and kernel.unreadable in (before, after):
+            entry.update({"executed": "unrunnable", "detail": _unreadable_detail(kernel, before, after)})
+            executions.append(entry)
+            lines.append(f"{entry['proposal']}: unrunnable")
+            continue
         executed = "moved" if before != after else "unchanged"
-        entry.update({"before": before, "after": after, "executed": executed, "as_expected": (executed == "moved") == (expect == "moves")})
+        entry.update({"executed": executed, "as_expected": (executed == "moved") == (expect == "moves")})
         executions.append(entry)
         lines.append(f"{entry['proposal']}: {kernel_id} -> {executed}, expected {expect}")
     return json.dumps(
@@ -363,6 +379,43 @@ def _execute_pairs(context: MachineContext) -> str:
         },
         ensure_ascii=False,
     )
+
+
+def _unreadable_detail(kernel: Kernel, before: str, after: str) -> str:
+    sides = [name for name, verdict in (("the input", before), ("the rewritten text", after)) if verdict == kernel.unreadable]
+    return f"{kernel.kernel_id} could not read {' and '.join(sides)} ({kernel.unreadable}); a move to or from that verdict is not a move"
+
+
+def predictions_of(context: MachineContext) -> dict[str, str]:
+    """This cycle's predictions by the proposal id prefix they name: the expectation, or ``?`` when unreadable."""
+
+    found: dict[str, str] = {}
+    for key in context.state.artifact_order:
+        record = context.state.artifacts[key]
+        if not str(record["kind_id"]).startswith(PAIR_PREDICTION_PREFIX) or int(record.get("cycle", 0)) != context.cycle:
+            continue
+        parsed = _proposal_of(context, record)
+        if parsed is None:
+            continue
+        proposal, expect = str(parsed.get("proposal", "")), str(parsed.get("expect", ""))
+        found[proposal[:16]] = expect if expect in EXPECTATIONS else "?"
+    return found
+
+
+def reading_for(executed: str, expect: str, predicted: str | None) -> str:
+    """How the two readings of a pair fared against the machine: nothing is decided, the pairing is named."""
+
+    if predicted is None:
+        return READING_ABSENT
+    if predicted not in EXPECTATIONS or executed not in ("moved", "unchanged") or expect not in EXPECTATIONS:
+        return READING_UNREADABLE
+    held = (executed == "moved") == (expect == "moves")
+    predicted_held = (executed == "moved") == (predicted == "moves")
+    if held and predicted_held:
+        return READING_AGREE
+    if held:
+        return READING_CODE_MISREAD
+    return READING_RULE_DIVERGES if predicted_held else READING_NEITHER
 
 
 def standing_for_pair(executed: str, expect: str) -> str:
@@ -467,17 +520,22 @@ def _verdict(context: MachineContext) -> str:
         f" -> {item['standing']}{'' if item['column'] is None else ' (' + item['column'] + ')'}"
         for item in verdicts
     ]
+    predictions = predictions_of(context)
     for record in context.artifacts_of_kind(PAIR_EXECUTION_KIND, cycle=context.cycle):
         parsed = _proposal_of(context, record) or {}
         for entry in parsed.get("executions", []):
             executed, expect = str(entry.get("executed")), str(entry.get("expect", ""))
             standing = standing_for_pair(executed, expect)
+            proposal = str(entry.get("proposal"))
+            predicted = predictions.get(proposal[:16])
             item = {
-                "proposal": str(entry.get("proposal")),
+                "proposal": proposal,
                 "kernel": str(entry.get("kernel")),
                 "transform": "proposer's own rewrite: " + str(entry.get("rewrite", ""))[:120],
                 "executed": executed,
                 "expected": expect,
+                "predicted": predicted,
+                "reading": reading_for(executed, expect, predicted),
                 "catalogued": False,
                 "catalogue_moves": False,
                 "same_input": None,
@@ -487,7 +545,8 @@ def _verdict(context: MachineContext) -> str:
             verdicts.append(item)
             lines.append(
                 f"{item['proposal']}: {item['kernel']} under {item['transform']} {executed}, expected {expect or 'nothing'}"
-                f" -> {standing}{'' if item['column'] is None else ' (' + item['column'] + ')'}"
+                f"{'' if predicted is None else ', predicted ' + predicted}"
+                f" -> {standing}{'' if item['column'] is None else ' (' + item['column'] + ')'}; {item['reading']}"
             )
     return json.dumps(
         {
@@ -523,6 +582,8 @@ VERDICT_SCHEMA: dict[str, Any] = {
                     "kernel": {"type": "string"},
                     "transform": {"type": "string"},
                     "executed": {"type": "string"},
+                    "predicted": {"enum": [*EXPECTATIONS, "?", None]},
+                    "reading": {"enum": list(READINGS)},
                     "catalogued": {"type": "boolean"},
                     "standing": {"enum": list(STANDINGS)},
                     "column": {"enum": [*COLUMNS, None]},
