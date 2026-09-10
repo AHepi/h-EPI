@@ -1,0 +1,55 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+### Analysis of Failed Expectation in `conformance.kernel.recovery` (Proposal `0647aefe61e261f2`)
+
+**Observed Failure:** The proposal expected the recovered object to *move* from `A` (inside the fence) to `B` (outside the fence) when `A` was removed from the fence, leaving only prose (`S`) inside. However, the execution recorded the object as *unchanged* (`{"b":2}` before and after), indicating the harness did not fall back to the last top-level object (`B`) as anticipated.
+
+**Rule vs. Code Discrepancy:**
+The documented rule states:
+> "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text."
+
+The code’s implementation in `recover_json_object` (lines 20–50 in `mini.kernel-source.v1`) adheres to this rule *only if the fence contains a valid JSON object*. When the fence contains prose (`S`), the code does not treat it as a "fence holding one [object]" and instead falls back to the last top-level object in the text. However, the execution shows the harness *retained* `B` as the recovered object, suggesting the fallback logic may not be triggered as written.
+
+**Key Lines of Code:**
+1. **Fence Parsing (Lines 25–28):**
+   ```python
+   for match in _FENCE.finditer(content):
+       fenced.append(match.group(1))
+   ```
+   The code extracts *all* content inside fences, including prose (`S`), but only JSON objects are considered for scoring.
+
+2. **Candidate Selection (Lines 38–50):**
+   ```python
+   for pool in (fenced, top_level):
+       for candidate in reversed(pool):
+           if type(value) is dict:
+               return value, duplicates
+   ```
+   The loop iterates over `fenced` *first*, but if no valid JSON object is found in any fence, it falls back to `top_level`. The execution suggests this fallback did not occur, implying the harness may have cached or misidentified the last valid object.
+
+**Why This Matters:**
+The failure reveals a potential ambiguity in the rule’s phrasing: "when any fence holds one [object]" could be interpreted as *any fence containing at least one JSON object* (regardless of prose) or *a fence whose entire content is a JSON object*. The code aligns with the latter interpretation, but the execution contradicts both the rule and the code, indicating a possible bug in the fallback logic.
+
+**Next Steps for Proposers:**
+1. **Test Fence-Only Prose:** Propose a rewrite where the fence contains *only* prose (e.g., `fence[ S ] B`). The rule implies the harness should recover `B`, but if it fails, the issue lies in the fallback logic.
+2. **Clarify Rule Wording:** The rule should explicitly state whether a fence with mixed content (e.g., `A S`) is considered to "hold one [object]" or not. If not, the code’s behavior is correct, and the proposal’s expectation was misaligned.
+3. **Inspect Caching:** If the harness retains the last valid object across rewrites, this could explain the *unchanged* result. Proposers should test whether the harness resets its state between executions.
+
+**Citations:**
+- The documented rule’s ambiguity is highlighted in the proposal’s own words:
+  > "The rule specifies that the object scored is the last *JSON object* inside a code fence if any fence holds one, regardless of what follows the fence." ([0647aefe61e261f2])
+- The code’s fallback logic is described in the docstring:
+  > "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." ([36a46390d285000e], lines 3–5).
+- The execution’s unexpected result:
+  > "after: `{"b":2}`, as_expected: false, executed: unchanged, expect: moves" ([f0c7638e4f2d2f8c]).
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

@@ -1,0 +1,31 @@
+### Analysis of `conformance.kernel.recovery` Proposals and Executions
+
+This cycle's proposals for `conformance.kernel.recovery` targeted a specific ambiguity in the documented rule: whether the "last one inside a code fence" refers strictly to the last *JSON object* in the fence or could be misinterpreted as the last *textual span* (e.g., ignoring nested or adjacent objects). The rule states:
+
+> "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text."
+
+The proposals tested whether the harness correctly prioritizes the last JSON object *within a fence* when multiple objects are present (e.g., `fence[ A B ]`), and whether removing the last object (`B`) shifts scoring to the previous object (`A`) in the same fence. The executions confirm the rule and code align: the harness consistently selects the last JSON object in the fence, regardless of prose or other JSON objects outside the fence (e.g., `fence[ A B ] C`).
+
+#### Key Observations:
+1. **Rule-Code Alignment**: The documented rule and the implementation (`recover_json_object`) agree. The code explicitly iterates over candidates in reverse order (`for candidate in reversed(pool)`) and returns the first valid JSON object, which is the last one in the fence. This matches the rule's intent to prioritize the last object in the fence.
+
+2. **No Misinterpretation Risk**: The proposals did not reveal any divergence between the rule and the code. The harness correctly ignores:
+   - Prose outside the fence (e.g., `fence[ A B ] S`).
+   - JSON objects outside the fence (e.g., `fence[ A B ] C`).
+   - The order of objects in the fence (e.g., `fence[ A B ]` scores `B`, not `A`).
+
+3. **Edge Cases Handled**: The rule's phrasing about "top-level balanced object" and "nested inside another is not a candidate of its own" is reflected in the code's use of `json.JSONDecoder.raw_decode`, which ensures only top-level objects are considered. This prevents mis-scoring nested objects or stray braces in prose.
+
+#### What Proposers Should Try Next:
+The current proposals successfully validated the rule's clarity for multi-object fences. Future tests could explore:
+- **Nested Objects**: Whether the harness correctly ignores objects nested inside others (e.g., `fence[ { "a": { "b": 1 } } ]` should score the outer object, not the inner one).
+- **Malformed JSON**: How the harness handles fences with mixed valid/invalid JSON (e.g., `fence[ { "a": 1 } { "b": 2 ]` where the second object is malformed). The rule mentions passing over unparseable candidates, but this was not tested here.
+- **Fence Boundaries**: Whether the harness correctly handles fences with no closing delimiter (e.g., `fence[ { "a": 1 }`). The rule does not specify this, but the code's regex (`_FENCE = re.compile('```(?:json|JSON)?\s*(.*?)```', re.DOTALL)`) assumes well-formed fences.
+
+#### Citations:
+- **Rule**: The documented rule for `recover_json_object` ([cfb66510a6ca9655]):
+  > "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text."
+- **Code**: The implementation of `recover_json_object` ([5cf1f38daafcce6b], lines 20-50):
+  > "for pool in (fenced, top_level):\n    for candidate in reversed(pool):"
+  This confirms the last object in the fence is prioritized.
+- **Executions**: The results for proposals `4a270cd3fd859e67`, `19c9836a9584a73c`, and `95dd44b9ef92de51` ([db47606994d4745c]) show the harness consistently moved from `B` to `A` when `B` was removed from the fence, as expected.

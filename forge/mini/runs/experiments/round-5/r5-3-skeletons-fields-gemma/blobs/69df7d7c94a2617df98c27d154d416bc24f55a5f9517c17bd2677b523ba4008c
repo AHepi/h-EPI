@@ -1,0 +1,28 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Proposal 2aaab44d5953f37c failed because the proposer misread the rule regarding the priority of fenced objects over top-level objects. 
+
+The proposer claimed that because object A is the only JSON object inside the fence, it is scored, and removing object B from after the fence would leave the result unchanged. However, the execution shows that in the input `fence[ S A ] B`, the recovered object was B, not A. 
+
+The rule states: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text' [a84bcb8e1134b8b4]. The proposer correctly identified that a fence holds an object (A), but failed to realize that the code implementation of `recover_json_object` processes the `fenced` pool and the `top_level` pool in a specific order. 
+
+Looking at the source code [695122c3db04313b], the function iterates through `for pool in (fenced, top_level):` and returns the first valid object found in the reversed pool. Because `fenced` is the first pool in the tuple, any object found in a fence will be returned before the function ever checks the `top_level` pool. 
+
+Wait, the execution result for 2aaab44d5953f37c shows: `before: "{"b":2}", after: "{"a":1}"`. This means the machine *did* pick B (the top-level object) over A (the fenced object) in the 'before' state. This indicates that the rule as written and the code part company. The rule says 'The object scored is the last one inside a code fence when any fence holds one', which implies fences have absolute priority. But the code [695122c3db04313b] does `for pool in (fenced, top_level): for candidate in reversed(pool): return value`. This code *should* prioritize fences. 
+
+Re-examining the execution: the input was `"```\nHere is the result:\n{"a": 1}\n```\n{"b": 2}"`. The `_FENCE` regex [695122c3db04313b] is `re.compile('```(?:json|JSON)?\s*(.*?)```', re.DOTALL)`. In the input, the fence contains `\nHere is the result:\n{"a": 1}\n`. The `recover_json_object` function then calls `loads_strict(candidate.strip())`. The stripped candidate is `Here is the result:\n{"a": 1}`. This is not strict JSON and will fail `loads_strict`. It will then try `_loads_last_wins`, which also fails because it is not a JSON object. Thus, the `fenced` pool yields nothing, and the harness falls back to the `top_level` pool, where it finds `{"b": 2}`. 
+
+The failure matters because it reveals that the 'fence priority' rule only applies if the fence contains a valid JSON object without leading/trailing prose that breaks the parser. The proposer assumed the harness could 'extract' the object from the fence regardless of the prose inside the fence, but the code requires the stripped fence content to be a parseable object. 
+
+A proposer should next try to test the boundary where a fence contains prose and an object, and see if the 'last top-level object' rule takes over when the fence content is not strict JSON.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

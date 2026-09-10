@@ -1,0 +1,18 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Proposal fdbee9e0e53dfb67 failed because the proposer misread the rule. The proposer expected the recovery of a JSON array `[{"a": 1}]` to differ from a JSON object `{"a": 1}`, but the execution shows both resulted in `{"a":1}`. This is because the code in `recover_json_object` specifically filters for dictionaries: `if type(value) is dict: return value, duplicates` (line 54 of [51a2da55fab63214]). The rule states the harness recovers "the object" [65ae18af7a738b26], and the implementation defines this as a JSON object (dict), ignoring arrays. 
+
+Proposals 2bbcca6c713acdb8 and b349680e54b9434e succeeded. 
+
+The failure of fdbee9e0e53dfb67 matters because it reveals a gap between the high-level rule "recovers the object" and the implementation's strict requirement for a `dict`. A proposer should next try to find cases where the `recover_json_object` logic for selecting the 'last' object (either in a fence or top-level) conflicts with a reading of the rules, or explore the 'last-wins' duplicate key logic.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

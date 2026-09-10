@@ -1,0 +1,15 @@
+```json
+{
+ "body": "All three proposals in this cycle were successful; the executions match the expectations. The proposers correctly interpreted the rule for `conformance.kernel.recovered-from-prose`, which distinguishes between strict JSON and recovery from prose or fences [a70c2e9bc362b532]. \n\nSpecifically, proposals 7d4ddab8b95f17a4 and f81e408049707b12 correctly identified that adding trailing prose or code fences forces the harness to use `recover_json_object` (line 43 in [1a49f5929bf26106]) rather than the initial `loads_strict` call (line 84 in [1a49f5929bf26106]), thus moving the result from 'no' to 'yes'. Proposal 63da0d75bbd04502 correctly noted that changing the language identifier within a fence does not change the fact that recovery from a fence is required, leaving the result 'unchanged'.\n\nSince these basic cases are solved, a proposer should next explore edge cases where the rule and code might diverge, such as the 'last-wins' logic for duplicate keys. The rule mentions that a candidate parsing as JSON with repeated keys resolved last-wins is scoreable [4adba2f4da302fee], and the code implements this via `_loads_last_wins` (line 64 in [1a49f5929bf26106]). A proposer could test if a text containing only a JSON object with duplicate keys is treated as 'strict JSON' (no) or 'recovered from prose' (yes), as `parse_content` only returns `False` for `recovered_from_prose` if `loads_strict(content)` succeeds (line 84 in [1a49f5929bf26106]), and strict JSON typically refuses duplicate keys.",
+ "citations": [
+  {
+   "block": "a70c2e9bc362b532",
+   "quote": "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)."
+  },
+  {
+   "block": "4adba2f4da302fee",
+   "quote": "A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable"
+  }
+ ]
+}
+```

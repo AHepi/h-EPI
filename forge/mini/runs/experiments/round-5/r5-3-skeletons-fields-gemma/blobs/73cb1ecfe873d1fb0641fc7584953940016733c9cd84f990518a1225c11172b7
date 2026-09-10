@@ -1,0 +1,15 @@
+# Execution
+
+## Proposals so far (proposals)
+[abc5c3bd0398d245] (mini.pair-proposal.grid-1.v1)
+For the input `fence[ S A ] fence[ B ]`, the `conformance.kernel.recovery` rule states that 'The object scored is the last one inside a code fence when any fence holds one' [4adba2f4da302fee]. In this input, there are two fences; the last one contains object B, so B is scored. In the rewritten text, where the first fence containing S and A is removed, object B remains the last (and only) object inside a code fence. According to the rule, the object scored is still the last one inside a code fence, which is B. Therefore, the recovered object remains B, and the recovery kernel is unchanged.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "unchanged"}
+[34cf9c9696de0331] (mini.pair-proposal.grid-2.v1)
+For the input `fence[ A S ]`, the `conformance.kernel.recovery` rule states that 'The object scored is the last one inside a code fence when any fence holds one' [4adba2f4da302fee]. In this input, the code fence contains a JSON object A followed by a sentence S; since A is the only JSON object inside the fence, it is the last one and is scored. In the rewritten text, where the sentence S is removed from inside the fence, object A remains the only (and thus last) JSON object inside the code fence. According to the rule, the object scored is still the last one inside a code fence, which is A. Therefore, the recovered object remains A, and the recovery kernel is unchanged.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "unchanged"}
+[5ad66314a559319d] (mini.pair-proposal.grid-3.v1)
+For the input `fence[ A S ] S`, the `conformance.kernel.recovery` rule states that 'The object scored is the last one inside a code fence when any fence holds one' [4adba2f4da302fee]. In this input, the code fence contains a JSON object A followed by a sentence S; since A is the only JSON object inside the fence, it is the last one and is scored. In the rewritten text, where the trailing sentence S is removed from after the code fence, object A remains the only (and thus last) JSON object inside the code fence. According to the rule, the object scored is still the last one inside a code fence, which is A. Therefore, the recovered object remains A, and the recovery kernel is unchanged.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

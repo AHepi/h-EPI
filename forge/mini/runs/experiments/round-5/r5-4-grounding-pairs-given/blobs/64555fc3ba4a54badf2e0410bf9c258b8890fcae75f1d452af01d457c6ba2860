@@ -1,0 +1,15 @@
+# Execution
+
+## Proposals so far (proposals)
+[6b1ccc223622533f] (mini.pair-proposal.grid-1.v1)
+The rule for conformance.kernel.span-occurs states that it checks 'Whether a cited span occurs in a document, whitespace-normalised, no relaxation' [966be5d711930718]. For the input text, the span 'five days' does not occur in the document 'AMARA WAS AWAY FOR FIVE DAYS.' because the rule specifies 'no relaxation' and the document is in all caps. Thus, the answer is 'NOT_IN_DOCUMENT'. For the rewritten text, the span 'five days' occurs verbatim in the document 'Amara was away for five days.', so the answer is 'verbatim'. Therefore, the answer moves.
+commitments: {"kernel": "conformance.kernel.span-occurs", "expect": "moves"}
+[08c51c3cc31342f5] (mini.pair-proposal.grid-2.v1)
+The rule for conformance.kernel.grounding states that it provides 'The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked' [6ab8417a77f3b613]. For the input text, the value is an empty string "", which occurs within the span 'five days', and the span 'five days' occurs in the document 'Amara was away for five days.', so the answer is 'GROUNDED'. For the rewritten text, the value is 'five', which also occurs within the span 'five days', and the span occurs in the document, so the answer is also 'GROUNDED'. Therefore, the answer is unchanged.
+commitments: {"kernel": "conformance.kernel.grounding", "expect": "unchanged"}
+[b6f1924b7c503489] (mini.pair-proposal.grid-3.v1)
+The cell provides an input and a rewritten text that are character-for-character identical. For the kernel conformance.kernel.grounding, the rule read as written implies the answer must be 'unchanged' because the input to the check is identical in both cases.
+commitments: {"kernel": "conformance.kernel.grounding", "expect": "unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

@@ -1,0 +1,30 @@
+```json
+{
+  "body": "The documented rule for `conformance.kernel.recovery` states that the object scored is the last one inside a code fence when any fence holds one. In the given cell `fence[ A B ] fence[ C ]`, there are two code fences: the first contains two JSON objects (`A` and `B`), and the second contains the JSON object `C`. The rule specifies that the last *JSON object* inside a fence is scored, so the object scored before the rewrite is `C` (the last JSON object inside the second fence). If `C` is removed from the second fence, the rule implies the object should move to the last remaining JSON object inside a fence, which would be `B` (the last JSON object inside the first fence). Thus, the object scored moves from `C` to `B`. This tests whether the rule's wording about 'last one inside a code fence' is interpreted strictly when multiple fences are present, and whether the removal of the last object in the last fence correctly shifts the scoring to the last object in the previous fence.",
+
+  "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"expect\": \"moves\"}",
+
+  "input": "```\n{\"a\": 1}\n{\"b\": 2}\n```\n```\n{\"c\": 3}\n```",
+
+  "rewritten": "```\n{\"a\": 1}\n{\"b\": 2}\n```\n```\n\n```",
+
+  "rewrite": "Removed the JSON object `C` from the second code fence.",
+
+  "cell": "fence[ A B ] fence[ C ]",
+
+  "citations": [
+    {
+      "block": "7a147bb8c4c1539c",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction."
+    },
+    {
+      "block": "ce275ea1972395f1",
+      "quote": "fence[ A ] fence[ B ]"
+    },
+    {
+      "block": "8cf1e40dd6411a40",
+      "quote": "fence[ A B ] fence[ C ]"
+    }
+  ]
+}
+```

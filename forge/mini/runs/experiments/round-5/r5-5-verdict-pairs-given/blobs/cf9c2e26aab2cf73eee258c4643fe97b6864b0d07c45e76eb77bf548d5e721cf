@@ -1,0 +1,15 @@
+# Execution
+
+## Proposals so far (proposals)
+[454381c29e88903a] (mini.pair-proposal.grid-1.v1)
+For the kernel `conformance.kernel.recovery`, the rule states that a candidate that parses as "JSON with repeated keys resolved last-wins, is scoreable" [cf3ead255ba521d3]. For the input `{"a": 1, "a": 2}`, the last-wins resolution results in `{"a": 2}`. For the rewritten text `{"a": 1}`, the result is `{"a": 1}`. Since the recovered objects differ, the answer moves.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[ede0dd68bee37a61] (mini.pair-proposal.grid-2.v1)
+For the kernel `conformance.kernel.recovery`, the rule states that a candidate that parses as strict JSON is scoreable, but one that does not (such as a float) is passed over [cf3ead255ba521d3]. However, the rule specifically says "a float, for instance" is passed over in the context of a candidate that does not parse as strict JSON. In standard JSON, `{"a": 1.5}` is a valid strict JSON object. Therefore, for the input `{"a": 1.5}`, the recovered object is `{"a": 1.5}`. For the rewritten text `{"a": 1}`, the recovered object is `{"a": 1}`. Since the recovered objects differ, the answer moves.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[cd556568fbf6100c] (mini.pair-proposal.grid-3.v1)
+For the kernel `conformance.kernel.recovery`, the rule states that the harness recovers the object "as canonical JSON" [cf3ead255ba521d3]. For the input `{"a": true}`, the recovered object is `{"a": true}`. For the rewritten text `{"a": 1}`, the recovered object is `{"a": 1}`. Since the recovered objects differ, the answer moves.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

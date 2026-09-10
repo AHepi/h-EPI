@@ -1,0 +1,15 @@
+# Execution
+
+## Proposals so far (proposals)
+[f5dc0f2028b7c186] (mini.pair-proposal.grid-1.v1)
+For the kernel `conformance.kernel.refusal-phrase`, the rule states that the answer is "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE" [f8b7dbf88099a402]. The listed refusal phrases include 'I cannot' and 'I am unable' [f8b7dbf88099a402]. For the input `I cannot answer. {"a": 1}`, the first listed refusal phrase present is 'I cannot'. For the rewritten text `I am not able to answer. {"a": 1}`, none of the listed refusal phrases ('I cannot', "I can't", "I'm sorry", 'I am unable', 'as an AI', 'cannot assist') are present. Therefore, the answer for the rewritten text is NONE. Since the answers differ, the result moves.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "expect": "moves"}
+[2cc3d2b72e9053d7] (mini.pair-proposal.grid-2.v1)
+For the kernel `conformance.kernel.recovery`, the rule states that the harness recovers the object "as canonical JSON, or NO_OBJECT" [65ae18af7a738b26]. For the input `{"a": "1"}`, the recovered object is `{"a": "1"}`. For the rewritten text `{"a": 1}`, the recovered object is `{"a": 1}`. Since the recovered objects differ, the answer moves.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[e5b78b68793ba1cd] (mini.pair-proposal.grid-3.v1)
+For the kernel `conformance.kernel.recovery`, the rule states that the harness recovers the object "as canonical JSON, or NO_OBJECT" [65ae18af7a738b26]. For the input `{"A": 1}`, the recovered object is `{"A": 1}`. For the rewritten text `{"a": 1}`, the recovered object is `{"a": 1}`. Since the recovered objects differ (as JSON keys are case-sensitive), the answer moves.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

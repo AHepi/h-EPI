@@ -1,0 +1,15 @@
+# Execution
+
+## Proposals so far (proposals)
+[b247944961848c51] (mini.pair-proposal.grid-1.v1)
+For the kernel `conformance.kernel.recovered-from-prose`, the rule states that the answer is 'no' if the harness could "read it as strict JSON" [a70c2e9bc362b532]. For the input `{"a": 1}`, which is strict JSON, the answer is 'no'. For the rewritten text `The answer: {"a": 1}`, the harness must "recover the object from prose" [a70c2e9bc362b532], so the answer is 'yes'. Since the answers differ, the result moves.
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "expect": "moves"}
+[6241a9d69cee1ec7] (mini.pair-proposal.grid-2.v1)
+For the kernel `conformance.kernel.recovery`, the rule states that the harness recovers the object "as canonical JSON, or NO_OBJECT" [65ae18af7a738b26]. For the input `{"a": "1"}`, the recovered object is `{"a": "1"}`. For the rewritten text `{"a": 1}`, the recovered object is `{"a": 1}`. Since the recovered objects differ, the answer moves.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[733ce9cc9aff93bb] (mini.pair-proposal.grid-3.v1)
+For the kernel `conformance.kernel.recovered-from-prose`, the rule states that the answer is 'yes' if the harness had to "recover the object from prose or a fence" and 'no' if it could "read it as strict JSON" [a70c2e9bc362b532]. For the input `The answer: {"a": 1}`, the harness must recover the object from prose, so the answer is 'yes'. For the rewritten text `{"a": 1}`, the harness can read it as strict JSON, so the answer is 'no'. Since the answers differ, the result moves.
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

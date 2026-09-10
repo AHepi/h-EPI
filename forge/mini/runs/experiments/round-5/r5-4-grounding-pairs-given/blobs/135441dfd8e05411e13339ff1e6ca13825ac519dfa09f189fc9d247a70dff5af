@@ -1,0 +1,15 @@
+# Execution
+
+## Proposals so far (proposals)
+[53ecb763572c64b0] (mini.pair-proposal.grid-1.v1)
+The cell provides an input and a rewritten text that are character-for-character identical. For any kernel, including conformance.kernel.grounding or conformance.kernel.span-occurs, the rule read as written implies the answer must be 'unchanged' because the input to the check is identical in both cases.
+commitments: {"kernel": "conformance.kernel.grounding", "expect": "unchanged"}
+[fef1f10bef2fd550] (mini.pair-proposal.grid-2.v1)
+The rule for conformance.kernel.span-occurs states that it checks 'Whether a cited span occurs in a document, whitespace-normalised, no relaxation' [966be5d711930718]. For the input text, the span 'Five days' does not occur verbatim in the document 'Amara was away for five days.' because of the capital 'F', and the rule specifies 'no relaxation'. For the rewritten text, the span 'five days' occurs verbatim in the document. Therefore, the answer moves from 'NOT_IN_DOCUMENT' to 'verbatim'.
+commitments: {"kernel": "conformance.kernel.span-occurs", "expect": "moves"}
+[260eb9794239ee52] (mini.pair-proposal.grid-3.v1)
+The rule for conformance.kernel.span-occurs states that it checks 'Whether a cited span occurs in a document, whitespace-normalised, no relaxation' [966be5d711930718]. For the input text, the span 'five days.' does not occur in the document 'Amara was away for five days.' because of the trailing period, and the rule specifies 'no relaxation'. For the rewritten text, the span 'five days' occurs verbatim in the document. Therefore, the answer moves from 'NOT_IN_DOCUMENT' to 'verbatim'.
+commitments: {"kernel": "conformance.kernel.span-occurs", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

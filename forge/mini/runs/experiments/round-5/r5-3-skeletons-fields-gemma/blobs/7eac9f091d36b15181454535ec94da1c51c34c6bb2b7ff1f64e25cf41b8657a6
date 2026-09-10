@@ -1,0 +1,15 @@
+# Execution
+
+## Proposals so far (proposals)
+[b6ff067571831f9e] (mini.pair-proposal.grid-1.v1)
+For the input `fence[ A ]`, the `conformance.kernel.recovery` rule states that 'The object scored is the last one inside a code fence when any fence holds one' [cf3ead255ba521d3]. In the input, object A is the only object inside a fence, so it is scored. In the rewritten text, where the fence is removed, the rule states the object scored is 'the last top-level object in the text' [cf3ead255ba521d3]. Since A remains the last top-level object, the recovered object remains A. Therefore, the recovery kernel is unchanged.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "unchanged"}
+[2d00107f487195a7] (mini.pair-proposal.grid-2.v1)
+For the input `fence[ A ] S`, the `conformance.kernel.recovered-from-prose` rule states that the kernel returns 'yes' if the harness had to recover the object from prose or a fence [cf3ead255ba521d3]. In the input, object A is inside a code fence, so the kernel returns 'yes'. In the rewritten text, where the sentence S is removed, object A remains inside a code fence. Therefore, the harness still recovers the object from a fence, and the result remains 'yes'. The recovered-from-prose kernel is unchanged.
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "expect": "unchanged"}
+[1c2b9cbe3567ae4a] (mini.pair-proposal.grid-3.v1)
+For the input `fence[ A ] B`, the `conformance.kernel.recovery` rule states that 'The object scored is the last one inside a code fence when any fence holds one' [cf3ead255ba521d3]. In this input, object A is inside a code fence, so A is scored. In the rewritten text, where object B is removed, object A remains the only object inside a code fence. According to the rule, the object scored is still the last one inside a code fence, which is A. Therefore, the recovered object remains A, and the recovery kernel is unchanged.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

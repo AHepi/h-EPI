@@ -1,0 +1,15 @@
+# Execution
+
+## Proposals so far (proposals)
+[a683b2caea1400e7] (mini.pair-proposal.grid-1.v1)
+The rule for conformance.kernel.span-occurs states that it checks 'Whether a cited span occurs in a document, whitespace-normalised, no relaxation' [966be5d711930718]. For the input text, the span 'five\ndays' is whitespace-normalised to 'five days', which occurs in the document 'Amara was away for five days.', so the answer is 'verbatim'. For the rewritten text, the span 'five days' also occurs in the document, so the answer is 'verbatim'. Therefore, the answer is unchanged.
+commitments: {"kernel": "conformance.kernel.span-occurs", "expect": "unchanged"}
+[fc96fa6b6244b795] (mini.pair-proposal.grid-2.v1)
+The rule for conformance.kernel.grounding states that it provides 'The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked' [6ab8417a77f3b613]. For the input text, the value 'five' occurs within the span 'was away for five days', and that span occurs in the document, so the answer is 'GROUNDED'. For the rewritten text, the value 'five' also occurs within the span 'five days', and that span occurs in the document, so the answer is 'GROUNDED'. Therefore, the answer is unchanged.
+commitments: {"kernel": "conformance.kernel.grounding", "expect": "unchanged"}
+[a8e5234a1a22ea2c] (mini.pair-proposal.grid-3.v1)
+The rule for conformance.kernel.span-occurs states that it checks 'Whether a cited span occurs in a document, whitespace-normalised, no relaxation' [966be5d711930718]. For the input text, the span 'amara' does not occur in the document 'Amara was away for five days.' because the rule specifies 'no relaxation' and the document contains 'Amara' (capitalized). Thus, the answer is 'NOT_IN_DOCUMENT'. For the rewritten text, the span 'Amara' occurs verbatim in the document, so the answer is 'verbatim'. Therefore, the answer moves.
+commitments: {"kernel": "conformance.kernel.span-occurs", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

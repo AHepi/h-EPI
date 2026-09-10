@@ -1,0 +1,105 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+### Analysis of `conformance.kernel.recovery` Proposals and Executions
+
+The three proposals (`d84d1bccde58223e`, `455d772be2f2feb1`, `d48e4a506eb7d457`) and their executions demonstrate alignment between the documented rules and the implementation for the `conformance.kernel.recovery` kernel. However, the proposals narrowly focus on a subset of the rule’s behavior—specifically, the prioritization of fenced JSON objects—and do not test edge cases where the rule and code might part company. Below, I outline where the rule and code align, where gaps exist, and what proposers should explore next.
+
+#### 1. **Alignment Between Rule and Code**
+The documented rule for `conformance.kernel.recovery` states:
+> "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text."
+
+The source code (`recover_json_object`) implements this logic as follows:
+- It first searches for JSON objects inside code fences (lines 30–33 in `mini.kernel-source.v1`).
+- If no fenced object is found, it falls back to the last top-level object in the text (lines 34–42).
+- The last object in the relevant pool (fenced or top-level) is selected (lines 43–55).
+
+The executions confirm this behavior:
+- For `d84d1bccde58223e` (fence[ A ] → fence[ ]), the object moves from `{"a":1}` to `NO_OBJECT`, as expected.
+- For `455d772be2f2feb1` (fence[ A ] S → fence[ ] S), the object moves from `{"a":1}` to `NO_OBJECT`, as expected.
+- For `d48e4a506eb7d457` (fence[ A ] B → fence[ ] B), the object moves from `{"a":1}` to `{"b":2}`, because `B` is now the last top-level object after the fence is emptied. This aligns with the rule’s fallback to the last top-level object when no fenced object exists.
+
+#### 2. **Gaps Between Rule and Code**
+While the proposals and executions confirm the rule’s primary behavior, they do not test scenarios where the rule’s wording and the code’s behavior might diverge. Key gaps include:
+
+##### a. **Nested Objects**
+The rule states:
+> "an object nested inside another is not a candidate of its own."
+
+The code does not explicitly enforce this. Instead, it relies on `json.JSONDecoder.raw_decode` to parse top-level objects (lines 36–42), which may or may not exclude nested objects depending on how the decoder behaves. For example:
+- Input: `{"outer": {"inner": 1}}`
+  The rule implies only `{"outer": {"inner": 1}}` should be a candidate, not `{"inner": 1}`.
+- However, the code does not explicitly filter out nested objects, so if `raw_decode` were to parse `{"inner": 1}` as a separate object (e.g., due to malformed input), the code might still consider it a candidate.
+
+Proposers should test this by providing inputs where nested objects are syntactically valid but semantically unintended (e.g., `{"a": {"b": 1}} {"b": 2}`).
+
+##### b. **Repeated Keys**
+The rule mentions:
+> "A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable."
+
+The code handles repeated keys via `_loads_last_wins` (lines 50–55), but the rule does not specify whether the presence of repeated keys should affect the selection of the object. For example:
+- Input: `{"a": 1, "a": 2}` (repeated key) vs. `{"a": 1}` (no repeated key).
+  The rule does not clarify whether the object with repeated keys should be preferred, avoided, or treated equally. The code treats it as scoreable, but proposers should test whether this aligns with the rule’s intent.
+
+##### c. **Floats and Non-Object Candidates**
+The rule states:
+> "one that does not (a float, for instance) is passed over."
+
+The code explicitly skips non-dict candidates (line 54: `if type(value) is dict:`). However, the rule does not specify whether a float or other non-object JSON value should trigger a fallback to an earlier object or result in `NO_OBJECT`. For example:
+- Input: `123.45` (a float) followed by `{"a": 1}` (a valid object).
+  The rule implies the float should be passed over, and the object should be selected. The code behaves this way, but proposers should test edge cases where the float appears *after* a valid object (e.g., `{"a": 1} 123.45`).
+
+##### d. **Prose Before Fences**
+The rule does not address whether prose *before* a fence should affect the selection of the fenced object. For example:
+- Input: `Prose {"a": 1} ```{"b": 2}````
+  The rule implies the fenced object `{"b": 2}` should be selected, but the code’s behavior is not explicitly tested for this case. Proposers should verify whether the code correctly ignores prose before fences.
+
+#### 3. **What Proposers Should Try Next**
+To uncover discrepancies between the rule and the code, proposers should focus on the following:
+
+##### a. **Nested Objects**
+- Test inputs where nested objects are syntactically valid but unintended (e.g., `{"a": {"b": 1}} {"b": 2}`).
+  Expected: Only `{"a": {"b": 1}}` should be a candidate.
+  Goal: Verify whether the code correctly excludes nested objects.
+
+##### b. **Repeated Keys**
+- Test inputs with repeated keys in fenced and non-fenced objects (e.g., `{"a": 1, "a": 2}` vs. `{"a": 1}`).
+  Expected: The object with repeated keys should be scoreable, but proposers should check whether the rule’s silence on this implies equal treatment.
+
+##### c. **Floats and Non-Object Candidates**
+- Test inputs where a float or other non-object appears *after* a valid object (e.g., `{"a": 1} 123.45`).
+  Expected: The valid object should be selected, and the float should be ignored.
+  Goal: Verify whether the code’s fallback logic aligns with the rule.
+
+##### d. **Prose Before Fences**
+- Test inputs with prose before fences (e.g., `Prose {"a": 1} ```{"b": 2}````).
+  Expected: The fenced object `{"b": 2}` should be selected.
+  Goal: Confirm whether the code correctly prioritizes fenced objects over prose.
+
+##### e. **Multiple Fences**
+- Test inputs with multiple fences (e.g., ````{"a": 1}``` ```{"b": 2}````).
+  Expected: The last fenced object (`{"b": 2}`) should be selected.
+  Goal: Verify whether the code correctly handles multiple fences.
+
+#### 4. **Failures That Matter**
+The most critical failures would involve cases where:
+- The code selects an object that the rule explicitly excludes (e.g., a nested object or a non-dict value).
+- The code fails to select an object that the rule explicitly includes (e.g., a fenced object with repeated keys).
+- The code’s fallback logic (e.g., selecting the last top-level object) contradicts the rule’s intent.
+
+Proposers should prioritize testing these scenarios to ensure the rule and code remain aligned.
+
+#### 5. **Evidence from the Catalogue**
+The catalogue provides examples of transforms that do not affect `conformance.kernel.recovery` (e.g., `prose-before`, `indent`, `fold-whitespace`), confirming that the kernel’s behavior is robust to superficial changes. However, the catalogue also shows that `fence` and `bare-after` transforms *do* affect recovery, which aligns with the rule’s emphasis on fenced objects. For example:
+- `7a60de6ecc4dd6e3` (bare-after): Moving an object from a fence to plain text changes the recovery outcome, as expected.
+- `a0e68e5c468b7070` (float-after): A float after a valid object does not affect recovery, confirming the rule’s intent to ignore non-objects.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

@@ -1,0 +1,20 @@
+```json
+{
+  "body": "For the kernel `conformance.kernel.recovery`, the rule states that a candidate is scoreable if it \"parses as strict JSON, or as JSON with repeated keys resolved last-wins\" [4756991799bcd6c4], and that one that does not is \"passed over\" [4756991799bcd6c4]. The input `{\"a\": 1` is not a balanced object and does not parse as JSON, so it is passed over, resulting in `NO_OBJECT` [65ae18af7a738b26]. The rewritten text `{\"a\": 1}` is a valid JSON object, so it is recovered as `{\"a\": 1}`. Since the recovered objects differ, the answer moves.",
+  "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"expect\": \"moves\"}",
+  "input": "{\"a\": 1",
+  "rewritten": "{\"a\": 1}",
+  "rewrite": "I added a closing brace to the input to make it a valid JSON object.",
+  "cell": "[e7332d444d799b5f] (mini.next-cell.3.v1)\nThe cell to cover: INPUT: {\"a\": 1 REWRITTEN: {\"a\": 1}",
+  "citations": [
+    {
+      "block": "4756991799bcd6c4",
+      "quote": "A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over"
+    },
+    {
+      "block": "65ae18af7a738b26",
+      "quote": "The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT."
+    }
+  ]
+}
+```

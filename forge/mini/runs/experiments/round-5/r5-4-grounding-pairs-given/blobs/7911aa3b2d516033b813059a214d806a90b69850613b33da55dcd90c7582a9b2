@@ -1,0 +1,15 @@
+```json
+{
+ "body": "Proposal 21a81a1a3f656c30 failed because the proposer misread the rule regarding whitespace normalization. The proposer expected the answer to move to 'NOT_IN_DOCUMENT' when the span was changed from 'five days' to 'five day', but the execution shows the result remained 'verbatim'. This indicates a discrepancy between the proposer's reading of the rule and the actual machine behavior. \n\nThe rule for `conformance.kernel.span-occurs` states it checks whether a span occurs in a document, \"whitespace-normalised, no relaxation\" [966be5d711930718]. The code implements this via `_normalise_whitespace`, which is defined as `\" \".join(value.split())` [5cf1f38daafcce6b]. \n\nHowever, the execution record [f95323da04f23a86] shows that for the rewritten input `{\"value\": \"days\", \"span\": \"five day\", \"document\": \"Amara was away for five days.\"}` the result was `verbatim`. This is a critical failure: the string \"five day\" is not a substring of \"Amara was away for five days.\" unless some unstated relaxation is occurring. The proposer's logic was correct based on the rule \"no relaxation\", but the machine's output contradicts both the rule and basic string matching. \n\nA proposer should next investigate whether the harness is applying a relaxation (like stemmings or partial matches) that is not documented in the rules, or if the execution record contains an error.",
+ "citations": [
+  {
+   "block": "966be5d711930718",
+   "quote": "Whether a cited span occurs in a document, whitespace-normalised, no relaxation"
+  },
+  {
+   "block": "5cf1f38daafcce6b",
+   "quote": "def _normalise_whitespace(value: str) -> str:\n    return \" \".join(value.split())"
+  }
+ ]
+}
+```

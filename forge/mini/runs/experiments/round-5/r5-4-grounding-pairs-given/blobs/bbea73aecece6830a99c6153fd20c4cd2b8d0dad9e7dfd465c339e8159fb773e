@@ -1,0 +1,18 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Proposal 260eb9794239ee52 failed because the proposer misread the rule regarding whitespace normalization. The proposer expected the span 'five days.' to be absent from the document 'Amara was away for five days.' due to the trailing period. However, the rule for `conformance.kernel.span-occurs` specifies that the check is 'whitespace-normalised' [966be5d711930718]. In the source code, `_span_occurs` calls `_normalise_whitespace` on both the span and the document [b6c35351972cc72f]. The `_normalise_whitespace` function is implemented as `" ".join(value.split())` [b6c35351972cc72f], which removes trailing punctuation if it is separated by whitespace, but more importantly, the execution shows that 'five days.' was already considered 'verbatim' in the document 'Amara was away for five days.' (likely because the period in the span was treated as part of the text and the document ended with a period, or the normalization logic handled it). 
+
+Actually, looking at the execution [143b8965381a8b5e], the 'before' value was 'verbatim'. This means the machine found 'five days.' in 'Amara was away for five days.' verbatim. The proposer's claim that it 'does not occur... because of the trailing period' was a misreading of how the machine handles the string match. 
+
+Failure 260eb9794239ee52 matters because it shows a misunderstanding of the 'no relaxation' vs 'whitespace-normalised' distinction. A proposer should next test cases where whitespace normalization specifically creates a match that would otherwise fail (e.g., newlines or multiple spaces) to verify the 'whitespace-normalised' part of the rule.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

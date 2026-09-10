@@ -1,0 +1,20 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+All three proposals in this cycle were successful; the executions [81a2429de10cb6ab] confirm that the results moved as expected. There are no failures to analyze.
+
+Proposers should continue exploring the boundaries of the recovery and prose kernels. Specifically, the grid contains several unexplored cases that could yield further moves:
+
+1. **Duplicate Keys**: The rule for `recover_json_object` mentions that "JSON with repeated keys resolved last-wins" is scoreable [a84bcb8e1134b8b4]. A pair using `{"a": 1, "a": 2}` vs `{"a": 1}` would test if the recovery kernel reflects the resolved object or the raw text [76f54c215587ce6f].
+2. **Non-Object JSON**: The rule states a candidate that does not parse as an object (e.g., a float) is "passed over" [a84bcb8e1134b8b4]. Testing `{"a": 1.5}` vs `{"a": 1}` or a bare float [5998fb38cbb706de] could reveal how the harness handles invalid candidates in the presence of valid ones.
+3. **Refusal Heuristics**: The rule for `parse_content` states the refusal heuristic decides the verdict "only when no object can be recovered" [a84bcb8e1134b8b4]. A pair with a refusal phrase and a valid JSON object [d6e0b999960b9233] would test if the `response-verdict` remains `JSON_OBJECT` despite the refusal phrase.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

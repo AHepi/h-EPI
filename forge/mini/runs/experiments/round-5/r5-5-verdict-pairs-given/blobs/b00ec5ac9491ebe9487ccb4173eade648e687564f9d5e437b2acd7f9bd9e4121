@@ -1,0 +1,15 @@
+# Execution
+
+## Proposals so far (proposals)
+[7c659c96c274b632] (mini.pair-proposal.grid-1.v1)
+For the kernel `conformance.kernel.recovery`, the rule states that the object scored is the "last top-level object in the text" [7a147bb8c4c1539c] when no code fence is present. For the input `{"a": 1} {"b": 2}`, the last top-level object is `{"b": 2}`. For the rewritten text `{"b": 2} {"a": 1}`, the last top-level object is `{"a": 1}`. Since the recovered objects differ, the answer moves.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[a052b7436dfe4cda] (mini.pair-proposal.grid-2.v1)
+For the kernel `conformance.kernel.recovery`, the rule states that the harness recovers the object "as canonical JSON, or NO_OBJECT" [65ae18af7a738b26]. For the input `nothing here at all`, there is no balanced object that parses as JSON, so the answer is `NO_OBJECT`. For the rewritten text `{"a": 1}`, the text is a valid JSON object, so the recovered object is `{"a": 1}`. Since the answers differ, the result moves.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[aca450161b82db36] (mini.pair-proposal.grid-3.v1)
+For the kernel `conformance.kernel.recovery`, the rule states that the object scored is the "last top-level object in the text" [7a147bb8c4c1539c] when no code fence is present. For the input `{"a": 1} {"a": 1}`, the last top-level object is `{"a": 1}`. For the rewritten text `{"a": 1}`, the last top-level object is also `{"a": 1}`. Since the recovered objects are identical, the answer is unchanged.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

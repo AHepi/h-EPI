@@ -1,0 +1,255 @@
+# Proposal: a grid cell
+
+You are shown the documented rules of the checks, not their code, and ONE cell under 'The cell to cover'. The cell holds two texts, one on the line after INPUT and one on the line after REWRITTEN. You do not choose them. Copy each of them into your own fields, character for character, and then do the only work there is: say what the rule, read as written, says the check's answer ought to do between the first text and the second — move ('moves') or stay ('unchanged') — and name in the body the words of the rule you read it from, and which answer the rule gives for each text. If the two texts look alike, read them again character by character before deciding. The commitments are a STRING whose content is JSON of the form {"kernel": "<id>", "expect": "moves" or "unchanged"} and nothing else. The four long fields are NOT in the commitments: this artifact carries "input", "rewritten", "rewrite" and "cell" as fields of its own, beside "body" and "commitments", each a plain string. Write the input and the rewritten text out in full there, as instances, never as descriptions; write in "rewrite" one sentence naming what you changed, and in "cell" the cell exactly as it was named. Do not repeat a pair shown among the earlier proposals.
+
+## The problem (problem)
+The checks under test are the conformance harness's own functions. Most seats are shown only their documented rules, not their code: how the harness recovers a JSON object from a reply, whether it had to recover it from prose, its response verdict, its refusal-phrase check, and its grounding matcher. The question: is there an input and a rewrite of it on which the rule, read as written, says one thing and the check, run by machine, does another? The executor runs the check on both texts and records what its answer did; nothing here decides anything, the record shows where a reading and the machine parted.
+
+## The documented rules of the checks (rules)
+[f8b7dbf88099a402] (mini.kernel-rules.v1)
+REFUSAL_PHRASES = ['I cannot', "I can't", "I'm sorry", 'I am unable', 'as an AI', 'cannot assist']
+
+The kernels:
+
+- conformance.kernel.recovery: The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT.
+
+- conformance.kernel.recovered-from-prose: Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no).
+
+- conformance.kernel.response-verdict: The harness's response verdict for the reply: JSON_OBJECT, INVALID_JSON, REFUSAL_SUSPECTED, or another of its verdicts.
+
+- conformance.kernel.refusal-phrase: The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE.
+
+- conformance.kernel.span-occurs: Whether a cited span occurs in a document, whitespace-normalised, no relaxation: the input is one JSON object {"span", "document"}; verbatim or NOT_IN_DOCUMENT.
+
+- conformance.kernel.grounding: The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked: the input is one JSON object {"value", "span", "document"}; GROUNDED, SPAN_MISSING, SPAN_NOT_IN_DOCUMENT or VALUE_NOT_IN_SPAN.
+
+def recover_json_object(content: 'str') -> 'Any':
+    Project import: extract a JSON object from fences or surrounding prose.
+
+    Every top-level balanced object in the text is a candidate, not only the span from the
+    first ``{`` to the last ``}``: reasoning prose before or after the answer frequently
+    contains stray braces, and an object nested inside another is not a candidate of its own.
+    The object scored is the last one inside a code fence when any fence holds one, else the
+    last top-level object in the text, because a model places its final answer last and marks
+    it: a reply that quotes its previous answer and then gives a corrected one is scored on the
+    correction. Until 9 September 2026 the object with the most keys was taken, ties to the
+    last, and nine cycle replies that dropped a criticised key were scored on the draft that
+    still carried it (``docs/failure-modes.md``, H40). A candidate that parses as strict JSON,
+    or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float,
+    for instance) is passed over, so a final answer refused for a float loses to an earlier
+    draft that parsed (``docs/kernel.md``, P-06).
+
+def _loads_last_wins(candidate: 'str') -> 'tuple[Any, tuple[str, ...]] | None':
+    Parse JSON that strict parsing refused only because of repeated keys; last value wins.
+
+def parse_content(content: 'str', refusal_phrases: 'tuple[str, ...]') -> 'tuple[Any, str, str | None, bool]':
+    Return (parsed, response_verdict, detail, recovered_from_prose).
+
+    The refusal heuristic decides the verdict only when no object can be recovered; whether a
+    phrase occurred at all is a separate fact, :func:`refusal_phrase_in`, recorded beside a
+    recovered object (H36: a refusal followed by a form is a refusal and a form).
+
+def refusal_phrase_in(content: 'str', refusal_phrases: 'tuple[str, ...]') -> 'str | None':
+    The first refusal phrase the text contains, typographic quotes read as straight ones, or None.
+
+def _plain_quotes(text: 'str') -> 'str':
+    Fold typographic apostrophes and quotation marks to their ASCII forms.
+
+    The refusal phrase list is written with straight apostrophes; a model that writes
+    "I’m sorry" is refusing all the same, and the first live refusal in these
+    records was missed for exactly that reason (H22).
+
+def _normalise_whitespace(value: 'str') -> 'str':
+    (no docstring)
+
+def _span_occurs(span: 'str', document: 'str', relaxations: 'tuple[str, ...]') -> 'str | None':
+    Return None when the span is not in the document, else how it was matched ("verbatim" or a relaxation).
+
+def _grounding_kernel(text: 'str') -> 'str':
+    The grounding verdict as the harness gives it, with no relaxation and the value-in-span check on.
+
+    The three lines are the harness's own (``_grounding_verdict`` in ``oracle.py``), read here
+    over one JSON object rather than over a variant and its output.
+
+
+## Proposals so far (earlier)
+[53ecb763572c64b0] (mini.pair-proposal.grid-1.v1)
+The cell provides an input and a rewritten text that are character-for-character identical. For any kernel, including conformance.kernel.grounding or conformance.kernel.span-occurs, the rule read as written implies the answer must be 'unchanged' because the input to the check is identical in both cases.
+commitments: {"kernel": "conformance.kernel.grounding", "expect": "unchanged"}
+[fef1f10bef2fd550] (mini.pair-proposal.grid-2.v1)
+The rule for conformance.kernel.span-occurs states that it checks 'Whether a cited span occurs in a document, whitespace-normalised, no relaxation' [966be5d711930718]. For the input text, the span 'Five days' does not occur verbatim in the document 'Amara was away for five days.' because of the capital 'F', and the rule specifies 'no relaxation'. For the rewritten text, the span 'five days' occurs verbatim in the document. Therefore, the answer moves from 'NOT_IN_DOCUMENT' to 'verbatim'.
+commitments: {"kernel": "conformance.kernel.span-occurs", "expect": "moves"}
+[260eb9794239ee52] (mini.pair-proposal.grid-3.v1)
+The rule for conformance.kernel.span-occurs states that it checks 'Whether a cited span occurs in a document, whitespace-normalised, no relaxation' [966be5d711930718]. For the input text, the span 'five days.' does not occur in the document 'Amara was away for five days.' because of the trailing period, and the rule specifies 'no relaxation'. For the rewritten text, the span 'five days' occurs verbatim in the document. Therefore, the answer moves from 'NOT_IN_DOCUMENT' to 'verbatim'.
+commitments: {"kernel": "conformance.kernel.span-occurs", "expect": "moves"}
+[8b91cbae1430e5bb] (mini.pair-proposal.grid-1.v1)
+The rule for conformance.kernel.span-occurs states that it checks 'Whether a cited span occurs in a document, whitespace-normalised, no relaxation' [966be5d711930718]. For the input text, the span 'five days' occurs in the document 'Amara was away for five days.', so the answer is 'verbatim'. For the rewritten text, the span 'six days' does not occur in the document 'Amara was away for five days.', so the answer is 'NOT_IN_DOCUMENT'. Therefore, the answer moves.
+commitments: {"kernel": "conformance.kernel.span-occurs", "expect": "moves"}
+[b84f07ceddae9d75] (mini.pair-proposal.grid-2.v1)
+The rule for conformance.kernel.span-occurs states that it checks 'Whether a cited span occurs in a document, whitespace-normalised, no relaxation' [966be5d711930718]. For the input text, the span is an empty string "", which occurs in any document, so the answer is 'verbatim'. For the rewritten text, the span 'five days' occurs in the document 'Amara was away for five days.', so the answer is also 'verbatim'. Therefore, the answer is unchanged.
+commitments: {"kernel": "conformance.kernel.span-occurs", "expect": "unchanged"}
+[adb20f338a5bcf88] (mini.pair-proposal.grid-3.v1)
+The rule for conformance.kernel.span-occurs states that it checks 'Whether a cited span occurs in a document, whitespace-normalised, no relaxation' [966be5d711930718]. For the input text, the span '.' occurs in the document 'Amara was away for five days.' (as the trailing period), so the answer is 'verbatim'. For the rewritten text, the span 'five days' also occurs in the document, so the answer is 'verbatim'. Therefore, the answer is unchanged.
+commitments: {"kernel": "conformance.kernel.span-occurs", "expect": "unchanged"}
+[232e3a0202e0efac] (mini.pair-proposal.grid-1.v1)
+The rule for conformance.kernel.span-occurs states that it checks 'Whether a cited span occurs in a document, whitespace-normalised, no relaxation' [966be5d711930718]. For the input text, the span 'away' occurs in the document 'Amara was away. Amara was away.', so the answer is 'verbatim'. For the rewritten text, the span 'away' occurs in the document 'Amara was away for five days.', so the answer is also 'verbatim'. Therefore, the answer is unchanged.
+commitments: {"kernel": "conformance.kernel.span-occurs", "expect": "unchanged"}
+[76a57b79fef85273] (mini.pair-proposal.grid-2.v1)
+The rule for conformance.kernel.grounding states that it provides 'The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked' [6ab8417a77f3b613]. For the input text, the value is 'FIVE' and the span is 'five days'; since 'FIVE' does not occur within 'five days' without relaxation, the answer is 'VALUE_NOT_IN_SPAN'. For the rewritten text, the value is 'five' and the span is 'five days'; since 'five' occurs within 'five days', the answer is 'GROUNDED'. Therefore, the answer moves.
+commitments: {"kernel": "conformance.kernel.grounding", "expect": "moves"}
+[c59b4f6732ac1157] (mini.pair-proposal.grid-3.v1)
+The cell provides an input and a rewritten text that are character-for-character identical. For the kernel conformance.kernel.grounding, the rule read as written implies the answer must be 'unchanged' because the input to the check is identical in both cases.
+commitments: {"kernel": "conformance.kernel.grounding", "expect": "unchanged"}
+[92469a7f6d3c616b] (mini.pair-proposal.grid-1.v1)
+The rule for conformance.kernel.grounding states that it provides 'The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked' [6ab8417a77f3b613]. For the input text, the value 'five days' occurs within the span 'five days', so the answer is 'GROUNDED'. For the rewritten text, the value 'five' also occurs within the span 'five days', so the answer is 'GROUNDED'. Therefore, the answer is unchanged.
+commitments: {"kernel": "conformance.kernel.grounding", "expect": "unchanged"}
+[931a7b9f2f3b6676] (mini.pair-proposal.grid-2.v1)
+The rule for conformance.kernel.grounding states that it provides 'The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked' [6ab8417a77f3b613]. For the input text, the value 'six' does not occur within the span 'five days', so the answer is 'VALUE_NOT_IN_SPAN'. For the rewritten text, the value 'five' occurs within the span 'five days', so the answer is 'GROUNDED'. Therefore, the answer moves.
+commitments: {"kernel": "conformance.kernel.grounding", "expect": "moves"}
+[0d8a2845f6a79ee8] (mini.pair-proposal.grid-3.v1)
+The rule for conformance.kernel.span-occurs states that it checks 'Whether a cited span occurs in a document, whitespace-normalised, no relaxation' [966be5d711930718]. For the input text, the span 'five days' occurs in the document 'Amara was away for five\ndays.' because the rule specifies the check is 'whitespace-normalised', meaning the newline is treated as whitespace. Thus, the answer is 'verbatim'. For the rewritten text, the span 'five days' also occurs in the document 'Amara was away for five days.', so the answer is 'verbatim'. Therefore, the answer is unchanged.
+commitments: {"kernel": "conformance.kernel.span-occurs", "expect": "unchanged"}
+
+## Verdicts so far (verdicts)
+[92ed59ab085418f1] (mini.verdict.v1)
+Verdict on this cycle's executions.
+53ecb763572c64b0: conformance.kernel.grounding under proposer's own rewrite: I did not change any characters because the input and rewritten texts are identical. unrunnable, expected unchanged -> rejected; no prediction
+fef1f10bef2fd550: conformance.kernel.span-occurs under proposer's own rewrite: I changed the span from 'Five days' to 'five days'. moved, expected moves -> rejected; no prediction
+260eb9794239ee52: conformance.kernel.span-occurs under proposer's own rewrite: I changed the span from 'five days.' to 'five days' by removing the trailing period. unchanged, expected moves -> candidate point (unchanged); no prediction
+commitments: {"verdicts": [{"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unrunnable", "expected": "unchanged", "kernel": "conformance.kernel.grounding", "predicted": null, "proposal": "53ecb763572c64b0", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I did not change any characters because the input and rewritten texts are identical."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "moved", "expected": "moves", "kernel": "conformance.kernel.span-occurs", "predicted": null, "proposal": "fef1f10bef2fd550", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I changed the span from 'Five days' to 'five days'."}, {"catalogue_moves": false, "catalogued": false, "column": "unchanged", "executed": "unchanged", "expected": "moves", "kernel": "conformance.kernel.span-occurs", "predicted": null, "proposal": "260eb9794239ee52", "reading": "no prediction", "same_input": null, "standing": "candidate point", "transform": "proposer's own rewrite: I changed the span from 'five days.' to 'five days' by removing the trailing period."}]}
+[899fbcd8996639f9] (mini.verdict.v1)
+Verdict on this cycle's executions.
+8b91cbae1430e5bb: conformance.kernel.span-occurs under proposer's own rewrite: I changed the span from 'five days' to 'six days'. moved, expected moves -> rejected; no prediction
+b84f07ceddae9d75: conformance.kernel.span-occurs under proposer's own rewrite: I changed the span from an empty string to 'five days'. unchanged, expected unchanged -> rejected; no prediction
+adb20f338a5bcf88: conformance.kernel.span-occurs under proposer's own rewrite: I changed the span from '.' to 'five days'. unchanged, expected unchanged -> rejected; no prediction
+commitments: {"verdicts": [{"catalogue_moves": false, "catalogued": false, "column": null, "executed": "moved", "expected": "moves", "kernel": "conformance.kernel.span-occurs", "predicted": null, "proposal": "8b91cbae1430e5bb", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I changed the span from 'five days' to 'six days'."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.span-occurs", "predicted": null, "proposal": "b84f07ceddae9d75", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I changed the span from an empty string to 'five days'."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.span-occurs", "predicted": null, "proposal": "adb20f338a5bcf88", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I changed the span from '.' to 'five days'."}]}
+[78df575ff238a2a3] (mini.verdict.v1)
+Verdict on this cycle's executions.
+232e3a0202e0efac: conformance.kernel.span-occurs under proposer's own rewrite: I changed the document from 'Amara was away. Amara was away.' to 'Amara was away for five days.' unchanged, expected unchanged -> rejected; no prediction
+76a57b79fef85273: conformance.kernel.grounding under proposer's own rewrite: I changed the value from 'FIVE' to 'five'. unchanged, expected moves -> candidate point (unchanged); no prediction
+c59b4f6732ac1157: conformance.kernel.grounding under proposer's own rewrite: I did not change any characters because the input and rewritten texts are identical. unrunnable, expected unchanged -> rejected; no prediction
+commitments: {"verdicts": [{"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.span-occurs", "predicted": null, "proposal": "232e3a0202e0efac", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I changed the document from 'Amara was away. Amara was away.' to 'Amara was away for five days.'"}, {"catalogue_moves": false, "catalogued": false, "column": "unchanged", "executed": "unchanged", "expected": "moves", "kernel": "conformance.kernel.grounding", "predicted": null, "proposal": "76a57b79fef85273", "reading": "no prediction", "same_input": null, "standing": "candidate point", "transform": "proposer's own rewrite: I changed the value from 'FIVE' to 'five'."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unrunnable", "expected": "unchanged", "kernel": "conformance.kernel.grounding", "predicted": null, "proposal": "c59b4f6732ac1157", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I did not change any characters because the input and rewritten texts are identical."}]}
+[794f5067f8fd66b9] (mini.verdict.v1)
+Verdict on this cycle's executions.
+92469a7f6d3c616b: conformance.kernel.grounding under proposer's own rewrite: I changed the value from 'five days' to 'five'. unchanged, expected unchanged -> rejected; no prediction
+931a7b9f2f3b6676: conformance.kernel.grounding under proposer's own rewrite: I changed the value from 'six' to 'five'. moved, expected moves -> rejected; no prediction
+0d8a2845f6a79ee8: conformance.kernel.span-occurs under proposer's own rewrite: I changed the document by replacing the newline character between 'five' and 'days' with a space. unchanged, expected unchanged -> rejected; no prediction
+commitments: {"verdicts": [{"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.grounding", "predicted": null, "proposal": "92469a7f6d3c616b", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I changed the value from 'five days' to 'five'."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "moved", "expected": "moves", "kernel": "conformance.kernel.grounding", "predicted": null, "proposal": "931a7b9f2f3b6676", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I changed the value from 'six' to 'five'."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.span-occurs", "predicted": null, "proposal": "0d8a2845f6a79ee8", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I changed the document by replacing the newline character between 'five' and 'days' with a space."}]}
+
+## Criticisms (criticisms)
+[7c882a3a902d4317] (mini.criticism.v1)
+All three proposals were executed successfully, and the machine's results matched the proposers' expectations. There are no failures to analyze in this cycle.
+
+## Executions (executions)
+[143b8965381a8b5e] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+53ecb763572c64b0: unrunnable
+fef1f10bef2fd550: conformance.kernel.span-occurs -> moved, expected moves
+260eb9794239ee52: conformance.kernel.span-occurs -> unchanged, expected moves
+commitments: {"executions": [{"detail": "the rewritten text is the input unchanged", "executed": "unrunnable", "expect": "unchanged", "input": "{\"value\": \"five\", \"span\": \"five days\", \"document\": \"Amara was away for five days.\"}", "kernel": "conformance.kernel.grounding", "proposal": "53ecb763572c64b0", "rewrite": "I did not change any characters because the input and rewritten texts are identical.", "rewritten": "{\"value\": \"five\", \"span\": \"five days\", \"document\": \"Amara was away for five days.\"}"}, {"after": "verbatim", "as_expected": true, "before": "NOT_IN_DOCUMENT", "executed": "moved", "expect": "moves", "input": "{\"value\": \"five\", \"span\": \"Five days\", \"document\": \"Amara was away for five days.\"}", "kernel": "conformance.kernel.span-occurs", "proposal": "fef1f10bef2fd550", "rewrite": "I changed the span from 'Five days' to 'five days'.", "rewritten": "{\"value\": \"five\", \"span\": \"five days\", \"document\": \"Amara was away for five days.\"}"}, {"after": "verbatim", "as_expected": false, "before": "verbatim", "executed": "unchanged", "expect": "moves", "input": "{\"value\": \"five\", \"span\": \"five days.\", \"document\": \"Amara was away for five days.\"}", "kernel": "conformance.kernel.span-occurs", "proposal": "260eb9794239ee52", "rewrite": "I changed the span from 'five days.' to 'five days' by removing the trailing period.", "rewritten": "{\"value\": \"five\", \"span\": \"five days\", \"document\": \"Amara was away for five days.\"}"}]}
+[a3d958d33f415db3] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+8b91cbae1430e5bb: conformance.kernel.span-occurs -> moved, expected moves
+b84f07ceddae9d75: conformance.kernel.span-occurs -> unchanged, expected unchanged
+adb20f338a5bcf88: conformance.kernel.span-occurs -> unchanged, expected unchanged
+commitments: {"executions": [{"after": "NOT_IN_DOCUMENT", "as_expected": true, "before": "verbatim", "executed": "moved", "expect": "moves", "input": "{\"value\": \"five\", \"span\": \"five days\", \"document\": \"Amara was away for five days.\"}", "kernel": "conformance.kernel.span-occurs", "proposal": "8b91cbae1430e5bb", "rewrite": "I changed the span from 'five days' to 'six days'.", "rewritten": "{\"value\": \"five\", \"span\": \"six days\", \"document\": \"Amara was away for five days.\"}"}, {"after": "verbatim", "as_expected": true, "before": "verbatim", "executed": "unchanged", "expect": "unchanged", "input": "{\"value\": \"five\", \"span\": \"\", \"document\": \"Amara was away for five days.\"}", "kernel": "conformance.kernel.span-occurs", "proposal": "b84f07ceddae9d75", "rewrite": "I changed the span from an empty string to 'five days'.", "rewritten": "{\"value\": \"five\", \"span\": \"five days\", \"document\": \"Amara was away for five days.\"}"}, {"after": "verbatim", "as_expected": true, "before": "verbatim", "executed": "unchanged", "expect": "unchanged", "input": "{\"value\": \"five\", \"span\": \".\", \"document\": \"Amara was away for five days.\"}", "kernel": "conformance.kernel.span-occurs", "proposal": "adb20f338a5bcf88", "rewrite": "I changed the span from '.' to 'five days'.", "rewritten": "{\"value\": \"five\", \"span\": \"five days\", \"document\": \"Amara was away for five days.\"}"}]}
+[17cd160b23408b7e] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+232e3a0202e0efac: conformance.kernel.span-occurs -> unchanged, expected unchanged
+76a57b79fef85273: conformance.kernel.grounding -> unchanged, expected moves
+c59b4f6732ac1157: unrunnable
+commitments: {"executions": [{"after": "verbatim", "as_expected": true, "before": "verbatim", "executed": "unchanged", "expect": "unchanged", "input": "{\"value\": \"five\", \"span\": \"away\", \"document\": \"Amara was away. Amara was away.\"}", "kernel": "conformance.kernel.span-occurs", "proposal": "232e3a0202e0efac", "rewrite": "I changed the document from 'Amara was away. Amara was away.' to 'Amara was away for five days.'", "rewritten": "{\"value\": \"five\", \"span\": \"away\", \"document\": \"Amara was away for five days.\"}"}, {"after": "GROUNDED", "as_expected": false, "before": "GROUNDED", "executed": "unchanged", "expect": "moves", "input": "{\"value\": \"FIVE\", \"span\": \"five days\", \"document\": \"Amara was away for five days.\"}", "kernel": "conformance.kernel.grounding", "proposal": "76a57b79fef85273", "rewrite": "I changed the value from 'FIVE' to 'five'.", "rewritten": "{\"value\": \"five\", \"span\": \"five days\", \"document\": \"Amara was away for five days.\"}"}, {"detail": "the rewritten text is the input unchanged", "executed": "unrunnable", "expect": "unchanged", "input": "{\"value\": \"five days\", \"span\": \"five days\", \"document\": \"Amara was away for five days.\"}", "kernel": "conformance.kernel.grounding", "proposal": "c59b4f6732ac1157", "rewrite": "I did not change any characters because the input and rewritten texts are identical.", "rewritten": "{\"value\": \"five days\", \"span\": \"five days\", \"document\": \"Amara was away for five days.\"}"}]}
+[0c33dabbf5ce8991] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+92469a7f6d3c616b: conformance.kernel.grounding -> unchanged, expected unchanged
+931a7b9f2f3b6676: conformance.kernel.grounding -> moved, expected moves
+0d8a2845f6a79ee8: conformance.kernel.span-occurs -> unchanged, expected unchanged
+commitments: {"executions": [{"after": "GROUNDED", "as_expected": true, "before": "GROUNDED", "executed": "unchanged", "expect": "unchanged", "input": "{\"value\": \"five days\", \"span\": \"five days\", \"document\": \"Amara was away for five days.\"}", "kernel": "conformance.kernel.grounding", "proposal": "92469a7f6d3c616b", "rewrite": "I changed the value from 'five days' to 'five'.", "rewritten": "{\"value\": \"five\", \"span\": \"five days\", \"document\": \"Amara was away for five days.\"}"}, {"after": "GROUNDED", "as_expected": true, "before": "VALUE_NOT_IN_SPAN", "executed": "moved", "expect": "moves", "input": "{\"value\": \"six\", \"span\": \"five days\", \"document\": \"Amara was away for five days.\"}", "kernel": "conformance.kernel.grounding", "proposal": "931a7b9f2f3b6676", "rewrite": "I changed the value from 'six' to 'five'.", "rewritten": "{\"value\": \"five\", \"span\": \"five days\", \"document\": \"Amara was away for five days.\"}"}, {"after": "verbatim", "as_expected": true, "before": "verbatim", "executed": "unchanged", "expect": "unchanged", "input": "{\"value\": \"five\", \"span\": \"five days\", \"document\": \"Amara was away for five\\ndays.\"}", "kernel": "conformance.kernel.span-occurs", "proposal": "0d8a2845f6a79ee8", "rewrite": "I changed the document by replacing the newline character between 'five' and 'days' with a space.", "rewritten": "{\"value\": \"five\", \"span\": \"five days\", \"document\": \"Amara was away for five days.\"}"}]}
+
+## Evidence (catalogue)
+To ground a claim in one of these, name its id in this artifact's citations; a quote must reproduce the block's own words.
+[638a6360b40e8b8a] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fence", "moves": false, "input": "{\"claimant_name\": \"amara okoro\",…
+[e847048a8c7847a8] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.fence", "moves": true, "input": "{\"claimant_name\": \"ama…
+[b0a010d1115d82a4] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.prose-before", "moves": false, "input": "{\"claimant_name\": \"amara o…
+[33b4e316004d90cc] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.prose-before", "moves": true, "input": "{\"claimant_name\"…
+[1c12ef186483bd0d] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.indent", "moves": false, "input": "{\"claimant_name\": \"amara okoro\"…
+[910693c99ba3c6da] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.indent", "moves": false, "input": "{\"claimant_name\": \"a…
+[706dbfa18782a310] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fold-whitespace", "moves": false, "input": "{\"claimant_name\": \"amar…
+[45929a4e30072bb7] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.fold-whitespace", "moves": false, "input": "{\"claimant_na…
+[7a60de6ecc4dd6e3] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.bare-after", "moves": true, "input": "{\"claimant_name\": \"amara okor…
+[1c84027e761c6f99] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.draft-before", "moves": false, "input": "{\"claimant_name\": \"amara o…
+[55dd56154fb39a87] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fence-then-bare-after", "moves": false, "input": "{\"claimant_name\": …
+[47cbc7b41aaf5c8f] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fence-with-prose", "moves": false, "input": "{\"claimant_name\": \"ama…
+[791e3ba34ce7d357] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.float-after", "moves": false, "input": "{\"claimant_name\": \"amara ok…
+[a0e68e5c468b7070] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.float-after", "moves": true, "input": "{\"claimant_name\":…
+[fece6100f6ea7485] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.fence", "moves": false, "input": "{\"claimant_name\": \"amara …
+[bea451e84fa483a5] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.prose-before", "moves": false, "input": "{\"claimant_name\": \…
+[1a9cd8bb407e62f8] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.bare-after", "moves": false, "input": "{\"claimant_name\": \"a…
+[9c839bd675122bb9] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.upper-case", "moves": false, "input": "{\"claimant_name\": \"a…
+[d4ded569665ba70d] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.upper-case", "moves": true, "input": "{\"claimant_name\": \"amara okor…
+[6e346a638ffdff8b] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.typographic-quotes", "moves": false, "input": "I'm sorry, no."}]…
+[478f1f02c67c06c4] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.upper-case", "moves": false, "input": "I'm sorry, no."}]}
+[42f90dc7e6a15965] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.fence", "moves": false, "input": "I'm sorry, no."}]}
+[3c0719eda3e180c6] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.prose-before", "moves": false, "input": "I'm sorry, no."}]}
+[56ed413d078ac9c2] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.refusal-prose-before", "moves": true, "input": "{\"claimant_name…
+[8bfbf8b9bdcd2a4c] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.refusal-prose-before", "moves": false, "input": "{\"claimant_n…
+[6ab8417a77f3b613] (registry, evidence) kernel conformance.kernel.grounding: The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked: the inp…
+[a70c2e9bc362b532] (registry, evidence) kernel conformance.kernel.recovered-from-prose: Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no).
+[65ae18af7a738b26] (registry, evidence) kernel conformance.kernel.recovery: The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT.
+[c8c80e388572359c] (registry, evidence) kernel conformance.kernel.refusal-phrase: The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE.
+[22dc5cbedaff143d] (registry, evidence) kernel conformance.kernel.response-verdict: The harness's response verdict for the reply: JSON_OBJECT, INVALID_JSON, REFUSAL_SUSPECTED, or another of its verdic…
+[966be5d711930718] (registry, evidence) kernel conformance.kernel.span-occurs: Whether a cited span occurs in a document, whitespace-normalised, no relaxation: the input is one JSON object {"span", "d…
+[1ec3ef823e482ae5] (grid, evidence) INPUT: {"value": "five", "span": "five days", "document": "Amara was away for five days."} REWRITTEN: {"value": "five", "span": "five days", "document": "Amara …
+[1ac40d5bf94c3ae9] (grid, evidence) INPUT: {"value": "five", "span": "Five days", "document": "Amara was away for five days."} REWRITTEN: {"value": "five", "span": "five days", "document": "Amara …
+[397e67db95db8169] (grid, evidence) INPUT: {"value": "five", "span": "five days.", "document": "Amara was away for five days."} REWRITTEN: {"value": "five", "span": "five days", "document": "Amara…
+[4598980cd134b655] (grid, evidence) INPUT: {"value": "five", "span": "five days", "document": "Amara was away for five days."} REWRITTEN: {"value": "five", "span": "six days", "document": "Amara w…
+[b729db7a4214fb79] (grid, evidence) INPUT: {"value": "five", "span": "", "document": "Amara was away for five days."} REWRITTEN: {"value": "five", "span": "five days", "document": "Amara was away …
+[b2a3fb4e8aea46ca] (grid, evidence) INPUT: {"value": "five", "span": ".", "document": "Amara was away for five days."} REWRITTEN: {"value": "five", "span": "five days", "document": "Amara was away…
+[e5d5690ed14e4fe6] (grid, evidence) INPUT: {"value": "five", "span": "away", "document": "Amara was away. Amara was away."} REWRITTEN: {"value": "five", "span": "away", "document": "Amara was away…
+[ea11c96194ee6d0a] (grid, evidence) INPUT: {"value": "FIVE", "span": "five days", "document": "Amara was away for five days."} REWRITTEN: {"value": "five", "span": "five days", "document": "Amara …
+[95276735189cb3bd] (grid, evidence) INPUT: {"value": "five days", "span": "five days", "document": "Amara was away for five days."} REWRITTEN: {"value": "five days", "span": "five days", "document…
+[17ec765bbf0d2f08] (grid, evidence) INPUT: {"value": "five days", "span": "five days", "document": "Amara was away for five days."} REWRITTEN: {"value": "five", "span": "five days", "document": "A…
+[10768a40c85acd79] (grid, evidence) INPUT: {"value": "six", "span": "five days", "document": "Amara was away for five days."} REWRITTEN: {"value": "five", "span": "five days", "document": "Amara w…
+[ec14dd744276e06c] (grid, evidence) INPUT: {"value": "five", "span": "five days", "document": "Amara was away for five\ndays."} REWRITTEN: {"value": "five", "span": "five days", "document": "Amara…
+[306fbee8384e8cae] (grid, evidence) INPUT: {"value": "five", "span": "five\ndays", "document": "Amara was away for five days."} REWRITTEN: {"value": "five", "span": "five days", "document": "Amara…
+[d6f0fce6385e3038] (grid, evidence) INPUT: {"value": "five", "span": "was away for five days", "document": "Amara was away for five days."} REWRITTEN: {"value": "five", "span": "five days", "docum…
+[7f19d1af69546744] (grid, evidence) INPUT: {"value": "Amara", "span": "amara", "document": "Amara was away for five days."} REWRITTEN: {"value": "Amara", "span": "Amara", "document": "Amara was aw…
+[95df763f5abb29f3] (grid, evidence) INPUT: {"value": "days", "span": "five days", "document": "Amara was away for five days."} REWRITTEN: {"value": "days", "span": "five day", "document": "Amara w…
+[99c123a00be6a2fe] (grid, evidence) INPUT: {"value": "five", "span": "for five days", "document": "Amara was away for five days and for five days more."} REWRITTEN: {"value": "five", "span": "for …
+[b4deadf5003ec496] (grid, evidence) INPUT: {"value": "five", "span": " five days ", "document": "Amara was away for five days."} REWRITTEN: {"value": "five", "span": "five days", "document": "Amar…
+[8515288d70197246] (grid, evidence) INPUT: {"value": "five", "span": "five days", "document": "AMARA WAS AWAY FOR FIVE DAYS."} REWRITTEN: {"value": "five", "span": "five days", "document": "Amara …
+[c0c0cd5355c868b1] (grid, evidence) INPUT: {"value": "", "span": "five days", "document": "Amara was away for five days."} REWRITTEN: {"value": "five", "span": "five days", "document": "Amara was …
+
+## The cell to cover (cell)
+[865d6c04234634d7] (mini.next-cell.1.v1)
+The cell to cover: INPUT: {"value": "five", "span": "five\ndays", "document": "Amara was away for five days."} REWRITTEN: {"value": "five", "span": "five days", "document": "Amara was away for five days."}
+(12 of 20 cells named so far.)
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", "cell", each a string.
+
+To ground a claim, add a citation naming a block and quoting its own words, like this:
+  "citations": [{"block": "10768a40c85acd79", "quote": "<words copied from that block>"}]
+
+## The shape this answer must take
+`commitments` must be a STRING whose content is JSON text fitting exactly this schema (the field itself is a string, not an object):
+{
+  "properties": {
+    "expect": {
+      "enum": [
+        "moves",
+        "unchanged"
+      ]
+    },
+    "kernel": {
+      "pattern": "^conformance\\.kernel\\.(grounding|span-occurs)$",
+      "type": "string"
+    }
+  },
+  "required": [
+    "kernel",
+    "expect"
+  ],
+  "type": "object"
+}

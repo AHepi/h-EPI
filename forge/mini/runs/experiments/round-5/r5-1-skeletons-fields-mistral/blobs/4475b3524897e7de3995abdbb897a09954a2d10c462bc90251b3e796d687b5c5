@@ -1,0 +1,47 @@
+### Analysis of `conformance.kernel.recovery` Proposals and Executions
+
+The executions this cycle show that the documented rules for `conformance.kernel.recovery` align with the implementation in all tested cases. However, one proposal reveals a potential ambiguity in the rule's wording that could mislead proposers. Below is a breakdown of each proposal's outcome and the rule's fidelity to the code.
+
+#### 1. Proposal `51a45a83c48df109` (grid-1.v1): **Unchanged Object**
+**Rule:** The documented rule states that the object scored is "the last one inside a code fence when any fence holds one, else the last top-level object in the text." The proposer interpreted this to mean that if the object inside the fence is identical to the one outside, the object should remain *unchanged* after removing the fenced object.
+
+**Execution:** The machine behaved as expected (`unchanged`), recovering the identical object `A` from outside the fence after its removal from the fence. This confirms the rule's wording is unambiguous in this case: the *last top-level object* is prioritized when no fenced object remains, even if it is identical to a previously fenced one.
+
+**Verdict:** The proposer read the rule correctly, and the rule aligns with the code. No misalignment here.
+
+---
+
+#### 2. Proposal `54ba5ef2a6c762d4` (grid-2.v1): **Object Moves Between Fences**
+**Rule:** The rule specifies that the object scored is the "last one inside a code fence when any fence holds one." The proposer argued that removing `B` from the second fence should shift the recovered object to `A` in the first fence.
+
+**Execution:** The machine behaved as expected (`moved`), recovering `A` after `B` was removed. This confirms the rule's wording is precise: the *last* fenced object is prioritized, and the implementation correctly falls back to the next-to-last fenced object when the last is removed.
+
+**Verdict:** The proposer read the rule correctly, and the rule aligns with the code. No misalignment here.
+
+---
+
+#### 3. Proposal `1962c9a4343de561` (grid-3.v1): **Non-Object Content in Fence**
+**Rule:** The rule states that the object scored is the "last one inside a code fence when any fence holds one," but does not explicitly exclude non-object content (e.g., prose) from being considered. The proposer assumed that only JSON objects inside fences are candidates, and removing `A` from the fence would result in `NO_OBJECT`.
+
+**Execution:** The machine behaved as expected (`moved`), returning `NO_OBJECT` after `A` was removed. This confirms the rule's implicit assumption: only *JSON objects* inside fences are candidates, and prose or other non-object content is ignored.
+
+**Potential Misreading:** The rule's wording could mislead proposers into thinking that *any* content inside a fence is a candidate, not just JSON objects. The code, however, explicitly checks for `type(value) is dict` (line 42 in `recover_json_object`), ensuring only valid JSON objects are considered. This is a case where the rule's wording could be clarified to avoid ambiguity.
+
+**Verdict:** The proposer's expectation was correct, but the rule's wording is slightly ambiguous. The code's behavior is stricter than the rule's phrasing suggests, as it excludes non-object content from consideration. Proposers should note that the rule implicitly refers to *JSON objects* inside fences, not arbitrary content.
+
+---
+
+### Key Takeaways for Proposers
+1. **Fenced Objects Take Priority:** The rule's wording about "last one inside a code fence" is unambiguous when multiple fences are present. The implementation correctly prioritizes the last fenced object and falls back to earlier fences if the last is removed.
+
+2. **Non-Object Content is Ignored:** The rule does not explicitly state that non-object content (e.g., prose) inside fences is ignored, but the code enforces this. Proposers should assume that only valid JSON objects inside fences are candidates for recovery.
+
+3. **Top-Level Objects as Fallback:** The rule's fallback to "last top-level object in the text" is clear and aligns with the code. Proposers can rely on this behavior when no fenced objects remain.
+
+4. **Next Steps:** Proposers should test edge cases involving non-object content in fences (e.g., prose, malformed JSON) to confirm the rule's implicit assumptions. If ambiguity persists, the rule's wording could be revised to explicitly state that only JSON objects are considered candidates.
+
+### Citations
+The following evidence blocks support the analysis:
+- The rule's wording on fenced objects: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." ([4756991799bcd6c4])
+- The code's explicit check for JSON objects: `if type(value) is dict:` (line 42 in `recover_json_object`, [51a2da55fab63214]).
+- Evidence of the machine's behavior with non-object content in fences: `NO_OBJECT` returned when only prose remains ([1962c9a4343de561], [50719eb62e3d0332]).

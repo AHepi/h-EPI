@@ -1,0 +1,15 @@
+# Execution
+
+## Proposals so far (proposals)
+[d84d1bccde58223e] (mini.pair-proposal.grid-1.v1)
+The documented rule for `conformance.kernel.recovery` states that the object scored is the last one inside a code fence when any fence holds one. In the given cell, there is only one JSON object `A` inside a single code fence. Since no other objects are present, removing `A` from the fence leaves no object to recover. The rule implies that the object should move from being recoverable to not being recoverable (NO_OBJECT). The object scored before the rewrite is `A`; after the rewrite, there is no object to score.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[455d772be2f2feb1] (mini.pair-proposal.grid-2.v1)
+The documented rule for `conformance.kernel.recovery` states that the object scored is the last one inside a code fence when any fence holds one. In the given cell, the code fence contains only the JSON object `A`, and the plain sentence `S` follows the fence. The rule specifies that the object scored is the last one inside a fence if any fence holds one, regardless of what follows the fence. Thus, the object scored before the rewrite is `A`. If `A` is removed from the fence, there is no object left inside the fence, and the rule implies the object should move from being recoverable (`A`) to not being recoverable (NO_OBJECT).
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[d48e4a506eb7d457] (mini.pair-proposal.grid-3.v1)
+The documented rule for `conformance.kernel.recovery` states that the object scored is the last one inside a code fence when any fence holds one. In the given cell, the code fence contains the JSON object `A`, and the JSON object `B` follows the fence. The rule specifies that the object scored is the last one *inside* a fence if any fence holds one, regardless of what follows the fence. Thus, the object scored before the rewrite is `A`. If `A` is removed from the fence, there is no object left inside the fence, and the rule implies the object should move from being recoverable (`A`) to not being recoverable (NO_OBJECT). The object `B` outside the fence is not considered for scoring under this rule.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

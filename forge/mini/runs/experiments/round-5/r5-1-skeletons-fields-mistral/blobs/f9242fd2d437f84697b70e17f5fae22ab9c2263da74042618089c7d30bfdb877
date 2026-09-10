@@ -1,0 +1,24 @@
+```json
+{
+  "body": "The documented rule for `conformance.kernel.recovery` states that the object scored is the last one inside a code fence when any fence holds one. In the given cell, the code fence contains the JSON object `A`, and the JSON object `B` follows the fence. The rule specifies that the object scored is the last one *inside* a fence if any fence holds one, regardless of what follows the fence. Thus, the object scored before the rewrite is `A`. If `A` is removed from the fence, there is no object left inside the fence, and the rule implies the object should move from being recoverable (`A`) to not being recoverable (NO_OBJECT). The object `B` outside the fence is not considered for scoring under this rule.",
+  "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"expect\": \"moves\"}",
+  "input": "```\n{\"a\": 1}\n```\n{\"b\": 2}",
+  "rewritten": "```\n\n```\n{\"b\": 2}",
+  "rewrite": "Removed the JSON object `A` from the code fence.",
+  "cell": "fence[ A ] B",
+  "citations": [
+    {
+      "block": "cf3ead255ba521d3",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it"
+    },
+    {
+      "block": "fa1a61eab2eebf73",
+      "quote": "fence[ A ] S"
+    },
+    {
+      "block": "1367c669e3d5463f",
+      "quote": "fence[ A ] B"
+    }
+  ]
+}
+```

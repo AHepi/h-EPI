@@ -1,0 +1,16 @@
+```json
+{
+  "body": "For the kernel `conformance.kernel.recovery`, the rule states that a candidate that parses as strict JSON is scoreable, but one that does not (such as a float) is passed over [cf3ead255ba521d3]. However, the rule specifically says \"a float, for instance\" is passed over in the context of a candidate that does not parse as strict JSON. In standard JSON, `{\"a\": 1.5}` is a valid strict JSON object. Therefore, for the input `{\"a\": 1.5}`, the recovered object is `{\"a\": 1.5}`. For the rewritten text `{\"a\": 1}`, the recovered object is `{\"a\": 1}`. Since the recovered objects differ, the answer moves.",
+  "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"expect\": \"moves\"}",
+  "input": "{\"a\": 1.5}",
+  "rewritten": "{\"a\": 1}",
+  "rewrite": "I changed the value of the key 'a' from 1.5 to 1.",
+  "cell": "[23b198e318f2cb50] (mini.next-cell.2.v1)\nThe cell to cover: INPUT: {\"a\": 1.5} REWRITTEN: {\"a\": 1}",
+  "citations": [
+    {
+      "block": "cf3ead255ba521d3",
+      "quote": "A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over"
+    }
+  ]
+}
+```

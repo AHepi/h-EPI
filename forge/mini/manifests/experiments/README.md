@@ -493,3 +493,51 @@ For `r5-1` to `r5-3` the criterion is the round-4 one, and the control's cell
 if the escaping repair works, mistral should lose few calls rather than most,
 and its record beside `r4-1`, `r4-6` and `r4-7` is the measure of the repair.
 Records under `forge/mini/runs/experiments/round-5/`.
+
+### Round 5, read: four of five
+
+Written when the three gemma shapes and the mistral shape had ended and the
+qwen shape was in its third cycle.
+
+**The fields form settles M13.** The same shape, the same model, the same seven
+cycles, across the four runs it took:
+
+| mistral-large-3:675b | proposals | drops | format failures | executions named unreadable |
+|---|---|---|---|---|
+| `r4-1`, before any repair | 1 | 20 | 41 | 0 |
+| `r4-6`, the format layer reads a raw break | 20 | 1 | 7 | 19 |
+| `r4-7`, both readers agree | 10 | 11 | 29 | 0 |
+| `r5-1`, the kind carries its own fields | 21 | 0 | 0 | 0 |
+
+Twenty-one proposals, nothing dropped, nothing refused. The requirement was
+never something the model could not do; it was something the template should not
+have asked for.
+
+- **`r5-3-skeletons-fields-gemma`**: the control again, at the control's own
+  cell in cycle 3, and three more of its class in cycles 5 to 7. The form change
+  costs the shape nothing.
+- **`r5-1-skeletons-fields-mistral`**: twenty-one proposals and two
+  disagreements, both of them mistral rewriting carelessly — it removed the
+  object from inside the fence rather than the bare object after it, so the pair
+  isolates nothing. Worth noticing anyway: the recorded `before` of its cycle-3
+  proposal is the control's own symptom, the bare object scored over the fenced
+  one, and the shape could not surface it because the rewrite was wrong. A model
+  that can now write the pair may still not write the pair asked for.
+- **`r5-4-grounding-pairs-given`**: fifteen of twenty-one agreed. Two failures
+  were the seat copying the input into both fields, so the pair was
+  `unrunnable`; one was a duplicate. The three real disagreements are the
+  seat misreading rows the table already holds: a span with a trailing full stop
+  that does occur, a value differing only in case (G-09), and a span shortened by
+  one letter that still occurs (G-08).
+- **`r5-5-verdict-pairs-given`**: nineteen of twenty-one agreed. One
+  disagreement is P-05, an array holding the object, misread. One duplicate.
+
+**What the given pairs show.** With the construction taken away entirely, a
+rules-reading seat agrees with the code on thirty-four of forty-two pairs and
+every disagreement is its own misreading of a row already written down. That is
+the useful negative: the seat's reading is ordinarily right, which is why a
+disagreement is worth looking at, and the discovery in this whole series came
+from *the space that was enumerated*, not from the seat reading unusually well.
+Put the control's cell in the grid and three different models find it; leave it
+out and no amount of reading finds it. What a person contributes is the space.
+

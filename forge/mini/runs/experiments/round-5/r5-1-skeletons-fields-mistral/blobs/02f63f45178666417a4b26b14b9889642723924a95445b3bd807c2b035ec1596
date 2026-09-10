@@ -1,0 +1,48 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+### Analysis of `conformance.kernel.recovery` Rule vs. Implementation
+
+The documented rule for `conformance.kernel.recovery` states:
+> The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.
+
+This rule was tested in three proposals this cycle, and the implementation aligned with the documented behavior in all cases. However, a closer examination of the rule's wording and the source code reveals a subtle but critical ambiguity in how the rule handles **multiple JSON objects within a single fence**. The proposals did not explicitly test this edge case, but the source code and documented rule part company here.
+
+#### Key Discrepancy: Multiple Objects in a Single Fence
+1. **Rule as Written (Ambiguous):**
+   The rule states the object scored is the "last one inside a code fence when any fence holds one." This could be interpreted in two ways:
+   - **Interpretation A (Strict):** The *last JSON object* in the fence (e.g., in `fence[ A B ]`, the object scored is `B`).
+   - **Interpretation B (Lenient):** The *last top-level balanced object* in the fence, even if it is not a valid JSON object (e.g., in `fence[ A {invalid} ]`, the object scored is `A` because `{invalid}` is not a valid JSON object).
+
+   The rule does not explicitly address whether the "last one" must be a *valid JSON object* or merely the last *balanced* object. The phrase "last one inside a code fence" is ambiguous.
+
+2. **Source Code (Strict):**
+   The implementation in `recover_json_object` (lines 20-50 in the source) explicitly iterates over *all top-level balanced objects* in the fence and selects the *last one that parses as valid JSON* (either strict or last-wins for duplicates). This means:
+   - If a fence contains `A B` and both are valid JSON objects, the last one (`B`) is scored.
+   - If a fence contains `A {invalid}`, the last *valid* object (`A`) is scored, even though `{invalid}` is the last *balanced* object.
+
+   The code thus enforces **Interpretation A** (last *valid* JSON object), but the rule does not make this explicit. This creates a gap where a proposer might assume the rule refers to the last *balanced* object, not the last *valid* one.
+
+#### Why This Matters
+The discrepancy is critical for inputs like `fence[ A {invalid} ]`. The rule, as written, could be read to imply that `{invalid}` is the "last one inside the fence," even though it is not a valid JSON object. The implementation, however, would correctly score `A` in this case. A proposer relying solely on the rule might expect `{invalid}` to be scored, leading to a mismatch between the rule's implied behavior and the actual output.
+
+#### Evidence of the Gap
+- The rule's wording does not specify that the "last one" must be a *valid JSON object*. It only mentions that "a candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable" in the context of *candidates*, not the selection of the last object (see [7a147bb8c4c1539c] in the rules).
+- The source code explicitly skips invalid objects (lines 35-45 in `recover_json_object`), ensuring only valid JSON objects are considered for scoring.
+
+#### What a Proposer Should Try Next
+To expose this gap, a proposer should test an input where the last *balanced* object in a fence is *not* a valid JSON object, such as:
+```
+fence[ {"a": 1} {"b": 2 invalid} ]
+```
+Here, the rule's ambiguity could lead a proposer to expect `{"b": 2 invalid}` to be scored (as the "last one"), while the implementation would correctly score `{"a": 1}`. This would reveal whether the rule needs to be clarified to specify that the "last one" must be a *valid JSON object*.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.
