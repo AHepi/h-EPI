@@ -580,6 +580,25 @@ The record shows it either way, since the executor stores both texts and names
 which one failed. It is left open and measured rather than patched inside a
 registered block.
 
+## M20 — The neutral packet announces which arm wrote it
+
+**Seen on** every mini arm of MINI-USE-TEST-1 block 2, all three instances:
+`forge/mini/runs/usetest/v4-s2-1`, `v4-s2-2`, `v4-s2-3`. **Status: OPEN.**
+
+The protocol ends every arm in the same eight fields with nothing in them that
+says which arm or model produced it, so that the adjudication can be blind, and
+`Packet.leaks()` exists to check that. Every mini arm leaked on every instance —
+the words `kernel`, `cell` and `proposal` — where the two arms that are not mini
+leaked once between them across six packets.
+
+The cause is not carelessness in a prompt. A mini arm is walked through a grid of
+cells and told which kernel it is testing, so its truthful account of what it did
+uses the vocabulary only a mini arm has. Neutrality and a faithful report are in
+tension here, and the packet's eight fields ask for both. The leaks are recorded
+per packet and the block reported them, so the machinery caught it; what it means
+is that a blind adjudication of these packets is not currently possible, and
+saying the adjudication was blind would be false.
+
 ## What the thirty runs show, and do not
 
 The control pre-registered in the README (a fence holding a sentence beside its

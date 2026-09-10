@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown the documented rules and the complete source of the checks. Read this cycle's executions beside the proposals: say which expectations held, which failed, which inputs the validator threw away and why, and for each failure whether the proposer misread the rule or the rule as written and the code part company — quote the rule's words and name the line of code. Say what a proposer should build next. Cite nothing you were not shown.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The proposal expected k_recovery to stay unchanged when B is added after the fence, because the rule says the object scored is the last one inside a code fence when any fence holds one. The execution shows the answer moved from A to B: before was {"a":1}, after was {"b":2}. The proposer misread the rule. The rule says "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." The code implements this in recover_json_object: it builds a fenced pool from _FENCE.finditer(content) and a top_level pool by scanning for '{' and raw_decode. It then iterates for pool in (fenced, top_level) and for candidate in reversed(pool). The fenced pool contains only A, so the first pool yields A. But the code does not stop after the fenced pool: if no fenced candidate parses as a dict, it falls through to the top_level pool. Here A parses as a dict, so the fenced pool should return A. The execution says otherwise, so the rule as written and the code part company. The rule's words "when any fence holds one" imply the fenced pool is decisive if it has a parseable object. The code's loop over both pools means a later top-level object can win if the fenced candidate is rejected for some reason, but A is a valid dict, so that reason is not visible here. The proposer should build a case where the fenced object is not a dict or fails strict parsing, and a later top-level object is a dict, to test whether the fenced pool truly takes priority. The validator threw away no inputs; the execution recorded the pair as moved.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

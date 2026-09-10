@@ -1,0 +1,44 @@
+{
+  "arm": "D",
+  "ceiling_breached": false,
+  "cost": {
+    "completion_tokens": 10294,
+    "completion_tokens_allowed": 164000,
+    "completion_tokens_per_call": 4000,
+    "invocations": 41,
+    "invocations_allowed": 41,
+    "machine_executions": 3,
+    "prompt_tokens": 3884,
+    "refusals": [],
+    "wall_ms": 116018
+  },
+  "endpoint": {
+    "base_url": "https://ollama.com",
+    "kind": "ollama-chat",
+    "options": {
+      "seed": 7,
+      "temperature": 0
+    },
+    "think": false,
+    "timeout_seconds": 600
+  },
+  "instance": "v4-s2-3",
+  "leaks": [
+    "kernel",
+    "cell"
+  ],
+  "method_version": 4,
+  "model": "deepseek-v4-pro:0813",
+  "packet": {
+    "claim": "The recovery kernel's rewrite operation is not idempotent for cells that already contain a fenced JSON object followed by prose or another object; appending a new object moves the recovered object instead of leaving the original cell unchanged.",
+    "execution_evidence": "The test campaign reports executed: 'moved' and after: '{\"b\":2}' for the input fence[ A ] with rewrite fence[ A ] B, where the expected result was 'unchanged'.",
+    "expected": "For a cell that is already a valid cell of the grammar (e.g. fence[ A ], fence[ S A ], fence[ A S ]), rewriting it by appending another object should leave the original cell unchanged, because the last object inside a code fence is still the original object and the appended object is outside the fence.",
+    "observed": "The executed result is 'moved' rather than 'unchanged' for inputs such as fence[ A ], fence[ S A ], and fence[ A S ] when a new object is appended after the cell. The recovered object changes from the original object to the appended object.",
+    "reproducer": "```\n{\"a\": 1}\n```\n{\"b\": 2}",
+    "scope": "All recovery-kernel rewrites that append a new object after a cell already containing a fenced JSON object, including cells with prose before or after the object inside the fence.",
+    "source_basis": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.",
+    "uncertainty": "The campaign records do not include the full grammar definition, so the exact cell grammar and whether appended prose/objects outside the fence should be considered part of the same cell cannot be independently verified. The reported INVALID_INSTANTIATION cases for other rewrites suggest the grammar may not permit multiple top-level objects, but the 'moved' results for the listed cases are inconsistent with the documented last-object-inside-a-fence rule."
+  },
+  "protocol": "mini-use-test-1",
+  "stopped_on": null
+}

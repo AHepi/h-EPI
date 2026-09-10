@@ -1,0 +1,19 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown the documented rules and the complete source of the checks. Read this cycle's executions beside the proposals: say which expectations held, which failed, which inputs the validator threw away and why, and for each failure whether the proposer misread the rule or the rule as written and the code part company — quote the rule's words and name the line of code. Say what a proposer should build next. Cite nothing you were not shown.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The execution was not a test of the proposal's claim. The validator threw the pair away before running the kernel, with detail "the rewritten text is no cell of the grammar". The proposal's rewritten text is ```
+Here is the result:
+{"a": 1}
+```
+{"b": 2}
+{"c": 3}. The cell grammar is fence[ S A ] B, which means a fence containing S and A, followed by B. The rewrite was "add", and the proposer added {"c": 3} after B, producing fence[ S A ] B C. That is not a cell of the grammar: the grammar has exactly one object after the fence, not two. The validator therefore discarded the input and recorded INVALID_INSTANTIATION. No expectation held or failed, because the check never ran. The proposer misread the shape of the cell: the rule for the cell is that the text is a fence containing S and A followed by B, and the rewrite must produce another text of that same shape. Adding a second object after the fence breaks the shape. The documented rule for k_recovery was not reached, so no part of it was tested. A proposer should build a rewrite that keeps the cell's shape: for the cell fence[ S A ] B, an edit that changes the contents of the fence or replaces B with another single object, not one that appends a second object after B.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

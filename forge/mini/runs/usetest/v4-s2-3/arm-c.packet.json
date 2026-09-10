@@ -1,0 +1,45 @@
+{
+  "arm": "C",
+  "ceiling_breached": false,
+  "cost": {
+    "completion_tokens": 5325,
+    "completion_tokens_allowed": 164000,
+    "completion_tokens_per_call": 4000,
+    "invocations": 21,
+    "invocations_allowed": 41,
+    "machine_executions": 4,
+    "prompt_tokens": 4172,
+    "refusals": [],
+    "wall_ms": 75051
+  },
+  "endpoint": {
+    "base_url": "https://ollama.com",
+    "kind": "ollama-chat",
+    "options": {
+      "seed": 7,
+      "temperature": 0
+    },
+    "think": false,
+    "timeout_seconds": 600
+  },
+  "instance": "v4-s2-3",
+  "leaks": [
+    "kernel",
+    "cell",
+    "proposal"
+  ],
+  "method_version": 4,
+  "model": "deepseek-v4-pro:0813",
+  "packet": {
+    "claim": "The recovery kernel's cell grammar and rewrite execution are inconsistent for inputs containing a fenced object followed by prose or another object.",
+    "execution_evidence": "The provided test campaign results show INVALID_INSTANTIATION for proposals 3a3ffd2295cea743, ba1632743be8e4d5, d2b9bbc3bb6439e5, c883056725f16492, de585053b0a58e84, 9919b2230d4cbfc6, 604b932e83eff54f, and a moved result for 9237691326ad9586.",
+    "expected": "Rewrites that add or remove a trailing part should be valid when the resulting text is still a cell of the grammar, and the recovered object should remain unchanged for additions after a complete fenced object.",
+    "observed": "Several rewrites are marked INVALID_INSTANTIATION with details like 'the rewritten text is no cell of the grammar' or 'the input is not the cell it names', even when the rewritten text appears to be a valid cell; one case (fence[ A B ] with added C) unexpectedly changes the recovered object from {\"b\":2} to {\"c\":3}.",
+    "reproducer": "```\n{\"a\": 1}\n```\n{\"b\": 2}",
+    "scope": "Recovery kernel inputs where a fenced JSON object is followed by prose or another object, and a rewrite adds or removes a trailing part.",
+    "source_basis": "recover_json_object: 'Every top-level balanced object in the text is a candidate... The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.'",
+    "uncertainty": "The exact grammar definition for 'cell' is not provided, so some INVALID_INSTANTIATION results may be correct if the grammar intentionally disallows certain sequences; the moved result for fence[ A B ] with added C may be intended if the last object wins, but it conflicts with the 'unchanged' expectation."
+  },
+  "protocol": "mini-use-test-1",
+  "stopped_on": null
+}

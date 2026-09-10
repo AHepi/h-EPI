@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown the documented rules and the complete source of the checks. Read this cycle's executions beside the proposals: say which expectations held, which failed, which inputs the validator threw away and why, and for each failure whether the proposer misread the rule or the rule as written and the code part company — quote the rule's words and name the line of code. Say what a proposer should build next. Cite nothing you were not shown.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The single proposal this cycle was not executed: the validator returned INVALID_INSTANTIATION with the detail "the rewritten text is no cell of the grammar". The proposal's cell was fence[ A S ] S, and its rewrite was fence[ A S ] S B. The validator accepted the cell and echoed it, but rejected the rewritten text as outside the grammar. The proposer's expectation was that k_recovery would be unchanged, because the rule for recover_json_object says "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." The rewritten text keeps the fenced object A and adds a top-level object B after the fence, so under the rule as written the fenced pool should win and A should still be recovered. The code implements exactly that: recover_json_object builds a fenced pool from _FENCE.finditer, then a top_level pool, and iterates "for pool in (fenced, top_level)", returning the first scoreable candidate from the reversed fenced pool. So the rule and the code agree here, and the proposal would have held if it had been executed. The failure is not a misreading of the rule and not a divergence between rule and code; it is a shape failure. The validator threw the input away before running the check because the rewritten text was not a cell of the grammar. The proposer should next build a rewrite that is itself a valid cell of the grammar, or first establish what the grammar permits for a rewrite. The execution record shows the validator did not run k_recovery on either text, so no check answer was recorded and no expectation was tested.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

@@ -1,0 +1,43 @@
+{
+  "arm": "E",
+  "ceiling_breached": false,
+  "cost": {
+    "completion_tokens": 9381,
+    "completion_tokens_allowed": 164000,
+    "completion_tokens_per_call": 4000,
+    "invocations": 41,
+    "invocations_allowed": 41,
+    "machine_executions": 3,
+    "prompt_tokens": 3781,
+    "refusals": [],
+    "wall_ms": 147215
+  },
+  "endpoint": {
+    "base_url": "https://ollama.com",
+    "kind": "ollama-chat",
+    "options": {
+      "seed": 7,
+      "temperature": 0
+    },
+    "think": false,
+    "timeout_seconds": 600
+  },
+  "instance": "v4-s2-3",
+  "leaks": [
+    "kernel"
+  ],
+  "method_version": 4,
+  "model": "deepseek-v4-pro:0813",
+  "packet": {
+    "claim": "The recovery kernel's rewrite-add operation is expected to leave the recovered object unchanged when a second JSON object is appended, but in several cases it moves the recovered object to the newly appended object.",
+    "execution_evidence": "after: {\"b\":2}, before: {\"a\":1}, executed: moved, expect: unchanged",
+    "expected": "unchanged",
+    "observed": "moved",
+    "reproducer": "```\nHere is the result:\n{\"a\": 1}\n```\n{\"b\": 2}",
+    "scope": "recovery kernel rewrite-add cases where a fenced object is followed by an unfenced top-level object",
+    "source_basis": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction.",
+    "uncertainty": "The rule says the last object inside a code fence is scored when any fence holds one, which would predict the fenced object should remain the recovered object; the observed 'moved' result contradicts this for the listed cases."
+  },
+  "protocol": "mini-use-test-1",
+  "stopped_on": null
+}

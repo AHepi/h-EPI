@@ -1,0 +1,44 @@
+{
+  "arm": "D",
+  "ceiling_breached": false,
+  "cost": {
+    "completion_tokens": 10873,
+    "completion_tokens_allowed": 164000,
+    "completion_tokens_per_call": 4000,
+    "invocations": 41,
+    "invocations_allowed": 41,
+    "machine_executions": 11,
+    "prompt_tokens": 3955,
+    "refusals": [],
+    "wall_ms": 163425
+  },
+  "endpoint": {
+    "base_url": "https://ollama.com",
+    "kind": "ollama-chat",
+    "options": {
+      "seed": 7,
+      "temperature": 0
+    },
+    "think": false,
+    "timeout_seconds": 600
+  },
+  "instance": "v4-s2-2",
+  "leaks": [
+    "kernel",
+    "cell"
+  ],
+  "method_version": 4,
+  "model": "deepseek-v4-pro:0813",
+  "packet": {
+    "claim": "The recovery kernel's 'unchanged' expectation is violated for inputs where the last top-level object is outside a code fence and a later non-object suffix is added; the kernel moves the recovered object to the newly added object instead of remaining unchanged.",
+    "execution_evidence": "The provided test campaign results show 'executed': 'moved' and 'as_expected': false for inputs such as fence[ S A ] S and fence[ A S ] S when the rewrite appends a non-object suffix.",
+    "expected": "For an input whose last top-level object is already the final answer, adding a non-object suffix should leave the recovered object unchanged.",
+    "observed": "In several cases with 'expect': 'unchanged', the kernel reports 'executed': 'moved' and changes the recovered object from the original object to a newly appended object.",
+    "reproducer": "```\\nHere is the result:\\n{\\\"a\\\": 1}\\n```\\nHere is the result:",
+    "scope": "Inputs where the last top-level object is inside a code fence and a non-object suffix is appended after it.",
+    "source_basis": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it.",
+    "uncertainty": "The exact grammar for 'fence[ S A ] S' and 'fence[ A S ] S' is not fully specified, so the intended cell semantics may differ from the observed behavior."
+  },
+  "protocol": "mini-use-test-1",
+  "stopped_on": null
+}

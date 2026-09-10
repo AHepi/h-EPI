@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown the documented rules and the complete source of the checks. Read this cycle's executions beside the proposals: say which expectations held, which failed, which inputs the validator threw away and why, and for each failure whether the proposer misread the rule or the rule as written and the code part company — quote the rule's words and name the line of code. Say what a proposer should build next. Cite nothing you were not shown.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The execution threw the proposal away before running the check: the detail says "the rewritten text is no cell of the grammar," and the rewritten_cell is empty. The proposer's rewrite was "add B after the fence," producing a text that ends with a bare object after prose. The cell grammar evidently does not admit that shape, so the validator discarded the input rather than running k_recovery on it. This is not a failure of the check's rule or code; it is a failure of the proposal to instantiate the cell. The proposer misread the grammar: the rule for k_recovery says the object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. The proposer's rewritten text still has a fenced object A, so the check would indeed return A unchanged if the text were a valid cell. But the validator never reached the check. The proposer should build a rewrite that stays within the cell grammar: if the cell is fence[ S A ] S, the rewrite must produce another text of that same shape, not append a second object outside the fence. A valid edit would change the fenced object itself, or change the trailing prose, or add a second fenced object if the grammar allows it, but not append a bare object after the fence.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

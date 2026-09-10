@@ -1,0 +1,26 @@
+# Execution
+
+## Proposals so far (proposals)
+[e4baaffb0364a805] (mini.pair-proposal.usetest.v1)
+The rule for k_recovery says it returns the object recovered from the reply, as canonical JSON text, or NO_OBJECT. For the input fence[ S A ] fence[ B ], the last object inside a code fence is B, so k_recovery returns the canonical JSON of B. For the rewritten text fence[ S A ] fence[ B ] S, the last object inside a code fence is still B, so k_recovery returns the canonical JSON of B. Since the fenced object remains B, the answer stays unchanged.
+cell: fence[ S A ] fence[ B ]
+input: ```
+Here is the result:
+{"a": 1}
+```
+```
+{"b": 2}
+```
+rewrite: add S after the second fence
+rewritten: ```
+Here is the result:
+{"a": 1}
+```
+```
+{"b": 2}
+```
+Here is the result:
+commitments: {"kernel": "recovery", "expect": "unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

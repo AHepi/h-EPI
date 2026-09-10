@@ -1,0 +1,22 @@
+# Execution
+
+## Proposals so far (proposals)
+[d0158ea050868b7f] (mini.pair-proposal.usetest.v1)
+The rule for k_recovery says the object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. For the original text fence[ A S ] A, the fence holds A and S, so the last object inside the fence is S, and k_recovery returns S. For the rewritten text fence[ A S ] A A, the fence still holds A and S, and the last object inside the fence is still S, so k_recovery returns S. Therefore the answer is unchanged.
+cell: fence[ A S ] A
+input: ```
+{"a": 1}
+Here is the result:
+```
+{"a": 1}
+rewrite: add one part after the fence
+rewritten: ```
+{"a": 1}
+Here is the result:
+```
+{"a": 1}
+{"a": 1}
+commitments: {"kernel": "recovery", "expect": "unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

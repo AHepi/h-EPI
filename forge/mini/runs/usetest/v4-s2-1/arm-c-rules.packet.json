@@ -1,0 +1,44 @@
+{
+  "arm": "C-rules",
+  "ceiling_breached": false,
+  "cost": {
+    "completion_tokens": 5169,
+    "completion_tokens_allowed": 164000,
+    "completion_tokens_per_call": 4000,
+    "invocations": 21,
+    "invocations_allowed": 41,
+    "machine_executions": 5,
+    "prompt_tokens": 4146,
+    "refusals": [],
+    "wall_ms": 42431
+  },
+  "endpoint": {
+    "base_url": "https://ollama.com",
+    "kind": "ollama-chat",
+    "options": {
+      "seed": 7,
+      "temperature": 0
+    },
+    "think": false,
+    "timeout_seconds": 600
+  },
+  "instance": "v4-s2-1",
+  "leaks": [
+    "kernel",
+    "cell"
+  ],
+  "method_version": 4,
+  "model": "deepseek-v4-pro:0813",
+  "packet": {
+    "claim": "The recovery kernel's cell grammar and scoring behavior are inconsistent with the documented recover_json_object rule: several inputs that should be scoreable or unchanged are reported as INVALID_INSTANTIATION or moved.",
+    "execution_evidence": "The provided test campaign results show 'executed': 'INVALID_INSTANTIATION' for the reproducer and similar inputs, and 'executed': 'moved' with 'as_expected': false for the fence[ A B ] case.",
+    "expected": "According to recover_json_object, every top-level balanced object in the text is a candidate; the last object inside a code fence when any fence holds one, else the last top-level object, is scored. Inputs with a fenced JSON object followed by prose or another object should recover the last scoreable object, and adding an object after a fence should move the recovered object to the new last object.",
+    "observed": "The executed results show INVALID_INSTANTIATION for many rewrites that add an object after a fenced object or prose, and one case where adding an object after a fence with two objects moved the recovered object from the second to the third, contrary to the expected unchanged behavior.",
+    "reproducer": "```\n{\"a\": 1}\n```\n{\"b\": 2}",
+    "scope": "All inputs to the recovery kernel that contain a fenced JSON object followed by additional top-level objects or prose, and rewrites that add objects after such fences.",
+    "source_basis": "recover_json_object: 'Every top-level balanced object in the text is a candidate... The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text... A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable.'",
+    "uncertainty": "The exact cell grammar rules are not fully specified in the provided documentation, so some INVALID_INSTANTIATION results may be due to grammar constraints not described here. The expected behavior for the fence[ A B ] case is inferred from the rule that the last object inside a code fence is scored, which should remain the second object when a third is added outside the fence."
+  },
+  "protocol": "mini-use-test-1",
+  "stopped_on": null
+}

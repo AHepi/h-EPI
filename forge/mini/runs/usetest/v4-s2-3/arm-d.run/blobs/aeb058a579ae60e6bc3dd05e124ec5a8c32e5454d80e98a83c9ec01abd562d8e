@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown the documented rules and the complete source of the checks. Read this cycle's executions beside the proposals: say which expectations held, which failed, which inputs the validator threw away and why, and for each failure whether the proposer misread the rule or the rule as written and the code part company — quote the rule's words and name the line of code. Say what a proposer should build next. Cite nothing you were not shown.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The proposal expected k_recovery to stay on A because B is outside the fence, but the execution shows the check moved to B: before was {"a":1}, after was {"b":2}. The rule says "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." The code in recover_json_object builds two pools, fenced and top_level, then iterates `for pool in (fenced, top_level)` and returns the first scoreable candidate found in reversed order. The fenced pool here contains only A, so A should be returned and B never considered. The execution's move to B therefore does not follow the rule as written. The likely cause is that the fenced candidate A is not scoreable in the rewritten text: the fence content is `{"a": 1}\nHere is the result:` because the sentence S is inside the fence. That candidate fails strict parsing and last-wins parsing, so the code passes over it and falls through to the top_level pool, where B is the last top-level object and is returned. The rule's words say the fenced pool is used when any fence holds one, but the code only uses a fenced candidate if it parses; a fence holding an unparseable object is treated as holding none, and the top-level pool is then consulted. The proposer misread the rule by assuming the fenced pool would be decisive even when its only candidate is unparseable. The rule as written and the code part company at the line `for pool in (fenced, top_level):` combined with the `continue` on parse failure: the rule says the last fenced object is scored when any fence holds one, but the code silently falls through to top-level objects when the fenced candidate does not parse. A proposer should next build a pair where the fenced object parses and a later top-level object also parses, to test whether the fenced pool is truly decisive, or a pair where the only fenced object is unparseable and a top-level object parses, to expose the fall-through as a defect against the rule's words.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

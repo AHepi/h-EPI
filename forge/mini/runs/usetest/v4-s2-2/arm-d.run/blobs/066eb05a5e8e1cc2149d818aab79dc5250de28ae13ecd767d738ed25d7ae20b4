@@ -1,0 +1,28 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown the documented rules and the complete source of the checks. Read this cycle's executions beside the proposals: say which expectations held, which failed, which inputs the validator threw away and why, and for each failure whether the proposer misread the rule or the rule as written and the code part company — quote the rule's words and name the line of code. Say what a proposer should build next. Cite nothing you were not shown.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The proposal expected k_recovery to move from A to B when the fence was edited to contain both objects. The execution shows it did not: before and after both returned {"a":1}. The proposer misread the rule. The rule says "The object scored is the last one inside a code fence when any fence holds one." The rewritten text is:
+
+```
+{"a": 1}
+```
+{"b": 2}
+
+The fence holds only {"a": 1}. The object {"b": 2} is outside the fence, in prose after it. The rule's phrase "inside a code fence" is the operative constraint, and the code implements it: in recover_json_object, fenced candidates are collected by _FENCE.finditer(content), which captures only the content between the fence markers. The second object is not in that capture, so it is not a fenced candidate. The top-level pool does contain both objects, but the code checks the fenced pool first and returns the last fenced candidate when any exists, so the prose object is never reached. The rule as written and the code agree here; the proposal simply placed B outside the fence while reasoning as if it were inside. A proposer should build a rewrite where the second object is inside the same fence, for example:
+
+```
+{"a": 1}
+{"b": 2}
+```
+
+Then the fenced pool contains both, the last is B, and k_recovery should move.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

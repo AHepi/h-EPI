@@ -1,0 +1,45 @@
+{
+  "arm": "E",
+  "ceiling_breached": false,
+  "cost": {
+    "completion_tokens": 9916,
+    "completion_tokens_allowed": 164000,
+    "completion_tokens_per_call": 4000,
+    "invocations": 41,
+    "invocations_allowed": 41,
+    "machine_executions": 11,
+    "prompt_tokens": 3755,
+    "refusals": [],
+    "wall_ms": 108204
+  },
+  "endpoint": {
+    "base_url": "https://ollama.com",
+    "kind": "ollama-chat",
+    "options": {
+      "seed": 7,
+      "temperature": 0
+    },
+    "think": false,
+    "timeout_seconds": 600
+  },
+  "instance": "v4-s2-1",
+  "leaks": [
+    "kernel",
+    "cell",
+    "proposal"
+  ],
+  "method_version": 4,
+  "model": "deepseek-v4-pro:0813",
+  "packet": {
+    "claim": "The recovery kernel's 'remove' rewrite is expected to leave the recovered object unchanged when the removed trailing text is not a scoreable JSON object, but in several cases it moves the recovered object to a different JSON value.",
+    "execution_evidence": "The test record for proposal a6876eb668aea02b shows executed 'moved' with before {\"a\":1} and after {\"a\":1}, but the cell fence[ A ] B and rewritten cell fence[ A ] indicate the recovered object should have remained {\"a\":1}; the record for proposal 4c7c92960035d573 shows executed 'moved' with before {\"b\":2} and after {\"a\":1} for input ```\nHere is the result:\n{\"a\": 1}\n```\n{\"b\": 2}.",
+    "expected": "For inputs where the final scoreable object is inside a fence and the removed trailing text is not a scoreable JSON object, removing that trailing text should not change the recovered object.",
+    "observed": "In cases such as fence[ A ] B with input ```{\"a\": 1}``` followed by {\"b\": 2}, the recovered object changes from {\"a\":1} to {\"b\":2} after removal, even though the removed text is a separate top-level object and the fenced object should remain the final scoreable object.",
+    "reproducer": "```\n{\"a\": 1}\n```\n{\"b\": 2}",
+    "scope": "Inputs where a fenced JSON object is followed by a separate top-level JSON object and the trailing object is removed by the 'remove' rewrite.",
+    "source_basis": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.",
+    "uncertainty": "The exact mechanism by which the recovered object changes is not fully specified in the provided records, but the observed 'moved' execution contradicts the expected 'unchanged' for these cases."
+  },
+  "protocol": "mini-use-test-1",
+  "stopped_on": null
+}

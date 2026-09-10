@@ -1,0 +1,20 @@
+# Execution
+
+## Proposals so far (proposals)
+[0964a4199482fb8f] (mini.pair-proposal.usetest.v1)
+The rule for recovery says the object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. For the input fence[ A ] B, the fence holds A, so the recovered object is A. For the rewritten fence[ A ] B C, the fence still holds A, so the recovered object remains A. Thus the recovery kernel's answer is unchanged.
+cell: fence[ A ] B
+input: ```
+{"a": 1}
+```
+{"b": 2}
+rewrite: add
+rewritten: ```
+{"a": 1}
+```
+{"b": 2}
+{"c": 3}
+commitments: {"kernel": "recovery", "expect": "unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

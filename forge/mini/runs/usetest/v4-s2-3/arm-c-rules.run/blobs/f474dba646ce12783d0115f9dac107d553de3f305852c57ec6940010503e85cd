@@ -1,0 +1,20 @@
+# Execution
+
+## Proposals so far (proposals)
+[a945fbce68d276e3] (mini.pair-proposal.usetest.v1)
+The rule for k_recovery says the object recovered is the last one inside a code fence when any fence holds one, else the last top-level object in the text. For the original text fence[ A B ] C, the fence holds A and B, so the last object inside the fence is B. For the rewritten text fence[ A B ], the fence still holds A and B, so the last object inside the fence is also B. Therefore the recovered object is the same, and the answer is unchanged.
+cell: fence[ A B ] C
+input: ```
+{"a": 1}
+{"b": 2}
+```
+{"c": 3}
+rewrite: removed C after the fence
+rewritten: ```
+{"a": 1}
+{"b": 2}
+```
+commitments: {"kernel": "recovery", "expect": "unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

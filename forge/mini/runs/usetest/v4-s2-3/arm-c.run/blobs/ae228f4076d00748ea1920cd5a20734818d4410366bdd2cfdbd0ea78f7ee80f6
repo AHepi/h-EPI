@@ -1,0 +1,26 @@
+# Execution
+
+## Proposals so far (proposals)
+[604b932e83eff54f] (mini.pair-proposal.usetest.v1)
+The rule for recover_json_object says the object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. The cell is fence[ A S ] fence[ B ], which has two fences. The first fence holds A and S, and the second fence holds B. Since a fence holds an object, the scored object is the last one inside a code fence, which is B. Adding one part after the second fence gives fence[ A S ] fence[ B ] C, which still has the same two fences, and the last object inside a code fence remains B. Therefore the rule says the check's answer should be unchanged between the two texts.
+cell: fence[ A S ] fence[ B ]
+input: ```
+{"a": 1}
+Here is the result:
+```
+```
+{"b": 2}
+```
+rewrite: add
+rewritten: ```
+{"a": 1}
+Here is the result:
+```
+```
+{"b": 2}
+```
+{"c": 3}
+commitments: {"kernel": "recovery", "expect": "unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

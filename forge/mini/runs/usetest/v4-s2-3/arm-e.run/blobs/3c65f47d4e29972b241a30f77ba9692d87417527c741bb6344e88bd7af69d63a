@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown the documented rules and the complete source of the checks. Read this cycle's executions beside the proposals: say which expectations held, which failed, which inputs the validator threw away and why, and for each failure whether the proposer misread the rule or the rule as written and the code part company — quote the rule's words and name the line of code. Say what a proposer should build next. Cite nothing you were not shown.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The proposal was not executed: the validator returned INVALID_INSTANTIATION with the detail "the rewritten text is no cell of the grammar". The cell was fence[ A S ] B, and the rewrite added a second object C outside the fence, producing fence[ A S ] B C. The grammar as given to the validator evidently does not admit a cell with two objects after the fence, so the rewritten text was thrown away before any kernel ran. The proposer's argument about k_recovery is therefore untested: no execution of the kernel on either text is recorded, and the expectation "unchanged" was never checked. The failure is not a misreading of the documented rule for k_recovery, nor a divergence between that rule and the code; it is a shape error in the instantiation. The rule quoted, "The object scored is the last one inside a code fence when any fence holds one," is implemented in recover_json_object by iterating over fenced candidates in reverse and returning the first dict, so the proposer's reading of the rule matches the code. What the proposer should build next is a rewrite that stays within the cell grammar: for example, keep the fence as the only fenced region and add the new object inside the fence, or choose a cell whose grammar permits a second top-level object after the fence, if one exists. The current pair cannot support any claim about the kernel because the validator discarded the input before execution.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

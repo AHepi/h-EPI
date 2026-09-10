@@ -1,0 +1,44 @@
+{
+  "arm": "C-rules",
+  "ceiling_breached": false,
+  "cost": {
+    "completion_tokens": 5015,
+    "completion_tokens_allowed": 164000,
+    "completion_tokens_per_call": 4000,
+    "invocations": 21,
+    "invocations_allowed": 41,
+    "machine_executions": 6,
+    "prompt_tokens": 4157,
+    "refusals": [],
+    "wall_ms": 44567
+  },
+  "endpoint": {
+    "base_url": "https://ollama.com",
+    "kind": "ollama-chat",
+    "options": {
+      "seed": 7,
+      "temperature": 0
+    },
+    "think": false,
+    "timeout_seconds": 600
+  },
+  "instance": "v4-s2-2",
+  "leaks": [
+    "kernel",
+    "cell"
+  ],
+  "method_version": 4,
+  "model": "deepseek-v4-pro:0813",
+  "packet": {
+    "claim": "The recovery kernel's rewrite oracle reports INVALID_INSTANTIATION for several rewrites that should be valid cells of the grammar, and reports 'moved' for a rewrite that should leave the recovered object unchanged.",
+    "execution_evidence": "none: no executable oracle",
+    "expected": "Rewrites that append a top-level object after a fenced object should be recognized as valid cells and should move the recovered object to the new last object; removing a trailing top-level object should move recovery back to the fenced object; adding a duplicate object should leave recovery unchanged.",
+    "observed": "Multiple rewrites are marked INVALID_INSTANTIATION with details like 'the rewritten text is no cell of the grammar' or 'the input is not the cell it names', and one rewrite that removes a trailing object is marked 'moved' when it should be 'unchanged'.",
+    "reproducer": "```\n{\"a\": 1}\n```\n{\"b\": 2}",
+    "scope": "recovery-kernel rewrite-oracle cells involving fenced objects followed by top-level objects",
+    "source_basis": "recover_json_object: 'Every top-level balanced object in the text is a candidate... The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text... A candidate that parses as strict JSON... is scoreable.'",
+    "uncertainty": "The grammar for cells is not fully specified in the provided rules, so some INVALID_INSTANTIATION results may be correct if the grammar intentionally excludes multiple top-level objects after a fence."
+  },
+  "protocol": "mini-use-test-1",
+  "stopped_on": null
+}

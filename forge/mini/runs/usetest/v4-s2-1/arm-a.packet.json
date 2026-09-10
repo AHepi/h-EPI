@@ -1,0 +1,41 @@
+{
+  "arm": "A",
+  "ceiling_breached": false,
+  "cost": {
+    "completion_tokens": 276,
+    "completion_tokens_allowed": 164000,
+    "completion_tokens_per_call": 4000,
+    "invocations": 1,
+    "invocations_allowed": 41,
+    "machine_executions": 0,
+    "prompt_tokens": 3876,
+    "refusals": [],
+    "wall_ms": 2754
+  },
+  "endpoint": {
+    "base_url": "https://ollama.com",
+    "kind": "ollama-chat",
+    "options": {
+      "seed": 7,
+      "temperature": 0
+    },
+    "think": false,
+    "timeout_seconds": 600
+  },
+  "instance": "v4-s2-1",
+  "leaks": [],
+  "method_version": 4,
+  "model": "deepseek-v4-pro:0813",
+  "packet": {
+    "claim": "recover_json_object ignores fenced candidates when there is more than one code fence, even though the documented rule says the object scored is the last one inside a code fence when any fence holds one.",
+    "execution_evidence": "none: no executable oracle",
+    "expected": "When content contains multiple code fences, the last fenced candidate that parses as a JSON object should be returned.",
+    "observed": "The code only uses fenced candidates when len(fenced) == 1; with multiple fences it falls back to top-level objects, so a valid JSON object in the last fence is ignored.",
+    "reproducer": "```json\n{\"a\": 1}\n```\n```json\n{\"b\": 2}\n```",
+    "scope": "Any input containing more than one code fence where the last fence contains a valid JSON object",
+    "source_basis": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text",
+    "uncertainty": "The docstring says 'when any fence holds one' which could be read as 'when exactly one fence holds one', but the rationale about scoring the final answer suggests multiple fences should still prefer the last fenced object."
+  },
+  "protocol": "mini-use-test-1",
+  "stopped_on": null
+}

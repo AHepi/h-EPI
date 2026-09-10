@@ -1,0 +1,45 @@
+{
+  "arm": "C-rules",
+  "ceiling_breached": false,
+  "cost": {
+    "completion_tokens": 5078,
+    "completion_tokens_allowed": 164000,
+    "completion_tokens_per_call": 4000,
+    "invocations": 21,
+    "invocations_allowed": 41,
+    "machine_executions": 5,
+    "prompt_tokens": 4134,
+    "refusals": [],
+    "wall_ms": 113554
+  },
+  "endpoint": {
+    "base_url": "https://ollama.com",
+    "kind": "ollama-chat",
+    "options": {
+      "seed": 7,
+      "temperature": 0
+    },
+    "think": false,
+    "timeout_seconds": 600
+  },
+  "instance": "v4-s2-3",
+  "leaks": [
+    "kernel",
+    "cell",
+    "proposal"
+  ],
+  "method_version": 4,
+  "model": "deepseek-v4-pro:0813",
+  "packet": {
+    "claim": "The recovery kernel's cell grammar and rewrite execution are inconsistent for inputs with a fenced object followed by prose or another object.",
+    "execution_evidence": "The provided test campaign results show INVALID_INSTANTIATION for proposals 6e926231a6feb78e, 23cf9366607b4a9d, 5f53e9aa9d4584e4, d0a99f69c34e90f2, b0c18ec3f659b3e7, 4661b792a4b41075, ef032f8da4e09e38, and others.",
+    "expected": "Rewrites that add content after a fence should be valid instantiations and should move the recovered object when the added content is a later top-level object, or remain unchanged when the added content is prose.",
+    "observed": "Several rewrites are reported as INVALID_INSTANTIATION with details like 'the rewritten text is no cell of the grammar' or 'the input is not the cell it names', even when the rewritten text contains a valid later top-level object.",
+    "reproducer": "```\n{\"a\": 1}\n```\nHere is the result:",
+    "scope": "Inputs where a fenced JSON object is followed by prose or additional top-level objects, and a rewrite adds content after the fence.",
+    "source_basis": "recover_json_object: 'Every top-level balanced object in the text is a candidate... The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.'",
+    "uncertainty": "The exact cell grammar rules are not fully specified in the provided documentation, so some INVALID_INSTANTIATION results may be intended if the grammar only permits certain sequences of fenced and unfenced parts."
+  },
+  "protocol": "mini-use-test-1",
+  "stopped_on": null
+}

@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown the documented rules and the complete source of the checks. Read this cycle's executions beside the proposals: say which expectations held, which failed, which inputs the validator threw away and why, and for each failure whether the proposer misread the rule or the rule as written and the code part company — quote the rule's words and name the line of code. Say what a proposer should build next. Cite nothing you were not shown.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The single proposal this cycle targeted k_recovered_from_prose with the cell fence[ A ] A, an input containing one fenced JSON object followed by the same object outside the fence, and a rewrite that removes the trailing object. The execution shows the check returned "yes" before and after, matching the proposer's expectation of unchanged. The rule as written says the answer is yes when the object had to be recovered from prose or a fence, and no when read strictly. The code implements this through parse_content, whose fourth element is True only when strict parsing failed and recover_json_object succeeded; here the input is not strict JSON because of the surrounding prose, so recovery runs, finds the fenced object, and returns yes. The rewrite still leaves a fenced object, so recovery still runs and the answer remains yes. The proposer read the rule correctly: the rule does not promise that removing a duplicate outside the fence changes the recovery path, and the code agrees. No expectations failed, and no inputs were thrown away. A proposer should next build a pair where the rewrite changes whether strict parsing succeeds, such as removing all prose so the text becomes a bare JSON object, which should flip the answer from yes to no, or adding prose around a bare object to flip it from no to yes.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

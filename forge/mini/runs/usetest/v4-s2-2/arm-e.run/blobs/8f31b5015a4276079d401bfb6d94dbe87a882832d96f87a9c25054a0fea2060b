@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown the documented rules and the complete source of the checks. Read this cycle's executions beside the proposals: say which expectations held, which failed, which inputs the validator threw away and why, and for each failure whether the proposer misread the rule or the rule as written and the code part company — quote the rule's words and name the line of code. Say what a proposer should build next. Cite nothing you were not shown.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The single proposal this cycle was never run against the check. The execution record says INVALID_INSTANTIATION with the detail "the rewritten text is no cell of the grammar", and the rewritten_cell field is empty. The proposer's rewrite was to add C after the second fence, producing a text whose final object is outside any fence. The cell grammar evidently requires the rewritten text to remain a cell of the form fence[ A ] fence[ B ], so the validator threw the input away before k_recovery could see it. No expectation held or failed: the check was not executed. The proposer misread the shape constraint, not the rule for k_recovery. The rule says the object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text; the proposal's rewritten text would have exercised the else branch, but the grammar did not admit that text. A proposer should build next a rewrite that keeps the rewritten text inside the cell grammar, for example changing the contents of the second fence rather than appending an unfenced object, so the execution actually reaches k_recovery.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

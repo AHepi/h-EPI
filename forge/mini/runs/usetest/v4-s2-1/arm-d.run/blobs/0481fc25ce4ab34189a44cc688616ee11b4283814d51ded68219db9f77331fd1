@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown the documented rules and the complete source of the checks. Read this cycle's executions beside the proposals: say which expectations held, which failed, which inputs the validator threw away and why, and for each failure whether the proposer misread the rule or the rule as written and the code part company — quote the rule's words and name the line of code. Say what a proposer should build next. Cite nothing you were not shown.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The single proposal this cycle targeted k_recovery with a fence[ A ] cell and an add rewrite that appends a second object outside the fence. The documented rule for recover_json_object says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." The source implements this in recover_json_object: it collects fenced candidates via _FENCE.finditer, then iterates `for pool in ((fenced if len(fenced) == 1 else []), top_level)` and takes the last candidate in the first non-empty pool. With one fence holding A and B outside the fence, the fenced pool contains only A, so A is returned both before and after the rewrite. The execution confirms this: before and after are both {"a":1}, and the expectation of unchanged held. No rule was misread and no code parted company with the rule as written here. The proposer correctly reasoned that the fence pool takes priority over the top-level pool, and the code matches that reading. A next proposal should probe the boundary where the fence pool is empty or where multiple fences exist, since the source's `fenced if len(fenced) == 1 else []` condition is a specific implementation choice not fully spelled out in the rule: the rule says "when any fence holds one," which could be read as covering multiple fences, but the code only uses the fenced pool when exactly one fence exists. That is a place where the rule as written and the code may part company, and a pair could expose it.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

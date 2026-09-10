@@ -1,0 +1,24 @@
+# Execution
+
+## Proposals so far (proposals)
+[c5e7264fe57d5b7d] (mini.pair-proposal.usetest.v1)
+The rule for k_recovered_from_prose says it returns whether the object had to be recovered from prose or a fence (yes) or read strictly (no). For the input fence[ A ] fence[ B ], the reply contains two fences, each holding one object. The recovery rule says the object scored is the last one inside a code fence when any fence holds one, so the object recovered is B, and it is recovered from a fence, so k_recovered_from_prose returns 'yes'. For the rewritten text fence[ A ] fence[ B ] S, the reply still contains two fences, each holding one object, and S is outside any fence. The recovery rule again scores the last object inside a code fence, which is B, so k_recovered_from_prose returns 'yes'. Therefore the answer is unchanged between the two texts.
+cell: fence[ A ] fence[ B ]
+input: ```
+{"a": 1}
+```
+```
+{"b": 2}
+```
+rewrite: fence[ A ] fence[ B ] S
+rewritten: ```
+{"a": 1}
+```
+```
+{"b": 2}
+```
+Here is the result:
+commitments: {"kernel": "recovered-from-prose", "expect": "unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

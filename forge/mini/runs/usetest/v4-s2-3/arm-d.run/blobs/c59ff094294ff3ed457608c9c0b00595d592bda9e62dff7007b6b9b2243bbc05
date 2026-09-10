@@ -1,0 +1,560 @@
+# Proposal
+
+You are shown the documented rules of the checks under test, their complete source under 'The source of the checks', and ONE cell of a frozen grid under 'The cell to cover'. Read both: what you are looking for is a place where the code does something the rule as written does not allow, and the expectation you commit to is still the rule's, never the code's. The notation: fence[ ... ] is a code fence, a line of three backticks before and after, holding one part per line in the order given; S is one plain sentence such as 'Here is the result:'; A, B and C are small JSON objects different from each other, such as {"a": 1}, {"b": 2}, {"c": 3}; anything after the closing bracket comes after the closing fence line, one part per line. Build the input exactly from the cell, each part on its own line and written out in full, and nothing added: a validator will check it against the cell before anything is run, and an input that is not the cell is thrown away. The rewritten text is the same reply with exactly ONE part added or removed, and it must itself be another cell of the same grammar — a fence must still hold at least one part, so a reply whose fence holds one object is changed by adding after the fence rather than by emptying it. Write real line breaks, never the two characters backslash and n.
+
+A worked example, on a cell that is NOT in the grid, so it gives nothing away. The cell "fence[ S ]" is built as exactly these three lines, where a line of three backticks is a real line of the text:
+```
+Here is the result:
+```
+and adding one part after the fence makes "fence[ S ] A":
+```
+Here is the result:
+```
+{"a": 1}
+
+The notation is never the input. Putting "fence[ S ]" in the input field, instead of the lines above, is the one mistake that throws a proposal away before anything is run.
+
+Say what the rule, read as written, says the check's answer ought to do between the two texts: move ('moves') or stay ('unchanged'), naming in the body the words of the rule you read it from and which answer the rule gives for each text. Your kernel is one of recovery, recovered-from-prose, response-verdict. The commitments are a STRING whose content is JSON of the form {"kernel": "<id>", "expect": "moves" or "unchanged"} and nothing else; this artifact carries "input", "rewritten", "rewrite" and "cell" as fields of its own, each a plain string, and the cell exactly as it was named.
+
+## The problem (problem)
+The checks under test read a model's reply and say what they found in it. You are shown their documented rules and never their code. The question is whether there is a reply, and a single edit of it, on which a check's answer does something the rule as written does not allow. A machine builds nothing and reads no rule: it validates that what you built is the shape you were given, runs the check on both texts, and records what came back. Nothing here decides that anything is a defect.
+
+## The documented rules of the checks (rules)
+[75e0cbc5190e58aa] (mini.usetest-rules.v1)
+REFUSAL_PHRASES = ['I cannot', "I can't", "I'm sorry", 'I am unable', 'as an AI', 'cannot assist']
+
+def _refuse_float(_text: str):
+    (no docstring)
+
+def _refuse_constant(_text: str):
+    (no docstring)
+
+def _loads_last_wins(candidate: str):
+    Parse JSON that strict parsing refused only because of repeated keys; last value wins.
+
+def recover_json_object(content: str):
+    Project import: extract a JSON object from fences or surrounding prose.
+
+    Every top-level balanced object in the text is a candidate, not only the span from the
+    first ``{`` to the last ``}``: reasoning prose before or after the answer frequently
+    contains stray braces, and an object nested inside another is not a candidate of its own.
+    The object scored is the last one inside a code fence when any fence holds one, else the
+    last top-level object in the text, because a model places its final answer last and marks
+    it: a reply that quotes its previous answer and then gives a corrected one is scored on the
+    correction. Until 9 September 2026 the object with the most keys was taken, ties to the
+    last, and nine cycle replies that dropped a criticised key were scored on the draft that
+    still carried it (``docs/failure-modes.md``, H40). A candidate that parses as strict JSON,
+    or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float,
+    for instance) is passed over, so a final answer refused for a float loses to an earlier
+    draft that parsed (``docs/kernel.md``, P-06).
+
+def _plain_quotes(text: str):
+    Fold typographic apostrophes and quotation marks to their ASCII forms.
+
+    The refusal phrase list is written with straight apostrophes; a model that writes
+    "I’m sorry" is refusing all the same, and the first live refusal in these
+    records was missed for exactly that reason (H22).
+
+def refusal_phrase_in(content: str, refusal_phrases: tuple[str, ...]):
+    The first refusal phrase the text contains, typographic quotes read as straight ones, or None.
+
+def parse_content(content: str, refusal_phrases: tuple[str, ...]):
+    Return (parsed, response_verdict, detail, recovered_from_prose).
+
+    The refusal heuristic decides the verdict only when no object can be recovered; whether a
+    phrase occurred at all is a separate fact, :func:`refusal_phrase_in`, recorded beside a
+    recovered object (H36: a refusal followed by a form is a refusal and a form).
+
+def _normalise_whitespace(value: str):
+    (no docstring)
+
+def _date_range_completions(document: str):
+    (no docstring)
+
+def _span_occurs(span: str, document: str, relaxations: tuple[str, ...]):
+    Return None when the span is not in the document, else how it was matched ("verbatim" or a relaxation).
+
+def k_recovery(text):
+    The object recovered from the reply, as canonical JSON text, or NO_OBJECT.
+
+def k_recovered_from_prose(text):
+    Whether the object had to be recovered from prose or a fence (yes) or read strictly (no).
+
+def k_response_verdict(text):
+    The response verdict for the reply.
+
+def k_refusal_phrase(text):
+    The first listed refusal phrase the reply contains, or NONE.
+
+def _fields(text):
+    (no docstring)
+
+def k_span_occurs(text):
+    Whether a cited span occurs in a document: the input is one JSON object {span, document}.
+
+def k_grounding(text):
+    The grounding verdict: the input is one JSON object {value, span, document}.
+
+## The source of the checks (source)
+[bc957e19ea0c0993] (mini.usetest-source.v1)
+"""The code under test. Generated from the conformance harness's own source."""
+
+from __future__ import annotations
+
+import json
+import re
+from typing import Any
+
+from creib.errors import RecordError
+from creib.strict_json import loads_strict
+
+REFUSAL_PHRASES = ['I cannot', "I can't", "I'm sorry", 'I am unable', 'as an AI', 'cannot assist']
+
+_FENCE = re.compile(r"```(?:json|JSON)?\s*(.*?)```", re.DOTALL)
+
+
+def _refuse_float(_text: str) -> Any:
+    raise ValueError("floats are not admitted")
+
+
+def _refuse_constant(_text: str) -> Any:
+    raise ValueError("NaN and Infinity are not admitted")
+
+
+def _loads_last_wins(candidate: str) -> tuple[Any, tuple[str, ...]] | None:
+    """Parse JSON that strict parsing refused only because of repeated keys; last value wins."""
+
+    seen_duplicates: list[str] = []
+
+    def pairs_hook(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        counts: dict[str, int] = {}
+        for key, _ in pairs:
+            counts[key] = counts.get(key, 0) + 1
+        seen_duplicates.extend(key for key, n in counts.items() if n > 1)
+        return dict(pairs)
+
+    try:
+        value = json.loads(candidate, object_pairs_hook=pairs_hook, parse_float=_refuse_float, parse_constant=_refuse_constant)
+    except (ValueError, RecursionError):
+        return None
+    if not seen_duplicates:
+        return None
+    return value, tuple(sorted(set(seen_duplicates)))
+
+
+def recover_json_object(content: str) -> Any:
+    """Project import: extract a JSON object from fences or surrounding prose.
+
+    Every top-level balanced object in the text is a candidate, not only the span from the
+    first ``{`` to the last ``}``: reasoning prose before or after the answer frequently
+    contains stray braces, and an object nested inside another is not a candidate of its own.
+    The object scored is the last one inside a code fence when any fence holds one, else the
+    last top-level object in the text, because a model places its final answer last and marks
+    it: a reply that quotes its previous answer and then gives a corrected one is scored on the
+    correction. Until 9 September 2026 the object with the most keys was taken, ties to the
+    last, and nine cycle replies that dropped a criticised key were scored on the draft that
+    still carried it (``docs/failure-modes.md``, H40). A candidate that parses as strict JSON,
+    or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float,
+    for instance) is passed over, so a final answer refused for a float loses to an earlier
+    draft that parsed (``docs/kernel.md``, P-06).
+    """
+
+    decoder = json.JSONDecoder()
+    fenced: list[str] = []
+    for match in _FENCE.finditer(content):
+        fenced.append(match.group(1))
+    top_level: list[str] = []
+    cursor = 0
+    for index, character in enumerate(content):
+        if character != "{" or index < cursor:
+            continue
+        try:
+            _value, end = decoder.raw_decode(content, index)
+        except (ValueError, RecursionError):
+            continue
+        top_level.append(content[index:end])
+        cursor = end
+    for pool in (fenced, top_level):
+        for candidate in reversed(pool):
+            duplicates: tuple[str, ...] = ()
+            try:
+                value = loads_strict(candidate.strip())
+            except (RecordError, ValueError, RecursionError):
+                # Strict JSON refuses duplicate keys. A reply that is otherwise one well-formed object with a
+                # repeated key is still scoreable: take the last value for each key, and say which keys repeated.
+                parsed = _loads_last_wins(candidate.strip())
+                if parsed is None:
+                    continue
+                value, duplicates = parsed
+            if type(value) is dict:
+                return value, duplicates
+    raise RecordError("no JSON object could be recovered from the response")
+
+
+_TYPOGRAPHIC_QUOTES = str.maketrans({"\u2019": "'", "\u2018": "'", "\u02bc": "'", "\u2032": "'", "\u201c": '"', "\u201d": '"'})
+
+
+def _plain_quotes(text: str) -> str:
+    """Fold typographic apostrophes and quotation marks to their ASCII forms.
+
+    The refusal phrase list is written with straight apostrophes; a model that writes
+    "I\u2019m sorry" is refusing all the same, and the first live refusal in these
+    records was missed for exactly that reason (H22).
+    """
+
+    return text.translate(_TYPOGRAPHIC_QUOTES)
+
+
+def refusal_phrase_in(content: str, refusal_phrases: tuple[str, ...]) -> str | None:
+    """The first refusal phrase the text contains, typographic quotes read as straight ones, or None."""
+
+    lowered = _plain_quotes(content).lower()
+    for phrase in refusal_phrases:
+        if _plain_quotes(phrase).lower() in lowered:
+            return phrase
+    return None
+
+
+def parse_content(content: str, refusal_phrases: tuple[str, ...]) -> tuple[Any, str, str | None, bool]:
+    """Return (parsed, response_verdict, detail, recovered_from_prose).
+
+    The refusal heuristic decides the verdict only when no object can be recovered; whether a
+    phrase occurred at all is a separate fact, :func:`refusal_phrase_in`, recorded beside a
+    recovered object (H36: a refusal followed by a form is a refusal and a form).
+    """
+
+    try:
+        return loads_strict(content), "JSON_OBJECT", None, False
+    except (RecordError, ValueError, RecursionError) as strict_error:
+        try:
+            recovered, duplicates = recover_json_object(content)
+        except RecordError:
+            phrase = refusal_phrase_in(content, refusal_phrases)
+            if phrase is not None:
+                return None, "REFUSAL_SUSPECTED", f"matched refusal phrase {phrase!r}; heuristic", False
+            return None, "INVALID_JSON", str(strict_error), False
+        if duplicates:
+            detail = (
+                f"strict parse failed ({strict_error}); object recovered with duplicate keys "
+                f"{list(duplicates)!r} resolved last-wins"
+            )
+        else:
+            detail = f"strict parse failed ({strict_error}); object recovered from prose"
+        return recovered, "JSON_OBJECT", detail, True
+
+
+def _normalise_whitespace(value: str) -> str:
+    return " ".join(value.split())
+
+
+_RANGE_SEP = r"(?:to|-|\u2013|\u2014|until|through)"
+
+
+_RANGE_SHARED_MONTH = re.compile(r"\b(\d{1,2})\s*" + _RANGE_SEP + r"\s*(\d{1,2})\s+([A-Z][a-z]{2,8})\s+(\d{4})\b")
+
+
+_RANGE_TWO_MONTHS = re.compile(
+    r"\b(?:([A-Z][a-z]{2})\s+)?(\d{1,2})\s+([A-Z][a-z]{2,8})\s*" + _RANGE_SEP + r"\s*(?:([A-Z][a-z]{2})\s+)?(\d{1,2})\s+([A-Z][a-z]{2,8})\s+(\d{4})\b"
+)
+
+
+def _date_range_completions(document: str) -> set[str]:
+    completions: set[str] = set()
+    for d1, d2, month, year in _RANGE_SHARED_MONTH.findall(document):
+        completions.add(f"{d1} {month} {year}")
+        completions.add(f"{d2} {month} {year}")
+    for wd1, d1, m1, wd2, d2, m2, year in _RANGE_TWO_MONTHS.findall(document):
+        completions.add(f"{d1} {m1} {year}")
+        completions.add(f"{d2} {m2} {year}")
+        if wd1:
+            completions.add(f"{wd1} {d1} {m1} {year}")
+        if wd2:
+            completions.add(f"{wd2} {d2} {m2} {year}")
+    return completions
+
+
+def _span_occurs(span: str, document: str, relaxations: tuple[str, ...]) -> str | None:
+    """Return None when the span is not in the document, else how it was matched ("verbatim" or a relaxation)."""
+
+    normal_span, normal_document = span, _normalise_whitespace(document)
+    if normal_span in normal_document:
+        return "verbatim"
+    if "case_insensitive" in relaxations and normal_span.casefold() in normal_document.casefold():
+        return "case_insensitive"
+    if "date_range_completion" in relaxations:
+        completions = _date_range_completions(normal_document)
+        if normal_span in completions or ("case_insensitive" in relaxations and normal_span.casefold() in {c.casefold() for c in completions}):
+            return "date_range_completion"
+    return None
+
+# --- the kernels: each a function of one text, as every arm sees them ---
+
+NO_OBJECT = "NO_OBJECT"
+NO_PHRASE = "NONE"
+UNREADABLE = "UNREADABLE_INPUT"
+
+
+def k_recovery(text):
+    """The object recovered from the reply, as canonical JSON text, or NO_OBJECT."""
+
+    try:
+        value, _duplicates = recover_json_object(text)
+    except RecordError:
+        return NO_OBJECT
+    return json.dumps(value, sort_keys=True, separators=(",", ":"))
+
+
+def k_recovered_from_prose(text):
+    """Whether the object had to be recovered from prose or a fence (yes) or read strictly (no)."""
+
+    return "yes" if parse_content(text, REFUSAL_PHRASES)[3] else "no"
+
+
+def k_response_verdict(text):
+    """The response verdict for the reply."""
+
+    return parse_content(text, REFUSAL_PHRASES)[1]
+
+
+def k_refusal_phrase(text):
+    """The first listed refusal phrase the reply contains, or NONE."""
+
+    return refusal_phrase_in(text, REFUSAL_PHRASES) or NO_PHRASE
+
+
+def _fields(text, *names):
+    try:
+        parsed = loads_strict(text)
+    except RecordError:
+        try:
+            parsed = loads_strict(text, control_characters=True)
+        except RecordError:
+            return None
+    if type(parsed) is not dict or any(type(parsed.get(name)) is not str for name in names):
+        return None
+    return {name: str(parsed[name]) for name in names}
+
+
+def k_span_occurs(text):
+    """Whether a cited span occurs in a document: the input is one JSON object {span, document}."""
+
+    fields = _fields(text, "span", "document")
+    if fields is None:
+        return UNREADABLE
+    matched = _span_occurs(fields["span"], fields["document"], ())
+    return "NOT_IN_DOCUMENT" if matched is None else matched
+
+
+def k_grounding(text):
+    """The grounding verdict: the input is one JSON object {value, span, document}."""
+
+    fields = _fields(text, "value", "span", "document")
+    if fields is None:
+        return UNREADABLE
+    if not fields["span"].strip():
+        return "SPAN_MISSING"
+    if _span_occurs(fields["span"], fields["document"], ()) is None:
+        return "SPAN_NOT_IN_DOCUMENT"
+    if _normalise_whitespace(fields["value"]).casefold() not in _normalise_whitespace(fields["span"]).casefold():
+        return "VALUE_NOT_IN_SPAN"
+    return "GROUNDED"
+
+
+KERNELS = {
+    "recovery": k_recovery,
+    "recovered-from-prose": k_recovered_from_prose,
+    "response-verdict": k_response_verdict,
+    "refusal-phrase": k_refusal_phrase,
+    "span-occurs": k_span_occurs,
+    "grounding": k_grounding,
+}
+
+
+## The cell to cover (cell)
+[18d24bd63b3108f1] (mini.next-cell.1.v1)
+The cell to cover: fence[ S A ] A
+(8 of 20 cells named so far.)
+
+## Proposals so far (earlier)
+[341d5d0f82f9ddcb] (mini.pair-proposal.usetest.v1)
+The rule for k_recovery says it returns the object recovered from the reply, as canonical JSON text, or NO_OBJECT. For the cell fence[ A ], the input is a code fence containing only the JSON object A. The rewritten text fence[ A ] B adds a second object B after the fence. The rule says the object scored is the last one inside a code fence when any fence holds one. In the original cell, the only fenced object is A, so k_recovery returns A. In the rewritten text, the fenced objects are A and B, so the last fenced object is B, and k_recovery returns B. Since the output changes from A to B, the check's answer moves.
+cell: fence[ A ]
+input: ```
+{"a": 1}
+```
+rewrite: fence[ A ] B
+rewritten: ```
+{"a": 1}
+```
+{"b": 2}
+commitments: {"kernel": "recovery", "expect": "moves"}
+[2b7f809223f6aabb] (mini.pair-proposal.usetest.v1)
+The rule for k_recovery says it returns the object recovered from the reply, as canonical JSON text, or NO_OBJECT. For the cell fence[ A ] S, the input is a code fence containing only the JSON object A, followed by the sentence S. The rewritten text fence[ A ] S B adds a second object B after the sentence S. The rule says the object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. In the original cell, the only fenced object is A, so k_recovery returns A. In the rewritten text, the fenced object is still A, and B is outside the fence, so the fenced pool is used and k_recovery returns A. Since the output remains A, the check's answer is unchanged.
+cell: fence[ A ] S
+input: ```
+{"a": 1}
+```
+Here is the result:
+rewrite: fence[ A ] S B
+rewritten: ```
+{"a": 1}
+```
+Here is the result:
+{"b": 2}
+commitments: {"kernel": "recovery", "expect": "unchanged"}
+[ab66d3a8d171d83c] (mini.pair-proposal.usetest.v1)
+The rule for k_recovery says it returns the object recovered from the reply, as canonical JSON text, or NO_OBJECT. For the cell fence[ A ] B, the input is a code fence containing only the JSON object A, followed by the object B outside the fence. The rewritten text fence[ A ] B C adds a third object C after B. The rule says the object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. In the original cell, the only fenced object is A, so k_recovery returns A. In the rewritten text, the fenced object is still A, and B and C are outside the fence, so the fenced pool is used and k_recovery returns A. Since the output remains A, the check's answer is unchanged.
+cell: fence[ A ] B
+input: ```
+{"a": 1}
+```
+{"b": 2}
+rewrite: fence[ A ] B C
+rewritten: ```
+{"a": 1}
+```
+{"b": 2}
+{"c": 3}
+commitments: {"kernel": "recovery", "expect": "unchanged"}
+[a4e3f494b408d3cc] (mini.pair-proposal.usetest.v1)
+The rule for k_recovery says it returns the object recovered from the reply, as canonical JSON text, or NO_OBJECT. For the cell fence[ A ] A, the input is a code fence containing only the JSON object A, followed by the object A outside the fence. The rewritten text fence[ A ] A B adds a second object B after the outside object A. The rule says the object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. In the original cell, the only fenced object is A, so k_recovery returns A. In the rewritten text, the fenced object is still A, and A and B are outside the fence, so the fenced pool is used and k_recovery returns A. Since the output remains A, the check's answer is unchanged.
+cell: fence[ A ] A
+input: ```
+{"a": 1}
+```
+{"a": 1}
+rewrite: fence[ A ] A B
+rewritten: ```
+{"a": 1}
+```
+{"a": 1}
+{"b": 2}
+commitments: {"kernel": "recovery", "expect": "unchanged"}
+[899c4caccc0d955f] (mini.pair-proposal.usetest.v1)
+The rule for k_recovery says it returns the object recovered from the reply, as canonical JSON text, or NO_OBJECT. For the cell fence[ A ] fence[ B ], the input is two code fences, the first containing only the JSON object A and the second containing only the JSON object B. The rewritten text fence[ A ] fence[ B ] C adds a third object C after the second fence. The rule says the object scored is the last one inside a code fence when any fence holds one. In the original cell, the fenced objects are A and B, so the last fenced object is B, and k_recovery returns B. In the rewritten text, the fenced objects are still A and B, and C is outside any fence, so the fenced pool is used and k_recovery returns B. Since the output remains B, the check's answer is unchanged.
+cell: fence[ A ] fence[ B ]
+input: ```
+{"a": 1}
+```
+```
+{"b": 2}
+```
+rewrite: fence[ A ] fence[ B ] C
+rewritten: ```
+{"a": 1}
+```
+```
+{"b": 2}
+```
+{"c": 3}
+commitments: {"kernel": "recovery", "expect": "unchanged"}
+[403f3c8e3f4f10f4] (mini.pair-proposal.usetest.v1)
+The rule for k_recovery says it returns the object recovered from the reply, as canonical JSON text, or NO_OBJECT. For the cell fence[ S A ], the input is a code fence containing the sentence S followed by the JSON object A. The rewritten text fence[ S A ] B adds a second object B after the fence. The rule says the object scored is the last one inside a code fence when any fence holds one. In the original cell, the only fenced object is A, so k_recovery returns A. In the rewritten text, the fenced object is still A, and B is outside the fence, so the fenced pool is used and k_recovery returns A. Since the output remains A, the check's answer is unchanged.
+cell: fence[ S A ]
+input: ```
+Here is the result:
+{"a": 1}
+```
+rewrite: fence[ S A ] B
+rewritten: ```
+Here is the result:
+{"a": 1}
+```
+{"b": 2}
+commitments: {"kernel": "recovery", "expect": "unchanged"}
+[642d56b1727d7c12] (mini.pair-proposal.usetest.v1)
+The rule for k_recovery says it returns the object recovered from the reply, as canonical JSON text, or NO_OBJECT. For the cell fence[ S A ] S, the input is a code fence containing the sentence S followed by the JSON object A, then the sentence S outside the fence. The rewritten text fence[ S A ] S B adds a second object B after the outside sentence S. The rule says the object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. In the original cell, the only fenced object is A, so k_recovery returns A. In the rewritten text, the fenced object is still A, and B is outside the fence, so the fenced pool is used and k_recovery returns A. Since the output remains A, the check's answer is unchanged.
+cell: fence[ S A ] S
+input: ```
+Here is the result:
+{"a": 1}
+```
+Here is the result:
+rewrite: fence[ S A ] S B
+rewritten: ```
+Here is the result:
+{"a": 1}
+```
+Here is the result:
+{"b": 2}
+commitments: {"kernel": "recovery", "expect": "unchanged"}
+[d4ad11c16f78cc4e] (mini.pair-proposal.usetest.v1)
+The rule for k_recovery says it returns the object recovered from the reply, as canonical JSON text, or NO_OBJECT. For the cell fence[ S A ] B, the input is a code fence containing the sentence S followed by the JSON object A, then the object B outside the fence. The rewritten text fence[ S A ] B C adds a third object C after B. The rule says the object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. In the original cell, the only fenced object is A, so k_recovery returns A. In the rewritten text, the fenced object is still A, and B and C are outside the fence, so the fenced pool is used and k_recovery returns A. Since the output remains A, the check's answer is unchanged.
+cell: fence[ S A ] B
+input: ```
+Here is the result:
+{"a": 1}
+```
+{"b": 2}
+rewrite: fence[ S A ] B C
+rewritten: ```
+Here is the result:
+{"a": 1}
+```
+{"b": 2}
+{"c": 3}
+commitments: {"kernel": "recovery", "expect": "unchanged"}
+
+## Executions (executions)
+[085b1f5cb21e6be2] (mini.usetest-execution.v1)
+Executed this cycle's pairs against the subject, after validating each against its cell.
+341d5d0f82f9ddcb: recovery unchanged, expected moves
+commitments: {"executions": [{"after": "{\"a\":1}", "as_expected": false, "before": "{\"a\":1}", "cell": "fence[ A ]", "cell_assigned": "fence[ A ]", "cell_echoed": "fence[ A ]", "executed": "unchanged", "expect": "moves", "input": "```\n{\"a\": 1}\n```", "kernel": "recovery", "proposal": "341d5d0f82f9ddcb", "rewrite": "fence[ A ] B", "rewritten": "```\n{\"a\": 1}\n```\n{\"b\": 2}", "rewritten_cell": "fence[ A ] B"}]}
+[2eb0ee457d15d001] (mini.usetest-execution.v1)
+Executed this cycle's pairs against the subject, after validating each against its cell.
+2b7f809223f6aabb: INVALID_INSTANTIATION
+commitments: {"executions": [{"cell": "fence[ A ] S", "cell_assigned": "fence[ A ] S", "cell_echoed": "fence[ A ] S", "detail": "the rewritten text is no cell of the grammar", "executed": "INVALID_INSTANTIATION", "expect": "unchanged", "input": "```\n{\"a\": 1}\n```\nHere is the result:", "kernel": "recovery", "proposal": "2b7f809223f6aabb", "rewrite": "fence[ A ] S B", "rewritten": "```\n{\"a\": 1}\n```\nHere is the result:\n{\"b\": 2}", "rewritten_cell": ""}]}
+[264bda70863255ff] (mini.usetest-execution.v1)
+Executed this cycle's pairs against the subject, after validating each against its cell.
+ab66d3a8d171d83c: INVALID_INSTANTIATION
+commitments: {"executions": [{"cell": "fence[ A ] B", "cell_assigned": "fence[ A ] B", "cell_echoed": "fence[ A ] B", "detail": "the rewritten text is no cell of the grammar", "executed": "INVALID_INSTANTIATION", "expect": "unchanged", "input": "```\n{\"a\": 1}\n```\n{\"b\": 2}", "kernel": "recovery", "proposal": "ab66d3a8d171d83c", "rewrite": "fence[ A ] B C", "rewritten": "```\n{\"a\": 1}\n```\n{\"b\": 2}\n{\"c\": 3}", "rewritten_cell": ""}]}
+[b659d8dd4f4842aa] (mini.usetest-execution.v1)
+Executed this cycle's pairs against the subject, after validating each against its cell.
+a4e3f494b408d3cc: INVALID_INSTANTIATION
+commitments: {"executions": [{"cell": "fence[ A ] A", "cell_assigned": "fence[ A ] A", "cell_echoed": "fence[ A ] A", "detail": "the rewritten text is no cell of the grammar", "executed": "INVALID_INSTANTIATION", "expect": "unchanged", "input": "```\n{\"a\": 1}\n```\n{\"a\": 1}", "kernel": "recovery", "proposal": "a4e3f494b408d3cc", "rewrite": "fence[ A ] A B", "rewritten": "```\n{\"a\": 1}\n```\n{\"a\": 1}\n{\"b\": 2}", "rewritten_cell": ""}]}
+[a367bcfbe97c7da2] (mini.usetest-execution.v1)
+Executed this cycle's pairs against the subject, after validating each against its cell.
+899c4caccc0d955f: INVALID_INSTANTIATION
+commitments: {"executions": [{"cell": "fence[ A ] fence[ B ]", "cell_assigned": "fence[ A ] fence[ B ]", "cell_echoed": "fence[ A ] fence[ B ]", "detail": "the rewritten text is no cell of the grammar", "executed": "INVALID_INSTANTIATION", "expect": "unchanged", "input": "```\n{\"a\": 1}\n```\n```\n{\"b\": 2}\n```", "kernel": "recovery", "proposal": "899c4caccc0d955f", "rewrite": "fence[ A ] fence[ B ] C", "rewritten": "```\n{\"a\": 1}\n```\n```\n{\"b\": 2}\n```\n{\"c\": 3}", "rewritten_cell": ""}]}
+[dddc37f6ede7d2f1] (mini.usetest-execution.v1)
+Executed this cycle's pairs against the subject, after validating each against its cell.
+403f3c8e3f4f10f4: recovery moved, expected unchanged
+commitments: {"executions": [{"after": "{\"b\":2}", "as_expected": false, "before": "{\"a\":1}", "cell": "fence[ S A ]", "cell_assigned": "fence[ S A ]", "cell_echoed": "fence[ S A ]", "executed": "moved", "expect": "unchanged", "input": "```\nHere is the result:\n{\"a\": 1}\n```", "kernel": "recovery", "proposal": "403f3c8e3f4f10f4", "rewrite": "fence[ S A ] B", "rewritten": "```\nHere is the result:\n{\"a\": 1}\n```\n{\"b\": 2}", "rewritten_cell": "fence[ S A ] B"}]}
+[8f67ed8cf0818dfe] (mini.usetest-execution.v1)
+Executed this cycle's pairs against the subject, after validating each against its cell.
+642d56b1727d7c12: INVALID_INSTANTIATION
+commitments: {"executions": [{"cell": "fence[ S A ] S", "cell_assigned": "fence[ S A ] S", "cell_echoed": "fence[ S A ] S", "detail": "the rewritten text is no cell of the grammar", "executed": "INVALID_INSTANTIATION", "expect": "unchanged", "input": "```\nHere is the result:\n{\"a\": 1}\n```\nHere is the result:", "kernel": "recovery", "proposal": "642d56b1727d7c12", "rewrite": "fence[ S A ] S B", "rewritten": "```\nHere is the result:\n{\"a\": 1}\n```\nHere is the result:\n{\"b\": 2}", "rewritten_cell": ""}]}
+[90239425ea176c9d] (mini.usetest-execution.v1)
+Executed this cycle's pairs against the subject, after validating each against its cell.
+d4ad11c16f78cc4e: INVALID_INSTANTIATION
+commitments: {"executions": [{"cell": "fence[ S A ] B", "cell_assigned": "fence[ S A ] B", "cell_echoed": "fence[ S A ] B", "detail": "the rewritten text is no cell of the grammar", "executed": "INVALID_INSTANTIATION", "expect": "unchanged", "input": "```\nHere is the result:\n{\"a\": 1}\n```\n{\"b\": 2}", "kernel": "recovery", "proposal": "d4ad11c16f78cc4e", "rewrite": "fence[ S A ] B C", "rewritten": "```\nHere is the result:\n{\"a\": 1}\n```\n{\"b\": 2}\n{\"c\": 3}", "rewritten_cell": ""}]}
+
+## Criticisms (criticisms)
+[4ec3476008516ad9] (mini.criticism.v1)
+The proposal was not executed: the validator returned INVALID_INSTANTIATION with the detail "the rewritten text is no cell of the grammar". The proposer's rewrite, fence[ S A ] B C, appends a third object C after B, but the cell grammar shown in the proposal is fence[ S A ] B, which has exactly one object outside the fence. The rewritten text therefore does not instantiate any cell of the grammar, so the machine threw the input away before running the check. This is not a case where a check's answer did something the rule disallows; no check ran. The proposer misread the shape constraint: the rewrite must remain a cell of the grammar, not merely a text that contains the original cell's text plus more. The rule for k_recovery was not exercised, so no expectation held or failed. A proposer should build next a rewrite that stays within the grammar, for example by changing the fenced object A or the outside object B, or by moving an object between the fenced and top-level pools, and then observe whether k_recovery's answer changes in a way the documented rule does not allow.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", "cell", each a string.
+
+## The shape this answer must take
+`commitments` must be a STRING whose content is JSON text fitting exactly this schema (the field itself is a string, not an object):
+{
+  "properties": {
+    "expect": {
+      "enum": [
+        "moves",
+        "unchanged"
+      ]
+    },
+    "kernel": {
+      "pattern": "^(recovery|recovered-from-prose|response-verdict)$",
+      "type": "string"
+    }
+  },
+  "required": [
+    "kernel",
+    "expect"
+  ],
+  "type": "object"
+}

@@ -1,0 +1,18 @@
+# Execution
+
+## Proposals so far (proposals)
+[b950b0a2822fc7d9] (mini.pair-proposal.usetest.v1)
+The rule for response-verdict says the refusal heuristic decides the verdict only when no object can be recovered. For the cell fence[ S A ], the text is a fence containing S and A, so an object can be recovered from the fence, and the verdict should be JSON_OBJECT. The rewritten text fence[ S ] also has a fence containing S, so an object can be recovered, and the verdict should also be JSON_OBJECT. Therefore the response-verdict should be unchanged between the two texts.
+cell: fence[ S A ]
+input: ```
+Here is the result:
+```
+{"a": 1}
+rewrite: removed A after the fence
+rewritten: ```
+Here is the result:
+```
+commitments: {"kernel": "response-verdict", "expect": "unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

@@ -1,0 +1,26 @@
+# Execution
+
+## Proposals so far (proposals)
+[3895d80de6a4c93f] (mini.pair-proposal.usetest.v1)
+The rule for recover_json_object says: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' For the first text, the last fenced object is A, so the recovery kernel returns A. For the rewritten text, the last fenced object is B, so the recovery kernel returns B. Since A and B are different objects, the recovery output moves.
+cell: fence[ S A ] fence[ B ]
+input: ```
+S
+A
+```
+```
+B
+```
+rewrite: add C after the second fence
+rewritten: ```
+S
+A
+```
+```
+B
+```
+C
+commitments: {"kernel": "recovery", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

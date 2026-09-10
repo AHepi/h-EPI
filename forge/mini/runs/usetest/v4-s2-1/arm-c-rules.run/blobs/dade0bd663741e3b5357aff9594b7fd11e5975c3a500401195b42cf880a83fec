@@ -1,0 +1,8 @@
+{
+  "body": "The rule for k_recovery says: 'The object recovered from the reply, as canonical JSON text, or NO_OBJECT.' The cell is fence[ S A ] fence[ B ], which contains two fenced objects: A and B. The recovery rule in recover_json_object says: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' Since both A and B are inside code fences, the last one inside a code fence is B. Therefore k_recovery on the original text should recover B. If we add one part after the final fence, the rewritten text becomes fence[ S A ] fence[ B ] C, where C is a new object after the fence. Now the last object inside a code fence is still B, because C is outside any fence. The rule says the object scored is the last one inside a code fence when any fence holds one, so k_recovery should still recover B. Thus the answer is unchanged.",
+  "commitments": "{\"kernel\": \"recovery\", \"expect\": \"unchanged\"}",
+  "input": "```\n{\"a\": 1}\n```\n```\n{\"b\": 2}\n```",
+  "rewritten": "```\n{\"a\": 1}\n```\n```\n{\"b\": 2}\n```\n{\"c\": 3}",
+  "rewrite": "add",
+  "cell": "fence[ S A ] fence[ B ]"
+}

@@ -1,0 +1,18 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown the documented rules and the complete source of the checks. Read this cycle's executions beside the proposals: say which expectations held, which failed, which inputs the validator threw away and why, and for each failure whether the proposer misread the rule or the rule as written and the code part company — quote the rule's words and name the line of code. Say what a proposer should build next. Cite nothing you were not shown.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The execution did not run the check at all: it returned INVALID_INSTANTIATION because the rewritten text is no cell of the grammar. The proposal's cell is fence[ S A ] S, and the rewrite adds a second object B after the final S, producing fence[ S A ] S B. The validator threw the rewritten text away for that reason, so no kernel answer was recorded and the expectation 'unchanged' was never tested.
+
+This is a shape failure, not a rule failure. The proposer misread the grammar: a cell of the form fence[ S A ] S has exactly one object after the fence, and the rewrite must stay within that shape. The rule for k_recovery is not implicated, because the check never ran. The relevant rule text is in recover_json_object: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' The code that enforces the grammar is not shown, but the execution detail names the failure: 'the rewritten text is no cell of the grammar.'
+
+A proposer should build a rewrite that keeps the cell shape intact. For example, if the goal is to test whether an object after the fence changes the recovered object, the cell must already contain that second object, or the rewrite must replace the existing object rather than append a new one. The next proposal should first confirm the grammar of the cell and then choose a rewrite that stays inside it.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

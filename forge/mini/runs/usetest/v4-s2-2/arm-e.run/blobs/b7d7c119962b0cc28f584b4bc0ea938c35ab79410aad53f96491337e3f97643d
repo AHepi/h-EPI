@@ -1,0 +1,4 @@
+{
+  "body": "The proposal expected k_recovery to move when the second object changed from A to B, but the execution shows it stayed on A: before and after both returned {\"a\":1}. The proposer misread the rule. The rule says the object scored is the last one inside a code fence when any fence holds one, and the input has a fenced object followed by an unfenced object. The fenced pool is searched first, so the unfenced B is never considered; the last fenced candidate is A. The code matches this: recover_json_object builds fenced and top_level pools, then iterates for pool in (fenced, top_level), returning the first scoreable candidate from the reversed fenced pool. The rewrite changed only the top-level object, which the rule explicitly subordinates to any fenced object. A proposer should build next a pair where the change is inside the fenced pool, or where no fence exists so the top-level pool is consulted.",
+  "commitments": "{}"
+}

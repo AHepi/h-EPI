@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown the documented rules and the complete source of the checks. Read this cycle's executions beside the proposals: say which expectations held, which failed, which inputs the validator threw away and why, and for each failure whether the proposer misread the rule or the rule as written and the code part company — quote the rule's words and name the line of code. Say what a proposer should build next. Cite nothing you were not shown.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The proposal was rejected before any check ran: the execution records INVALID_INSTANTIATION with the detail "the input is not the cell it names: the fence should hold 1 part(s) and holds 2". The cell is written as fence[ A ] B, which names a fence holding one part, A, followed by B outside the fence. The input supplied is a single fence containing two JSON objects, ```{"a": 1}\n{"b": 2}```. That is not the cell named: the fence holds two parts, not one, and there is no B outside the fence. The validator threw the input away for that reason, so no kernel was executed and no answer was recorded. The proposer misread the cell notation: fence[ A ] B means a fence whose only content is A, with B after the closing fence, not a fence containing both A and B. The rule for k_recovery says the object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. A correct instantiation of fence[ A ] B would be a fence containing one JSON object followed by another JSON object outside the fence, for example ```{"a": 1}```\n{"b": 2}. On that input the fence holds one object, so the last object inside the fence is A, and k_recovery returns the canonical JSON of A. Removing B leaves ```{"a": 1}```, on which the fence still holds A and k_recovery again returns the canonical JSON of A, so the answer would not move. To make the answer move under this rule, the proposer should build a cell where the scored object changes between the two texts: for example, a fence holding one object followed by a later top-level object outside the fence, and a rewrite that removes the fenced object so the last top-level object becomes the one outside. The next proposal should name the cell exactly as the input instantiates it, with the fence containing only the part named inside the brackets.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

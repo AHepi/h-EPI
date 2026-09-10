@@ -1,0 +1,135 @@
+{
+  "arms": [
+    {
+      "arm": "A",
+      "claim": "recover_json_object ignores fenced candidates when there is more than one code fence, even though the documented rule says the object scored is the last one inside a code fence when any fence holds on",
+      "cost": {
+        "completion_tokens": 276,
+        "completion_tokens_allowed": 164000,
+        "completion_tokens_per_call": 4000,
+        "invocations": 1,
+        "invocations_allowed": 41,
+        "machine_executions": 0,
+        "prompt_tokens": 3876,
+        "refusals": [],
+        "wall_ms": 2754
+      },
+      "leaks": [],
+      "model": "deepseek-v4-pro:0813",
+      "packet": true,
+      "reproducer_separates": []
+    },
+    {
+      "arm": "B",
+      "claim": "No defect found",
+      "cost": {
+        "completion_tokens": 328,
+        "completion_tokens_allowed": 164000,
+        "completion_tokens_per_call": 4000,
+        "invocations": 2,
+        "invocations_allowed": 41,
+        "machine_executions": 6,
+        "prompt_tokens": 8264,
+        "refusals": [],
+        "wall_ms": 3235
+      },
+      "leaks": [],
+      "model": "deepseek-v4-pro:0813",
+      "packet": true,
+      "reproducer_separates": []
+    },
+    {
+      "arm": "C-rules",
+      "claim": "The recovery kernel's cell grammar and scoring behavior are inconsistent with the documented recover_json_object rule: several inputs that should be scoreable or unchanged are reported as INVALID_INST",
+      "cost": {
+        "completion_tokens": 5169,
+        "completion_tokens_allowed": 164000,
+        "completion_tokens_per_call": 4000,
+        "invocations": 21,
+        "invocations_allowed": 41,
+        "machine_executions": 5,
+        "prompt_tokens": 4146,
+        "refusals": [],
+        "wall_ms": 42431
+      },
+      "leaks": [
+        "kernel",
+        "cell"
+      ],
+      "model": "deepseek-v4-pro:0813",
+      "packet": true,
+      "reproducer_separates": []
+    },
+    {
+      "arm": "C",
+      "claim": "The recovery kernel's rewrite-instantiation checks are inconsistent with the documented recover_json_object rule: several rewrites that should be valid additions after a fenced object are reported as ",
+      "cost": {
+        "completion_tokens": 5294,
+        "completion_tokens_allowed": 164000,
+        "completion_tokens_per_call": 4000,
+        "invocations": 21,
+        "invocations_allowed": 41,
+        "machine_executions": 4,
+        "prompt_tokens": 4181,
+        "refusals": [],
+        "wall_ms": 61658
+      },
+      "leaks": [
+        "kernel",
+        "cell"
+      ],
+      "model": "deepseek-v4-pro:0813",
+      "packet": true,
+      "reproducer_separates": []
+    },
+    {
+      "arm": "D",
+      "claim": "The recovery kernel's 'remove' rewrite is expected to leave the recovered object unchanged when the removed trailing content is a second top-level JSON object, but the executed result shows 'moved' an",
+      "cost": {
+        "completion_tokens": 9631,
+        "completion_tokens_allowed": 164000,
+        "completion_tokens_per_call": 4000,
+        "invocations": 41,
+        "invocations_allowed": 41,
+        "machine_executions": 13,
+        "prompt_tokens": 3721,
+        "refusals": [],
+        "wall_ms": 115133
+      },
+      "leaks": [
+        "kernel"
+      ],
+      "model": "deepseek-v4-pro:0813",
+      "packet": true,
+      "reproducer_separates": []
+    },
+    {
+      "arm": "E",
+      "claim": "The recovery kernel's 'remove' rewrite is expected to leave the recovered object unchanged when the removed trailing text is not a scoreable JSON object, but in several cases it moves the recovered ob",
+      "cost": {
+        "completion_tokens": 9916,
+        "completion_tokens_allowed": 164000,
+        "completion_tokens_per_call": 4000,
+        "invocations": 41,
+        "invocations_allowed": 41,
+        "machine_executions": 11,
+        "prompt_tokens": 3755,
+        "refusals": [],
+        "wall_ms": 108204
+      },
+      "leaks": [
+        "kernel",
+        "cell",
+        "proposal"
+      ],
+      "model": "deepseek-v4-pro:0813",
+      "packet": true,
+      "reproducer_separates": []
+    }
+  ],
+  "instance": "v4-s2-1",
+  "mutation_id": "s2-fence-single-only",
+  "seeded": true,
+  "seeded_kernel": "recovery",
+  "stratum": "S2"
+}

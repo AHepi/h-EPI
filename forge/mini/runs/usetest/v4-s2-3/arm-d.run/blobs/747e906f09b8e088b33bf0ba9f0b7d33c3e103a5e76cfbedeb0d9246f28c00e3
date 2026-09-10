@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown the documented rules and the complete source of the checks. Read this cycle's executions beside the proposals: say which expectations held, which failed, which inputs the validator threw away and why, and for each failure whether the proposer misread the rule or the rule as written and the code part company — quote the rule's words and name the line of code. Say what a proposer should build next. Cite nothing you were not shown.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The proposal was never executed: the validator rejected it as INVALID_INSTANTIATION with the detail "the rewritten text is no cell of the grammar". The proposer's rewrite, fence[ A ] B C, is not a cell of the grammar, so the machine threw the input away before running the check. No expectation held or failed because no check ran. The proposer misread the grammar: the cell is fence[ A ] B, and the rewrite must remain a cell of that grammar, not append a third object outside the fence. The rule for k_recovery says the object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. The source implements this in recover_json_object: it builds a fenced pool from _FENCE.finditer(content) and a top_level pool by scanning for '{' and using decoder.raw_decode, then iterates for pool in (fenced, top_level) and for candidate in reversed(pool). The proposal's rewritten text would have put C in the top_level pool, but since the fenced pool is non-empty, the top_level pool is never reached. The proposer should build a rewrite that is a valid cell of the grammar, such as fence[ A ] B where B is changed, or a cell with no fence where the last top-level object changes, and then state what the check returns on both texts.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

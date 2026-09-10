@@ -1,0 +1,17 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown the documented rules and the complete source of the checks. Read this cycle's executions beside the proposals: say which expectations held, which failed, which inputs the validator threw away and why, and for each failure whether the proposer misread the rule or the rule as written and the code part company — quote the rule's words and name the line of code. Say what a proposer should build next. Cite nothing you were not shown.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The only execution this cycle is b3b6095c61b125cf, and it was thrown away before any check ran: the validator rejected it as INVALID_INSTANTIATION. The cell named is fence[ S A ], which the harness reads as a fence holding two parts, S and A. The input supplied holds one part, the prose line "Here is the result:", inside the fence, with the object {"a": 1} outside it. The validator's detail says exactly this: "the fence should hold 2 part(s) and holds 1". So no expectation held or failed against the check; the input never reached k_recovery. The proposer misread the cell notation, not the rule: fence[ S A ] means both S and A are inside the fence, not that S is a fence and A follows it. The rule and the code were never in play. A proposer should next build an input whose fence contains two parts, for example ```
+S
+A
+``` with S and A as the two objects or texts the cell intends, and then test whether adding B after the fence changes k_recovery's answer. The rule says the object scored is the last one inside a code fence when any fence holds one, so with A still the last fenced object the answer should stay unchanged; that is the expectation to carry into a valid execution.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

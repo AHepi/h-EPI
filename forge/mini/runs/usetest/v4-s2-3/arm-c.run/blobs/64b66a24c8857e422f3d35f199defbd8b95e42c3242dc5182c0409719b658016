@@ -1,0 +1,8 @@
+{
+  "body": "The rule for response-verdict says the check returns the response verdict for the reply. For the input fence[ A B ] S, the reply is a code fence containing two JSON objects A and B, followed by the sentence S. The rule for recover_json_object says the object scored is the last one inside a code fence when any fence holds one. Here the fence holds A and B, so the last object inside the fence is B. The rule for parse_content says it first tries strict JSON on the whole content; the whole content is not strict JSON because it has a fence and prose, so it then recovers an object. Since an object is recovered, the response verdict is JSON_OBJECT. For the rewritten text fence[ A B ] S C, the fence still holds A and B, and C is after the fence. The rule still scores the last object inside the fence, which is B, so the response verdict remains JSON_OBJECT. Therefore the check's answer is unchanged between the two texts.",
+  "commitments": "{\"kernel\": \"response-verdict\", \"expect\": \"unchanged\"}",
+  "input": "```\n{\"a\": 1}\n{\"b\": 2}\n```\nHere is the result:",
+  "rewritten": "```\n{\"a\": 1}\n{\"b\": 2}\n```\nHere is the result:\n{\"c\": 3}",
+  "rewrite": "add",
+  "cell": "fence[ A B ] S"
+}

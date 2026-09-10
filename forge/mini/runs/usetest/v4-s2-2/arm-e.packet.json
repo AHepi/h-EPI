@@ -1,0 +1,43 @@
+{
+  "arm": "E",
+  "ceiling_breached": false,
+  "cost": {
+    "completion_tokens": 8744,
+    "completion_tokens_allowed": 164000,
+    "completion_tokens_per_call": 4000,
+    "invocations": 41,
+    "invocations_allowed": 41,
+    "machine_executions": 4,
+    "prompt_tokens": 3848,
+    "refusals": [],
+    "wall_ms": 157048
+  },
+  "endpoint": {
+    "base_url": "https://ollama.com",
+    "kind": "ollama-chat",
+    "options": {
+      "seed": 7,
+      "temperature": 0
+    },
+    "think": false,
+    "timeout_seconds": 600
+  },
+  "instance": "v4-s2-2",
+  "leaks": [
+    "kernel"
+  ],
+  "method_version": 4,
+  "model": "deepseek-v4-pro:0813",
+  "packet": {
+    "claim": "The recovery kernel's rewrite oracle is inconsistent with the documented recover_json_object rule: it expects the recovered object to stay unchanged when a new top-level object is appended after a fenced object, but the rule says the last top-level object in the text is scored when no fence holds one, and the appended object is the last top-level object.",
+    "execution_evidence": "executed: unchanged, before: {\\\"a\\\":1}, after: {\\\"a\\\":1}, as_expected: false",
+    "expected": "For input ```\\n{\\\"a\\\": 1}\\n```\\n{\\\"b\\\": 2}, recover_json_object should return {\\\"b\\\":2} as the last top-level object, so a rewrite that appends {\\\"b\\\":2} should move the recovered object from {\\\"a\\\":1} to {\\\"b\\\":2}.",
+    "observed": "The executed result is 'unchanged' with before and after both {\\\"a\\\":1}, and as_expected is false, indicating the oracle did not move to the appended last top-level object.",
+    "reproducer": "```\\n{\\\"a\\\": 1}\\n```\\n{\\\"b\\\": 2}",
+    "scope": "All inputs where a fenced JSON object is followed by one or more top-level JSON objects outside any fence, and the rewrite appends or changes the trailing top-level object.",
+    "source_basis": "recover_json_object: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text'",
+    "uncertainty": "The rule's phrase 'when any fence holds one' could be read as always preferring a fenced object over any unfenced object, which would make the observed unchanged behavior correct; however, the later clause 'else the last top-level object' and the stated rationale about final answers suggest the last top-level object should win when it is outside a fence, so the intended precedence is ambiguous."
+  },
+  "protocol": "mini-use-test-1",
+  "stopped_on": null
+}

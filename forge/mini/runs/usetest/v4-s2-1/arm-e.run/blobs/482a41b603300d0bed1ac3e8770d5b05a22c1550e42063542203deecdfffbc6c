@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown the documented rules and the complete source of the checks. Read this cycle's executions beside the proposals: say which expectations held, which failed, which inputs the validator threw away and why, and for each failure whether the proposer misread the rule or the rule as written and the code part company — quote the rule's words and name the line of code. Say what a proposer should build next. Cite nothing you were not shown.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The single proposal in this cycle is a no-op: it removes a trailing sentence after a fenced JSON object and expects k_recovery to be unchanged. The execution confirms this — before and after both return the canonical JSON of the object inside the fence, so the expectation held. No rule was misread and no code parted company with the rule as written. The rule for recover_json_object says the object scored is the last one inside a code fence when any fence holds one; the code implements exactly that by collecting fenced candidates and iterating in reverse. Removing prose after the fence cannot change which fenced object is last, so the outcome is forced. The validator threw nothing away: the input matched the cell, the rewrite produced the stated rewritten text, and the execution recorded the expected unchanged result. A proposer should build next on a case where the rule and the code could diverge — for example, a reply with multiple fenced objects, a fenced object that fails strict parsing but parses last-wins, or a refusal phrase beside a recoverable object — rather than a case whose outcome is determined by the first sentence of the documented rule.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

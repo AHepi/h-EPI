@@ -1,0 +1,18 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown the documented rules and the complete source of the checks. Read this cycle's executions beside the proposals: say which expectations held, which failed, which inputs the validator threw away and why, and for each failure whether the proposer misread the rule or the rule as written and the code part company — quote the rule's words and name the line of code. Say what a proposer should build next. Cite nothing you were not shown.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The execution did not run the check at all: it returned INVALID_INSTANTIATION with the detail "the rewritten text is no cell of the grammar". The proposal's cell was `fence[ A ] fence[ B ]`, and the rewrite was `add`, producing a rewritten text that appends `{"c": 3}` outside any fence. The validator threw the rewritten text away because it is not a cell of the grammar, so no kernel output was recorded and the expectation "unchanged" was never tested.
+
+This is not a case where a rule and the code part company, nor where the proposer misread a documented rule of the checks. The failure is at the level of the harness's grammar: the proposal's rewrite produced a text that the validator does not accept as a cell. The documented rules for `k_recovery` say the object scored is the last one inside a code fence when any fence holds one, and the source at `recover_json_object` implements exactly that: it collects fenced candidates via `_FENCE.finditer`, then iterates `reversed(pool)` for the fenced pool first, returning the first dict it can parse. Had the rewritten text been accepted, the answer would indeed have been unchanged, because the trailing `{"c": 3}` is outside any fence and the fenced pool still ends with B. But the execution never reached that code.
+
+A proposer should build next a pair whose rewritten text is a cell of the grammar. If the goal is to test whether a trailing unfenced object can displace a fenced one, the rewrite must produce a text that the grammar accepts as a cell; otherwise the validator discards it before any check runs. The proposal's own reasoning about the rule was consistent with the source, but the instantiation was invalid, so nothing about the check was learned.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

@@ -237,3 +237,122 @@ It does not say that mini's core has been ablated fairly, because break 4 means 
 got to enumerate. The honest next step is one further block at a ceiling that admits the grid,
 identical for every arm, under method version 3 — and if the core still loses there, the
 protocol's conclusion is the one to take.
+
+---
+
+# Block 2: information parity, a hard ceiling, and six arms that all found nothing
+
+Method version 4, pre-registered at `ed06ad3` in
+`forge/mini/usetest/block-2.preregistration.md` and committed before any instance was drawn.
+Six arms on three S2 instances, one model throughout (`deepseek-v4-pro:0813`), one ceiling: 41
+invocations, 164,000 completion tokens, 4,000 reserved and capped per send, reasoning off,
+timeout 600 s. Records under `forge/mini/runs/usetest/v4-s2-1`, `v4-s2-2`, `v4-s2-3`.
+
+## What every arm did
+
+| Instance | Arm | Calls | Cells covered | Pairs thrown away | Run stopped | Defect recovered |
+|---|---|---|---|---|---|---|
+| v4-s2-1 | A | 1 | — | — | — | no |
+| v4-s2-1 | B | 2 | — | — | — | no |
+| v4-s2-1 | C | 21 | 4 | 16 | `cycle_cap` | no |
+| v4-s2-1 | C-rules | 21 | 5 | 15 | `cycle_cap` | no |
+| v4-s2-1 | D | 41 | 13 | 1 | `call_budget_spent` | no |
+| v4-s2-1 | E | 41 | 11 | 3 | `call_budget_spent` | no |
+| v4-s2-2 | A | 1 | — | — | — | no |
+| v4-s2-2 | B | 2 | — | — | — | no |
+| v4-s2-2 | C | 21 | 6 | 14 | `cycle_cap` | no |
+| v4-s2-2 | C-rules | 21 | 6 | 14 | `cycle_cap` | no |
+| v4-s2-2 | D | 41 | 11 | 3 | `call_budget_spent` | no |
+| v4-s2-2 | E | 41 | 4 | 10 | `call_budget_spent` | no |
+| v4-s2-3 | A | 1 | — | — | — | no |
+| v4-s2-3 | B | 3 | — | — | — | no |
+| v4-s2-3 | C | 21 | 4 | 16 | `cycle_cap` | no |
+| v4-s2-3 | C-rules | 21 | 5 | 15 | `cycle_cap` | no |
+| v4-s2-3 | D | 41 | 3 | 11 | `call_budget_spent` | no |
+| v4-s2-3 | E | 41 | 3 | 11 | `call_budget_spent` | no |
+
+**Nought of three, for every arm.** Including arm A, which recovered three of three in block 1.
+That is the first thing to explain, and until it is explained nothing else in the table can be
+read as being about mini.
+
+## Why arm A fell from three of three to nought of three
+
+Not because it stopped finding the defect. On `v4-s2-1` arm A wrote, in one call:
+
+> `recover_json_object` ignores fenced candidates when there is more than one code fence, even
+> though the documented rule says the object should be the last fenced candidate
+
+which is the seeded mutation, named correctly. Block 1's arm A wrote the same claim. What
+differed was the **reproducer**:
+
+| Block | Reproducer | Clean answers | Mutated answers | Separates |
+|---|---|---|---|---|
+| 1 | two fences, then `{"c": 3}` | `{"b":2}` | `{"c":3}` | yes |
+| 2 | two fences, nothing after | `{"b":2}` | `{"b":2}` | no |
+
+Without the bare object after the fences both subjects answer the same thing, so the criterion —
+does this reproducer tell the clean subject from the mutated one — says no, and correctly. The
+diagnosis was right and the demonstration was not.
+
+The block's own configuration is what removed it. Reasoning is off in block 2 because M17 says a
+reasoning model cannot return a parseable reply inside a per-call cap small enough to walk a
+twenty-cell grid. Re-running arm A alone, outside this block, with reasoning **on** and a 16,000
+token cap: on instance 1 it produced block 1's reproducer, trailing object and all, and
+**recovered** the defect. On instance 2 it over-escaped its reproducer (M16) and did not. On
+instance 3 it spent the whole 16,000 tokens and returned no packet at all.
+
+So the honest statement is: at this ceiling, reasoning off costs arm A its reproducer, and
+reasoning on costs more per call than a twenty-cell grid can afford. Block 2's ceiling was chosen
+to let the grid be walked and it made the strongest arm worse. That is a property of the ceiling,
+not of any arm, and it is why block 1 and block 2 are not compared arm for arm.
+
+## What the block does say
+
+**P3 is answered, and negatively.** Arm C — the proposer shown the subject's complete source —
+covered *fewer* cells than arm C-rules on two of three instances and the same number on the
+third: 4 against 5, 6 against 6, 4 against 5. Information parity was the confound that made block
+1 unreadable, and removing it changes nothing in mini's favour. The source was not what was
+stopping the mini arms.
+
+**P4 is contradicted on a secondary measure.** The critic was expected to buy nothing. It bought
+construction: arm D threw away 1, 3 and 11 pairs where arm C threw away 16, 14 and 16, and
+covered 13, 11 and 3 cells against C's 4, 6 and 4. Per call, D is level with or ahead of C on
+cells covered. What the critic improved was the proposer's ability to build a valid pair — not
+its ability to find a defect, which stayed at nought. Attention (E) is at or below D everywhere.
+
+**P5 held completely.** No arm breached the ceiling on any instance, every record names the
+endpoint it was given, and arms D and E stopped on `call_budget_spent` — the reservation refusing
+a send, live, in the block rather than only in a test.
+
+**P1 and P2 both failed.** Arm C recovered nothing with the source in front of it, and arm A did
+not hold at three of three.
+
+## What broke this time
+
+**Break 8: the packets are not blind.** The protocol says every arm ends in the same eight
+neutral fields "with nothing in them that says which arm or model produced it", and
+`Packet.leaks()` exists to check it. Every mini arm leaked on every instance — `kernel`, `cell`,
+`proposal` — and arms A and B leaked on one instance between them. A mini arm's packet describes
+the grid it was walked through, so it announces itself. The blinding the protocol claims is not
+achieved for the mini arms and a blind adjudication of these packets is not currently possible.
+The leaks are recorded per packet, so this was caught by the machinery rather than missed by it.
+
+**Break 9: the criterion cannot tell a wrong diagnosis from an undemonstrated one.** Arm A's
+claim on `v4-s2-1` was exactly right and scored the same as arm B's "No defect found". A
+criterion that only asks whether the reproducer separates is the right *primary* criterion — it
+is the only one a machine can settle — but it collapses two very different failures, and this
+block is the case that shows why that matters. Recording the claim's correctness needs a person
+and is not something to bolt on mid-protocol.
+
+**M19 at scale.** Invalid instantiation, almost all of it a rewrite that leaves the grammar,
+accounts for 14 to 16 of arm C's 20 proposals. The grid is being handed out in full and walked in
+full; what fails is the construction of the second text.
+
+## What would have to change for a block 3
+
+Three things, and the first is not optional. A ceiling that lets a reasoning model reason **and**
+lets a grid be walked is not affordable at twenty cells and two calls a cycle, so either the grid
+shrinks, or the arms run at a per-call cap of their own rather than a shared one, or the model is
+one that works without reasoning. Second, the packet has to be neutralised before an adjudication
+can be called blind. Third, M19 has to come down, or arm C is measuring construction rather than
+search: three quarters of its calls currently produce nothing to execute.

@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown the documented rules and the complete source of the checks. Read this cycle's executions beside the proposals: say which expectations held, which failed, which inputs the validator threw away and why, and for each failure whether the proposer misread the rule or the rule as written and the code part company — quote the rule's words and name the line of code. Say what a proposer should build next. Cite nothing you were not shown.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The proposal's expectation held: the execution records recovery unchanged, expected unchanged, with before and after both the canonical JSON text {"a":1}. The proposer read the rule correctly. The rule says the object scored is the last one inside a code fence when any fence holds one, and the code implements exactly that: recover_json_object builds a fenced pool from _FENCE.finditer and iterates reversed(pool) first, returning the first dict it can parse. In both texts the only fenced object is {"a": 1}, so the rewrite outside the fence is never considered. No inputs were thrown away; the validator accepted the cell and the execution ran. The rule as written and the code are in agreement here. A proposer should build next on a case where the rule's words and the code part company, for example a reply with a fenced object that fails strict parsing and a later top-level object that parses, or a reply with no fence where the last top-level object is not the one the rule's prose suggests should win.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

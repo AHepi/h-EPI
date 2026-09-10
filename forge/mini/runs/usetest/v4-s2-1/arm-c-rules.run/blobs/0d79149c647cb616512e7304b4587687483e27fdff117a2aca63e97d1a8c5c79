@@ -1,0 +1,22 @@
+# Execution
+
+## Proposals so far (proposals)
+[e41679796a523cb0] (mini.pair-proposal.usetest.v1)
+The rule for k_recovery says: 'The object recovered from the reply, as canonical JSON text, or NO_OBJECT.' For the original text, the last top-level object in the text is A, so k_recovery returns A. For the rewritten text, the last top-level object is B, so k_recovery returns B. Since A and B are different objects, the answer moves.
+cell: fence[ A S ] B
+input: ```
+{"a": 1}
+Here is the result:
+```
+{"b": 2}
+rewrite: add
+rewritten: ```
+{"a": 1}
+Here is the result:
+```
+{"b": 2}
+{"c": 3}
+commitments: {"kernel": "recovery", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

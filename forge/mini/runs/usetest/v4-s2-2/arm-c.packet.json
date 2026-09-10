@@ -1,0 +1,45 @@
+{
+  "arm": "C",
+  "ceiling_breached": false,
+  "cost": {
+    "completion_tokens": 5161,
+    "completion_tokens_allowed": 164000,
+    "completion_tokens_per_call": 4000,
+    "invocations": 21,
+    "invocations_allowed": 41,
+    "machine_executions": 6,
+    "prompt_tokens": 4150,
+    "refusals": [],
+    "wall_ms": 47678
+  },
+  "endpoint": {
+    "base_url": "https://ollama.com",
+    "kind": "ollama-chat",
+    "options": {
+      "seed": 7,
+      "temperature": 0
+    },
+    "think": false,
+    "timeout_seconds": 600
+  },
+  "instance": "v4-s2-2",
+  "leaks": [
+    "kernel",
+    "cell",
+    "proposal"
+  ],
+  "method_version": 4,
+  "model": "deepseek-v4-pro:0813",
+  "packet": {
+    "claim": "The recovery kernel's rewrite/add operation is not monotone with respect to the recovered object: adding a new object after a fence can change the recovered object from the last object inside the fence to the newly added object, even when the fence still contains a valid object.",
+    "execution_evidence": "The test record for proposal ab28bc9582dbc83c shows before={\"b\":2}, after={\"c\":3}, executed=moved, expect=unchanged, as_expected=false.",
+    "expected": "For an input whose cell is a fence containing a valid object, adding another object after the fence should leave the recovered object unchanged, because the documented rule says the object scored is the last one inside a code fence when any fence holds one.",
+    "observed": "In several cases, adding an object after a fence changed the recovered object from the object inside the fence to the newly added object. For example, input ```\\n{\"a\": 1}\\n{\"b\": 2}\\n``` recovered {\"b\":2}, and after adding {\"c\":3} the recovered object became {\"c\":3}.",
+    "reproducer": "```\n{\"a\": 1}\n{\"b\": 2}\n```",
+    "scope": "All inputs where a code fence contains at least one valid JSON object and a rewrite adds another object after the fence.",
+    "source_basis": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.",
+    "uncertainty": "The documented rule could be read as applying only to the original text, not to rewritten text, but the test harness clearly expects the recovered object to remain unchanged under this rewrite, so the implementation appears to violate the intended monotonicity."
+  },
+  "protocol": "mini-use-test-1",
+  "stopped_on": null
+}

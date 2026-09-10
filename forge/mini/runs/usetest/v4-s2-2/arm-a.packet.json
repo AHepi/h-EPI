@@ -1,0 +1,41 @@
+{
+  "arm": "A",
+  "ceiling_breached": false,
+  "cost": {
+    "completion_tokens": 368,
+    "completion_tokens_allowed": 164000,
+    "completion_tokens_per_call": 4000,
+    "invocations": 1,
+    "invocations_allowed": 41,
+    "machine_executions": 0,
+    "prompt_tokens": 3873,
+    "refusals": [],
+    "wall_ms": 2354
+  },
+  "endpoint": {
+    "base_url": "https://ollama.com",
+    "kind": "ollama-chat",
+    "options": {
+      "seed": 7,
+      "temperature": 0
+    },
+    "think": false,
+    "timeout_seconds": 600
+  },
+  "instance": "v4-s2-2",
+  "leaks": [],
+  "method_version": 4,
+  "model": "deepseek-v4-pro:0813",
+  "packet": {
+    "claim": "k_span_occurs always calls _span_occurs with an empty relaxations tuple, so the date_range_completion relaxation is never applied, contradicting the documented purpose of _span_occurs to support relaxations.",
+    "execution_evidence": "none: no executable oracle",
+    "expected": "When a span is not verbatim in the document but is a date-range completion (e.g., span '15 March 2024' for document '12-15 March 2024'), _span_occurs should return 'date_range_completion' if that relaxation is enabled.",
+    "observed": "k_span_occurs passes () as relaxations, so _span_occurs only checks verbatim matching and returns 'NOT_IN_DOCUMENT' for date-range completions.",
+    "reproducer": "{\"span\": \"15 March 2024\", \"document\": \"The event runs 12-15 March 2024.\"}",
+    "scope": "All inputs to k_span_occurs where the span is a date-range completion but not verbatim in the document.",
+    "source_basis": "def _span_occurs(span: str, document: str, relaxations: tuple[str, ...]) -> str | None: ... if \"date_range_completion\" in relaxations: completions = _date_range_completions(normal_document); if normal_span in completions ... return \"date_range_completion\"",
+    "uncertainty": "The documented rules for k_span_occurs do not explicitly state that date_range_completion should be enabled; the defect is inferred from the existence and documentation of the relaxation mechanism in _span_occurs."
+  },
+  "protocol": "mini-use-test-1",
+  "stopped_on": null
+}

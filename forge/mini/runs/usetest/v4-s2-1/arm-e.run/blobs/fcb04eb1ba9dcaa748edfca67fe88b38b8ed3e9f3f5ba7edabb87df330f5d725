@@ -1,0 +1,18 @@
+# Execution
+
+## Proposals so far (proposals)
+[da8f597169f67ce8] (mini.pair-proposal.usetest.v1)
+The cell is fence[ A ] A, which is a code fence containing one JSON object followed by another JSON object after the fence. The rule for k_recovery says it returns the object recovered from the reply, as canonical JSON text, or NO_OBJECT. For the input fence[ A ] A, the recovered object is A, so k_recovery returns the canonical JSON of A. If one part is removed, making fence[ A ], the rule says the object scored is the last one inside a code fence when any fence holds one. Since the fence holds A, the last object inside the fence is A, so k_recovery returns the canonical JSON of A. Therefore the answer is unchanged between the two texts.
+cell: fence[ A ] A
+input: ```
+{"a": 1}
+```
+{"a": 1}
+rewrite: remove
+rewritten: ```
+{"a": 1}
+```
+commitments: {"kernel": "recovery", "expect": "unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
