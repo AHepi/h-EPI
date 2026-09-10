@@ -118,6 +118,8 @@ MINI_CODES: frozenset[str] = frozenset(
         "MINI_RUN_ROOT_OCCUPIED",
         "MINI_ENDPOINT_INVALID",
         "MINI_LIVE_KEY_MISSING",
+        "MINI_LIVE_COMPLETION_CAP_INVALID",
+        "MINI_COMPLETION_CAP_UNENFORCED",
         # MINI-USE-TEST-1 (``usetest.py``): the comparison in which mini may lose.
         "MINI_USETEST_MUTATION_UNPLACED",
         "MINI_USETEST_SUBJECT_UNREADABLE",
@@ -126,6 +128,7 @@ MINI_CODES: frozenset[str] = frozenset(
         "MINI_USETEST_CELL_UNREADABLE",
         "MINI_USETEST_CALL_FAILED",
         "MINI_USETEST_PLAN_INVALID",
+        "MINI_USETEST_CEILING_SPENT",
     }
 )
 

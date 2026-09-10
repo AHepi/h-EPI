@@ -115,9 +115,13 @@ class ScriptedResponder:
     working under the two-call shape.
     """
 
-    def __init__(self, script: Mapping[str, Any]) -> None:
+    def __init__(self, script: Mapping[str, Any], completion_cap: int | None = None) -> None:
         self._script = {stage: replies for stage, replies in script.items()}
         self._used: dict[str, int] = {}
+        # A scripted run sends nothing, so the cap is a declaration and not an enforcement: it
+        # is here so a plan that reserves a completion allowance can be run offline against the
+        # same check a live run passes.
+        self.completion_cap = completion_cap
 
     @property
     def used(self) -> Mapping[str, int]:
@@ -264,9 +268,17 @@ class LiveResponder:
         *,
         endpoint: Endpoint = DEFAULT_ENDPOINT,
         retries: int = 0,
+        completion_cap: int | None = None,
     ) -> None:
         self.model = model
         self.endpoint = endpoint
+        # A cap on the wire, so a run whose plan reserves a completion allowance before each
+        # send cannot be handed a reply larger than the reservation. It is sent as an option
+        # and so is recorded with the request; the plan's reservation and this cap are checked
+        # against each other before the run starts.
+        if completion_cap is not None and (type(completion_cap) is not int or completion_cap < 1):
+            raise MiniError("MINI_LIVE_COMPLETION_CAP_INVALID", "completion_cap must be a whole number of tokens, at least 1")
+        self.completion_cap = completion_cap
         if executor is None:
             if endpoint.auth == "bearer" and not os.environ.get(API_KEY_ENV):
                 raise MiniError(
@@ -295,7 +307,11 @@ class LiveResponder:
                 system=system,
                 user=request.brief,
                 format_schema=schema,
-                options={"temperature": self.endpoint.temperature, "seed": self.endpoint.seed},
+                options=(
+                    {"temperature": self.endpoint.temperature, "seed": self.endpoint.seed}
+                    if self.completion_cap is None
+                    else {"temperature": self.endpoint.temperature, "seed": self.endpoint.seed, "num_predict": self.completion_cap}
+                ),
                 think=self.endpoint.think,
             )
         )

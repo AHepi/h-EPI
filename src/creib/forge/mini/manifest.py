@@ -81,18 +81,31 @@ class Stage:
 
 @dataclass(frozen=True)
 class Cycles:
-    """What ends a run: a cycle cap, a budget cap, a registered condition."""
+    """What ends a run: a cycle cap, a budget cap, a registered condition.
+
+    ``max_completion_tokens`` and ``completion_tokens_per_call`` are declared together and
+    turn the call cap from something read between cycles into something reserved before every
+    send. They are absent by default and, when absent, are written to no compiled manifest, so
+    a manifest compiled before they existed keeps the digest it had.
+    """
 
     max_cycles: int
     max_calls: int | None
     stop_condition: StopCondition
+    max_completion_tokens: int | None = None
+    completion_tokens_per_call: int | None = None
 
     def to_dict(self) -> dict[str, object]:
-        return {
+        written: dict[str, object] = {
             "max_cycles": self.max_cycles,
             "max_calls": self.max_calls,
             "stop_condition": self.stop_condition.condition_id,
         }
+        if self.max_completion_tokens is not None:
+            written["max_completion_tokens"] = self.max_completion_tokens
+        if self.completion_tokens_per_call is not None:
+            written["completion_tokens_per_call"] = self.completion_tokens_per_call
+        return written
 
 
 @dataclass(frozen=True)
@@ -291,9 +304,28 @@ def compile_manifest(path: Path, policy_dir: Path | None = None) -> RunPlan:
     max_calls = cycles_raw.get("max_calls")
     if max_calls is not None and (type(max_calls) is not int or max_calls < 1):
         raise MiniError("MINI_CYCLES_INVALID", "cycles.max_calls must be a whole number of calls, at least 1")
+    max_completion_tokens = cycles_raw.get("max_completion_tokens")
+    if max_completion_tokens is not None and (type(max_completion_tokens) is not int or max_completion_tokens < 1):
+        raise MiniError("MINI_CYCLES_INVALID", "cycles.max_completion_tokens must be a whole number of tokens, at least 1")
+    per_call = cycles_raw.get("completion_tokens_per_call")
+    if per_call is not None and (type(per_call) is not int or per_call < 1):
+        raise MiniError("MINI_CYCLES_INVALID", "cycles.completion_tokens_per_call must be a whole number of tokens, at least 1")
+    if (max_completion_tokens is None) != (per_call is None):
+        raise MiniError(
+            "MINI_CYCLES_INVALID",
+            "cycles.max_completion_tokens and cycles.completion_tokens_per_call are declared together or not at all: "
+            "a total with no per-call allowance cannot be reserved before a send, and an allowance with no total bounds nothing",
+        )
+    if max_completion_tokens is not None and per_call is not None and per_call > max_completion_tokens:
+        raise MiniError(
+            "MINI_CYCLES_INVALID",
+            "cycles.completion_tokens_per_call may not exceed cycles.max_completion_tokens; the first send could never be reserved",
+        )
     cycles = Cycles(
         max_cycles=max_cycles,
         max_calls=max_calls,
+        max_completion_tokens=max_completion_tokens,
+        completion_tokens_per_call=per_call,
         stop_condition=resolve_stop_condition(
             text(cycles_raw.get("stop_condition", STOP_NEVER), "cycles.stop_condition", "MINI_STOP_CONDITION_UNKNOWN")
         ),

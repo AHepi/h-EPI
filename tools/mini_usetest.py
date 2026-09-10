@@ -131,33 +131,82 @@ def _draw(args: argparse.Namespace) -> int:
     return 0
 
 
-def _executor(timeout_seconds: int, retries: int) -> Any:
+def _endpoint(args: argparse.Namespace) -> Any:
+    """What every arm of this run sends to, built once and written into every record.
+
+    A run whose record cannot name its timeout cannot explain a timeout death, and one that
+    cannot name its reasoning setting cannot explain what that setting cost. Both are set here
+    rather than left to a default, and both travel with the arm's result.
+    """
+
+    from creib.forge.conformance.spec import endpoint_from_dict
+
+    return endpoint_from_dict(
+        {
+            "kind": "ollama-chat",
+            "base_url": "https://ollama.com",
+            "timeout_seconds": int(args.timeout_seconds),
+            "options": {"temperature": 0, "seed": 7},
+            "think": _think(args.think),
+        }
+    )
+
+
+def _think(value: str) -> bool | str | None:
+    """The reasoning setting as the harness reads it, from a word on the command line."""
+
+    lowered = str(value).strip().lower()
+    if lowered in ("off", "false", "no"):
+        return False
+    if lowered in ("on", "true", "yes"):
+        return True
+    if lowered in ("low", "medium", "high"):
+        return lowered
+    raise MiniError(INVALID, f"--think must be off, on, low, medium or high; got {value!r}")
+
+
+def _executor(endpoint: Any, retries: int) -> Any:
     from creib.forge.conformance.executor import OllamaChatExecutor
 
-    return OllamaChatExecutor(base_url="https://ollama.com", timeout_seconds=timeout_seconds, retries=retries)
+    return OllamaChatExecutor(
+        base_url=endpoint.base_url, timeout_seconds=endpoint.timeout_seconds, retries=retries, auth=endpoint.auth
+    )
 
 
-def _mini_arm(args: argparse.Namespace, instance: Path, ceiling: usetest.Ceiling) -> tuple[Any, list[dict[str, Any]]]:
-    """Run one mini arm: the manifest under the shared call budget, then one packet call."""
+def _mini_arm(args: argparse.Namespace, instance: Path, ceiling: usetest.Ceiling, endpoint: Any) -> tuple[Any, list[dict[str, Any]]]:
+    """Run one mini arm: the manifest under the shared ceiling, then one packet call.
+
+    There is no slack arithmetic left. Mini reserves a call and its completion allowance
+    before every send, so the run's own budget is the shared ceiling minus exactly the one
+    call held back for the packet, and the cycle cap is the grid: enough cycles to walk every
+    cell, with the reservation, not the cycle count, deciding when the arm stops.
+    """
 
     from creib.forge.mini.executor import LiveResponder
     from creib.forge.mini.manifest import compile_manifest
     from creib.forge.mini.report import read_run
     from creib.forge.mini.runner import run_mini
 
-    # Mini checks its call budget between cycles and not after every call, so a cycle that
-    # starts under budget can finish over it (the audit's F-H). The shared ceiling is the whole
-    # point of this comparison, so the budget is set low enough that the worst overrun still
-    # fits: one call for the packet, and one cycle's worth of slack.
-    per_cycle = 2 if args.arm in (usetest.ARM_D, usetest.ARM_E) else 1
-    calls_for_mini = max(1, ceiling.invocations - 1 - (per_cycle - 1))
-    manifest = usetest.arm_manifest(args.arm, instance.name, cycles=calls_for_mini, max_calls=calls_for_mini)
+    calls_for_mini = max(1, ceiling.invocations - 1)
+    tokens_for_mini = max(
+        ceiling.completion_tokens_per_call, ceiling.completion_tokens - ceiling.completion_tokens_per_call
+    )
+    manifest = usetest.arm_manifest(
+        args.arm,
+        instance.name,
+        cycles=len(usetest.RECOVERY_GRID),
+        max_calls=calls_for_mini,
+        max_completion_tokens=tokens_for_mini,
+        completion_tokens_per_call=ceiling.completion_tokens_per_call,
+    )
     manifest_path = instance / f"arm-{args.arm.lower()}.manifest.json"
     _write(manifest_path, json.dumps(manifest, indent=2, ensure_ascii=False) + "\n")
     plan = compile_manifest(manifest_path)
     root = instance / f"arm-{args.arm.lower()}.run"
-    responder = LiveResponder(args.model, retries=args.retries)
-    outcome = run_mini(plan, root, responder, responder_id=f"model:{args.model}")
+    responder = LiveResponder(
+        args.model, endpoint=endpoint, retries=args.retries, completion_cap=ceiling.completion_tokens_per_call
+    )
+    outcome = run_mini(plan, root, responder, responder_id=f"model:{args.model}", endpoint=endpoint)
     reading = read_run(root)
     executions: list[dict[str, Any]] = []
     from creib.forge.mini.log import BlobStore, replay
@@ -171,20 +220,27 @@ def _mini_arm(args: argparse.Namespace, instance: Path, ceiling: usetest.Ceiling
             continue
         payload = json.loads(blobs.get(str(record["commitments_ref"])).decode("utf-8"))
         executions.extend(payload.get("executions", []))
-    ceiling.used_invocations += responder.calls
-    ceiling.used_prompt_tokens += sum(state.tokens_by_kind.values())
+    # What the run spent, as its own budget counted it: every send and every completion token,
+    # refused replies included. ``tokens_by_kind`` counts only accepted replies, so version 3
+    # charged the ceiling a figure smaller than the run had actually spent, and charged it to
+    # the prompt counter besides.
+    ceiling.charge_run(outcome.calls, outcome.completion_tokens)
     ceiling.machine_executions += sum(1 for item in executions if item.get("executed") in ("moved", "unchanged"))
     summary = json.dumps(executions, ensure_ascii=False, indent=2)[:8000]
     rules = usetest.rules_text((instance / "subject.py").read_text(encoding="utf-8"))
     packet_reply = usetest._ask(
-        _executor(args.timeout_seconds, args.retries),
+        _executor(endpoint, args.retries),
         args.model,
         "You are reporting the result of a test campaign someone else ran. " + usetest._PACKET_INSTRUCTION,
         "## The documented rules of the checks\n\n" + rules + "\n\n## What was run, and what the checks answered\n\n" + summary,
         ceiling,
         usetest.PACKET_SCHEMA,
+        think=endpoint.think,
     )
-    transcript = [{"phase": "mini", "stop_reason": outcome.stop_reason, "executions": executions}, {"phase": "report", "reply": packet_reply}]
+    transcript = [
+        {"phase": "mini", "stop_reason": outcome.stop_reason, "calls": outcome.calls, "completion_tokens": outcome.completion_tokens, "executions": executions},
+        {"phase": "report", "reply": packet_reply},
+    ]
     return usetest.packet_from(packet_reply, instance.name, args.arm, args.model), transcript
 
 
@@ -194,14 +250,28 @@ def _run(args: argparse.Namespace) -> int:
     if not subject.is_file():
         raise MiniError(INVALID, f"{instance} holds no subject; draw the instance first")
     os.environ[usetest.SUBJECT_ENV] = str(subject)
-    ceiling = usetest.Ceiling(invocations=args.invocations, completion_tokens=args.completion_tokens)
+    endpoint = _endpoint(args)
+    ceiling = usetest.Ceiling(
+        invocations=args.invocations,
+        completion_tokens=args.completion_tokens,
+        completion_tokens_per_call=args.completion_tokens_per_call,
+    )
     started = time.monotonic()
-    if args.arm in (usetest.ARM_C, usetest.ARM_D, usetest.ARM_E):
-        packet, transcript = _mini_arm(args, instance, ceiling)
-    elif args.arm == usetest.ARM_A:
-        packet, transcript = usetest.run_arm_a(_executor(args.timeout_seconds, args.retries), args.model, subject, ceiling)
-    else:
-        packet, transcript = usetest.run_arm_b(_executor(args.timeout_seconds, args.retries), args.model, subject, ceiling)
+    stopped_on: str | None = None
+    try:
+        if args.arm in usetest.MINI_ARMS:
+            packet, transcript = _mini_arm(args, instance, ceiling, endpoint)
+        elif args.arm == usetest.ARM_A:
+            packet, transcript = usetest.run_arm_a(_executor(endpoint, args.retries), args.model, subject, ceiling, think=endpoint.think)
+        else:
+            packet, transcript = usetest.run_arm_b(_executor(endpoint, args.retries), args.model, subject, ceiling, think=endpoint.think)
+    except MiniError as error:
+        # An arm that cannot reserve its next send, or that died on the transport, still leaves
+        # a result: a packet-less record naming what stopped it. An arm that writes nothing at
+        # all would be read as an arm that found nothing, which is a different thing.
+        if error.code not in ("MINI_USETEST_CEILING_SPENT", "MINI_USETEST_CALL_FAILED", "MINI_LIVE_CALL_FAILED"):
+            raise
+        packet, transcript, stopped_on = None, [{"phase": "stopped", "code": error.code, "detail": str(error)}], error.code
     elapsed = int((time.monotonic() - started) * 1000)
     result = {
         "protocol": usetest.USE_TEST_ID,
@@ -212,13 +282,22 @@ def _run(args: argparse.Namespace) -> int:
         "leaks": list(packet.leaks()) if packet is not None else [],
         "cost": {**ceiling.as_dict(), "wall_ms": elapsed},
         "method_version": usetest.METHOD_VERSION,
+        # What the run was given, so a death can be explained from the record alone rather
+        # than from whatever the operator remembers typing.
+        "endpoint": endpoint.to_dict(),
+        "stopped_on": stopped_on,
         # Parity is the comparison's primary control, so a breach is reported rather than left
         # to be noticed in the numbers.
         "ceiling_breached": ceiling.used_invocations > ceiling.invocations or ceiling.used_completion_tokens > ceiling.completion_tokens,
     }
     _write(instance / f"arm-{args.arm.lower()}.packet.json", json.dumps(result, indent=2, ensure_ascii=False, sort_keys=True) + "\n")
     _write(instance / f"arm-{args.arm.lower()}.transcript.json", json.dumps(transcript, indent=2, ensure_ascii=False)[:400_000] + "\n")
-    print(f"{instance.name} arm {args.arm} ({args.model}): {'a packet' if packet else 'no packet'}, {ceiling.as_dict()}", flush=True)
+    print(
+        f"{instance.name} arm {args.arm} ({args.model}): {'a packet' if packet else 'no packet'}"
+        + (f", stopped on {stopped_on}" if stopped_on else "")
+        + f", {ceiling.as_dict()}",
+        flush=True,
+    )
     return 0
 
 
@@ -288,7 +367,18 @@ def main(argv: Sequence[str] | None = None) -> int:
     run.add_argument("--model", required=True)
     run.add_argument("--invocations", type=int, default=8)
     run.add_argument("--completion-tokens", type=int, default=12000)
+    run.add_argument(
+        "--completion-tokens-per-call",
+        type=int,
+        default=2000,
+        help="what each send reserves, and the cap the request carries; a reply cannot be larger than what was reserved for it",
+    )
     run.add_argument("--timeout-seconds", type=int, default=600)
+    run.add_argument(
+        "--think",
+        default="off",
+        help="the reasoning setting sent with every call: off, on, low, medium or high; recorded with the arm's result",
+    )
     run.add_argument("--retries", type=int, default=1)
     run.set_defaults(handler=_run)
 

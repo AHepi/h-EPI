@@ -148,8 +148,14 @@ class MiniTestCase(unittest.TestCase):
             stages = body + [copy.deepcopy(VERDICT_STAGE)] + end
         return {**manifest, "kinds": kinds, "stages": stages}
 
-    def run_plan(self, plan: RunPlan, script: Mapping[str, list[str]], name: str = "run") -> RunOutcome:
-        return run_mini(plan, self.tmp / name, ScriptedResponder(script))
+    def run_plan(
+        self,
+        plan: RunPlan,
+        script: Mapping[str, list[str]],
+        name: str = "run",
+        responder_cap: int | None = None,
+    ) -> RunOutcome:
+        return run_mini(plan, self.tmp / name, ScriptedResponder(script, completion_cap=responder_cap))
 
     def run_manifest(
         self,
@@ -157,9 +163,10 @@ class MiniTestCase(unittest.TestCase):
         script: Mapping[str, list[str]] | None = None,
         name: str = "run",
         policy_dir: Path | None = None,
+        responder_cap: int | None = None,
     ) -> tuple[RunPlan, RunOutcome]:
         plan = self.compile(manifest, policy_dir)
-        return plan, self.run_plan(plan, dict(script or DEFAULT_SCRIPT), name)
+        return plan, self.run_plan(plan, dict(script or DEFAULT_SCRIPT), name, responder_cap)
 
     def events(self, outcome: RunOutcome) -> list[dict[str, Any]]:
         lines = (outcome.root / "log.jsonl").read_text(encoding="utf-8").splitlines()

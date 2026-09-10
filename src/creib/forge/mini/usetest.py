@@ -51,9 +51,14 @@ USE_TEST_ID = "mini-use-test-1"
 #: proposer to remove a part from cells that have only one, so its first cells could not be
 #: instantiated at all. Version 2 trusted the proposal's echo of the cell it had been given, so a
 #: seat that copied the rendered port text instead of the cell failed validation for the
-#: rendering's fault; version 3 takes the assigned cell from the assignment. Every break is
-#: recorded in ``docs/mini/USE_TEST.md``.
-METHOD_VERSION = 3
+#: rendering's fault; version 3 takes the assigned cell from the assignment. Version 3 also
+#: showed every mini proposer the documented rules and withheld the code, while arm A was given
+#: both, so an arm difference could be read as an information difference; version 4 shows the
+#: source to the proposer and the critic of arms C, D and E, keeps arm C-rules at the old
+#: reading so the code's absence is measured on its own, and reserves each send's cost before
+#: it is made instead of counting it afterwards. Every break is recorded in
+#: ``docs/mini/USE_TEST.md``.
+METHOD_VERSION = 4
 
 #: The harness functions a subject is built around. Everything they reach is copied with them:
 #: the closure is computed from the source rather than listed, so a subject cannot go stale
@@ -667,34 +672,84 @@ class Ceiling:
     """The resource ceiling every arm shares on one hidden instance.
 
     The protocol's primary causal comparison is at a common ceiling, so the ceiling is counted
-    here rather than trusted to a prompt: an arm that has spent its invocations or its
-    completion tokens is not asked again.
+    here rather than trusted to a prompt. Version 3 counted a call after it had been made, so
+    an arm could finish a cycle it had started and a single enormous reply was paid for before
+    anything noticed (USE_TEST break 2). A call and its completion allowance are reserved
+    before the send instead, and ``completion_tokens_per_call`` is the same figure the request
+    carries as its own cap, so no reply can be larger than what was reserved for it. An arm
+    that cannot reserve is not asked, and the refusal is typed.
     """
 
     invocations: int = 8
     completion_tokens: int = 12_000
+    completion_tokens_per_call: int = 2_000
     used_invocations: int = 0
     used_prompt_tokens: int = 0
     used_completion_tokens: int = 0
     machine_executions: int = 0
+    refusals: list[dict[str, int | str]] = field(default_factory=list)
 
     @property
     def spent(self) -> bool:
-        return self.used_invocations >= self.invocations or self.used_completion_tokens >= self.completion_tokens
+        return not self.can_reserve
+
+    @property
+    def can_reserve(self) -> bool:
+        """Would the next send's reservation fit? Asked before offering an arm another turn."""
+
+        return (
+            self.used_invocations + 1 <= self.invocations
+            and self.used_completion_tokens + self.completion_tokens_per_call <= self.completion_tokens
+        )
+
+    def reserve(self) -> None:
+        """Take a call and its allowance before the send, or refuse the send."""
+
+        if self.used_invocations + 1 > self.invocations:
+            self.refusals.append({"ceiling": "invocations", "allowed": self.invocations, "spent": self.used_invocations, "reservation": 1})
+            raise MiniError(
+                "MINI_USETEST_CEILING_SPENT",
+                f"the ceiling allows {self.invocations} invocations and {self.used_invocations} have been made; this send was not made",
+            )
+        if self.used_completion_tokens + self.completion_tokens_per_call > self.completion_tokens:
+            self.refusals.append(
+                {
+                    "ceiling": "completion_tokens",
+                    "allowed": self.completion_tokens,
+                    "spent": self.used_completion_tokens,
+                    "reservation": self.completion_tokens_per_call,
+                }
+            )
+            raise MiniError(
+                "MINI_USETEST_CEILING_SPENT",
+                f"the ceiling allows {self.completion_tokens} completion tokens, {self.used_completion_tokens} are spent "
+                f"and this send reserves {self.completion_tokens_per_call}; it was not made",
+            )
+        self.used_invocations += 1
 
     def charge(self, prompt_tokens: int, completion_tokens: int) -> None:
-        self.used_invocations += 1
+        """What a send that was reserved actually returned."""
+
         self.used_prompt_tokens += max(0, prompt_tokens)
         self.used_completion_tokens += max(0, completion_tokens)
 
-    def as_dict(self) -> dict[str, int]:
+    def charge_run(self, calls: int, completion_tokens: int, prompt_tokens: int = 0) -> None:
+        """What a whole mini run spent, reserved inside the run against the same figures."""
+
+        self.used_invocations += max(0, calls)
+        self.used_prompt_tokens += max(0, prompt_tokens)
+        self.used_completion_tokens += max(0, completion_tokens)
+
+    def as_dict(self) -> dict[str, Any]:
         return {
             "invocations_allowed": self.invocations,
             "completion_tokens_allowed": self.completion_tokens,
+            "completion_tokens_per_call": self.completion_tokens_per_call,
             "invocations": self.used_invocations,
             "prompt_tokens": self.used_prompt_tokens,
             "completion_tokens": self.used_completion_tokens,
             "machine_executions": self.machine_executions,
+            "refusals": [dict(item) for item in self.refusals],
         }
 
 
@@ -713,9 +768,17 @@ _PACKET_INSTRUCTION = (
 ARM_A = "A"
 ARM_B = "B"
 ARM_C = "C"
+#: The parity control. Arm C with the proposer that version 3 gave every mini arm: the
+#: documented rules and no code. Beside arm C it says what withholding the source costs on its
+#: own, with the loop, the grid and the ceiling held fixed.
+ARM_C_RULES = "C-rules"
 ARM_D = "D"
 ARM_E = "E"
-ARMS: tuple[str, ...] = (ARM_A, ARM_B, ARM_C, ARM_D, ARM_E)
+ARMS: tuple[str, ...] = (ARM_A, ARM_B, ARM_C, ARM_C_RULES, ARM_D, ARM_E)
+#: The arms that run a mini manifest. The others are a direct audit and an adversary.
+MINI_ARMS: tuple[str, ...] = (ARM_C, ARM_C_RULES, ARM_D, ARM_E)
+#: The arms shown the subject's source, as arm A is. Arm C-rules is the one that is not.
+SOURCE_ARMS: tuple[str, ...] = (ARM_C, ARM_D, ARM_E)
 
 _ARM_A_SYSTEM = (
     "You are auditing one module for defects. You are given its documented rules and its complete source. "
@@ -732,13 +795,34 @@ _ARM_B_SYSTEM = (
 )
 
 
-def _ask(executor: Any, model: str, system: str, user: str, ceiling: Ceiling, schema: dict[str, Any] | None = None) -> str:
-    """One model call, charged against the shared ceiling. The key is read inside the executor."""
+def _ask(
+    executor: Any,
+    model: str,
+    system: str,
+    user: str,
+    ceiling: Ceiling,
+    schema: dict[str, Any] | None = None,
+    think: bool | str | None = False,
+) -> str:
+    """One model call, reserved before it is sent. The key is read inside the executor.
+
+    ``num_predict`` is the same figure the reservation took, so the reply cannot be larger
+    than what was paid for it. ``think`` is passed rather than left to a default: a run whose
+    record cannot name its reasoning setting cannot explain what the setting cost.
+    """
 
     from creib.forge.conformance.executor import ChatRequest
 
+    ceiling.reserve()
     response = executor.complete(
-        ChatRequest(model=model, system=system, user=user, format_schema=schema, options={"temperature": 0, "seed": 7}, think=None)
+        ChatRequest(
+            model=model,
+            system=system,
+            user=user,
+            format_schema=schema,
+            options={"temperature": 0, "seed": 7, "num_predict": ceiling.completion_tokens_per_call},
+            think=think,
+        )
     )
     ceiling.charge(response.prompt_eval_count or 0, response.eval_count or 0)
     if not response.usable:
@@ -783,11 +867,13 @@ def rules_text(source: str) -> str:
     return "\n\n".join(parts)
 
 
-def run_arm_a(executor: Any, model: str, subject_path: Path, ceiling: Ceiling) -> tuple[Packet | None, list[dict[str, Any]]]:
+def run_arm_a(
+    executor: Any, model: str, subject_path: Path, ceiling: Ceiling, think: bool | str | None = False
+) -> tuple[Packet | None, list[dict[str, Any]]]:
     """Arm A: rules and code, no execution, one candidate."""
 
     transcript: list[dict[str, Any]] = []
-    reply = _ask(executor, model, _ARM_A_SYSTEM, _brief(subject_path, rules_only=False), ceiling, PACKET_SCHEMA)
+    reply = _ask(executor, model, _ARM_A_SYSTEM, _brief(subject_path, rules_only=False), ceiling, PACKET_SCHEMA, think=think)
     transcript.append({"phase": "report", "reply": reply})
     return packet_from(reply, "", ARM_A, model), transcript
 
@@ -797,13 +883,22 @@ def run_arm_b(
     model: str,
     subject_path: Path,
     ceiling: Ceiling,
-    rounds: int = 4,
+    rounds: int | None = None,
+    think: bool | str | None = False,
 ) -> tuple[Packet | None, list[dict[str, Any]]]:
     """Arm B: rules, code, and as many machine-run tests as the ceiling allows.
 
     The strongest simple baseline, and the one that matters: it may design any test it likes and
     is told exactly what the code answered. It gets no grid, no critic, no cycles and no seats.
+
+    Version 3 capped this at four rounds whatever the ceiling was, so at any ceiling above four
+    calls arm B was bounded by a constant and the mini arms by the ceiling, which is not a
+    shared ceiling. ``rounds`` now defaults to what the ceiling allows, one call held back for
+    the report.
     """
+
+    if rounds is None:
+        rounds = max(1, ceiling.invocations - 1)
 
     subject = load_subject(subject_path)
     transcript: list[dict[str, Any]] = []
@@ -813,7 +908,7 @@ def run_arm_b(
     for _round in range(rounds):
         if ceiling.spent:
             break
-        reply = _ask(executor, model, _ARM_B_SYSTEM, conversation, ceiling)
+        reply = _ask(executor, model, _ARM_B_SYSTEM, conversation, ceiling, think=think)
         candidate = packet_from(reply, "", ARM_B, model)
         if candidate is not None:
             transcript.append({"phase": "report", "reply": reply})
@@ -844,7 +939,15 @@ def run_arm_b(
         conversation += "\n\n## What the code answered on the tests you asked for\n\n" + json.dumps(results, ensure_ascii=False, indent=2)
     if ceiling.spent:
         return None, transcript
-    reply = _ask(executor, model, _ARM_A_SYSTEM.replace("You cannot run anything: reason from the text. ", ""), conversation, ceiling, PACKET_SCHEMA)
+    reply = _ask(
+        executor,
+        model,
+        _ARM_A_SYSTEM.replace("You cannot run anything: reason from the text. ", ""),
+        conversation,
+        ceiling,
+        PACKET_SCHEMA,
+        think=think,
+    )
     transcript.append({"phase": "report", "reply": reply})
     return packet_from(reply, "", ARM_B, model), transcript
 
@@ -857,6 +960,7 @@ def run_arm_b(
 SUBJECT_ENV = "MINI_USETEST_SUBJECT"
 
 RULES_KIND = "mini.usetest-rules.v1"
+SOURCE_KIND = "mini.usetest-source.v1"
 EXECUTION_KIND = "mini.usetest-execution.v1"
 PROPOSAL_PREFIX = "mini.pair-proposal."
 
@@ -886,6 +990,27 @@ def _rules_seat(context: Any) -> str:
         {
             "body": text,
             "commitments": f"The documented rules of the subject under test, without its code, sha256 {hashlib.sha256(text.encode('utf-8')).hexdigest()}.",
+        },
+        ensure_ascii=False,
+    )
+
+
+def _source_seat(context: Any) -> str:
+    """A machine seat whose artifact is the subject's complete source.
+
+    Arm A is shown the rules and the code. A mini arm that is shown only the rules is a
+    different arm AND a different brief, so a difference between them says nothing about the
+    loop. This seat is what removes that confound: the arms that declare it read what arm A
+    reads, and arm C-rules, which does not declare it, is what the confound costs on its own.
+    """
+
+    import hashlib
+
+    source = bound_subject().read_text(encoding="utf-8")
+    return json.dumps(
+        {
+            "body": source,
+            "commitments": f"The complete source of the subject under test, sha256 {hashlib.sha256(source.encode('utf-8')).hexdigest()}.",
         },
         ensure_ascii=False,
     )
@@ -973,12 +1098,13 @@ def _execution_seat(context: Any) -> str:
 
 
 def register_seats() -> None:
-    """Register the two use-test seats, once."""
+    """Register the three use-test seats, once."""
 
     from .machines import MachineSeat, register_machine_seat, resolve_machine_seat
 
     for kind_id, description, function in (
         (RULES_KIND, "Emits the subject's documented rules, without its code.", _rules_seat),
+        (SOURCE_KIND, "Emits the subject's complete source, as the direct-audit arm is shown it.", _source_seat),
         (EXECUTION_KIND, "Validates each pair against its cell and runs it against the subject.", _execution_seat),
     ):
         try:
@@ -992,9 +1118,22 @@ register_seats()
 
 # --- the manifests the mini arms run, generated per instance from the frozen grid ---
 
-_PROPOSER_INSTRUCTION = (
+#: What a proposer is told it can see. The rest of the instruction is one text for both, so the
+#: only difference between an arm shown the source and arm C-rules is the source itself.
+_SHOWN_RULES_ONLY = (
     "You are shown the documented rules of the checks under test, not their code, and ONE cell of a frozen grid under "
-    "'The cell to cover'. The notation: fence[ ... ] is a code fence, a line of three backticks before and after, "
+    "'The cell to cover'. "
+)
+
+_SHOWN_WITH_SOURCE = (
+    "You are shown the documented rules of the checks under test, their complete source under 'The source of the "
+    "checks', and ONE cell of a frozen grid under 'The cell to cover'. Read both: what you are looking for is a place "
+    "where the code does something the rule as written does not allow, and the expectation you commit to is still the "
+    "rule's, never the code's. "
+)
+
+_PROPOSER_BODY = (
+    "The notation: fence[ ... ] is a code fence, a line of three backticks before and after, "
     "holding one part per line in the order given; S is one plain sentence such as 'Here is the result:'; A, B and C "
     "are small JSON objects different from each other, such as {\"a\": 1}, {\"b\": 2}, {\"c\": 3}; anything after the "
     "closing bracket comes after the closing fence line, one part per line. Build the input exactly from the cell, "
@@ -1011,7 +1150,21 @@ _PROPOSER_INSTRUCTION = (
     '"rewritten", "rewrite" and "cell" as fields of its own, each a plain string, and the cell exactly as it was named.'
 )
 
+
+def proposer_instruction(shows_source: bool) -> str:
+    """The proposer's brief, differing only in what it says the seat has been given."""
+
+    return (_SHOWN_WITH_SOURCE if shows_source else _SHOWN_RULES_ONLY) + _PROPOSER_BODY
+
 _CRITIC_INSTRUCTION = (
+    "Do not propose. You are shown the documented rules and the complete source of the checks. Read this cycle's "
+    "executions beside the proposals: say which expectations held, which failed, which inputs the validator threw away "
+    "and why, and for each failure whether the proposer misread the rule or the rule as written and the code part "
+    "company — quote the rule's words and name the line of code. Say what a proposer should build next. Cite nothing "
+    "you were not shown."
+)
+
+_CRITIC_INSTRUCTION_RULES_ONLY = (
     "Do not propose. Read this cycle's executions beside the proposals: say which expectations held, which failed, "
     "which inputs the validator threw away and why, and what a proposer should build next. Cite nothing you were not "
     "shown."
@@ -1020,19 +1173,22 @@ _CRITIC_INSTRUCTION = (
 _LONG_FIELDS = ("input", "rewritten", "rewrite", "cell")
 
 
-def _proposal_kind(kind_id: str, cell_port: str) -> dict[str, Any]:
+def _proposal_kind(kind_id: str, cell_port: str, shows_source: bool) -> dict[str, Any]:
+    ports = [
+        {"port_id": "problem", "port_type": "problem", "window": "all"},
+        {"port_id": "rules", "port_type": "usetest_rules", "window": "this_cycle"},
+    ]
+    if shows_source:
+        ports.append({"port_id": "source", "port_type": "usetest_source", "window": "this_cycle"})
+    ports.append({"port_id": "cell", "port_type": cell_port, "window": "this_cycle"})
     return {
         "kind_id": kind_id,
         "title": "Proposal",
         "optional_fields": list(_LONG_FIELDS),
         "commitment_call": "single",
-        "input_ports": [
-            {"port_id": "problem", "port_type": "problem", "window": "all"},
-            {"port_id": "rules", "port_type": "usetest_rules", "window": "this_cycle"},
-            {"port_id": "cell", "port_type": cell_port, "window": "this_cycle"},
-        ],
+        "input_ports": ports,
         "output_port": {"port_id": "out", "produces_kind": kind_id},
-        "instruction": _PROPOSER_INSTRUCTION,
+        "instruction": proposer_instruction(shows_source),
         "format": {
             "commitments": {
                 "all_of": [
@@ -1062,11 +1218,24 @@ PROBLEM = (
 )
 
 
-def arm_manifest(arm: str, instance_id: str, cycles: int, max_calls: int) -> dict[str, Any]:
-    """The manifest one mini arm runs on one instance: core, full, or full with attention on."""
+def arm_manifest(
+    arm: str,
+    instance_id: str,
+    cycles: int,
+    max_calls: int,
+    max_completion_tokens: int | None = None,
+    completion_tokens_per_call: int | None = None,
+) -> dict[str, Any]:
+    """The manifest one mini arm runs on one instance: core, full, or full with attention on.
 
-    if arm not in (ARM_C, ARM_D, ARM_E):
-        raise MiniError("MINI_USETEST_PLAN_INVALID", f"{arm!r} is not a mini arm; those are {ARM_C}, {ARM_D}, {ARM_E}")
+    Every arm but ``C-rules`` declares the source seat, so its proposer and its critic read
+    what the direct-audit arm reads. ``C-rules`` is arm C with that seat removed and nothing
+    else changed, which is what makes it a control on the brief rather than on the loop.
+    """
+
+    if arm not in MINI_ARMS:
+        raise MiniError("MINI_USETEST_PLAN_INVALID", f"{arm!r} is not a mini arm; those are {', '.join(MINI_ARMS)}")
+    shows_source = arm in SOURCE_ARMS
     proposal_kind = "mini.pair-proposal.usetest.v1"
     cell_kind = "mini.next-cell.1.v1"
     port_types = [
@@ -1076,21 +1245,30 @@ def arm_manifest(arm: str, instance_id: str, cycles: int, max_calls: int) -> dic
         {"port_type": "executions", "draws_from": {"artifact_kinds": [EXECUTION_KIND]}, "render": {"rule": "list_bodies_and_commitments", "header": "Executions"}},
         {"port_type": "criticisms", "draws_from": {"artifact_kinds": ["mini.criticism.v1"]}, "render": {"rule": "list_bodies", "header": "Criticisms"}},
     ]
+    if shows_source:
+        port_types.insert(
+            1,
+            {"port_type": "usetest_source", "draws_from": {"artifact_kinds": [SOURCE_KIND]}, "render": {"rule": "list_bodies", "header": "The source of the checks"}},
+        )
     kinds: list[dict[str, Any]] = [
         {"kind_id": RULES_KIND, "title": "Rules", "input_ports": [], "output_port": {"port_id": "out", "produces_kind": RULES_KIND}},
         {"kind_id": cell_kind, "title": "Next cell", "input_ports": [], "output_port": {"port_id": "out", "produces_kind": cell_kind}},
-        _proposal_kind(proposal_kind, "cell_1"),
+        _proposal_kind(proposal_kind, "cell_1", shows_source),
         {"kind_id": EXECUTION_KIND, "title": "Execution", "input_ports": [{"port_id": "proposals", "port_type": "proposals", "window": "this_cycle"}], "output_port": {"port_id": "out", "produces_kind": EXECUTION_KIND}},
         {"kind_id": "mini.verdict.v1", "title": "Verdict", "input_ports": [{"port_id": "executions", "port_type": "executions", "window": "this_cycle"}], "output_port": {"port_id": "out", "produces_kind": "mini.verdict.v1"}},
     ]
+    proposer_ports = ["problem", "rules"] + (["source"] if shows_source else []) + ["cell"]
     stages: list[dict[str, Any]] = [
         {"stage_id": "rules", "kind_id": RULES_KIND, "seat": "machine", "ports": []},
         {"stage_id": "cell", "kind_id": cell_kind, "seat": "machine", "ports": []},
-        {"stage_id": "propose", "kind_id": proposal_kind, "ports": ["problem", "rules", "cell"]},
+        {"stage_id": "propose", "kind_id": proposal_kind, "ports": list(proposer_ports)},
         {"stage_id": "execute", "kind_id": EXECUTION_KIND, "seat": "machine", "ports": ["proposals"]},
         {"stage_id": "verdict", "kind_id": "mini.verdict.v1", "seat": "machine", "ports": ["executions"]},
         {"stage_id": "end", "end": True},
     ]
+    if shows_source:
+        kinds.insert(1, {"kind_id": SOURCE_KIND, "title": "Source", "input_ports": [], "output_port": {"port_id": "out", "produces_kind": SOURCE_KIND}})
+        stages.insert(1, {"stage_id": "source", "kind_id": SOURCE_KIND, "seat": "machine", "ports": []})
     if arm in (ARM_D, ARM_E):
         # Full mini: the proposer is fed what the run has done, and a critic reads each cycle.
         proposal = next(kind for kind in kinds if kind["kind_id"] == proposal_kind)
@@ -1101,34 +1279,56 @@ def arm_manifest(arm: str, instance_id: str, cycles: int, max_calls: int) -> dic
                 {"port_id": "criticisms", "port_type": "criticisms", "window": "previous_cycle"},
             ]
         )
-        next(stage for stage in stages if stage["stage_id"] == "propose")["ports"] = [
-            "problem",
-            "rules",
-            "cell",
+        next(stage for stage in stages if stage["stage_id"] == "propose")["ports"] = list(proposer_ports) + [
             "earlier",
             "executions",
             "criticisms",
         ]
+        critic_ports = [
+            {"port_id": "problem", "port_type": "problem", "window": "all"},
+            {"port_id": "rules", "port_type": "usetest_rules", "window": "this_cycle"},
+        ]
+        if shows_source:
+            critic_ports.append({"port_id": "source", "port_type": "usetest_source", "window": "this_cycle"})
+        critic_ports.extend(
+            [
+                {"port_id": "proposals", "port_type": "proposals", "window": "this_cycle"},
+                {"port_id": "executions", "port_type": "executions", "window": "this_cycle"},
+            ]
+        )
         kinds.append(
             {
                 "kind_id": "mini.criticism.v1",
                 "title": "Criticism",
-                "input_ports": [
-                    {"port_id": "problem", "port_type": "problem", "window": "all"},
-                    {"port_id": "rules", "port_type": "usetest_rules", "window": "this_cycle"},
-                    {"port_id": "proposals", "port_type": "proposals", "window": "this_cycle"},
-                    {"port_id": "executions", "port_type": "executions", "window": "this_cycle"},
-                ],
+                "input_ports": critic_ports,
                 "output_port": {"port_id": "out", "produces_kind": "mini.criticism.v1"},
-                "instruction": _CRITIC_INSTRUCTION,
+                "instruction": _CRITIC_INSTRUCTION if shows_source else _CRITIC_INSTRUCTION_RULES_ONLY,
             }
         )
-        stages.insert(4, {"stage_id": "criticise", "kind_id": "mini.criticism.v1", "ports": ["problem", "rules", "proposals", "executions"]})
+        stages.append(
+            {
+                "stage_id": "criticise",
+                "kind_id": "mini.criticism.v1",
+                "ports": [port["port_id"] for port in critic_ports],
+            }
+        )
+        # The critic reads what this cycle executed, so it runs after the execution and before
+        # the verdict, wherever the source stage put the earlier ones.
+        criticise = stages.pop()
+        stages.insert([stage["stage_id"] for stage in stages].index("verdict"), criticise)
     manifest: dict[str, Any] = {
         "schema_version": "creib.mini.manifest.v1",
         "manifest_id": f"mini.usetest.{instance_id}.arm-{arm.lower()}",
         "problem": PROBLEM,
-        "cycles": {"max_cycles": cycles, "max_calls": max_calls},
+        "cycles": {
+            "max_cycles": cycles,
+            "max_calls": max_calls,
+            **(
+                {}
+                if max_completion_tokens is None
+                else {"max_completion_tokens": max_completion_tokens, "completion_tokens_per_call": completion_tokens_per_call}
+            ),
+        },
         "port_types": port_types,
         "kinds": kinds,
         "stages": stages,

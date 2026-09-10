@@ -27,6 +27,7 @@ from .log import (
     BLOBS_DIR,
     EVIDENCE_BATCHED,
     FORMAT_FAILURE,
+    BUDGET_REFUSED,
     PORT_EMPTY,
     LOG_NAME,
     REFUSED,
@@ -82,6 +83,10 @@ class RunOutcome:
     stop_reason: str
     stages_entered: tuple[str, ...]
     cycles_completed: int = 0
+    #: Sends made and completion tokens returned, refused replies included, as the budget
+    #: counted them at the moment each send was reserved.
+    calls: int = 0
+    completion_tokens: int = 0
 
 
 class _Recorder:
@@ -517,6 +522,7 @@ def _attempt_submission(
     cycle: int = 0,
     phase: str = PHASE_BOTH,
     earlier_calls: Sequence[Mapping[str, Any]] = (),
+    budget: _CallBudget | None = None,
 ) -> AttemptOutcome | None:
     """Ask the seat, and keep every reply — the refused ones included.
 
@@ -533,6 +539,17 @@ def _attempt_submission(
     refused_refs: list[str] = []
     usage: list[dict[str, Any]] = []
     for attempt in range(policy.retries + 1):
+        # A retry is a send and costs what a send costs, so the reservation is read here and
+        # not once per stage. A reservation that does not fit ends the attempt loop before
+        # anything is sent; the caller reads the budget and stops the run.
+        if budget is not None and not budget.reserve():
+            recorder.emit(
+                BUDGET_REFUSED,
+                {"attempt": attempt, "phase": phase, "seat": stage.seat, **dict(budget.refused or {})},
+                stage_id=stage.stage_id,
+                kind_id=kind.kind_id,
+            )
+            return None
         # The rendered format is already in the brief, on every attempt; a retry
         # adds the error BESIDE it rather than in place of it.
         shown = brief if attempt == 0 else brief + "\n\n## The last reply was refused, for these reasons\n" + "\n".join(reasons)
@@ -548,6 +565,8 @@ def _attempt_submission(
             )
         )
         reply_ref = blobs.put(reply.text.encode("utf-8"))
+        if budget is not None:
+            budget.charge(reply.completion_tokens)
         usage.append({"attempt": attempt, "prompt_tokens": reply.prompt_tokens, "completion_tokens": reply.completion_tokens})
         try:
             submission = read_submission(reply.text, kind, phase)
@@ -621,6 +640,54 @@ def machine_responder(plan: RunPlan, state: MiniState, blobs: BlobStore, stage: 
 
     seat = resolve_machine_seat(str(stage.kind_id))
     return MachineResponder(seat, MachineContext(plan=plan, state=state, blobs=blobs, stage=stage, cycle=cycle))
+
+
+@dataclass
+class _CallBudget:
+    """What a send costs, taken out of the budget before the send is made.
+
+    The cycle cap and the call cap are read between cycles, so a cycle that starts under
+    budget can finish over it: mini charged what a call cost only after it had been made, and
+    a reply far larger than anything expected was already paid for by the time anyone counted
+    (USE_TEST break 2, the audit's F-H). A reservation is read before every send instead. A
+    call and its declared completion allowance are taken first, and a send whose reservation
+    does not fit is not made at all, so a shared ceiling is a fact about the run rather than
+    about its schedule. ``spent_reason`` names which reservation failed and is read by the run
+    loop, which stops there; nothing is recorded for the stage whose send was never made.
+    """
+
+    max_calls: int | None
+    max_completion_tokens: int | None
+    completion_tokens_per_call: int | None
+    calls: int = 0
+    completion_tokens: int = 0
+    spent_reason: str | None = None
+    refused: dict[str, Any] | None = None
+
+    def reserve(self) -> bool:
+        """Take a call and its allowance, or say which ceiling the reservation would cross."""
+
+        if self.max_calls is not None and self.calls + 1 > self.max_calls:
+            self.spent_reason = "call_budget_spent"
+            self.refused = {"ceiling": "max_calls", "allowed": self.max_calls, "spent": self.calls, "reservation": 1}
+            return False
+        if self.max_completion_tokens is not None and self.completion_tokens_per_call is not None:
+            if self.completion_tokens + self.completion_tokens_per_call > self.max_completion_tokens:
+                self.spent_reason = "completion_budget_spent"
+                self.refused = {
+                    "ceiling": "max_completion_tokens",
+                    "allowed": self.max_completion_tokens,
+                    "spent": self.completion_tokens,
+                    "reservation": self.completion_tokens_per_call,
+                }
+                return False
+        self.calls += 1
+        return True
+
+    def charge(self, completion_tokens: int) -> None:
+        """What the send actually returned, which the next reservation is read against."""
+
+        self.completion_tokens += max(0, completion_tokens)
 
 
 def _host_stop(plan: RunPlan, state: MiniState, cycle: int, calls: int) -> str | None:
@@ -710,12 +777,29 @@ def run_mini(
     )
     _batch_evidence(plan, blobs, recorder)
 
-    calls = 0
+    # A completion budget is a reservation, and a reservation only bounds anything if the reply
+    # it pays for is capped at the same figure on the wire. A plan that declares one and a
+    # responder that does not enforce it would record a ceiling the run could walk straight
+    # through, so the two are checked against each other before the first send.
+    if plan.cycles.completion_tokens_per_call is not None:
+        cap = getattr(responder, "completion_cap", None)
+        if cap != plan.cycles.completion_tokens_per_call:
+            raise MiniError(
+                "MINI_COMPLETION_CAP_UNENFORCED",
+                f"the plan reserves {plan.cycles.completion_tokens_per_call} completion tokens for each send and the "
+                f"responder caps a reply at {cap!r}; a reservation nothing enforces is not a ceiling",
+            )
+
+    budget = _CallBudget(
+        max_calls=plan.cycles.max_calls,
+        max_completion_tokens=plan.cycles.max_completion_tokens,
+        completion_tokens_per_call=plan.cycles.completion_tokens_per_call,
+    )
     cycle = 0
     stop_reason = "cycle_cap"
     while True:
         cycle += 1
-        stop = _host_stop(plan, state, cycle, calls)
+        stop = _host_stop(plan, state, cycle, budget.calls)
         if stop is not None:
             stop_reason = stop
             break
@@ -770,13 +854,18 @@ def run_mini(
             brief, exposed = render_brief(plan, state, blobs, stage, cycle)
             seat_responder = machine_responder(plan, state, blobs, stage, cycle) if machine else responder
             first_phase = PHASE_BODY if two_calls else PHASE_BOTH
+            # A machine seat calls no model and reserves nothing; the budget counts sends as
+            # they are made, so a retry that succeeded is one call and not two (audit F3).
+            stage_budget = None if machine else budget
             attempt = _attempt_submission(
-                plan, recorder, seat_responder, stage, kind, brief, blobs, cycle, first_phase
+                plan, recorder, seat_responder, stage, kind, brief, blobs, cycle, first_phase, budget=stage_budget
             )
-            # The host's budget counts what was actually invoked, so a retry
-            # that succeeded is not counted as one call (audit F3).
-            if not machine:
-                calls += attempt.invocations if attempt is not None else kind.failure_policy.retries + 1
+            if budget.spent_reason is not None:
+                # The send was never made, so this stage produced nothing and nothing about it
+                # is recorded beyond the reservation that did not fit.
+                stop_reason = budget.spent_reason
+                halted = True
+                break
             calls_made: list[dict[str, Any]] = []
             if attempt is not None:
                 calls_made.append(_call_record(first_phase, attempt))
@@ -785,9 +874,12 @@ def run_mini(
                     plan, kind, attempt.submission.body, state, blobs, stage, cycle
                 )
                 second = _attempt_submission(
-                    plan, recorder, seat_responder, stage, kind, second_brief, blobs, cycle, PHASE_COMMITMENTS, calls_made
+                    plan, recorder, seat_responder, stage, kind, second_brief, blobs, cycle, PHASE_COMMITMENTS, calls_made, budget=stage_budget
                 )
-                calls += second.invocations if second is not None else kind.failure_policy.retries + 1
+                if budget.spent_reason is not None:
+                    stop_reason = budget.spent_reason
+                    halted = True
+                    break
                 if second is None:
                     attempt = None
                 else:
@@ -844,7 +936,18 @@ def run_mini(
         if halted:
             break
 
-    recorder.emit(RUN_ENDED, {"stop_reason": stop_reason, "cycles_completed": max(cycle - 1, 0)})
+    # What the run spent, counted as it was spent: every send, refused replies included, and
+    # every completion token that came back. ``tokens_by_kind`` counts only what was accepted,
+    # so a run that paid for replies it turned away could not say so from the state alone.
+    recorder.emit(
+        RUN_ENDED,
+        {
+            "stop_reason": stop_reason,
+            "cycles_completed": max(cycle - 1, 0),
+            "calls": budget.calls,
+            "completion_tokens": budget.completion_tokens,
+        },
+    )
     return RunOutcome(
         run_id=plan.run_id,
         root=root,
@@ -853,4 +956,6 @@ def run_mini(
         stop_reason=stop_reason,
         stages_entered=tuple(state.stages_entered),
         cycles_completed=max(cycle - 1, 0),
+        calls=budget.calls,
+        completion_tokens=budget.completion_tokens,
     )

@@ -50,6 +50,7 @@ EVIDENCE_BATCHED = "EVIDENCE_BATCHED"
 ROUTED = "ROUTED"
 ATTENTION_CHOSE = "ATTENTION_CHOSE"
 PORT_EMPTY = "PORT_EMPTY"
+BUDGET_REFUSED = "BUDGET_REFUSED"
 RUN_ENDED = "RUN_ENDED"
 
 EVENT_TYPES: tuple[str, ...] = (
@@ -63,6 +64,7 @@ EVENT_TYPES: tuple[str, ...] = (
     ROUTED,
     ATTENTION_CHOSE,
     PORT_EMPTY,
+    BUDGET_REFUSED,
     RUN_ENDED,
 )
 
@@ -285,6 +287,10 @@ class MiniState:
     attention_choices: list[dict[str, Any]] = field(default_factory=list)
     stage_coordinates: list[list[Any]] = field(default_factory=list)
     empty_ports: list[dict[str, Any]] = field(default_factory=list)
+    #: Every send a reservation refused, in order: the ceiling it would have crossed, what was
+    #: already spent, and what the send would have taken. A run that stopped on its budget can
+    #: be read back and say which one, and how much was left.
+    budget_refusals: list[dict[str, Any]] = field(default_factory=list)
     ended: bool = False
     stop_reason: str = ""
 
@@ -310,6 +316,7 @@ class MiniState:
             "attention_choices": list(self.attention_choices),
             "stage_coordinates": list(self.stage_coordinates),
             "empty_ports": list(self.empty_ports),
+            "budget_refusals": list(self.budget_refusals),
             "ended": self.ended,
             "stop_reason": self.stop_reason,
         }
@@ -381,6 +388,8 @@ def apply_event(state: MiniState, event: Event) -> None:
             state.pushed.setdefault(key, []).append(artifact_id)
     elif event.type == PORT_EMPTY:
         state.empty_ports.append({"cycle": event.cycle, "stage_id": event.stage_id, **payload})
+    elif event.type == BUDGET_REFUSED:
+        state.budget_refusals.append({"cycle": event.cycle, "stage_id": event.stage_id, **payload})
     elif event.type == ATTENTION_CHOSE:
         state.attention_choices.append({"policy": payload.get("policy"), "chosen": payload.get("chosen")})
     elif event.type == RUN_ENDED:

@@ -147,17 +147,40 @@ class PacketTests(MiniTestCase):
         self.assertIsNone(usetest.packet_from({"claim": "", "observed": ""}, "i1", usetest.ARM_A, "m"))
 
     def test_the_ceiling_is_counted_and_not_trusted_to_a_prompt(self) -> None:
-        ceiling = usetest.Ceiling(invocations=2, completion_tokens=100)
+        ceiling = usetest.Ceiling(invocations=2, completion_tokens=100, completion_tokens_per_call=40)
+        ceiling.reserve()
         ceiling.charge(10, 40)
         self.assertFalse(ceiling.spent)
+        ceiling.reserve()
         ceiling.charge(10, 40)
         self.assertTrue(ceiling.spent, "the invocations are spent")
         self.assertEqual(ceiling.as_dict()["completion_tokens"], 80)
 
+    def test_a_send_whose_reservation_will_not_fit_is_not_made(self) -> None:
+        """The ceiling as a fact about the run, not about its schedule (USE_TEST break 2)."""
+
+        ceiling = usetest.Ceiling(invocations=9, completion_tokens=100, completion_tokens_per_call=40)
+        for _ in range(3):
+            ceiling.reserve()
+            ceiling.charge(0, 30)
+        self.assertFalse(ceiling.can_reserve, "90 spent, 40 reserved, 100 allowed: the fourth send does not fit")
+        with self.assertRaises(MiniError) as caught:
+            ceiling.reserve()
+        self.assertEqual(caught.exception.code, "MINI_USETEST_CEILING_SPENT")
+        self.assertEqual(ceiling.used_invocations, 3, "the refused send was never made")
+        self.assertEqual(ceiling.as_dict()["refusals"][0]["ceiling"], "completion_tokens")
+
+    def test_an_invocation_is_taken_before_the_send_and_not_after_it(self) -> None:
+        ceiling = usetest.Ceiling(invocations=1, completion_tokens=10_000, completion_tokens_per_call=100)
+        ceiling.reserve()
+        with self.assertRaises(MiniError):
+            ceiling.reserve()
+        self.assertEqual(ceiling.as_dict()["refusals"][0], {"ceiling": "invocations", "allowed": 1, "spent": 1, "reservation": 1})
+
 
 class ArmTests(MiniTestCase):
     def test_each_mini_arm_compiles_and_costs_what_the_protocol_says(self) -> None:
-        for arm, calls in ((usetest.ARM_C, 1), (usetest.ARM_D, 2), (usetest.ARM_E, 2)):
+        for arm, calls in ((usetest.ARM_C, 1), (usetest.ARM_C_RULES, 1), (usetest.ARM_D, 2), (usetest.ARM_E, 2)):
             with self.subTest(arm=arm):
                 manifest = usetest.arm_manifest(arm, "i1", cycles=7, max_calls=7)
                 path = self.tmp / f"{arm}.json"
@@ -167,6 +190,69 @@ class ArmTests(MiniTestCase):
                 self.assertEqual(len(model_stages), calls, "the core spends one call a cycle and the full loop two")
         self.assertNotIn("attention", usetest.arm_manifest(usetest.ARM_D, "i1", 7, 7))
         self.assertEqual(usetest.arm_manifest(usetest.ARM_E, "i1", 7, 7)["attention"]["policy"], "mini.attention.most-unanswered-criticisms")
+
+    def test_every_arm_but_the_control_reads_what_the_direct_audit_arm_reads(self) -> None:
+        """Information parity: arm A is shown the source, so C, D and E are shown it too.
+
+        Arm C-rules is arm C with the source seat taken out and nothing else changed, so the
+        pair says what withholding the code costs with the loop, the grid and the ceiling
+        held fixed.
+        """
+
+        for arm in usetest.SOURCE_ARMS:
+            with self.subTest(arm=arm):
+                manifest = usetest.arm_manifest(arm, "i1", cycles=7, max_calls=7)
+                stages = {stage["stage_id"]: stage for stage in manifest["stages"]}
+                self.assertIn("source", stages)
+                self.assertEqual(stages["source"]["kind_id"], usetest.SOURCE_KIND)
+                proposer = next(kind for kind in manifest["kinds"] if kind["kind_id"].startswith("mini.pair-proposal."))
+                self.assertIn("source", [port["port_id"] for port in proposer["input_ports"]])
+                self.assertIn("source", stages["propose"]["ports"])
+                critic = next((kind for kind in manifest["kinds"] if kind["kind_id"] == "mini.criticism.v1"), None)
+                if critic is not None:
+                    self.assertIn("source", [port["port_id"] for port in critic["input_ports"]])
+                    self.assertIn("source", stages["criticise"]["ports"])
+
+        control = usetest.arm_manifest(usetest.ARM_C_RULES, "i1", cycles=7, max_calls=7)
+        self.assertNotIn("source", [stage["stage_id"] for stage in control["stages"]])
+        self.assertNotIn(usetest.SOURCE_KIND, [kind["kind_id"] for kind in control["kinds"]])
+        proposer = next(kind for kind in control["kinds"] if kind["kind_id"].startswith("mini.pair-proposal."))
+        self.assertNotIn("source", [port["port_id"] for port in proposer["input_ports"]])
+
+    def test_the_control_and_its_arm_differ_only_in_what_the_brief_says_it_was_given(self) -> None:
+        shown, withheld = usetest.proposer_instruction(True), usetest.proposer_instruction(False)
+        self.assertIn("their complete source", shown)
+        self.assertIn("not their code", withheld)
+        tail = "The notation:"
+        self.assertEqual(shown[shown.index(tail):], withheld[withheld.index(tail):], "one text, two openings")
+
+    def test_the_source_seat_emits_the_subject_and_the_rules_seat_does_not(self) -> None:
+        path = self.tmp / "subject.py"
+        path.write_text(usetest.subject_source(), encoding="utf-8")
+        os.environ[usetest.SUBJECT_ENV] = str(path)
+        try:
+            source = json.loads(usetest._source_seat(None))["body"]
+            rules = json.loads(usetest._rules_seat(None))["body"]
+        finally:
+            os.environ.pop(usetest.SUBJECT_ENV, None)
+        self.assertIn("def recover_json_object", source)
+        self.assertIn("return", source, "the source seat emits code")
+        self.assertNotIn("    return", rules, "the rules seat emits no code")
+
+    def test_a_mini_arm_may_declare_the_reservation_and_compiles_with_it(self) -> None:
+        manifest = usetest.arm_manifest(
+            usetest.ARM_C, "i1", cycles=20, max_calls=40, max_completion_tokens=80_000, completion_tokens_per_call=2_000
+        )
+        self.assertEqual(manifest["cycles"]["completion_tokens_per_call"], 2_000)
+        path = self.tmp / "reserved.json"
+        path.write_text(json.dumps(manifest), encoding="utf-8")
+        plan = compile_manifest(path)
+        self.assertEqual((plan.cycles.max_completion_tokens, plan.cycles.completion_tokens_per_call), (80_000, 2_000))
+
+    def test_an_arm_that_is_not_an_arm_is_refused(self) -> None:
+        with self.assertRaises(MiniError) as caught:
+            usetest.arm_manifest("A", "i1", 7, 7)
+        self.assertEqual(caught.exception.code, "MINI_USETEST_PLAN_INVALID")
 
     def test_the_execution_seat_refuses_when_no_subject_is_bound(self) -> None:
         os.environ.pop(usetest.SUBJECT_ENV, None)
@@ -183,7 +269,7 @@ class ArmTests(MiniTestCase):
         os.environ[usetest.SUBJECT_ENV] = str(subject)
         try:
             manifest = usetest.arm_manifest(usetest.ARM_C, "i1", cycles=2, max_calls=2)
-            self.assertEqual(usetest.METHOD_VERSION, 3, "a changed method starts a new block")
+            self.assertEqual(usetest.METHOD_VERSION, 4, "a changed method starts a new block")
             # The machine hands out the grid's first cell, so a conforming proposal builds that
             # one; a proposal that builds another cell is not conforming however good it is.
             conforming = submission(

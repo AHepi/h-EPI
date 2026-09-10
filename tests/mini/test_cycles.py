@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import copy
 
-from creib.forge.mini.log import ARTIFACT_SUBMITTED, RUN_ENDED, STAGE_ENTERED, replay
+from creib.forge.mini.common import MiniError
+from creib.forge.mini.log import ARTIFACT_SUBMITTED, BUDGET_REFUSED, RUN_ENDED, STAGE_ENTERED, replay
 from creib.forge.mini.stops import (
     STOP_NEVER,
     STOP_NO_ARTIFACT_LAST_CYCLE,
@@ -65,15 +66,72 @@ class TheHostStopsTests(MiniTestCase):
         self.assertEqual(outcome.stop_reason, "cycle_cap")
         self.assertEqual(self.events_of(outcome, RUN_ENDED)[0]["payload"]["cycles_completed"], 2)
 
-    def test_the_budget_cap_stops_the_run_before_a_cycle_not_inside_one(self) -> None:
-        """Two calls per artifact, so one cycle of two stages costs four."""
+    def test_the_budget_cap_still_stops_the_run_at_a_cycle_boundary(self) -> None:
+        """Two calls per artifact, so one cycle of two stages costs four.
+
+        A cap the cycle boundary lands exactly on is read between cycles, as it always was:
+        the reservation below never comes into it, because there is no send to refuse.
+        """
+
+        manifest = base_manifest()
+        manifest["cycles"] = {"max_cycles": 10, "max_calls": 4}
+        _, outcome = self.run_manifest(manifest, _script(10))
+        self.assertEqual(outcome.stop_reason, "budget_cap")
+        self.assertEqual(outcome.cycles_completed, 1)
+
+    def test_a_call_cap_inside_a_cycle_refuses_the_send_rather_than_finishing_it(self) -> None:
+        """The boundary that moved.
+
+        Until the reservation existed the call cap was read between cycles only, so a cycle
+        that started under budget finished over it: with five calls allowed and four to a
+        cycle, mini made all eight and stopped afterwards. Now the sixth send is not made.
+        The run stops on the reservation that did not fit, and the record names it.
+        """
 
         manifest = base_manifest()
         manifest["cycles"] = {"max_cycles": 10, "max_calls": 5}
-        _, outcome = self.run_manifest(manifest, _script(10))
-        self.assertEqual(outcome.stop_reason, "budget_cap")
-        self.assertEqual(outcome.cycles_completed, 2)
-        self.assertEqual(len(outcome.stages_entered) % 2, 0)
+        plan, outcome = self.run_manifest(manifest, _script(10))
+        self.assertEqual(outcome.stop_reason, "call_budget_spent")
+        self.assertEqual(outcome.cycles_completed, 1)
+        refused = self.events_of(outcome, BUDGET_REFUSED)
+        self.assertEqual(len(refused), 1)
+        self.assertEqual(refused[0]["payload"]["ceiling"], "max_calls")
+        self.assertEqual((refused[0]["payload"]["allowed"], refused[0]["payload"]["spent"]), (5, 5))
+        state = replay(outcome.root / "log.jsonl", plan.genesis)
+        self.assertEqual(len(state.budget_refusals), 1)
+
+    def test_a_completion_budget_refuses_the_send_whose_allowance_will_not_fit(self) -> None:
+        """A reservation is the declared allowance, and what is charged is what came back."""
+
+        manifest = base_manifest()
+        manifest["cycles"] = {"max_cycles": 10, "max_completion_tokens": 60, "completion_tokens_per_call": 20}
+        _, outcome = self.run_manifest(manifest, _script(10), responder_cap=20)
+        self.assertEqual(outcome.stop_reason, "completion_budget_spent")
+        refused = self.events_of(outcome, BUDGET_REFUSED)[0]["payload"]
+        self.assertEqual(refused["ceiling"], "max_completion_tokens")
+        self.assertEqual(refused["reservation"], 20)
+        self.assertLessEqual(refused["spent"] + refused["reservation"], 60 + 20)
+
+    def test_a_completion_budget_no_responder_enforces_is_refused_before_the_first_send(self) -> None:
+        manifest = base_manifest()
+        manifest["cycles"] = {"max_cycles": 2, "max_completion_tokens": 60, "completion_tokens_per_call": 20}
+        with self.assertRaises(MiniError) as caught:
+            self.run_manifest(manifest, _script(2))
+        self.assertEqual(caught.exception.code, "MINI_COMPLETION_CAP_UNENFORCED")
+
+    def test_a_total_and_a_per_call_allowance_are_declared_together(self) -> None:
+        for cycles in ({"max_completion_tokens": 60}, {"completion_tokens_per_call": 20}):
+            manifest = base_manifest()
+            manifest["cycles"] = {"max_cycles": 2, **cycles}
+            with self.assertRaises(MiniError) as caught:
+                self.compile(manifest)
+            self.assertEqual(caught.exception.code, "MINI_CYCLES_INVALID")
+
+    def test_an_absent_completion_budget_is_written_to_no_manifest(self) -> None:
+        """The rule for anything that adds calls or loosens a check: absent adds no bytes."""
+
+        plan = self.compile(base_manifest())
+        self.assertEqual(sorted(plan.cycles.to_dict()), ["max_calls", "max_cycles", "stop_condition"])
 
     def test_a_registered_stop_condition_stops_the_run(self) -> None:
         manifest = base_manifest()
