@@ -1,0 +1,385 @@
+# Criticism
+
+Do not propose. You are shown the documented rules and the complete source of the checks. Read this cycle's executions beside the proposals: say which expectations held, which failed, which inputs the validator threw away and why, and for each failure whether the proposer misread the rule or the rule as written and the code part company — quote the rule's words and name the line of code. Say what a proposer should build next. Cite nothing you were not shown.
+
+## The problem (problem)
+The checks under test read a model's reply and say what they found in it. You are shown their documented rules and never their code. The question is whether there is a reply, and a single edit of it, on which a check's answer does something the rule as written does not allow. A machine builds nothing and reads no rule: it validates that what you built is the shape you were given, runs the check on both texts, and records what came back. Nothing here decides that anything is a defect.
+
+## The documented rules of the checks (rules)
+[d3f239be8ad7a8ce] (mini.usetest-rules.v1)
+REFUSAL_PHRASES = ['I cannot', "I can't", "I'm sorry", 'I am unable', 'as an AI', 'cannot assist']
+
+def _refuse_float(_text: str):
+    (no docstring)
+
+def _refuse_constant(_text: str):
+    (no docstring)
+
+def _loads_last_wins(candidate: str):
+    Parse JSON that strict parsing refused only because of repeated keys; last value wins.
+
+def recover_json_object(content: str):
+    Project import: extract a JSON object from fences or surrounding prose.
+
+    Every top-level balanced object in the text is a candidate, not only the span from the
+    first ``{`` to the last ``}``: reasoning prose before or after the answer frequently
+    contains stray braces, and an object nested inside another is not a candidate of its own.
+    The object scored is the last one inside a code fence when any fence holds one, else the
+    last top-level object in the text, because a model places its final answer last and marks
+    it: a reply that quotes its previous answer and then gives a corrected one is scored on the
+    correction. Until 9 September 2026 the object with the most keys was taken, ties to the
+    last, and nine cycle replies that dropped a criticised key were scored on the draft that
+    still carried it (``docs/failure-modes.md``, H40). A candidate that parses as strict JSON,
+    or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float,
+    for instance) is passed over, so a final answer refused for a float loses to an earlier
+    draft that parsed (``docs/kernel.md``, P-06).
+
+def _plain_quotes(text: str):
+    Fold typographic apostrophes and quotation marks to their ASCII forms.
+
+    The refusal phrase list is written with straight apostrophes; a model that writes
+    "I’m sorry" is refusing all the same, and the first live refusal in these
+    records was missed for exactly that reason (H22).
+
+def refusal_phrase_in(content: str, refusal_phrases: tuple[str, ...]):
+    The first refusal phrase the text contains, typographic quotes read as straight ones, or None.
+
+def parse_content(content: str, refusal_phrases: tuple[str, ...]):
+    Return (parsed, response_verdict, detail, recovered_from_prose).
+
+    The refusal heuristic decides the verdict only when no object can be recovered; whether a
+    phrase occurred at all is a separate fact, :func:`refusal_phrase_in`, recorded beside a
+    recovered object (H36: a refusal followed by a form is a refusal and a form).
+
+def _normalise_whitespace(value: str):
+    (no docstring)
+
+def _date_range_completions(document: str):
+    (no docstring)
+
+def _span_occurs(span: str, document: str, relaxations: tuple[str, ...]):
+    Return None when the span is not in the document, else how it was matched ("verbatim" or a relaxation).
+
+def k_recovery(text):
+    The object recovered from the reply, as canonical JSON text, or NO_OBJECT.
+
+def k_recovered_from_prose(text):
+    Whether the object had to be recovered from prose or a fence (yes) or read strictly (no).
+
+def k_response_verdict(text):
+    The response verdict for the reply.
+
+def k_refusal_phrase(text):
+    The first listed refusal phrase the reply contains, or NONE.
+
+def _fields(text):
+    (no docstring)
+
+def k_span_occurs(text):
+    Whether a cited span occurs in a document: the input is one JSON object {span, document}.
+
+def k_grounding(text):
+    The grounding verdict: the input is one JSON object {value, span, document}.
+
+## The source of the checks (source)
+[4fd3d18995096efa] (mini.usetest-source.v1)
+"""The code under test. Generated from the conformance harness's own source."""
+
+from __future__ import annotations
+
+import json
+import re
+from typing import Any
+
+from creib.errors import RecordError
+from creib.strict_json import loads_strict
+
+REFUSAL_PHRASES = ['I cannot', "I can't", "I'm sorry", 'I am unable', 'as an AI', 'cannot assist']
+
+_FENCE = re.compile(r"```(?:json|JSON)?\s*(.*?)```", re.DOTALL)
+
+
+def _refuse_float(_text: str) -> Any:
+    raise ValueError("floats are not admitted")
+
+
+def _refuse_constant(_text: str) -> Any:
+    raise ValueError("NaN and Infinity are not admitted")
+
+
+def _loads_last_wins(candidate: str) -> tuple[Any, tuple[str, ...]] | None:
+    """Parse JSON that strict parsing refused only because of repeated keys; last value wins."""
+
+    seen_duplicates: list[str] = []
+
+    def pairs_hook(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        counts: dict[str, int] = {}
+        for key, _ in pairs:
+            counts[key] = counts.get(key, 0) + 1
+        seen_duplicates.extend(key for key, n in counts.items() if n > 1)
+        return dict(pairs)
+
+    try:
+        value = json.loads(candidate, object_pairs_hook=pairs_hook, parse_float=_refuse_float, parse_constant=_refuse_constant)
+    except (ValueError, RecursionError):
+        return None
+    if not seen_duplicates:
+        return None
+    return value, tuple(sorted(set(seen_duplicates)))
+
+
+def recover_json_object(content: str) -> Any:
+    """Project import: extract a JSON object from fences or surrounding prose.
+
+    Every top-level balanced object in the text is a candidate, not only the span from the
+    first ``{`` to the last ``}``: reasoning prose before or after the answer frequently
+    contains stray braces, and an object nested inside another is not a candidate of its own.
+    The object scored is the last one inside a code fence when any fence holds one, else the
+    last top-level object in the text, because a model places its final answer last and marks
+    it: a reply that quotes its previous answer and then gives a corrected one is scored on the
+    correction. Until 9 September 2026 the object with the most keys was taken, ties to the
+    last, and nine cycle replies that dropped a criticised key were scored on the draft that
+    still carried it (``docs/failure-modes.md``, H40). A candidate that parses as strict JSON,
+    or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float,
+    for instance) is passed over, so a final answer refused for a float loses to an earlier
+    draft that parsed (``docs/kernel.md``, P-06).
+    """
+
+    decoder = json.JSONDecoder()
+    fenced: list[str] = []
+    for match in _FENCE.finditer(content):
+        fenced.append(match.group(1))
+    top_level: list[str] = []
+    cursor = 0
+    for index, character in enumerate(content):
+        if character != "{" or index < cursor:
+            continue
+        try:
+            _value, end = decoder.raw_decode(content, index)
+        except (ValueError, RecursionError):
+            continue
+        top_level.append(content[index:end])
+        cursor = end
+    for pool in (fenced, top_level):
+        for candidate in reversed(pool):
+            duplicates: tuple[str, ...] = ()
+            try:
+                value = loads_strict(candidate.strip())
+            except (RecordError, ValueError, RecursionError):
+                # Strict JSON refuses duplicate keys. A reply that is otherwise one well-formed object with a
+                # repeated key is still scoreable: take the last value for each key, and say which keys repeated.
+                parsed = _loads_last_wins(candidate.strip())
+                if parsed is None:
+                    continue
+                value, duplicates = parsed
+            if type(value) is dict:
+                return value, duplicates
+    raise RecordError("no JSON object could be recovered from the response")
+
+
+_TYPOGRAPHIC_QUOTES = str.maketrans({"\u2019": "'", "\u2018": "'", "\u02bc": "'", "\u2032": "'", "\u201c": '"', "\u201d": '"'})
+
+
+def _plain_quotes(text: str) -> str:
+    """Fold typographic apostrophes and quotation marks to their ASCII forms.
+
+    The refusal phrase list is written with straight apostrophes; a model that writes
+    "I\u2019m sorry" is refusing all the same, and the first live refusal in these
+    records was missed for exactly that reason (H22).
+    """
+
+    return text.translate(_TYPOGRAPHIC_QUOTES)
+
+
+def refusal_phrase_in(content: str, refusal_phrases: tuple[str, ...]) -> str | None:
+    """The first refusal phrase the text contains, typographic quotes read as straight ones, or None."""
+
+    lowered = _plain_quotes(content).lower()
+    for phrase in refusal_phrases:
+        if _plain_quotes(phrase).lower() in lowered:
+            return phrase
+    return None
+
+
+def parse_content(content: str, refusal_phrases: tuple[str, ...]) -> tuple[Any, str, str | None, bool]:
+    """Return (parsed, response_verdict, detail, recovered_from_prose).
+
+    The refusal heuristic decides the verdict only when no object can be recovered; whether a
+    phrase occurred at all is a separate fact, :func:`refusal_phrase_in`, recorded beside a
+    recovered object (H36: a refusal followed by a form is a refusal and a form).
+    """
+
+    try:
+        return loads_strict(content), "JSON_OBJECT", None, False
+    except (RecordError, ValueError, RecursionError) as strict_error:
+        try:
+            recovered, duplicates = recover_json_object(content)
+        except RecordError:
+            phrase = refusal_phrase_in(content, refusal_phrases)
+            if phrase is not None:
+                return None, "REFUSAL_SUSPECTED", f"matched refusal phrase {phrase!r}; heuristic", False
+            return None, "INVALID_JSON", str(strict_error), False
+        if duplicates:
+            detail = (
+                f"strict parse failed ({strict_error}); object recovered with duplicate keys "
+                f"{list(duplicates)!r} resolved last-wins"
+            )
+        else:
+            detail = f"strict parse failed ({strict_error}); object recovered from prose"
+        return recovered, "JSON_OBJECT", detail, True
+
+
+def _normalise_whitespace(value: str) -> str:
+    return " ".join(value.split())
+
+
+_RANGE_SEP = r"(?:to|-|\u2013|\u2014|until|through)"
+
+
+_RANGE_SHARED_MONTH = re.compile(r"\b(\d{1,2})\s*" + _RANGE_SEP + r"\s*(\d{1,2})\s+([A-Z][a-z]{2,8})\s+(\d{4})\b")
+
+
+_RANGE_TWO_MONTHS = re.compile(
+    r"\b(?:([A-Z][a-z]{2})\s+)?(\d{1,2})\s+([A-Z][a-z]{2,8})\s*" + _RANGE_SEP + r"\s*(?:([A-Z][a-z]{2})\s+)?(\d{1,2})\s+([A-Z][a-z]{2,8})\s+(\d{4})\b"
+)
+
+
+def _date_range_completions(document: str) -> set[str]:
+    completions: set[str] = set()
+    for d1, d2, month, year in _RANGE_SHARED_MONTH.findall(document):
+        completions.add(f"{d1} {month} {year}")
+        completions.add(f"{d2} {month} {year}")
+    for wd1, d1, m1, wd2, d2, m2, year in _RANGE_TWO_MONTHS.findall(document):
+        completions.add(f"{d1} {m1} {year}")
+        completions.add(f"{d2} {m2} {year}")
+        if wd1:
+            completions.add(f"{wd1} {d1} {m1} {year}")
+        if wd2:
+            completions.add(f"{wd2} {d2} {m2} {year}")
+    return completions
+
+
+def _span_occurs(span: str, document: str, relaxations: tuple[str, ...]) -> str | None:
+    """Return None when the span is not in the document, else how it was matched ("verbatim" or a relaxation)."""
+
+    normal_span, normal_document = span, _normalise_whitespace(document)
+    if normal_span in normal_document:
+        return "verbatim"
+    if "case_insensitive" in relaxations and normal_span.casefold() in normal_document.casefold():
+        return "case_insensitive"
+    if "date_range_completion" in relaxations:
+        completions = _date_range_completions(normal_document)
+        if normal_span in completions or ("case_insensitive" in relaxations and normal_span.casefold() in {c.casefold() for c in completions}):
+            return "date_range_completion"
+    return None
+
+# --- the kernels: each a function of one text, as every arm sees them ---
+
+NO_OBJECT = "NO_OBJECT"
+NO_PHRASE = "NONE"
+UNREADABLE = "UNREADABLE_INPUT"
+
+
+def k_recovery(text):
+    """The object recovered from the reply, as canonical JSON text, or NO_OBJECT."""
+
+    try:
+        value, _duplicates = recover_json_object(text)
+    except RecordError:
+        return NO_OBJECT
+    return json.dumps(value, sort_keys=True, separators=(",", ":"))
+
+
+def k_recovered_from_prose(text):
+    """Whether the object had to be recovered from prose or a fence (yes) or read strictly (no)."""
+
+    return "yes" if parse_content(text, REFUSAL_PHRASES)[3] else "no"
+
+
+def k_response_verdict(text):
+    """The response verdict for the reply."""
+
+    return parse_content(text, REFUSAL_PHRASES)[1]
+
+
+def k_refusal_phrase(text):
+    """The first listed refusal phrase the reply contains, or NONE."""
+
+    return refusal_phrase_in(text, REFUSAL_PHRASES) or NO_PHRASE
+
+
+def _fields(text, *names):
+    try:
+        parsed = loads_strict(text)
+    except RecordError:
+        try:
+            parsed = loads_strict(text, control_characters=True)
+        except RecordError:
+            return None
+    if type(parsed) is not dict or any(type(parsed.get(name)) is not str for name in names):
+        return None
+    return {name: str(parsed[name]) for name in names}
+
+
+def k_span_occurs(text):
+    """Whether a cited span occurs in a document: the input is one JSON object {span, document}."""
+
+    fields = _fields(text, "span", "document")
+    if fields is None:
+        return UNREADABLE
+    matched = _span_occurs(fields["span"], fields["document"], ())
+    return "NOT_IN_DOCUMENT" if matched is None else matched
+
+
+def k_grounding(text):
+    """The grounding verdict: the input is one JSON object {value, span, document}."""
+
+    fields = _fields(text, "value", "span", "document")
+    if fields is None:
+        return UNREADABLE
+    if not fields["span"].strip():
+        return "SPAN_MISSING"
+    if _span_occurs(fields["span"], fields["document"], ()) is None:
+        return "SPAN_NOT_IN_DOCUMENT"
+    if _normalise_whitespace(fields["value"]).casefold() not in _normalise_whitespace(fields["span"]).casefold():
+        return "VALUE_NOT_IN_SPAN"
+    return "GROUNDED"
+
+
+KERNELS = {
+    "recovery": k_recovery,
+    "recovered-from-prose": k_recovered_from_prose,
+    "response-verdict": k_response_verdict,
+    "refusal-phrase": k_refusal_phrase,
+    "span-occurs": k_span_occurs,
+    "grounding": k_grounding,
+}
+
+
+## Proposals so far (proposals)
+[3c4eb2f059b55674] (mini.pair-proposal.usetest.v1)
+The documented rule for recovery says: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' In the original text, the fence holds one object, A, so the rule's answer is A. In the rewritten text, the fence still holds one object, A, and the added B is outside the fence; the rule still selects the last object inside a code fence, which is A. Therefore the recovery answer is unchanged.
+cell: fence[ S A ]
+input: ```
+Here is the result:
+{"a": 1}
+```
+rewrite: added B after the fence
+rewritten: ```
+Here is the result:
+{"a": 1}
+```
+{"b": 2}
+commitments: {"kernel": "recovery", "expect": "unchanged"}
+
+## Executions (executions)
+[7d04f7c8f7904de6] (mini.usetest-execution.v1)
+Executed this cycle's pairs against the subject, after validating each against its cell.
+3c4eb2f059b55674: recovery moved, expected unchanged
+commitments: {"executions": [{"after": "{\"b\":2}", "as_expected": false, "before": "{\"a\":1}", "cell": "fence[ S A ]", "cell_assigned": "fence[ S A ]", "cell_echoed": "fence[ S A ]", "executed": "moved", "expect": "unchanged", "input": "```\nHere is the result:\n{\"a\": 1}\n```", "kernel": "recovery", "proposal": "3c4eb2f059b55674", "rewrite": "added B after the fence", "rewritten": "```\nHere is the result:\n{\"a\": 1}\n```\n{\"b\": 2}", "rewritten_cell": "fence[ S A ] B"}]}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+
+## The last reply was refused, for these reasons
+MINI_SUBMISSION_FIELD_TYPE: submission.citations[0].block must be a non-empty string

@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown the documented rules and the complete source of the checks. Read this cycle's executions beside the proposals: say which expectations held, which failed, which inputs the validator threw away and why, and for each failure whether the proposer misread the rule or the rule as written and the code part company — quote the rule's words and name the line of code. Say what a proposer should build next. Cite nothing you were not shown.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The execution for 4353a77b80936dde was INVALID_INSTANTIATION with detail 'the rewritten text is no cell of the grammar'. The validator threw away the input before running the recovery kernel, so the expectation 'unchanged' was never tested. The proposer misread the cell grammar, not the documented rule. The cell is `fence[ S A ] S`; the rewrite added B after the S following the fence, producing `fence[ S A ] S B`, which is not a cell of that grammar. The rule as written and the code did not part company because the check never ran; the rejection happened before any line of the shown source. The relevant constraint is the cell grammar, which is not part of the documented rules but part of the harness. The proposer should build a rewrite that remains a cell of the grammar `fence[ S A ] S`, for example by changing the S after the fence to a string that contains the JSON object as text, or by changing the A inside the fence, but not by adding a new top-level object outside the fence.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

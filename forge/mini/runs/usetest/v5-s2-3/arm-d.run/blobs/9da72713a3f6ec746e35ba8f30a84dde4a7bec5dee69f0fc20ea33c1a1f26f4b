@@ -1,0 +1,17 @@
+{
+  "body": "The single expectation failed: recovery was expected unchanged but moved from {\"a\":1} to {\"b\":2}. No inputs were discarded; the pair was validated and executed. The proposer did not misread the rule. The rule says 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' The code parts company with that rule. In recover_json_object, fenced candidates are built by fenced.append(match.group(1)), which stores the entire text between fences, not the object inside. When that fenced text is prose plus an object, loads_strict(candidate.strip()) fails, so the fenced pool yields nothing. The code then falls through to the top_level pool, which is built by scanning the whole content for top-level objects and includes objects inside fences as well as outside. The loop for pool in (fenced, top_level): for candidate in reversed(pool): therefore returns the last top-level object in the whole text, here B outside the fence, even though a fence held an object. Next, a proposer should build a minimal pair with a fence containing prose plus an object and an object after the fence, expecting recovery to move to the outside object, to document this rule-code mismatch.",
+  "citations": [
+    {
+      "id": "d3f239be8ad7a8ce",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text."
+    },
+    {
+      "id": "4fd3d18995096efa",
+      "quote": "fenced.append(match.group(1))"
+    },
+    {
+      "id": "4fd3d18995096efa",
+      "quote": "for pool in (fenced, top_level):"
+    }
+  ]
+}

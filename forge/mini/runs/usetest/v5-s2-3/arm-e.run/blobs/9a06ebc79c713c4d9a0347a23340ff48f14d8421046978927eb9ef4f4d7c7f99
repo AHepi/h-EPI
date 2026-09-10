@@ -1,0 +1,20 @@
+# Execution
+
+## Proposals so far (proposals)
+[60affacf58f89364] (mini.pair-proposal.usetest.v1)
+The rule for recover_json_object says: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' For the original cell fence[ A ] A, the only object inside the fence is A, so the rule says recovery is A. For the rewritten cell fence[ A B ] A, the objects inside the fence are A then B; the last one inside the fence is B, so the rule says recovery is B. Therefore the rule says the check's answer should move.
+cell: fence[ A ] A
+input: ```
+{"a": 1}
+```
+{"a": 1}
+rewrite: add {"b": 2} after {"a": 1} inside the fence
+rewritten: ```
+{"a": 1}
+{"b": 2}
+```
+{"a": 1}
+commitments: {"kernel": "recovery", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

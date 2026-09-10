@@ -1,0 +1,20 @@
+# Execution
+
+## Proposals so far (proposals)
+[966776eeca0eddeb] (mini.pair-proposal.usetest.v1)
+For kernel recovery, the rule in recover_json_object states: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' In the original text, the code fence holds the JSON object A, so recovery returns A. In the rewritten text, the fence holds only the sentence S and no JSON object, so the rule falls back to the last top-level object, which is B. Therefore the check's answer moves from A to B.
+cell: fence[ A S ] B
+input: ```
+{"a": 1}
+Here is the result:
+```
+{"b": 2}
+rewrite: remove A
+rewritten: ```
+Here is the result:
+```
+{"b": 2}
+commitments: {"kernel":"recovery","expect":"moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
