@@ -1,0 +1,22 @@
+{
+  "model": "deepseek-v4-pro",
+  "max_tokens": 32000,
+  "subject": "/home/user/h-EPI/forge/mini/runs/usetest/v5-s2-2/subject.py",
+  "finish_reason": "stop",
+  "usage": {
+    "prompt_tokens": 3972,
+    "completion_tokens": 11345,
+    "total_tokens": 15317,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 10991
+    },
+    "prompt_cache_hit_tokens": 0,
+    "prompt_cache_miss_tokens": 3972
+  },
+  "content": "{\n  \"claim\": \"recover_json_object skips code-fenced JSON objects with repeated keys instead of resolving them last-wins, so when such a fenced object is followed by a later top-level object, the later object is returned even though the documented rule says the last fenced object is scored.\",\n  \"expected\": \"For content consisting of a code-fenced JSON object with a repeated key followed by a top-level JSON object, the recovered object should be the fenced object with the repeated key resolved to its last value (e.g. {\\\"a\\\":2}).\",\n  \"observed\": \"The fenced pool passes parsed = None for strict-parse failures, so the fenced duplicate-key candidate is skipped; control falls through to the top-level pool, whose reversed candidate list returns the later top-level object instead.\",\n  \"reproducer\": \"```json\\n{\\\"a\\\":1,\\\"a\\\":2}\\n```\\n{\\\"b\\\":3}\",\n  \"source_basis\": \"From the documented rules: \\\"The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text\\\" and \\\"A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable\\\".\",\n  \"execution_evidence\": \"none: no executable oracle\",\n  \"scope\": \"Inputs where a code fence contains a valid JSON object with repeated keys and a later top-level JSON object is present.\",\n  \"uncertainty\": \"Assumes creib.strict_json.loads_strict rejects duplicate keys on strict parse, as the source comment states. The code path is otherwise clear from the source.\"\n}",
+  "reasoning_chars": 45985,
+  "elapsed_s": 194
+}

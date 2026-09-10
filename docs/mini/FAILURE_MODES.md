@@ -599,6 +599,37 @@ per packet and the block reported them, so the machinery caught it; what it mean
 is that a blind adjudication of these packets is not currently possible, and
 saying the adjudication was blind would be false.
 
+## H4 — The same model finishes on one path and never finishes on another
+
+**Found by** three calls with the same brief, the same subject and the same 32,000-token cap,
+recorded side by side in `forge/mini/runs/probes/deepseek-api/`. **Status: OPEN**, and the
+strongest candidate cause of M17.
+
+| Path | Model | Completion tokens | Of which reasoning | Finished | Content |
+|---|---|---|---|---|---|
+| `ollama.com` | `deepseek-v4-pro:0813` | **32,000**, exactly the cap | not reported separately | no | **empty** |
+| `api.deepseek.com` | `deepseek-flash` | 14,004 | 13,679 | `stop` | a full packet |
+| `api.deepseek.com` | `deepseek-v4-pro` | **11,345** | 10,991 | `stop` | a full packet |
+
+The subject is `forge/mini/runs/usetest/v5-s2-2/subject.py` and the brief is arm A's, in all
+three. The same model that reaches a natural stop in 11,345 tokens against the vendor's own API
+runs to the full 32,000 through `ollama.com` and emits no content at all.
+
+M17 read this as a model that reasons at length inside any affordable cap, and block 3 was
+registered on that reading: raise the allowance until the reasoning fits. The reading was wrong,
+or at least not the whole of it. The allowance was never the binding constraint — 11,345 was
+enough on one path and 32,000 was not enough on another, for one model and one prompt.
+
+What this does **not** establish is the mechanism. Two candidates, and nothing here separates
+them: the cap may be applied to reasoning and content together on one path and to content alone
+on the other, so that the same generation is truncated in one and not the other; or the serving
+configuration may differ, so the model reasons far longer on one path than the other for reasons
+that have nothing to do with the cap. Both are consistent with the table and neither is shown.
+
+The consequence for anything already run is stated rather than repaired: **every mini result in
+this repository was produced through `ollama.com`**, so a null result on a reasoning model is a
+null result on that path, and the arm it belongs to has not been shown to fail anywhere else.
+
 ## What the thirty runs show, and do not
 
 The control pre-registered in the README (a fence holding a sentence beside its

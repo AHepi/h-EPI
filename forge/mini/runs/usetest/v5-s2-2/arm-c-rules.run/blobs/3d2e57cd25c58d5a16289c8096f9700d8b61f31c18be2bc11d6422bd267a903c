@@ -1,0 +1,24 @@
+# Execution
+
+## Proposals so far (proposals)
+[7188579b21b897f6] (mini.pair-proposal.usetest.v1)
+According to recover_json_object, "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." In both the input and the rewritten text, the code fence holds {"a": 1}, so the recovered object is {"a": 1} in both; the objects after the fence are ignored. Therefore k_recovery is unchanged.
+cell: fence[ A ] B
+input: ```
+{"a": 1}
+```
+{"b": 2}
+rewrite: ```
+{"a": 1}
+```
+{"b": 2}
+{"c": 3}
+rewritten: ```
+{"a": 1}
+```
+{"b": 2}
+{"c": 3}
+commitments: {"kernel": "recovery", "expect": "unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
