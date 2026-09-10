@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+One proposal failed: f42b894836d73128 expected 'moves' but execution returned 'unchanged'. The proposer read the documented rule correctly—'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text' [f8b7dbf88099a402]—but the execution shows the rule as written and the code part company. The input had A inside a fence and B outside; the rule says A should be scored, yet execution shows before={"b":2}, meaning B was recovered from the start. After removing A from the fence, after={"b":2} remained unchanged. This indicates the fence regex '_FENCE = re.compile('```(?:json|JSON)?\\s*(.*?)```', re.DOTALL)' [36a46390d285000e] did not capture A as a fenced candidate, so recovery fell to top-level search and found B both times. The proposer should test whether the fence syntax in their input matches the regex exactly (language tag optional, whitespace handling). Proposal e818445a49ebd73f passed as expected (unchanged). Proposal 48fbd63e3e55fb93 passed as expected (moved). The failure matters because it reveals the documented priority rule does not match actual recovery when fence parsing fails silently.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

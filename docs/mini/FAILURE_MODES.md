@@ -384,7 +384,7 @@ functions, that its verdict now reads a catalogue as the harness reads a kernel
 point, and that a live model can be walked through it without a hand-written
 reply.
 
-## The experiments: eighteen runs, three rounds and two addenda
+## The experiments: thirty runs, five rounds and three addenda
 
 `forge/mini/manifests/experiments/README.md` pre-registers the diagnosis, the
 positive control, the criterion and each round's shapes before its runs, and
@@ -504,15 +504,30 @@ kind is easier to write and produces candidates that are all the same
 misreading. What a grid's cells should name is the input's shape, leaving the
 expectation entirely to the seat's reading of the rule.
 
-## What the eighteen runs show, and do not
+## M16 — The escape sequence written out, in the form that does not need it
+
+**Seen on** `runs/experiments/round-5/r5-2-skeletons-fields-qwen/`: four of five
+disagreements in that run came from the seat writing the two characters
+backslash and n into its `input` field where a line break belonged, so the reply
+it built was one line and the fence it named was not a fence. **Status: OPEN**,
+and a template's business.
+
+It is the mirror of M13. Nesting the instance inside a JSON string made models
+under-escape, and carrying it in a field of its own makes at least one of them
+over-escape, since the habit of escaping outlives the reason for it. Nothing in
+the machine should guess which characters a seat meant; an instruction that says
+plainly to write real line breaks, not the two characters, is the remedy, and
+the record shows the failure either way because the executor stores the text it
+ran.
+
+## What the thirty runs show, and do not
 
 The control pre-registered in the README (a fence holding a sentence beside its
 object, and a bare object after it, scored on the bare object against the
 docstring) was found by the last shape of the third round, by a proposer shown the docstring
 and not the code, handed the control's cell in a notation, writing the
 docstring's expectation, with the machine's answer differing: `r3-7`, events 80
-and 146, and again at 168 on two more cells of the same class. The other seventeen runs did
-not find it: a proposer that reads the code expects what the code does; a
+and 146, and again at 168 on two more cells of the same class. The runs that did not find it failed in ways worth naming: a proposer that reads the code expects what the code does; a
 proposer asked for a disagreement confirms invariances instead; a proposer
 that picks its own cell picks the easy ones; a proposer handed a cell in words
 builds a different reply. Three smaller points the kernel table lacked were

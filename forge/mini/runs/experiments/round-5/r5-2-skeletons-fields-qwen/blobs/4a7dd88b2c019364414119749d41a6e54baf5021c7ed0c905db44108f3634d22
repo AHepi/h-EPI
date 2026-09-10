@@ -1,0 +1,279 @@
+# Proposal: a grid cell
+
+You are shown the documented rules of the recovery check, not its code, and ONE cell of a grid of reply shapes under 'The cell to cover'. The cell is written in a notation: fence[ ... ] is a code fence, a line of three backticks before and after, holding one part per line in the order given; S is one plain sentence such as 'Here is the result:'; A, B and C are small JSON objects different from each other, such as {"a": 1}, {"b": 2}, {"c": 3}; anything after the closing ] comes after the closing fence line, one part per line. Build the input exactly from the cell, parts on their own lines, nothing added. The rewritten text is the same reply with ONE part removed, and say what the rule says the recovered object ought to do: move or stay. Your expectation comes from the rule's words alone: name in the body which object the rule says is scored before and after. The commitments carry "cell": the cell exactly as named. The commitments are a STRING whose content is JSON of the form {"kernel": "<id>", "expect": "moves" or "unchanged"} and nothing else. The four long fields are NOT in the commitments: this artifact carries "input", "rewritten", "rewrite" and "cell" as fields of its own, beside "body" and "commitments", each a plain string. Write the input and the rewritten text out in full there, as instances, never as descriptions; write in "rewrite" one sentence naming what you changed, and in "cell" the cell exactly as it was named. Do not repeat a pair shown among the earlier proposals.
+
+## The problem (problem)
+The checks under test are the conformance harness's own functions. Most seats are shown only their documented rules, not their code: how the harness recovers a JSON object from a reply, whether it had to recover it from prose, its response verdict, its refusal-phrase check, and its grounding matcher. The question: is there an input and a rewrite of it on which the rule, read as written, says one thing and the check, run by machine, does another? The executor runs the check on both texts and records what its answer did; nothing here decides anything, the record shows where a reading and the machine parted.
+
+## The documented rules of the checks (rules)
+[cfb66510a6ca9655] (mini.kernel-rules.v1)
+REFUSAL_PHRASES = ['I cannot', "I can't", "I'm sorry", 'I am unable', 'as an AI', 'cannot assist']
+
+The kernels:
+
+- conformance.kernel.recovery: The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT.
+
+- conformance.kernel.recovered-from-prose: Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no).
+
+- conformance.kernel.response-verdict: The harness's response verdict for the reply: JSON_OBJECT, INVALID_JSON, REFUSAL_SUSPECTED, or another of its verdicts.
+
+- conformance.kernel.refusal-phrase: The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE.
+
+- conformance.kernel.span-occurs: Whether a cited span occurs in a document, whitespace-normalised, no relaxation: the input is one JSON object {"span", "document"}; verbatim or NOT_IN_DOCUMENT.
+
+- conformance.kernel.grounding: The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked: the input is one JSON object {"value", "span", "document"}; GROUNDED, SPAN_MISSING, SPAN_NOT_IN_DOCUMENT or VALUE_NOT_IN_SPAN.
+
+def recover_json_object(content: 'str') -> 'Any':
+    Project import: extract a JSON object from fences or surrounding prose.
+
+    Every top-level balanced object in the text is a candidate, not only the span from the
+    first ``{`` to the last ``}``: reasoning prose before or after the answer frequently
+    contains stray braces, and an object nested inside another is not a candidate of its own.
+    The object scored is the last one inside a code fence when any fence holds one, else the
+    last top-level object in the text, because a model places its final answer last and marks
+    it: a reply that quotes its previous answer and then gives a corrected one is scored on the
+    correction. Until 9 September 2026 the object with the most keys was taken, ties to the
+    last, and nine cycle replies that dropped a criticised key were scored on the draft that
+    still carried it (``docs/failure-modes.md``, H40). A candidate that parses as strict JSON,
+    or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float,
+    for instance) is passed over, so a final answer refused for a float loses to an earlier
+    draft that parsed (``docs/kernel.md``, P-06).
+
+def _loads_last_wins(candidate: 'str') -> 'tuple[Any, tuple[str, ...]] | None':
+    Parse JSON that strict parsing refused only because of repeated keys; last value wins.
+
+def parse_content(content: 'str', refusal_phrases: 'tuple[str, ...]') -> 'tuple[Any, str, str | None, bool]':
+    Return (parsed, response_verdict, detail, recovered_from_prose).
+
+    The refusal heuristic decides the verdict only when no object can be recovered; whether a
+    phrase occurred at all is a separate fact, :func:`refusal_phrase_in`, recorded beside a
+    recovered object (H36: a refusal followed by a form is a refusal and a form).
+
+def refusal_phrase_in(content: 'str', refusal_phrases: 'tuple[str, ...]') -> 'str | None':
+    The first refusal phrase the text contains, typographic quotes read as straight ones, or None.
+
+def _plain_quotes(text: 'str') -> 'str':
+    Fold typographic apostrophes and quotation marks to their ASCII forms.
+
+    The refusal phrase list is written with straight apostrophes; a model that writes
+    "I’m sorry" is refusing all the same, and the first live refusal in these
+    records was missed for exactly that reason (H22).
+
+def _normalise_whitespace(value: 'str') -> 'str':
+    (no docstring)
+
+def _span_occurs(span: 'str', document: 'str', relaxations: 'tuple[str, ...]') -> 'str | None':
+    Return None when the span is not in the document, else how it was matched ("verbatim" or a relaxation).
+
+def _grounding_kernel(text: 'str') -> 'str':
+    The grounding verdict as the harness gives it, with no relaxation and the value-in-span check on.
+
+    The three lines are the harness's own (``_grounding_verdict`` in ``oracle.py``), read here
+    over one JSON object rather than over a variant and its output.
+
+
+## Proposals so far (earlier)
+[d80950dfc5b23769] (mini.pair-proposal.grid-1.v1)
+According to the documented rule for conformance.kernel.recovery, 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text'. In the input, the object {"a": 1} is inside the code fence, so it is the scored object. In the rewritten text, the code fence is empty, so no object is inside, and there is no top-level object, resulting in NO_OBJECT. Thus the recovered object moves from {"a": 1} to NO_OBJECT.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[b49607d37dc5d9fd] (mini.pair-proposal.grid-2.v1)
+According to the documented rule for conformance.kernel.recovery, 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text'. In the input, the object {"a": 1} is inside the code fence, so it is the scored object. In the rewritten text, the code fence is empty, so no object is inside, and there is no top-level object (only the sentence 'Here is the result:'), resulting in NO_OBJECT. Thus the recovered object moves from {"a": 1} to NO_OBJECT.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[01ccc126cc6f73ff] (mini.pair-proposal.grid-3.v1)
+According to the documented rule for conformance.kernel.recovery, 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text'. In the input, the object A is inside the code fence, so it is the scored object. The object B is outside the fence. In the rewritten text, the object B is removed, but the code fence still holds object A. Thus the recovered object stays unchanged.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "unchanged"}
+[eae4efdea742d2a9] (mini.pair-proposal.grid-1.v1)
+According to the documented rule for conformance.kernel.recovery, 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text'. In the input, the object A is inside the code fence, so it is the scored object. In the rewritten text, the code fence is empty, so no object is inside, and the rule falls back to 'the last top-level object in the text', which is the object A outside the fence. Since the object outside is identical to the object inside, the recovered object stays unchanged.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "unchanged"}
+[1f3b2bc9829971e4] (mini.pair-proposal.grid-2.v1)
+According to the documented rule for conformance.kernel.recovery, 'The object scored is the last one inside a code fence when any fence holds one'. In the input, there are two code fences: the first holds object A, and the second holds object B. Since B is the last object inside a code fence, it is the scored object. In the rewritten text, object B is removed from the second fence, leaving it empty. The first fence still holds object A. Since A is now the last object inside a code fence, the scored object changes from B to A. Thus the recovered object moves.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[e6721eaaa370a55d] (mini.pair-proposal.grid-3.v1)
+According to the documented rule for conformance.kernel.recovery, 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text'. In the input, the code fence contains the sentence S and the JSON object A. Since the fence holds an object, A is the scored object. In the rewritten text, the JSON object A is removed from inside the code fence, leaving only the sentence S. The fence no longer holds an object, and there are no top-level objects outside the fence. Thus the recovered object moves from {"a": 1} to NO_OBJECT.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[0d8c1518fc299b6c] (mini.pair-proposal.grid-1.v1)
+According to the documented rule for conformance.kernel.recovery, 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text' [a84bcb8e1134b8b4]. In the input, the code fence contains the sentence S and the JSON object A. Since the fence holds an object, A is the scored object. In the rewritten text, the JSON object A is removed from inside the code fence, leaving only the sentence S. The fence no longer holds an object, and there are no top-level objects outside the fence (only the sentence S). Thus the recovered object moves from {"a": 1} to NO_OBJECT.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[672d0e5c1fe9ac8c] (mini.pair-proposal.grid-2.v1)
+According to the documented rule for conformance.kernel.recovery, 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text' [a84bcb8e1134b8b4]. In the input, the code fence contains the sentence S and the JSON object A. Since the fence holds an object, A is the scored object. The object B appears after the closing fence. In the rewritten text, the JSON object A is removed from inside the code fence, leaving only the sentence S. The fence no longer holds an object, so the rule falls back to 'the last top-level object in the text', which is the object B outside the fence. Thus the recovered object moves from {"a": 1} to {"b": 2}.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[ed7d03564de4492e] (mini.pair-proposal.grid-3.v1)
+According to the documented rule for conformance.kernel.recovery, 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text' [a84bcb8e1134b8b4]. In the input fence[ S A ] A, the code fence contains sentence S and JSON object A, and object A also appears after the closing fence. Since the fence holds an object, A inside the fence is the scored object. In the rewritten text fence[ S A ], the outside A is removed, but the fence still holds object A. Thus the recovered object stays unchanged at {"a": 1}.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "unchanged"}
+[8dffcc7266800858] (mini.pair-proposal.grid-1.v1)
+According to the documented rule for conformance.kernel.recovery, 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text' [4adba2f4da302fee]. In the input, the second code fence holds object B, so it is the scored object. In the rewritten text, the second code fence is empty, so the rule falls back to the last object inside a code fence that holds one, which is object A in the first fence. Thus the recovered object moves from {"b": 2} to {"a": 1}.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[3503f871eb520910] (mini.pair-proposal.grid-2.v1)
+According to the documented rule for conformance.kernel.recovery, 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text' [4adba2f4da302fee]. In the input fence[ A S ], the code fence contains JSON object A and sentence S. Since the fence holds an object, A is the scored object. In the rewritten text fence[ S ], the JSON object A is removed from inside the code fence, leaving only the sentence S. The fence no longer holds an object, and there are no top-level objects outside the fence. Thus the recovered object moves from {"a": 1} to NO_OBJECT.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[da7f5ee022b7563f] (mini.pair-proposal.grid-3.v1)
+According to the documented rule for conformance.kernel.recovery, 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text' [4adba2f4da302fee]. In the input fence[ A S ] S, the code fence contains JSON object A and sentence S. Since the fence holds an object, A is the scored object. In the rewritten text fence[ S ] S, the JSON object A is removed from inside the code fence, leaving only the sentence S. The fence no longer holds an object, and there are no top-level objects outside the fence (only the sentence S). Thus the recovered object moves from {"a": 1} to NO_OBJECT.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[f42b894836d73128] (mini.pair-proposal.grid-1.v1)
+According to the documented rule for conformance.kernel.recovery, 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text' [f8b7dbf88099a402]. In the input, the code fence contains JSON object A and sentence S. Since the fence holds an object, A is the scored object. In the rewritten text, the JSON object A is removed from inside the code fence, leaving only the sentence S. The fence no longer holds an object, so the rule falls back to 'the last top-level object in the text', which is the object B outside the fence. Thus the recovered object moves from {"a": 1} to {"b": 2}.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[e818445a49ebd73f] (mini.pair-proposal.grid-2.v1)
+According to the documented rule for conformance.kernel.recovery, 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text' [f8b7dbf88099a402]. In the input fence[ A S ] A, the code fence contains JSON object A and sentence S. Since the fence holds an object, A inside the fence is the scored object. In the rewritten text fence[ A S ], the outside A is removed, but the fence still holds object A. Thus the recovered object stays unchanged at {"a": 1}.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "unchanged"}
+[48fbd63e3e55fb93] (mini.pair-proposal.grid-3.v1)
+According to the documented rule for conformance.kernel.recovery, 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text' [f8b7dbf88099a402]. In the input, there are two code fences. The first holds object A and sentence S. The second holds object B. Since B is the last object inside a code fence, it is the scored object. In the rewritten text, object B is removed from the second fence, leaving it empty. The first fence still holds object A. Since A is now the last object inside a code fence, the scored object changes from B to A. Thus the recovered object moves.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[fff2b0f39b15f915] (mini.pair-proposal.grid-1.v1)
+According to the documented rule for conformance.kernel.recovery, 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text' [65ae18af7a738b26]. In the input fence[ A B ], both JSON objects A and B are inside the code fence. Since B is the last object inside the fence, B is the scored object. In the rewritten text fence[ A ], the JSON object B is removed from inside the code fence, leaving only object A. Since A is now the last (and only) object inside the fence, the scored object changes from B to A. Thus the recovered object moves from {"b": 2} to {"a": 1}.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+
+## Verdicts so far (verdicts)
+[2c9269d319a5abe3] (mini.verdict.v1)
+Verdict on this cycle's executions.
+d80950dfc5b23769: conformance.kernel.recovery under proposer's own rewrite: Removed the JSON object A from inside the code fence. moved, expected moves -> rejected; no prediction
+b49607d37dc5d9fd: conformance.kernel.recovery under proposer's own rewrite: I removed the JSON object A from inside the code fence. moved, expected moves -> rejected; no prediction
+01ccc126cc6f73ff: conformance.kernel.recovery under proposer's own rewrite: I removed the JSON object B that appeared after the closing code fence. unchanged, expected unchanged -> rejected; no prediction
+commitments: {"verdicts": [{"catalogue_moves": false, "catalogued": false, "column": null, "executed": "moved", "expected": "moves", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "d80950dfc5b23769", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: Removed the JSON object A from inside the code fence."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "moved", "expected": "moves", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "b49607d37dc5d9fd", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I removed the JSON object A from inside the code fence."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "01ccc126cc6f73ff", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: I removed the JSON object B that appeared after the closing code fence."}]}
+[85d36d9cf6546fbd] (mini.verdict.v1)
+Verdict on this cycle's executions.
+eae4efdea742d2a9: conformance.kernel.recovery under proposer's own rewrite: Removed the JSON object A from inside the code fence, leaving the identical object outside. unchanged, expected unchanged -> rejected; no prediction
+1f3b2bc9829971e4: conformance.kernel.recovery under proposer's own rewrite: Removed the JSON object B from the second code fence. moved, expected moves -> rejected; no prediction
+e6721eaaa370a55d: conformance.kernel.recovery under proposer's own rewrite: Removed the JSON object A from inside the code fence, leaving only the sentence S. moved, expected moves -> rejected; no prediction
+commitments: {"verdicts": [{"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "eae4efdea742d2a9", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: Removed the JSON object A from inside the code fence, leaving the identical object outside."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "moved", "expected": "moves", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "1f3b2bc9829971e4", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: Removed the JSON object B from the second code fence."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "moved", "expected": "moves", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "e6721eaaa370a55d", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: Removed the JSON object A from inside the code fence, leaving only the sentence S."}]}
+[1b85511b0342939f] (mini.verdict.v1)
+Verdict on this cycle's executions.
+0d8c1518fc299b6c: conformance.kernel.recovery under proposer's own rewrite: Removed the JSON object A from inside the code fence. moved, expected moves -> rejected; no prediction
+672d0e5c1fe9ac8c: conformance.kernel.recovery under proposer's own rewrite: Removed the JSON object A from inside the code fence, leaving the sentence S in the fence and object B outside. unchanged, expected moves -> candidate point (unchanged); no prediction
+ed7d03564de4492e: conformance.kernel.recovery under proposer's own rewrite: Removed the JSON object A that appeared after the closing code fence. unchanged, expected unchanged -> rejected; no prediction
+commitments: {"verdicts": [{"catalogue_moves": false, "catalogued": false, "column": null, "executed": "moved", "expected": "moves", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "0d8c1518fc299b6c", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: Removed the JSON object A from inside the code fence."}, {"catalogue_moves": false, "catalogued": false, "column": "unchanged", "executed": "unchanged", "expected": "moves", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "672d0e5c1fe9ac8c", "reading": "no prediction", "same_input": null, "standing": "candidate point", "transform": "proposer's own rewrite: Removed the JSON object A from inside the code fence, leaving the sentence S in the fence and object B outside."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "ed7d03564de4492e", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: Removed the JSON object A that appeared after the closing code fence."}]}
+[9c9ddd20dc0d82cd] (mini.verdict.v1)
+Verdict on this cycle's executions.
+8dffcc7266800858: conformance.kernel.recovery under proposer's own rewrite: Removed the JSON object B from the second code fence. moved, expected moves -> rejected; no prediction
+3503f871eb520910: conformance.kernel.recovery under proposer's own rewrite: Removed the JSON object A from inside the code fence, leaving only the sentence S. moved, expected moves -> rejected; no prediction
+da7f5ee022b7563f: conformance.kernel.recovery under proposer's own rewrite: Removed the JSON object A from inside the code fence, leaving only the sentence S. moved, expected moves -> rejected; no prediction
+commitments: {"verdicts": [{"catalogue_moves": false, "catalogued": false, "column": null, "executed": "moved", "expected": "moves", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "8dffcc7266800858", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: Removed the JSON object B from the second code fence."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "moved", "expected": "moves", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "3503f871eb520910", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: Removed the JSON object A from inside the code fence, leaving only the sentence S."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "moved", "expected": "moves", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "da7f5ee022b7563f", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: Removed the JSON object A from inside the code fence, leaving only the sentence S."}]}
+[a91b8a1fcc4a68d1] (mini.verdict.v1)
+Verdict on this cycle's executions.
+f42b894836d73128: conformance.kernel.recovery under proposer's own rewrite: Removed the JSON object A from inside the code fence, leaving the sentence S in the fence and object B outside. unchanged, expected moves -> candidate point (unchanged); no prediction
+e818445a49ebd73f: conformance.kernel.recovery under proposer's own rewrite: Removed the JSON object A that appeared after the closing code fence. unchanged, expected unchanged -> rejected; no prediction
+48fbd63e3e55fb93: conformance.kernel.recovery under proposer's own rewrite: Removed the JSON object B from the second code fence. moved, expected moves -> rejected; no prediction
+commitments: {"verdicts": [{"catalogue_moves": false, "catalogued": false, "column": "unchanged", "executed": "unchanged", "expected": "moves", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "f42b894836d73128", "reading": "no prediction", "same_input": null, "standing": "candidate point", "transform": "proposer's own rewrite: Removed the JSON object A from inside the code fence, leaving the sentence S in the fence and object B outside."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "unchanged", "expected": "unchanged", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "e818445a49ebd73f", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: Removed the JSON object A that appeared after the closing code fence."}, {"catalogue_moves": false, "catalogued": false, "column": null, "executed": "moved", "expected": "moves", "kernel": "conformance.kernel.recovery", "predicted": null, "proposal": "48fbd63e3e55fb93", "reading": "no prediction", "same_input": null, "standing": "rejected", "transform": "proposer's own rewrite: Removed the JSON object B from the second code fence."}]}
+
+## Criticisms (criticisms)
+[35f8e7ca4571df08] (mini.criticism.v1)
+One proposal failed: f42b894836d73128 expected 'moves' but execution returned 'unchanged'. The proposer read the documented rule correctly—'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text' [f8b7dbf88099a402]—but the execution shows the rule as written and the code part company. The input had A inside a fence and B outside; the rule says A should be scored, yet execution shows before={"b":2}, meaning B was recovered from the start. After removing A from the fence, after={"b":2} remained unchanged. This indicates the fence regex '_FENCE = re.compile('```(?:json|JSON)?\\s*(.*?)```', re.DOTALL)' [36a46390d285000e] did not capture A as a fenced candidate, so recovery fell to top-level search and found B both times. The proposer should test whether the fence syntax in their input matches the regex exactly (language tag optional, whitespace handling). Proposal e818445a49ebd73f passed as expected (unchanged). Proposal 48fbd63e3e55fb93 passed as expected (moved). The failure matters because it reveals the documented priority rule does not match actual recovery when fence parsing fails silently.
+
+## Executions (executions)
+[f038437f1d2ab481] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+d80950dfc5b23769: conformance.kernel.recovery -> moved, expected moves
+b49607d37dc5d9fd: conformance.kernel.recovery -> moved, expected moves
+01ccc126cc6f73ff: conformance.kernel.recovery -> unchanged, expected unchanged
+commitments: {"executions": [{"after": "NO_OBJECT", "as_expected": true, "before": "{\"a\":1}", "executed": "moved", "expect": "moves", "input": "```\\n{\"a\": 1}\\n```", "kernel": "conformance.kernel.recovery", "proposal": "d80950dfc5b23769", "rewrite": "Removed the JSON object A from inside the code fence.", "rewritten": "```\\n```"}, {"after": "NO_OBJECT", "as_expected": true, "before": "{\"a\":1}", "executed": "moved", "expect": "moves", "input": "```\n{\"a\": 1}\n```\nHere is the result:", "kernel": "conformance.kernel.recovery", "proposal": "b49607d37dc5d9fd", "rewrite": "I removed the JSON object A from inside the code fence.", "rewritten": "```\n```\nHere is the result:"}, {"after": "{\"a\":1}", "as_expected": true, "before": "{\"a\":1}", "executed": "unchanged", "expect": "unchanged", "input": "```\n{\"a\": 1}\n```\n{\"b\": 2}", "kernel": "conformance.kernel.recovery", "proposal": "01ccc126cc6f73ff", "rewrite": "I removed the JSON object B that appeared after the closing code fence.", "rewritten": "```\n{\"a\": 1}\n```"}]}
+[5dc8111792ab9af5] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+eae4efdea742d2a9: conformance.kernel.recovery -> unchanged, expected unchanged
+1f3b2bc9829971e4: conformance.kernel.recovery -> moved, expected moves
+e6721eaaa370a55d: conformance.kernel.recovery -> moved, expected moves
+commitments: {"executions": [{"after": "{\"a\":1}", "as_expected": true, "before": "{\"a\":1}", "executed": "unchanged", "expect": "unchanged", "input": "```\\n{\"a\": 1}\\n```\\n{\"a\": 1}", "kernel": "conformance.kernel.recovery", "proposal": "eae4efdea742d2a9", "rewrite": "Removed the JSON object A from inside the code fence, leaving the identical object outside.", "rewritten": "```\\n```\\n{\"a\": 1}"}, {"after": "{\"a\":1}", "as_expected": true, "before": "{\"b\":2}", "executed": "moved", "expect": "moves", "input": "```\\n{\"a\": 1}\\n```\\n```\\n{\"b\": 2}\\n```", "kernel": "conformance.kernel.recovery", "proposal": "1f3b2bc9829971e4", "rewrite": "Removed the JSON object B from the second code fence.", "rewritten": "```\\n{\"a\": 1}\\n```\\n```\\n```"}, {"after": "NO_OBJECT", "as_expected": true, "before": "{\"a\":1}", "executed": "moved", "expect": "moves", "input": "```\\nHere is the result:\\n{\"a\": 1}\\n```", "kernel": "conformance.kernel.recovery", "proposal": "e6721eaaa370a55d", "rewrite": "Removed the JSON object A from inside the code fence, leaving only the sentence S.", "rewritten": "```\\nHere is the result:\\n```"}]}
+[9d1b3cb1c86e741a] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+0d8c1518fc299b6c: conformance.kernel.recovery -> moved, expected moves
+672d0e5c1fe9ac8c: conformance.kernel.recovery -> unchanged, expected moves
+ed7d03564de4492e: conformance.kernel.recovery -> unchanged, expected unchanged
+commitments: {"executions": [{"after": "NO_OBJECT", "as_expected": true, "before": "{\"a\":1}", "executed": "moved", "expect": "moves", "input": "```\nHere is the result:\n{\"a\": 1}\n```\nHere is the result:", "kernel": "conformance.kernel.recovery", "proposal": "0d8c1518fc299b6c", "rewrite": "Removed the JSON object A from inside the code fence.", "rewritten": "```\nHere is the result:\n```\nHere is the result:"}, {"after": "{\"b\":2}", "as_expected": false, "before": "{\"b\":2}", "executed": "unchanged", "expect": "moves", "input": "```\\nHere is the result:\\n{\"a\": 1}\\n```\\n{\"b\": 2}", "kernel": "conformance.kernel.recovery", "proposal": "672d0e5c1fe9ac8c", "rewrite": "Removed the JSON object A from inside the code fence, leaving the sentence S in the fence and object B outside.", "rewritten": "```\\nHere is the result:\\n```\\n{\"b\": 2}"}, {"after": "{\"a\":1}", "as_expected": true, "before": "{\"a\":1}", "executed": "unchanged", "expect": "unchanged", "input": "```\nHere is the result:\n{\"a\": 1}\n```\n{\"a\": 1}", "kernel": "conformance.kernel.recovery", "proposal": "ed7d03564de4492e", "rewrite": "Removed the JSON object A that appeared after the closing code fence.", "rewritten": "```\nHere is the result:\n{\"a\": 1}\n```"}]}
+[4a92687d9b69d848] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+8dffcc7266800858: conformance.kernel.recovery -> moved, expected moves
+3503f871eb520910: conformance.kernel.recovery -> moved, expected moves
+da7f5ee022b7563f: conformance.kernel.recovery -> moved, expected moves
+commitments: {"executions": [{"after": "{\"a\":1}", "as_expected": true, "before": "{\"b\":2}", "executed": "moved", "expect": "moves", "input": "```\nHere is the result:\n{\"a\": 1}\n```\n```\n{\"b\": 2}\n```", "kernel": "conformance.kernel.recovery", "proposal": "8dffcc7266800858", "rewrite": "Removed the JSON object B from the second code fence.", "rewritten": "```\nHere is the result:\n{\"a\": 1}\n```\n```\n```"}, {"after": "NO_OBJECT", "as_expected": true, "before": "{\"a\":1}", "executed": "moved", "expect": "moves", "input": "```\n{\"a\": 1}\nHere is the result:\n```", "kernel": "conformance.kernel.recovery", "proposal": "3503f871eb520910", "rewrite": "Removed the JSON object A from inside the code fence, leaving only the sentence S.", "rewritten": "```\nHere is the result:\n```"}, {"after": "NO_OBJECT", "as_expected": true, "before": "{\"a\":1}", "executed": "moved", "expect": "moves", "input": "```\\n{\"a\": 1}\\nHere is the result:\\n```\\nHere is the result:", "kernel": "conformance.kernel.recovery", "proposal": "da7f5ee022b7563f", "rewrite": "Removed the JSON object A from inside the code fence, leaving only the sentence S.", "rewritten": "```\\nHere is the result:\\n```\\nHere is the result:"}]}
+[483a7049f40ccf46] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+f42b894836d73128: conformance.kernel.recovery -> unchanged, expected moves
+e818445a49ebd73f: conformance.kernel.recovery -> unchanged, expected unchanged
+48fbd63e3e55fb93: conformance.kernel.recovery -> moved, expected moves
+commitments: {"executions": [{"after": "{\"b\":2}", "as_expected": false, "before": "{\"b\":2}", "executed": "unchanged", "expect": "moves", "input": "```\n{\"a\": 1}\nHere is the result:\n```\n{\"b\": 2}", "kernel": "conformance.kernel.recovery", "proposal": "f42b894836d73128", "rewrite": "Removed the JSON object A from inside the code fence, leaving the sentence S in the fence and object B outside.", "rewritten": "```\nHere is the result:\n```\n{\"b\": 2}"}, {"after": "{\"a\":1}", "as_expected": true, "before": "{\"a\":1}", "executed": "unchanged", "expect": "unchanged", "input": "```\n{\"a\": 1}\nHere is the result:\n```\n{\"a\": 1}", "kernel": "conformance.kernel.recovery", "proposal": "e818445a49ebd73f", "rewrite": "Removed the JSON object A that appeared after the closing code fence.", "rewritten": "```\n{\"a\": 1}\nHere is the result:\n```"}, {"after": "{\"a\":1}", "as_expected": true, "before": "{\"b\":2}", "executed": "moved", "expect": "moves", "input": "```\\n{\"a\": 1}\\nHere is the result:\\n```\\n```\\n{\"b\": 2}\\n```", "kernel": "conformance.kernel.recovery", "proposal": "48fbd63e3e55fb93", "rewrite": "Removed the JSON object B from the second code fence.", "rewritten": "```\\n{\"a\": 1}\\nHere is the result:\\n```\\n```\\n```"}]}
+
+## Evidence (catalogue)
+To ground a claim in one of these, name its id in this artifact's citations; a quote must reproduce the block's own words.
+[638a6360b40e8b8a] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fence", "moves": false, "input": "{\"claimant_name\": \"amara okoro\",…
+[e847048a8c7847a8] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.fence", "moves": true, "input": "{\"claimant_name\": \"ama…
+[b0a010d1115d82a4] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.prose-before", "moves": false, "input": "{\"claimant_name\": \"amara o…
+[33b4e316004d90cc] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.prose-before", "moves": true, "input": "{\"claimant_name\"…
+[1c12ef186483bd0d] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.indent", "moves": false, "input": "{\"claimant_name\": \"amara okoro\"…
+[910693c99ba3c6da] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.indent", "moves": false, "input": "{\"claimant_name\": \"a…
+[706dbfa18782a310] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fold-whitespace", "moves": false, "input": "{\"claimant_name\": \"amar…
+[45929a4e30072bb7] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.fold-whitespace", "moves": false, "input": "{\"claimant_na…
+[7a60de6ecc4dd6e3] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.bare-after", "moves": true, "input": "{\"claimant_name\": \"amara okor…
+[1c84027e761c6f99] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.draft-before", "moves": false, "input": "{\"claimant_name\": \"amara o…
+[55dd56154fb39a87] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fence-then-bare-after", "moves": false, "input": "{\"claimant_name\": …
+[47cbc7b41aaf5c8f] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.fence-with-prose", "moves": false, "input": "{\"claimant_name\": \"ama…
+[791e3ba34ce7d357] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.float-after", "moves": false, "input": "{\"claimant_name\": \"amara ok…
+[a0e68e5c468b7070] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovered-from-prose", "transform": "conformance.transform.float-after", "moves": true, "input": "{\"claimant_name\":…
+[fece6100f6ea7485] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.fence", "moves": false, "input": "{\"claimant_name\": \"amara …
+[bea451e84fa483a5] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.prose-before", "moves": false, "input": "{\"claimant_name\": \…
+[1a9cd8bb407e62f8] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.bare-after", "moves": false, "input": "{\"claimant_name\": \"a…
+[9c839bd675122bb9] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.upper-case", "moves": false, "input": "{\"claimant_name\": \"a…
+[d4ded569665ba70d] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.recovery", "transform": "conformance.transform.upper-case", "moves": true, "input": "{\"claimant_name\": \"amara okor…
+[6e346a638ffdff8b] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.typographic-quotes", "moves": false, "input": "I'm sorry, no."}]…
+[478f1f02c67c06c4] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.upper-case", "moves": false, "input": "I'm sorry, no."}]}
+[42f90dc7e6a15965] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.fence", "moves": false, "input": "I'm sorry, no."}]}
+[3c0719eda3e180c6] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.prose-before", "moves": false, "input": "I'm sorry, no."}]}
+[56ed413d078ac9c2] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.refusal-phrase", "transform": "conformance.transform.refusal-prose-before", "moves": true, "input": "{\"claimant_name…
+[8bfbf8b9bdcd2a4c] (catalogue, evidence) {"points": [{"kernel": "conformance.kernel.response-verdict", "transform": "conformance.transform.refusal-prose-before", "moves": false, "input": "{\"claimant_n…
+[6ab8417a77f3b613] (registry, evidence) kernel conformance.kernel.grounding: The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked: the inp…
+[a70c2e9bc362b532] (registry, evidence) kernel conformance.kernel.recovered-from-prose: Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no).
+[65ae18af7a738b26] (registry, evidence) kernel conformance.kernel.recovery: The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT.
+[c8c80e388572359c] (registry, evidence) kernel conformance.kernel.refusal-phrase: The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE.
+[22dc5cbedaff143d] (registry, evidence) kernel conformance.kernel.response-verdict: The harness's response verdict for the reply: JSON_OBJECT, INVALID_JSON, REFUSAL_SUSPECTED, or another of its verdic…
+[966be5d711930718] (registry, evidence) kernel conformance.kernel.span-occurs: Whether a cited span occurs in a document, whitespace-normalised, no relaxation: the input is one JSON object {"span", "d…
+[f3cc0eb6088a166b] (grid, evidence) fence[ A ]
+[fa1a61eab2eebf73] (grid, evidence) fence[ A ] S
+[1367c669e3d5463f] (grid, evidence) fence[ A ] B
+[77335a502d2920bc] (grid, evidence) fence[ A ] A
+[ce275ea1972395f1] (grid, evidence) fence[ A ] fence[ B ]
+[3ad384d2543b8df1] (grid, evidence) fence[ S A ]
+[cec930d8051f7f0e] (grid, evidence) fence[ S A ] S
+[87780449a3237f8c] (grid, evidence) fence[ S A ] B
+[e3d821bf38a8814a] (grid, evidence) fence[ S A ] A
+[e4e8f25ea6c76092] (grid, evidence) fence[ S A ] fence[ B ]
+[128d422753b6ba2b] (grid, evidence) fence[ A S ]
+[d35bcaa49d705c85] (grid, evidence) fence[ A S ] S
+[426c58ea31cf5e9b] (grid, evidence) fence[ A S ] B
+[64e2cd6959f6103a] (grid, evidence) fence[ A S ] A
+[c2593f8183475176] (grid, evidence) fence[ A S ] fence[ B ]
+[19d2650843ce00cf] (grid, evidence) fence[ A B ]
+[506312386b9bd440] (grid, evidence) fence[ A B ] S
+[3c551f9dfa885462] (grid, evidence) fence[ A B ] C
+[0e2943a6f5157c85] (grid, evidence) fence[ A B ] A
+[8cf1e40dd6411a40] (grid, evidence) fence[ A B ] fence[ C ]
+
+## The cell to cover (cell)
+[53a4ce63832d80e2] (mini.next-cell.2.v1)
+The cell to cover: fence[ A B ] S
+(16 of 20 cells named so far.)
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", "cell", each a string.
+
+To ground a claim, add a citation naming a block and quoting its own words, like this:
+  "citations": [{"block": "0e2943a6f5157c85", "quote": "<words copied from that block>"}]
+
+## The shape this answer must take
+`commitments` must be a STRING whose content is JSON text fitting exactly this schema (the field itself is a string, not an object):
+{
+  "properties": {
+    "expect": {
+      "enum": [
+        "moves",
+        "unchanged"
+      ]
+    },
+    "kernel": {
+      "pattern": "^conformance\\.kernel\\.(recovery|recovered-from-prose|response-verdict)$",
+      "type": "string"
+    }
+  },
+  "required": [
+    "kernel",
+    "expect"
+  ],
+  "type": "object"
+}

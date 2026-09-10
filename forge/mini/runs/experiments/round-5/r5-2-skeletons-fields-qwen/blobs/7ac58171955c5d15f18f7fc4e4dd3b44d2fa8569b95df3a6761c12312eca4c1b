@@ -1,0 +1,15 @@
+# Execution
+
+## Proposals so far (proposals)
+[eae4efdea742d2a9] (mini.pair-proposal.grid-1.v1)
+According to the documented rule for conformance.kernel.recovery, 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text'. In the input, the object A is inside the code fence, so it is the scored object. In the rewritten text, the code fence is empty, so no object is inside, and the rule falls back to 'the last top-level object in the text', which is the object A outside the fence. Since the object outside is identical to the object inside, the recovered object stays unchanged.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "unchanged"}
+[1f3b2bc9829971e4] (mini.pair-proposal.grid-2.v1)
+According to the documented rule for conformance.kernel.recovery, 'The object scored is the last one inside a code fence when any fence holds one'. In the input, there are two code fences: the first holds object A, and the second holds object B. Since B is the last object inside a code fence, it is the scored object. In the rewritten text, object B is removed from the second fence, leaving it empty. The first fence still holds object A. Since A is now the last object inside a code fence, the scored object changes from B to A. Thus the recovered object moves.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[e6721eaaa370a55d] (mini.pair-proposal.grid-3.v1)
+According to the documented rule for conformance.kernel.recovery, 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text'. In the input, the code fence contains the sentence S and the JSON object A. Since the fence holds an object, A is the scored object. In the rewritten text, the JSON object A is removed from inside the code fence, leaving only the sentence S. The fence no longer holds an object, and there are no top-level objects outside the fence. Thus the recovered object moves from {"a": 1} to NO_OBJECT.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

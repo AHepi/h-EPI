@@ -541,3 +541,77 @@ from *the space that was enumerated*, not from the seat reading unusually well.
 Put the control's cell in the grid and three different models find it; leave it
 out and no amount of reading finds it. What a person contributes is the space.
 
+**`r5-2-skeletons-fields-qwen`, and the mirror of the escaping failure.**
+Twenty-one proposals, nothing dropped, one format failure, five disagreements.
+Four of the five are the same thing: in the fields form the model wrote the two
+characters backslash and n where a line break belonged, so the reply it built
+was one long line and its fence was not a fence. Those cells tested nothing
+about fences, and the record says so, because the executor stores the text it
+ran. The fifth is the control's cell built correctly with the wrong part
+removed, whose recorded `before` is again the bare object scored over the fenced
+one.
+
+Nesting the instance inside a JSON string made models under-escape; carrying it
+in a field of its own makes one of them over-escape. Both are visible in the
+record and neither costs a call, and the remedy for the second is a sentence in
+the instruction rather than anything in the machine (register M16).
+
+## What five rounds show
+
+Thirty live runs, five models, ten shapes and their mutations, every round
+written down before its records existed and read after. The operator's question
+was whether a loop of this kind can find a blind spot nobody wrote down, and
+whether the angle needs a rethink if it cannot.
+
+**It can, and the finding replicates.** The tree carries a defect in JSON
+recovery that its own docstring contradicts: a fence holding a sentence beside
+its object, or two objects, is not read as a fenced candidate, so a bare object
+after it is scored instead. It was pre-registered here as the control before any
+of these runs, and it was found by three models — gemma4:31b, qwen3.5:397b,
+mistral-large-3:675b — under one shape, each shown the docstring and not the
+code, each handed the cells of a machine-enumerated grid in a notation, each
+writing the docstring's expectation and each contradicted by the machine. It is
+`docs/failure-modes.md` H43. Four further boundary points went into
+`docs/kernel.md` from these records: P-09, P-10, R-03, R-04 and G-09.
+
+**What the arrangement has to be.** Everything that failed, failed the same way:
+the seat was left to choose what to test.
+
+1. A proposer that reads the code predicts the code, and can differ from it only
+   by misreading. Show it the documented rule and nothing else.
+2. A proposer that chooses its own input chooses the easy shapes. Thirty-three
+   proposals in three shapes came near the control and none landed on it; a
+   machine seat that enumerates a space and hands over one cell at a time landed
+   on it in the third cycle, three times over.
+3. A cell described in words is instantiated wrongly. A cell written in a
+   notation is built as written.
+4. A cell named after a difference tells the seat what to expect and produces
+   candidates that are all one misreading. Name the shape, not the difference.
+5. Ask for one change per pair. A seat asked for a realistic reply changes four
+   things and the pair says nothing about any of them.
+
+So: the machine chooses what to test, the model instantiates it and reads the
+rule, the machine executes, and a person reads the disagreement. That division
+is the result. The seat's reading is ordinarily right — thirty-four of
+forty-two, when the pair is handed to it whole — which is exactly what makes a
+disagreement worth a person's time.
+
+**What the loop cannot do.** A pair shape surfaces only disagreements, so a
+boundary both readers get right is in the record and not in the candidate list;
+R-04 came out that way, by reading a verdict the rule had rejected. A
+transform-and-catalogue shape has the opposite limit: it can only test rows
+someone already wrote, and it refuted five of them. Neither shape is complete,
+and running one of them alone will miss what the other sees. And no shape
+invented a space: the control was found because a person put its cell in the
+grid. What a person contributes is the space; what the loop contributes is that
+it will not flinch from the answer.
+
+**What it cost.** Most of the loss in this series was not the models failing to
+reason but the template asking for something no model writes reliably: a JSON
+instance inside a JSON string inside a JSON reply. On the largest model that was
+forty-one of forty-two calls. Two repairs to how a reply is read, and a kind
+that carries its own long fields, took that to twenty-one of twenty-one with
+nothing dropped. Mini's design was not the problem and did not change: the
+artifact template, kinds as records, ports and windows, cycles, the permission
+layer and the record are as they were.
+

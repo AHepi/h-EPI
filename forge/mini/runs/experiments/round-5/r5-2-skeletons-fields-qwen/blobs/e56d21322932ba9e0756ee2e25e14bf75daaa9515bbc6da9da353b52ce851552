@@ -1,0 +1,20 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Three proposals tested conformance.kernel.recovery under the fence transform. Two passed (fff2b0f39b15f915, 1facd5a4ca291c1b); one failed (59fc20fd3c22d623). The failure matters because it exposes a divergence between the documented rule and the code's actual behaviour.
+
+The rule states: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text' [cfb66510a6ca9655]. Proposal 59fc20fd3c22d623 applied this correctly: input fence[ A B ] C has fenced objects A and B, so B (last in fence) should be scored. The rewrite fence[ A ] C should then score A. The proposer expected 'moves' from B to A.
+
+The execution shows 'unchanged': before {"c":3}, after {"c":3} [2c362869f97948e5]. The harness picked C (the bare object after the fence) rather than B (the last fenced object). This is not a proposer misread; the rule as written and the code part company. The code iterates fenced pools first [5cf1f38daafcce6b], yet the execution suggests bare objects after fences can override fenced ones in certain configurations.
+
+Proposers should next test: (1) fence[ A B ] with no bare object after, to confirm fenced objects win in isolation; (2) fence[ A ] B C with multiple bare objects, to see which bare object wins when no fence content exists; (3) whether the 'last top-level object' clause in the rule inadvertently includes bare objects that appear after fenced content, contradicting the 'when any fence holds one' priority.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

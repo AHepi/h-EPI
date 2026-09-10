@@ -1,0 +1,15 @@
+# Execution
+
+## Proposals so far (proposals)
+[9aefbdc2cd7fde6e] (mini.pair-proposal.grid-1.v1)
+According to the documented rule for conformance.kernel.recovery, 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text' [65ae18af7a738b26]. In the input fence[ A B ] A, the code fence contains JSON objects A and B. Since the fence holds objects, the last one inside (B) is the scored object. In the rewritten text fence[ A ] A, the JSON object B is removed from inside the code fence, leaving only object A inside the fence. Since the fence still holds an object, the last one inside (A) is now the scored object. Thus the recovered object moves from {"b": 2} to {"a": 1}.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[ae5c0aaa9593c3de] (mini.pair-proposal.grid-2.v1)
+According to the documented rule for conformance.kernel.recovery, 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text' [65ae18af7a738b26]. In the input fence[ A B ] fence[ C ], there are two code fences. The first holds objects A and B, the second holds object C. Since fences hold objects, the last object inside a code fence is scored. C is in the second (last) fence, so C is the scored object. In the rewritten text fence[ A B ] fence[ ], object C is removed from the second fence, leaving it empty. The first fence still holds objects A and B. Since B is now the last object inside any code fence, the scored object changes from C to B. Thus the recovered object moves from {"c": 3} to {"b": 2}.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[9f845f88fbc32862] (mini.pair-proposal.grid-3.v1)
+According to the documented rule for conformance.kernel.recovery, 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text' [65ae18af7a738b26]. In the input fence[ A ] B, the code fence holds object A, so A is the scored object. Object B appears after the closing fence but is not scored because the fence holds an object. In the rewritten text, object A is removed from inside the code fence, leaving it empty. The fence no longer holds an object, so the rule falls back to 'the last top-level object in the text', which is object B outside the fence. Thus the recovered object moves from {"a": 1} to {"b": 2}.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

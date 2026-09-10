@@ -1,0 +1,9 @@
+{
+  "body": "According to the documented rule for conformance.kernel.recovery, 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text' [65ae18af7a738b26]. In the input fence[ A B ] A, the code fence contains JSON objects A and B. Since the fence holds objects, the last one inside (B) is the scored object. In the rewritten text fence[ A ] A, the JSON object B is removed from inside the code fence, leaving only object A inside the fence. Since the fence still holds an object, the last one inside (A) is now the scored object. Thus the recovered object moves from {\"b\": 2} to {\"a\": 1}.",
+  "commitments": "{\"kernel\": \"conformance.kernel.recovery\", \"expect\": \"moves\"}",
+  "input": "```\\n{\"a\": 1}\\n{\"b\": 2}\\n```\\n{\"a\": 1}",
+  "rewritten": "```\\n{\"a\": 1}\\n```\\n{\"a\": 1}",
+  "rewrite": "Removed the JSON object B from inside the code fence.",
+  "cell": "fence[ A B ] A",
+  "citations": [{"block": "65ae18af7a738b26", "quote": "kernel conformance.kernel.recovery: The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT."}, {"block": "0e2943a6f5157c85", "quote": "fence[ A B ] A"}]
+}

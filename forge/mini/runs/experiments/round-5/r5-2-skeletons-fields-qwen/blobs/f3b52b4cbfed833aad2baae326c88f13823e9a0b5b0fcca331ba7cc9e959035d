@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. You are shown both the documented rules and the source. Read this cycle's executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule, or the rule as written and the code part company; quote the rule's words and name the line of code. Say which failures matter and what a proposer should try next. Cite blocks by id.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+One proposal failed: 672d0e5c1fe9ac8c expected conformance.kernel.recovery to move from {"a": 1} to {"b": 2}, but execution shows before={"b":2}, after={"b":2} (unchanged). The proposer misread the rule. The documented rule states 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text' [a84bcb8e1134b8b4], which would prioritise the fenced {"a": 1}. However, the execution record shows the harness recovered {"b": 2} (the bare object outside the fence) even though a fence held an object. This indicates the rule as written and the code part company: the source code's recover_json_object function [695122c3db04313b] iterates fenced candidates then top-level candidates, but the execution behaviour suggests the bare object was selected instead of the fenced one. The failure matters because it reveals the recovery priority documented in the rule does not match observed harness behaviour. A proposer should try next: verify which object the harness actually recovers when both fenced and bare JSON objects are present, then construct pairs that test the real recovery order rather than the documented one.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

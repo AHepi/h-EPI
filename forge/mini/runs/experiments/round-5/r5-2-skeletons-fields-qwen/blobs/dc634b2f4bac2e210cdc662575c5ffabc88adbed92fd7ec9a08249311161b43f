@@ -1,0 +1,15 @@
+# Execution
+
+## Proposals so far (proposals)
+[0d8c1518fc299b6c] (mini.pair-proposal.grid-1.v1)
+According to the documented rule for conformance.kernel.recovery, 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text' [a84bcb8e1134b8b4]. In the input, the code fence contains the sentence S and the JSON object A. Since the fence holds an object, A is the scored object. In the rewritten text, the JSON object A is removed from inside the code fence, leaving only the sentence S. The fence no longer holds an object, and there are no top-level objects outside the fence (only the sentence S). Thus the recovered object moves from {"a": 1} to NO_OBJECT.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[672d0e5c1fe9ac8c] (mini.pair-proposal.grid-2.v1)
+According to the documented rule for conformance.kernel.recovery, 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text' [a84bcb8e1134b8b4]. In the input, the code fence contains the sentence S and the JSON object A. Since the fence holds an object, A is the scored object. The object B appears after the closing fence. In the rewritten text, the JSON object A is removed from inside the code fence, leaving only the sentence S. The fence no longer holds an object, so the rule falls back to 'the last top-level object in the text', which is the object B outside the fence. Thus the recovered object moves from {"a": 1} to {"b": 2}.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[ed7d03564de4492e] (mini.pair-proposal.grid-3.v1)
+According to the documented rule for conformance.kernel.recovery, 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text' [a84bcb8e1134b8b4]. In the input fence[ S A ] A, the code fence contains sentence S and JSON object A, and object A also appears after the closing fence. Since the fence holds an object, A inside the fence is the scored object. In the rewritten text fence[ S A ], the outside A is removed, but the fence still holds object A. Thus the recovered object stays unchanged at {"a": 1}.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

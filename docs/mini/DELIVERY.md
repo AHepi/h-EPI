@@ -354,9 +354,9 @@ oppositely on the same field; five calls cannot say which is typical.
 
 ## The experiments (Amendment 5)
 
-Eighteen live runs under `forge/mini/runs/experiments/`, in three rounds of
-five and two addenda, each round pre-registered in
+Thirty live runs under `forge/mini/runs/experiments/`, in five rounds of five
+and three addenda, each round pre-registered in
 `forge/mini/manifests/experiments/README.md` before its records and read after.
-What they corrected in mini is `FAILURE_MODES.md` M11 to M13; what they found in
-the harness is `docs/failure-modes.md` H43 and `docs/kernel.md` P-09, R-03 and
-G-09; `SPEC.md` §22 is the machinery, written from the code.
+What they corrected in mini is `FAILURE_MODES.md` M11 to M16; what they found in
+the harness is `docs/failure-modes.md` H43 and `docs/kernel.md` P-09, P-10, R-03,
+R-04 and G-09; `SPEC.md` §22 is the machinery, written from the code.

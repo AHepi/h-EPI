@@ -1,0 +1,7 @@
+All three proposals in this cycle passed their expectations: eae4efdea742d2a9 (unchanged), 1f3b2bc9829971e4 (moves), and e6721eaaa370a55d (moves) all matched their executed outcomes. No expectation failed, so there is no proposer misreading or rule/code divergence to report for these specific tests.
+
+The documented rule for conformance.kernel.recovery states: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text'. The source code implements this by iterating `for pool in (fenced, top_level)` with `reversed(pool)`, checking fenced content first, then falling back to top-level objects. This alignment held across all three test cases.
+
+One potential rule/code discrepancy exists outside these proposals: the conformance.kernel.span-occurs rule says 'whitespace-normalised, no relaxation' and expects 'verbatim or NOT_IN_DOCUMENT', but the _span_occurs function accepts a relaxations parameter and can return 'case_insensitive' or 'date_range_completion'. However, when called from _grounding_kernel, it passes an empty tuple `()`, so no relaxation applies in that context.
+
+Since all expectations were met, proposers should continue testing conformance.kernel.recovery with varied fence/prose arrangements. Future cycles might examine span-occurs or grounding kernels where the relaxation discrepancy could manifest.

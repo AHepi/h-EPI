@@ -1,0 +1,15 @@
+# Execution
+
+## Proposals so far (proposals)
+[d80950dfc5b23769] (mini.pair-proposal.grid-1.v1)
+According to the documented rule for conformance.kernel.recovery, 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text'. In the input, the object {"a": 1} is inside the code fence, so it is the scored object. In the rewritten text, the code fence is empty, so no object is inside, and there is no top-level object, resulting in NO_OBJECT. Thus the recovered object moves from {"a": 1} to NO_OBJECT.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[b49607d37dc5d9fd] (mini.pair-proposal.grid-2.v1)
+According to the documented rule for conformance.kernel.recovery, 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text'. In the input, the object {"a": 1} is inside the code fence, so it is the scored object. In the rewritten text, the code fence is empty, so no object is inside, and there is no top-level object (only the sentence 'Here is the result:'), resulting in NO_OBJECT. Thus the recovered object moves from {"a": 1} to NO_OBJECT.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[01ccc126cc6f73ff] (mini.pair-proposal.grid-3.v1)
+According to the documented rule for conformance.kernel.recovery, 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text'. In the input, the object A is inside the code fence, so it is the scored object. The object B is outside the fence. In the rewritten text, the object B is removed, but the code fence still holds object A. Thus the recovered object stays unchanged.
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

@@ -638,7 +638,7 @@ cell it is given and writes the rule's expectation; which cells get covered is
 not its choice. `NextCellTests` holds the walk.
 
 `forge/mini/manifests/experiments/README.md` is the pre-registration and the
-reading of the eighteen runs that used these, in order, with what each shape
+reading of the thirty runs that used these, in order, with what each shape
 found and did not; `FAILURE_MODES.md` carries what they corrected.
 
 ---
