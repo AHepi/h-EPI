@@ -129,6 +129,11 @@ MINI_CODES: frozenset[str] = frozenset(
         "MINI_USETEST_CALL_FAILED",
         "MINI_USETEST_PLAN_INVALID",
         "MINI_USETEST_CEILING_SPENT",
+        # BUILD-TEST-1 (``buildtest.py``): reconstruction against relay.
+        "MINI_BUILDTEST_ARM_UNKNOWN",
+        "MINI_BUILDTEST_PATH_UNKNOWN",
+        "MINI_BUILDTEST_KEY_MISSING",
+        "MINI_BUILDTEST_PLAN_INVALID",
     }
 )
 
