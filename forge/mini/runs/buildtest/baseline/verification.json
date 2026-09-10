@@ -1,0 +1,28 @@
+{
+  "refusal_phrase_in returns a list-order phrase, not the first in the text": {
+    "input": "I'm sorry, but I cannot",
+    "first_in_text": "I'm sorry",
+    "code_returns": "I cannot",
+    "kernel_rows_covering_it": "none; R-01 case and quotes, R-02 beside a form, R-03 inside a value, R-04 split by whitespace",
+    "status": "candidate, new"
+  },
+  "a fence tagged other than json has its object dropped": {
+    "python_tag": "{'a': 2}",
+    "json_tag": "{'a': 1}",
+    "regex": "```(?:json|JSON)?\\s*(.*?)```",
+    "kernel_rows_covering_it": "none; P-01, P-02, P-06, P-10 cover fences but not the tag",
+    "status": "candidate, new"
+  },
+  "_span_occurs answers verbatim on a non-verbatim span": {
+    "call": "_span_occurs('a  b', 'a b', ())",
+    "returns": "verbatim",
+    "kernel_rows_covering_it": "G-01, G-08, O-01 record the whitespace normalisation",
+    "status": "already a boundary"
+  },
+  "an object nested in a top-level array is recovered": {
+    "call": "recover_json_object('[{\"a\": 1}]')",
+    "returns": "{'a': 1}",
+    "kernel_rows_covering_it": "P-05 records the array reply at the oracle level, not this function",
+    "status": "known at one level, unclear at this one"
+  }
+}

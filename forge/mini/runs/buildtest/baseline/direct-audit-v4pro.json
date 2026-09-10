@@ -1,0 +1,37 @@
+{
+  "model": "deepseek-v4-pro",
+  "attempts": [
+    {
+      "attempt": 0,
+      "elapsed_s": 149,
+      "function": "recover_json_object",
+      "docstring_words": "Every top-level balanced object in the text is a candidate",
+      "code_does": "It scans every occurrence of '{' not already covered by a previous raw_decode and decodes from there. This treats an object nested inside a top-level array as a candidate; with input [{\"a\":1}] it recovers the nested object {\"a\":1} even though the top-level value is an array, not an object.",
+      "example_input": "[{\"a\": 1}]"
+    },
+    {
+      "attempt": 1,
+      "elapsed_s": 177,
+      "function": "_span_occurs",
+      "docstring_words": "Return None when the span is not in the document, else how it was matched (\"verbatim\" or a relaxation).",
+      "code_does": "Normalizes whitespace in both span and document before checking, and returns \"verbatim\" if the normalized span is a substring of the normalized document, even when the original span is not literally present.",
+      "example_input": "_span_occurs(\"a  b\", \"a b\", ())"
+    },
+    {
+      "attempt": 2,
+      "elapsed_s": 160,
+      "function": "recover_json_object",
+      "docstring_words": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text",
+      "code_does": "It only recognizes code fences whose opening fence is bare ```, ```json, or ```JSON (via _FENCE); a fence with any other tag such as ```python is ignored, so its object is treated only as a top-level candidate, and the function returns the last top-level object instead of the last fenced one.",
+      "example_input": "```python\n{\"a\": 1}\n```\n{\"a\": 2}"
+    },
+    {
+      "attempt": 3,
+      "elapsed_s": 288,
+      "function": "refusal_phrase_in",
+      "docstring_words": "The first refusal phrase the text contains, typographic quotes read as straight ones, or None.",
+      "code_does": "Returns the first phrase in the refusal_phrases list that appears anywhere in the text, so it can return a phrase that is not the first refusal phrase occurring in the text.",
+      "example_input": "refusal_phrase_in(\"I'm sorry, but I cannot\", (\"I cannot\", \"I'm sorry\"))"
+    }
+  ]
+}
