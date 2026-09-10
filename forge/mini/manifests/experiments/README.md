@@ -140,3 +140,67 @@ doing what neither reader wrote down.
 | `e-replies-as-written` | nemotron-3-nano:30b | rules only; inputs are replies as a model writes them (headings, hedges, quoted drafts, labelled fences), rewrites one edit a model might make |
 
 Three cycles each. Records under `forge/mini/runs/experiments/round-2/`.
+
+### Round 2, read so far
+
+Written when A (twice: the first run was moved aside by mistake and re-run,
+so the shape has a repeat), B and C had ended, and D and E were in their
+second cycle. S3 of round 1 had ended by then too.
+
+- **S3** (qwen3.5:397b, registered transforms against the catalogue's "does
+  not move" rows): nine proposals, nine run, five `defect` standings, the first
+  on any run. Two are trivial (a sentence with no object, under a transform
+  that adds one). Two refute the fold-whitespace rows with runs of spaces
+  inside a string value or a key: the transform reaches inside strings and the
+  row's invariance was written over the row's example, not its class. One is
+  substantive: the response verdict under upper case on a reply holding a JSON
+  literal (`"active": true` becomes `TRUE`, `INVALID_JSON`), which no row
+  states. The criterion's first clause is met; what it shows is that the
+  catalogue's invariance rows overclaim their class.
+- **A** (gemma4:31b, rules only): two runs, nine pairs each, two pairs the same
+  between them at temperature zero. One candidate in each run, the same one:
+  the value's containment in the span is unchanged under a change of the
+  value's case. The rules do not say so, the code folds case, and no row of
+  `docs/kernel.md` records it (G-04 is the span's occurrence). The criterion's
+  second clause is met, on a small point.
+- **B** (mistral-large-3:675b, rules-only proposers, code-only predictors):
+  nine pairs, nine run, five candidates. The readings: two "expectation
+  failed, prediction held", two "expectation held, prediction failed", three
+  "both failed", two "both held". Of the two where the rule's reader was wrong
+  and the code's reader right, one is a misreading (an object inside a
+  sentence taken for a nested one) and one is a point the table lacks: a
+  listed refusal phrase inside a string value of the form itself is found by
+  the scan, so a note field reading "I cannot verify this" raises the flag
+  (R-02 covers prose around the object, not text inside it). Of the three
+  "both failed", all are two misreadings of the same clause (the prose flag is
+  set by a fence too; containment is containment). "Both failed" does not
+  mean the code does what nobody wrote; it means two readers missed the same
+  words. A person's reading stays necessary, as pre-registered.
+- **C** (gemma4:31b, the grid): nine cells covered, nine pairs run, all
+  expected `unchanged` and all unchanged. The grid reached the control's cell
+  (a sentence inside the fence before the object) in cycle 2 but with nothing
+  after the fence, where the code and the rule agree; the control needs that
+  cell beside a different bare object after the fence, and nine proposals did
+  not reach the conjunction.
+
+What this says: the shape that targets a written row (S3) and the shape that
+records two readings (B) produce findings; the shape that asks for the rule's
+expectation alone (A) produces the same small one twice; the grid gets to the
+neighbourhood of the control and stops one dimension short.
+
+## Round 3
+
+Mutations from the round-2 records, pre-registered before the runs:
+
+| Shape | Model | What it varies |
+|---|---|---|
+| `r3-1-invariances-readable` | gemma4:31b | S3's shape on a second model, with the input required to be one the kernel reads, so a sentence with no object cannot refute a recovery row |
+| `r3-2-grid-conjunctions` | gemma4:31b | the grid with two dimensions per cell (what the fence holds, what follows the fence), four cycles; the control's cell is one of twenty and is not named |
+| `r3-3-two-readers-four` | gemma4:31b | B's shape on a second model, four cycles |
+| `r3-4-sensitivities` | mistral-large-3:675b | the mirror of S3: rows that say the pair moves, and an input of the class on which it does not |
+| `r3-5-replies-as-written-four` | gemma4:31b | E's shape on a second model, four cycles |
+
+Records under `forge/mini/runs/experiments/round-3/`. The criterion is
+unchanged. The control is found if a verdict on a pair or triple of the
+control's shape (a fence holding a sentence and an object, a different bare
+object after it) shows the bare object scored.
