@@ -329,3 +329,73 @@ is whether criticism *does* anything.
   out on the strongest version of itself this repository can build.**
 - **C10.** At least one `cannot-tell` is used. A closed ground enum with an escape road that nobody
   takes is a measurement that the escape was unnecessary, not that it was absent.
+
+## Asking why, and three answers that change what the numbers meant
+
+### Why did the enumerator ground none of its 460 collapses?
+
+Not because it writes no prose, which was the easy answer and the wrong one. **458 of the 460 are on
+functions whose entire range over the fourteen seeds is a single value.** `control_kind` returns
+`None` for every seed; `_headings`, `_loads_last_wins` and four others likewise. A constant function
+collapses every pair trivially: that is not a boundary, it is a seed set too narrow to make the
+function vary.
+
+So the enumerator grounded nothing because **it found almost nothing worth grounding**, and the
+baseline was weak because the *seeds* were weak, not because enumeration is. The model's
+contribution is therefore not "supplying the reading" over a good search — it is **choosing inputs
+that make a function vary at all**, which fourteen fixed seeds did not.
+
+### Why did N and F come back equal?
+
+Not because the return path is inert. **F was told "Do not repeat any pair above" and repeated
+twice — more than N, which was never told.**
+
+| arm | distinct pairs | repeats of an earlier pair |
+|---|---|---|
+| N (no carry) | 7 | 1 |
+| F (carry) | 6 | **2** |
+| W (same carry) | **8** | **0** |
+
+The carry was not ignored; it was **obeyed toward the wrong target**. F's criticism is intelligent
+and confidently misattributed: reading its segment-3 carry, the critic diagnoses a fence-regex
+divergence and tells the next conjecture to avoid `json` fences. Its two dominant failures —
+claims naming a function that does not exist, and claims giving two identical texts — live in the
+**reading**, and its critic never mentions the reading once in eight segments, because it cannot see
+one. A misdiagnosis carried forward steers the next segment at a target that was never the problem,
+which is how F repeated more than the arm with no guidance at all.
+
+### Why did rewiring work?
+
+Because the critic gained **a third place to assign blame**. F's critic can blame the conjecture or
+the code. W's can also blame the reading, and does:
+
+> "…It names the function the prose named and states the expectation the prose stated, so it renders
+> the conjecture faithfully. **The defect is in the conjecture's interpretation of the rule, not in
+> the reading.**"
+
+That is the attribution step, and it is unavailable to a critic with two categories for a
+three-category problem.
+
+### C6 was not failed by the arm; it was failed by my test of it
+
+The earlier reading said "none of W's eight criticisms names a reading's artifact id — C6 fails". It
+searched for **reading** ids. The critic refers to the reading through the **conjecture's** id,
+because the reading is rendered as that conjecture's commitments line. Measured for any artifact id
+of the run:
+
+| arm | cites an artifact id | discusses "the reading" |
+|---|---|---|
+| N | 1/8 | **0/8** |
+| F | 0/8 | **0/8** |
+| W | **7/8** | **7/8** |
+| A | 3/5 | **5/5** |
+
+**C6 holds.** The wire was added and used, so C5's effect stands on the wiring as claimed, and the
+earlier "the mechanism is being shown, not citing" was an artefact of my own measurement.
+
+### What this does to the verdict on the return path
+
+"The return path alone buys nothing" is **withdrawn**. The return path carries whatever the critic
+produced, and amplifies it either way: F's carry amplified a misdiagnosis into two repeated pairs,
+and W's carried a correct attribution into zero repeats and the block's widest coverage. Its value
+is **conditional on whether the critic can see the layer the errors are in**.
