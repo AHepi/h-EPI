@@ -643,6 +643,38 @@ computation, and the repeat floor is read as though it were.
 cap, in block 3's arm A on `v5-s2-2`. One occurrence in fourteen calls on that path, cause
 unknown, recorded rather than explained.
 
+## H5 — The permission layer declares what the machinery does not enforce
+
+**Found by** `forge/construct/runs/mini-can-install/`, which is forty lines and settles a claim
+this repository's own documents had wrong. **Status: OPEN.**
+
+`CLAUDE.md` says mini mints no standing and that the permission layer's `changes` is `nothing`,
+with any other value refused at compile. The refusal is real: `policy.py` raises
+`MINI_POLICY_CHANGE_UNSUPPORTED` on anything else. But that declaration governs what a **seat is
+permitted to claim**, and a registered machine seat is arbitrary Python handed the whole record.
+Nothing in the policy, the compiler or the runner prevents such a seat from holding an object
+outside the record and mutating it.
+
+The demonstration does exactly that. A machine seat reads the cycle's proposal, verifies it by
+exhaustive check, and installs it into a controller that lives outside the run. Three cycles, the
+policy still reporting `changes = nothing`, and the controller goes from 34 contract violations to
+0 and stays there. Mini installed.
+
+**What this corrects.** It had been claimed, in this session and in the CONSTRUCT-TEST
+pre-registration, that mini is *architecturally* pinned at the no-return control — unable, by
+construction, to let a proposal reach an operative state. That is false, and the error was
+conflating a convention of every template written so far with a limit of the machine. Every mini
+template in this tree happens to be sealed; none had to be.
+
+**What remains true.** `changes` is compile-refused at anything but `nothing`; every mini run in
+this repository to date was sealed; and a cycle must still end in a verdict stage, which the
+demonstration satisfies rather than evades.
+
+**Why it is a defect and not a feature.** The installation above took its standing from an
+exhaustive verifier, not from a seat's judgement, so it respects what the rule is *for*. The same
+mechanism would install on a seat's say-so and nothing would notice. A permission layer that
+declares a restriction the machinery does not enforce is a layer that will be believed.
+
 ## What the thirty runs show, and do not
 
 The control pre-registered in the README (a fence holding a sentence beside its

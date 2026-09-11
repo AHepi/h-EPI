@@ -17,11 +17,22 @@ and
 > In every case the effect must occur in the operative state rather than only in a congratulatory
 > summary.
 
-Mini cannot satisfy that. Its permission layer sets `changes: nothing` by design, so a proposal it
-accepts never reaches anything operative; a person reads the record and acts. That is exactly the
-Evidence Report's **no-return control** — retain the correct artifact, do not install it — which
-that report reports *failing by construction*. **Mini is architecturally pinned at a control
-condition.** This protocol measures the thing mini was built unable to do.
+Every mini template written in this repository is sealed: a proposal it accepts never reaches
+anything operative, and a person reads the record and acts. That is exactly the Evidence Report's
+**no-return control** — retain the correct artifact, do not install it — which that report reports
+*failing by construction*. This protocol measures what those templates never did.
+
+**A correction, made after this block ran and kept here rather than quietly fixed.** The first
+version of this paragraph said mini was *architecturally* pinned at that control, unable by
+construction to let a proposal reach an operative state. That is false. `changes: nothing` is
+compile-refused at any other value, but it governs what a seat may **claim**; a registered machine
+seat is arbitrary Python handed the whole record, and nothing stops it holding an object outside
+the record and mutating it. `forge/mini/runs/../construct/runs/mini-can-install/` demonstrates it
+in forty lines: a mini run, policy still reading `changes = nothing`, three cycles, controller from
+34 violations to 0. The register entry is H5 in `docs/mini/FAILURE_MODES.md`.
+
+So what follows is not a verdict on mini's architecture. It is a measurement of the difference
+installation makes — and mini can be configured to make it.
 
 ## The measure
 
