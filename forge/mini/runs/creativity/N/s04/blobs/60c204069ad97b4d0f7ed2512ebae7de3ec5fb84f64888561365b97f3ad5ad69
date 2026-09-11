@@ -1,0 +1,17 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+## The conjecture, as written (conj)
+[c7c17403fe94eb02] (mini.conjecture.v1)
+I am testing open:creib.forge.conformance.records.recover_json_object. The documented rule says: "Every top-level balanced object in the text is a candidate, not only the span from the first ``{`` to the last ``}``: reasoning prose before or after the answer frequently contains stray braces, and an object nested inside another is not a candidate of its own." The two reply texts are, in full, `{"b": 2}` and `{"a": "prefix {"b": 2}"}`. For the first, the rule requires the recovered object {"b": 2} with no duplicate keys. For the second, the rule requires no JSON object to be recovered (a RecordError), because the only parseable object is inside a string value and is not a top-level balanced object. The check gives the same answer for both: the tuple ({"b": 2}, ()). I would be wrong if recover_json_object on the second text raises RecordError or returns a different value, or if the rule is read as allowing objects inside string literals to count as top-level candidates.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.

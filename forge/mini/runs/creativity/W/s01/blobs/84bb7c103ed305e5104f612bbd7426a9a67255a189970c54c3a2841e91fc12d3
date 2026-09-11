@@ -1,0 +1,18 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Pair: conjecture [65e609a2d669816e] vs execution [6d4273184253c274]. The conjecture does not misread the rule. The rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text..." The first input has two fences; the last object inside any fence is {"c":3}, so the rule requires {"c":3}. The execution returned ({'a': 1}, ()) before and after, i.e. it returned the first fence's object. The code parts company with the rule as written: recover_json_object builds a fenced pool of each fence's entire content, so the second fence's content '{"b":2} {"c":3}' fails as a single JSON object, and the function falls back to the first fence's content '{"a":1}'. That is the alternative reading the conjecture explicitly rejected, not the documented rule. Next conjecture should try: assert that the fenced pool must collect individual JSON objects inside each fence and take the last such object across all fences, and propose a test where the last fence contains multiple objects. Avoid repeating: do not frame the issue as an ambiguity between 'last fence whose entire content parses' and 'last object inside any fence'; the rule is unambiguous, and the implementation's granularity is the defect.
+
+Reading: the commitments field of conjecture artifact [65e609a2d669816e] claims to render the conjecture's words: "The function open:creib.forge.conformance.records.recover_json_object is being tested... For the first text, the rule requires the answer {"c":3}... For the second text, the rule requires the answer {"a":1}... The check gives the same answer for both: it returns {"a":1}." The reading says: "The function open:creib.forge.conformance.records.recover_json_object is being tested; its documented rule requires the last object inside any code fence, so for the first text it should return {"c":3} and for the second {"a":1}, but the implementation returns {"a":1} for both, meaning the check is incorrect under that rule." It renders them faithfully: it names the same function the prose named, states the same expected outputs, and reports the same observed output. No defect in the reading; the defect is in the implementation, not in the conjecture or its reading.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

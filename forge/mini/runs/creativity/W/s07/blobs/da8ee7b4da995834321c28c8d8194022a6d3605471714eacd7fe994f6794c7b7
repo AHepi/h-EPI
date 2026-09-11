@@ -1,0 +1,18 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+## The conjecture, as written (conj)
+[788b6bf5dcdd1b54] (mini.conjecture.v1)
+Conjecture: The function open:creib.forge.conformance.records.refusal_phrase_in, whose documented rule is "The first refusal phrase the text contains, typographic quotes read as straight ones, or None.", must return different answers for the two reply texts below, but the check as implemented returns the same answer for both. Reply text A: 'I'm sorry, I cannot do that.' Reply text B: 'I cannot, I'm sorry.' The rule requires A to return 'I'm sorry' because that phrase occurs first in the text, and B to return 'I cannot' because that phrase occurs first in the text. The implementation instead loops over the refusal_phrases tuple in its fixed order and returns the first phrase from that tuple that appears anywhere, so for both A and B it returns 'I cannot' (since 'I cannot' precedes 'I'm sorry' in the tuple). Thus the check gives the same answer on a pair the rule requires it to tell apart. I would be wrong if refusal_phrase_in on A returns 'I'm sorry' and on B returns 'I cannot', or if the documented rule is read as 'first phrase in the refusal_phrases list that appears' rather than first occurrence in the text.
+commitments: The function open:creib.forge.conformance.records.refusal_phrase_in, whose documented rule is 'The first refusal phrase the text contains, typographic quotes read as straight ones, or None.', must return 'I'm sorry' for reply text A ('I'm sorry, I cannot do that.') and 'I cannot' for reply text B ('I cannot, I'm sorry.'), but the implementation as written returns 'I cannot' for both because it iterates over the refusal_phrases tuple in fixed order rather than by first occurrence in the text. This means the check gives the same answer on a pair the rule requires it to tell apart. The conjecture would be false if refusal_phrase_in returns 'I'm sorry' for A and 'I cannot' for B, or if the documented rule is read as 'first phrase in the refusal_phrases list that appears' rather than first occurrence in the text.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.

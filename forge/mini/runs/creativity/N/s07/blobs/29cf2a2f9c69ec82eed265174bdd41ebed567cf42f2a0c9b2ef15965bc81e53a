@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The conjecture misread the code, not the rule. The rule says: "Every top-level balanced object in the text is a candidate, not only the span from the first ``{`` to the last ``}``: reasoning prose before or after the answer frequently contains stray braces, and an object nested inside another is not a candidate of its own." The code's top-level scan does use raw_decode at every `{`, but for the first reply `"{\"a\": 1}"` the `{` is followed by an escaped quote, so raw_decode fails and no candidate is appended; recover_json_object raises RecordError. The execution confirms this: 'before': ' raised', not the object. The conjecture's claim that the check returns the object for the first reply is false. The rule and code agree; the conjecture misread the code's behavior. Next conjecture should test that a `{` inside a string is not recovered because raw_decode fails on the escaped quote, and should avoid repeating the claim that the top-level scan recovers an object inside a string.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

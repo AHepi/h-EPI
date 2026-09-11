@@ -1,0 +1,16 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Pair: conjecture 220cd235493de3da vs execution f40a12a1eab23982. The conjecture says the documented rule requires recover_json_object to raise RecordError for '[{"a": 1}, {"b": 2}]' because the only objects are array elements, not top-level, and to return ({"b": 2}, ()) for '{"b": 2}'. The execution shows the function unchanged and still returns ({"b": 2}, ()) for the array input, with as_expected false and expect 'moves'. So the rule as written and the code part company: the code's top-level scanner raw_decodes at every '{' and does not exclude objects inside arrays, so it treats '{"b": 2}' as a top-level candidate. The conjecture did not misread the rule; the code violates the rule's words 'the last top-level object in the text' and 'an object nested inside another is not a candidate of its own.' However, the conjecture is internally inconsistent: its last sentence says 'I would be wrong if recover_json_object on '[{"a": 1}, {"b": 2}]' raises RecordError instead of returning '{"b": 2}'', which contradicts the earlier requirement to raise. The reading (commitments line in the same artifact) says the function 'must raise RecordError for '[{"a": 1}, {"b": 2}]' and return ({"b": 2}, ()) for '{"b": 2}''. It renders the earlier expectation but omits the contradictory last sentence, so it is incomplete; the defect is in the conjecture, not the reading, because the prose cannot simultaneously require raising and say it would be wrong to raise. Next conjecture should try: state unambiguously that recover_json_object must raise RecordError for the array input, and propose a code change that enforces top-level by parsing the whole text and only considering objects not nested in arrays or other values (e.g., track array depth or parse the full JSON and take top-level dicts). Avoid repeating the contradictory 'I would be wrong if it raises' sentence, and avoid claiming the check already moves when the execution shows unchanged.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

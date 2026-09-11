@@ -1,0 +1,18 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+## The conjecture, as written (conj)
+[220cd235493de3da] (mini.conjecture.v1)
+Conjecture: open:creib.forge.conformance.records.recover_json_object. The documented rule says: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text' and 'an object nested inside another is not a candidate of its own.' The two replies are, first, '[{"a": 1}, {"b": 2}]' and, second, '{"b": 2}'. For the first reply, there is no code fence and no top-level object: the only objects are elements of an array, which are not top-level, so the rule requires recover_json_object to raise RecordError with 'no JSON object could be recovered from the response'. For the second reply, the last top-level object is '{"b": 2}', so the rule requires it to return ({"b": 2}, ()). The check gives the same answer for both: it returns ({"b": 2}, ()) for the first reply because its top-level scanner calls raw_decode at each '{' without excluding objects inside arrays, so it treats '{"b": 2}' as a top-level candidate. I would be wrong if recover_json_object on '[{"a": 1}, {"b": 2}]' raises RecordError instead of returning '{"b": 2}', or if it returns any answer other than ({"b": 2}, ()) for that text.
+commitments: The function recover_json_object, per its documented rule, must raise RecordError for '[{"a": 1}, {"b": 2}]' and return ({"b": 2}, ()) for '{"b": 2}'; the check currently returns ({"b": 2}, ()) for both, so it violates the rule.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.

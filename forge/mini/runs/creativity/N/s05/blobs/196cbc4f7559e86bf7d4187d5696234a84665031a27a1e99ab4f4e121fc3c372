@@ -1,0 +1,17 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+## The conjecture, as written (conj)
+[2e3b122dbab7ff32] (mini.conjecture.v1)
+I am testing recover_json_object. The documented rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction." The first reply text is the string consisting of three backtick characters, the word json, a newline, the characters {"a":1}, a newline, the characters {"b":2}, a newline, three backtick characters, a newline, and the characters {"c":3}. The second reply text is the string {"c":3}. For the first reply, the rule requires the last object inside the code fence, which is {"b":2}, because the fence holds two objects and the last one is {"b":2}. For the second reply, the rule requires the last top-level object, which is {"c":3}. The function returns {"c":3} for both replies: for the first, it treats the entire fenced content as one candidate, fails to parse it, and falls through to the top-level objects, returning the last top-level object {"c":3}; for the second, it returns {"c":3} directly. I would be wrong if the function returned {"b":2} for the first reply, or if the rule were read as requiring the entire fenced span to be a single parseable object, in which case the first reply would also require {"c":3}.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.

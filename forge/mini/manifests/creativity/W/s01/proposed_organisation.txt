@@ -1,0 +1,15 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+Conjecture 68aa0cc305d6e61c is correct that the code violates the rule, and it does not misread the rule. The rule says "Every top-level balanced object in the text is a candidate" and "an object nested inside another is not a candidate of its own." A brace inside a string literal is not a top-level object; it is part of a JSON string token. The code in recover_json_object scans every `{` and calls raw_decode without tracking whether the brace is inside a string, so for `"{"a":1}"` it recovers `{"a":1}`. The execution confirms this: input `"{"a":1}"` produced `({'a': 1}, ())` with `as_expected: false` and `executed: unchanged`, not RecordError. Thus the rule as written and the code part company; the conjecture's reading is not the defect. A next conjecture should try a case where a brace inside a string is followed by a valid object outside the string, or a string containing only a brace, to force the function to distinguish lexical tokens. It should avoid repeating the claim that the rule explicitly mentions string literals; the rule does not use that word, and the defect is the code's failure to respect JSON tokenization, not an explicit string-literal clause.

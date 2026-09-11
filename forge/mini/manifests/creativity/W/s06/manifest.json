@@ -1,0 +1,243 @@
+{
+  "schema_version": "creib.mini.manifest.v1",
+  "manifest_id": "mini.creativity.w.s06",
+  "problem": "The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.\n\nFind a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.\n\nA pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.\n\n## What this inquiry has already run\n\n- open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unchanged\n- open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unchanged\n- open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unrunnable\n- open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unchanged\n- open:creib.forge.conformance.records.refusal_phrase_in on a pair differing by: moves -> the check answered unchanged\n- open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unchanged\n\nDo not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.\n\n## The standing criticism of the last attempt\n\nThe conjecture misreads the rule. The rule's words are: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' The phrase 'when any fence holds one' does not mean 'when any fenced text contains a JSON object somewhere among other prose.' In the implementation, a fence 'holds one' only when the fenced content itself parses as a single JSON object: `_FENCE` captures the whole fenced span, and `recover_json_object` tries that span as a candidate before falling back to top-level objects. For the first reply, the fenced span is `{\"a\": 1}\\nextra prose`, which is not a JSON object, so no fence holds one; the rule then selects the last top-level object, `{\"b\": 2}`, exactly as the code returns. The execution confirms this: input ` ```json\\n{\\\"a\\\": 1}\\nextra prose\\n```\\n{\\\"b\\\": 2}` returned `({'b': 2}, ())`, unchanged, not the conjectured `{\\\"a\\\": 1}`. Thus rule as written and code agree; the conjecture's reading is the defect. The reading in the conjecture's commitments field (artifact id [0407a412d2908b33]) is faithful to the conjecture's prose: it names the same function and states the same expectation, including the claim 'the rule requires returning {\\\"a\\\": 1}, but the function returns {\\\"b\\\": 2}'. It is not a defective reading; the defect is in the conjecture it records. A next conjecture should not repeat the interpretation that a fence containing any JSON object among extra text 'holds one.' Instead it should test the boundary the code actually implements: a fenced span that is itself a single JSON object versus a fenced span with extra prose, and confirm the fallback to the last top-level object.",
+  "cycles": {
+    "max_cycles": 1
+  },
+  "port_types": [
+    {
+      "port_type": "source",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.kernel-source.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies",
+        "header": "The source of the checks"
+      }
+    },
+    {
+      "port_type": "conj",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.conjecture.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies_and_commitments",
+        "header": "The conjecture, as written"
+      }
+    },
+    {
+      "port_type": "reads",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.pair-proposal.reading.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies_and_commitments",
+        "header": "Readings"
+      }
+    },
+    {
+      "port_type": "execs",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.pair-execution.open.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies_and_commitments",
+        "header": "What the machine returned"
+      }
+    },
+    {
+      "port_type": "crits",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.criticism.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies",
+        "header": "Criticism"
+      }
+    }
+  ],
+  "kinds": [
+    {
+      "kind_id": "mini.kernel-source.v1",
+      "title": "Source",
+      "input_ports": [],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.kernel-source.v1"
+      }
+    },
+    {
+      "kind_id": "mini.conjecture.v1",
+      "title": "Conjecture",
+      "instruction": "Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.\n\nA kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.\n\n- creib.forge.conformance.appraisal\n- creib.forge.conformance.claims\n- creib.forge.conformance.compare\n- creib.forge.conformance.controls\n- creib.forge.conformance.corpus\n- creib.forge.conformance.cycles\n- creib.forge.conformance.dependence\n- creib.forge.conformance.families\n- creib.forge.conformance.oracle\n- creib.forge.conformance.prompt\n- creib.forge.conformance.records\n- creib.forge.conformance.report\n- creib.forge.conformance.routing\n- creib.forge.conformance.spec\n- creib.forge.conformance.units\n",
+      "input_ports": [
+        {
+          "port_id": "problem",
+          "port_type": "problem",
+          "window": "all"
+        },
+        {
+          "port_id": "source",
+          "port_type": "source",
+          "window": "all"
+        }
+      ],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.conjecture.v1"
+      }
+    },
+    {
+      "kind_id": "mini.pair-proposal.reading.v1",
+      "title": "Reading",
+      "commitment_call": "single",
+      "optional_fields": [
+        "input",
+        "rewritten",
+        "rewrite"
+      ],
+      "instruction": "You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.\n\nThe commitments are a STRING holding JSON of the form {\"kernel\": \"<path>\", \"expect\": \"moves\" or \"unchanged\"} and nothing else.\n\n\"kernel\" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.\n\nThis artifact carries \"input\", \"rewritten\" and \"rewrite\" as fields of its own, each a plain string: \"input\" and \"rewritten\" are the two reply texts exactly as the prose gave them, and \"rewrite\" says how they differ. Use \"moves\" when the rule requires the two answers to differ.",
+      "input_ports": [
+        {
+          "port_id": "conj",
+          "port_type": "conj",
+          "window": "this_cycle"
+        }
+      ],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.pair-proposal.reading.v1"
+      }
+    },
+    {
+      "kind_id": "mini.pair-execution.open.v1",
+      "title": "Execute",
+      "input_ports": [
+        {
+          "port_id": "reads",
+          "port_type": "reads",
+          "window": "this_cycle"
+        }
+      ],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.pair-execution.open.v1"
+      }
+    },
+    {
+      "kind_id": "mini.criticism.v1",
+      "title": "Criticism",
+      "instruction": "Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.\n\nYou are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.",
+      "input_ports": [
+        {
+          "port_id": "source",
+          "port_type": "source",
+          "window": "all"
+        },
+        {
+          "port_id": "conj",
+          "port_type": "conj",
+          "window": "this_cycle"
+        },
+        {
+          "port_id": "reads",
+          "port_type": "reads",
+          "window": "this_cycle"
+        },
+        {
+          "port_id": "execs",
+          "port_type": "execs",
+          "window": "this_cycle"
+        }
+      ],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.criticism.v1"
+      }
+    },
+    {
+      "kind_id": "mini.verdict.v1",
+      "title": "Verdict",
+      "input_ports": [
+        {
+          "port_id": "execs",
+          "port_type": "execs",
+          "window": "this_cycle"
+        }
+      ],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.verdict.v1"
+      }
+    }
+  ],
+  "stages": [
+    {
+      "stage_id": "source",
+      "kind_id": "mini.kernel-source.v1",
+      "seat": "machine",
+      "ports": []
+    },
+    {
+      "stage_id": "conjecture",
+      "kind_id": "mini.conjecture.v1",
+      "ports": [
+        "problem",
+        "source"
+      ]
+    },
+    {
+      "stage_id": "reading",
+      "kind_id": "mini.pair-proposal.reading.v1",
+      "ports": [
+        "conj"
+      ]
+    },
+    {
+      "stage_id": "execute",
+      "kind_id": "mini.pair-execution.open.v1",
+      "seat": "machine",
+      "ports": [
+        "reads"
+      ]
+    },
+    {
+      "stage_id": "criticise",
+      "kind_id": "mini.criticism.v1",
+      "ports": [
+        "source",
+        "conj",
+        "execs"
+      ]
+    },
+    {
+      "stage_id": "verdict",
+      "kind_id": "mini.verdict.v1",
+      "seat": "machine",
+      "ports": [
+        "execs"
+      ]
+    },
+    {
+      "stage_id": "end",
+      "end": true
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "contract",
+      "text": "the checks under test are the harness's own\n"
+    }
+  ]
+}

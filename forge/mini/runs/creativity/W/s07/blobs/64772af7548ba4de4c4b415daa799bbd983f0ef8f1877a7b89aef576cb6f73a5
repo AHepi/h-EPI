@@ -1,0 +1,20 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Pair: conjecture vs code. The conjecture did not misread the rule. The rule's words are 'The first refusal phrase the text contains, typographic quotes read as straight ones, or None.' That means the phrase whose first occurrence in the text is earliest, not the first phrase in the refusal_phrases tuple. The code parts company with the rule: refusal_phrase_in loops over refusal_phrases in fixed order and returns the first phrase from that tuple that appears anywhere, so for A ('I'm sorry, I cannot do that.') it returns 'I cannot' (because 'I cannot' is earlier in the tuple than 'I'm sorry'), and for B ('I cannot, I'm sorry.') it also returns 'I cannot'. The rule requires 'I'm sorry' for A and 'I cannot' for B. So the check gives the same answer on a pair the rule requires it to tell apart.
+
+Reading: the commitments block (no separate artifact id shown) quotes the conjecture's words 'The function open:creib.forge.conformance.records.refusal_phrase_in...' and renders them faithfully. It names the same function, states the same expected outputs ('I'm sorry' for A, 'I cannot' for B), and states the same implementation defect (fixed tuple order). No defect in the reading; the conjecture and the reading are both correct.
+
+Next conjecture should try a different pair that also exposes the tuple-order defect, e.g., 'I am unable, I cannot' (rule: 'I am unable'; code: 'I cannot'), and should avoid repeating the same A/B pair or the misreading that the rule means tuple order.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

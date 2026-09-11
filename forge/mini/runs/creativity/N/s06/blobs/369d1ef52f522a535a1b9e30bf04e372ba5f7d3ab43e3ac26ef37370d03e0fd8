@@ -1,0 +1,11 @@
+I am testing `open:creib.forge.conformance.oracle.recover_json_object`. The documented rule I am reading is: “The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.”
+
+The two reply texts, in full, are:
+
+Reply 1: `"```json\n{\"b\":2} {\"c\":3}\n```\n{\"a\":1}"`
+
+Reply 2: `"```json\n{\"d\":4} {\"e\":5}\n```\n{\"a\":1}"`
+
+For Reply 1, the rule requires the answer `{"c":3}`, because the only code fence holds two top-level objects and the last one inside that fence is `{"c":3}`. For Reply 2, the rule requires `{"e":5}`, because the only code fence holds two top-level objects and the last one inside that fence is `{"e":5}`. The check, however, gives the same answer for both: it passes over the fenced content because the entire fenced span is not a single JSON object, then falls back to the last top-level object in the text, which is `{"a":1}` in both replies.
+
+What would make me wrong: if the check actually returns `{"c":3}` for Reply 1 and `{"e":5}` for Reply 2, or if the documented rule is read as requiring a code fence to contain exactly one object before it is considered, then the two replies would not be a pair on which the check gives the same answer while the rule requires different answers.

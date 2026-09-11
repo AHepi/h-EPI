@@ -1,0 +1,20 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+## The conjecture, as written (conj)
+[8d97a2184586509b] (mini.conjecture.v1)
+I conjecture that open:creib.forge.conformance.records.recover_json_object fails to distinguish two replies its documented rule requires it to tell apart. The rule I am reading is: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text'. The two reply texts are, in full, (1) ```javascript
+{"a":1}
+```
+{"b":2} and (2) {"b":2}. For reply (1), the rule requires the object inside the code fence, {"a":1}, because a code fence holds one. For reply (2), with no fence, the rule requires the last top-level object, {"b":2}. The function returns {"b":2} for both, because its fence regex only matches ```json, ```JSON, or bare ```, so the javascript fence is not collected as a fence, and the later top-level object wins. What would make me wrong: if the documented rule's 'code fence' is intended to mean only fences with json, JSON, or no language tag, then reply (1) has no qualifying fence and the rule would also require {"b":2}, so the pair would not be a bug.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.

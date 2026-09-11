@@ -1,0 +1,18 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+Pair: conjecture [65e609a2d669816e] vs execution [6d4273184253c274]. The conjecture does not misread the rule. The rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text..." The first input has two fences; the last object inside any fence is {"c":3}, so the rule requires {"c":3}. The execution returned ({'a': 1}, ()) before and after, i.e. it returned the first fence's object. The code parts company with the rule as written: recover_json_object builds a fenced pool of each fence's entire content, so the second fence's content '{"b":2} {"c":3}' fails as a single JSON object, and the function falls back to the first fence's content '{"a":1}'. That is the alternative reading the conjecture explicitly rejected, not the documented rule. Next conjecture should try: assert that the fenced pool must collect individual JSON objects inside each fence and take the last such object across all fences, and propose a test where the last fence contains multiple objects. Avoid repeating: do not frame the issue as an ambiguity between 'last fence whose entire content parses' and 'last object inside any fence'; the rule is unambiguous, and the implementation's granularity is the defect.
+
+Reading: the commitments field of conjecture artifact [65e609a2d669816e] claims to render the conjecture's words: "The function open:creib.forge.conformance.records.recover_json_object is being tested... For the first text, the rule requires the answer {"c":3}... For the second text, the rule requires the answer {"a":1}... The check gives the same answer for both: it returns {"a":1}." The reading says: "The function open:creib.forge.conformance.records.recover_json_object is being tested; its documented rule requires the last object inside any code fence, so for the first text it should return {"c":3} and for the second {"a":1}, but the implementation returns {"a":1} for both, meaning the check is incorrect under that rule." It renders them faithfully: it names the same function the prose named, states the same expected outputs, and reports the same observed output. No defect in the reading; the defect is in the implementation, not in the conjecture or its reading.

@@ -1,0 +1,16 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Execution 24a26832f1bb5d82 was unrunnable, so no observed output supports the conjecture's claim that the check returns {"x":10} for both texts. Inspecting the source, the code's fenced pool treats each fence's entire content as one candidate. For the first text, the second fence's content '{"y":20} {"z":30}' fails to parse as a single object, so the code falls back to the first fence's content '{"x":10}' and returns {"x":10}. The rule as written says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." The second fence holds two objects, so it does not hold one; the first fence holds one, so the last fence that holds one is the first. Thus the code and the rule agree, and the conjecture misread the rule by reading "last one inside a code fence" as "last object inside any code fence" rather than "last fence whose entire content is one object." A next conjecture should try a text where the last fence contains exactly one object and an earlier fence contains multiple objects, to confirm the code picks the last fence that holds one. It should avoid repeating the assumption that the fenced pool scans individual objects inside a fence, and avoid claiming the rule requires the last object inside any fence when a fence contains multiple objects. The reading is the commitments line of conjecture artifact 3c0a7589f889d738: "The function open:creib.forge.conformance.records.recover_json_object returns {"x":10} for both reply texts, even though its documented rule requires {"z":30} for the first text." It names the function the prose named and states the expectation the prose stated, so it renders the conjecture faithfully. The defect is in the conjecture's interpretation of the rule, not in the reading; the reading's function and expectation match the prose exactly, while the prose's claim that the rule requires {"z":30} is the misreading.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

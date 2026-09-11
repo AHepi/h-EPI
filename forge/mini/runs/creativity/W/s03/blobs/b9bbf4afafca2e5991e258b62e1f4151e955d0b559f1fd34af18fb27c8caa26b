@@ -1,0 +1,20 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Conjecture 38804f402b272d4b did not misread the rule. The rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." A fenced block with a language tag such as ```python is still a code fence. The code's fence regex is `_FENCE = re.compile('```(?:json|JSON)?\\s*(.*?)```', re.DOTALL)`, which matches only an empty info string or `json`/`JSON`; it does not match `python`. Therefore for both texts the fenced object is ignored and the function falls back to the last top-level object, `{"b": 2}`. The execution confirms: input ` ```python\n{"a": 1}\n```\n{"b": 2}` returns `({'b': 2}, ())`, and the rewritten input with `{"c": 3}` also returns `({'b': 2}, ())`. So the rule as written and the code part company; the conjecture is correct.
+
+Next conjecture should try a code change: make `_FENCE` match any fenced block regardless of info string, e.g. `re.compile('```[^`\n]*\\s*(.*?)```', re.DOTALL)`, and then assert the two texts return `{"a": 1}` and `{"c": 3}` respectively. Avoid repeating the observation without proposing a fix, and avoid assuming only json/JSON fences count.
+
+Reading attack: the reading is the commitments line attached to conjecture 38804f402b272d4b (no separate artifact id is given). It says: "The function open:creib.forge.conformance.records.recover_json_object returns {"b": 2} for both specified reply texts, failing to distinguish them as the documented rule requires." This names the function the prose named and states the behavioral expectation the prose stated. It omits the mechanism and the required outputs, but the phrase "failing to distinguish them as the documented rule requires" carries the required distinction. I cannot call the reading defective; the defect is in the code, not the conjecture or the reading.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

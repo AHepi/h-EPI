@@ -1,0 +1,18 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+## The conjecture, as written (conj)
+[3c0a7589f889d738] (mini.conjecture.v1)
+The function open:creib.forge.conformance.records.recover_json_object is being tested. Its documented rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." The two reply texts are: first, "```json\n{\"x\":10}\n```\n```json\n{\"y\":20} {\"z\":30}\n```"; second, "```json\n{\"x\":10}\n```". For the first text, the rule requires the answer {"z":30}, because that is the last object inside any code fence. For the second text, the rule requires the answer {"x":10}, because that is the only object inside a code fence. The check gives the same answer for both: it returns {"x":10}, because it treats each fence's entire content as one candidate, so the last fence's content '{"y":20} {\"z\":30}' fails to parse as a single JSON object, and it falls back to the earlier fence's content. The observation that would show this conjecture false is if the check returned {"z":30} for the first text.
+commitments: The function open:creib.forge.conformance.records.recover_json_object returns {"x":10} for both reply texts, even though its documented rule requires {"z":30} for the first text.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.

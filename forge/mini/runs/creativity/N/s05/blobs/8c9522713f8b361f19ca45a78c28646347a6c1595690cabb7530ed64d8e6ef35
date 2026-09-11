@@ -1,0 +1,16 @@
+# Execute
+
+## Readings (reads)
+[f78d87f9bad96cf1] (mini.pair-proposal.reading.v1)
+Reading: the conjecture tests recover_json_object against two replies. The first reply is a fenced JSON block containing {"a":1} and {"b":2}, followed by a top-level {"c":3}; the second reply is just {"c":3}. Under the documented rule, the first reply should score the last object inside the fence, {"b":2}, and the second should score {"c":3}, so the expected outputs differ. The observed function returns {"c":3} for both, treating the fenced content as one unparseable candidate and falling through to the top-level object. I was unsure only about the phrase 'when any fence holds one'; I read it as 'when any fence holds at least one object', matching the conjecture's own statement that the fence holds two objects.
+input: ```json
+{"a":1}
+{"b":2}
+```
+{"c":3}
+rewrite: The first reply contains a fenced JSON block with two objects followed by a top-level object; the second reply is only that top-level object.
+rewritten: {"c":3}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

@@ -1,0 +1,12 @@
+# Execute
+
+## Readings (reads)
+[120a36b20002b9d4] (mini.pair-proposal.reading.v1)
+The function open:creib.forge.conformance.records.recover_json_object is being tested. Its documented rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." The two reply texts are: first, "```json\n{\"x\":10}\n```\n```json\n{\"y\":20} {\"z\":30}\n```"; second, "```json\n{\"x\":10}\n```". For the first text, the rule requires the answer {"z":30}, because that is the last object inside any code fence. For the second text, the rule requires the answer {"x":10}, because that is the only object inside a code fence. The check gives the same answer for both: it returns {"x":10}, because it treats each fence's entire content as one candidate, so the last fence's content '{"y":20} {\"z\":30}' fails to parse as a single JSON object, and it falls back to the earlier fence's content. The observation that would show this conjecture false is if the check returned {"z":30} for the first text.
+input: ```json\n{\"x\":10}\n```\n```json\n{\"y\":20} {\"z\":30}\n```
+rewrite: moves
+rewritten: ```json\n{\"x\":10}\n```
+commitments: {"kernel": "open:creib.forge.conformance.records.recover_json_object", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

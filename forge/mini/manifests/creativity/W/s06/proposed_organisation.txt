@@ -1,0 +1,20 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unrunnable
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.records.refusal_phrase_in on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+The conjecture misreads the rule. The rule's words are: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' The phrase 'when any fence holds one' does not mean 'when any fenced text contains a JSON object somewhere among other prose.' In the implementation, a fence 'holds one' only when the fenced content itself parses as a single JSON object: `_FENCE` captures the whole fenced span, and `recover_json_object` tries that span as a candidate before falling back to top-level objects. For the first reply, the fenced span is `{"a": 1}\nextra prose`, which is not a JSON object, so no fence holds one; the rule then selects the last top-level object, `{"b": 2}`, exactly as the code returns. The execution confirms this: input ` ```json\n{\"a\": 1}\nextra prose\n```\n{\"b\": 2}` returned `({'b': 2}, ())`, unchanged, not the conjectured `{\"a\": 1}`. Thus rule as written and code agree; the conjecture's reading is the defect. The reading in the conjecture's commitments field (artifact id [0407a412d2908b33]) is faithful to the conjecture's prose: it names the same function and states the same expectation, including the claim 'the rule requires returning {\"a\": 1}, but the function returns {\"b\": 2}'. It is not a defective reading; the defect is in the conjecture it records. A next conjecture should not repeat the interpretation that a fence containing any JSON object among extra text 'holds one.' Instead it should test the boundary the code actually implements: a fenced span that is itself a single JSON object versus a fenced span with extra prose, and confirm the fallback to the last top-level object.
