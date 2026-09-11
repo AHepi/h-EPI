@@ -1,0 +1,20 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unrunnable
+- open:creib.forge.conformance.oracle._grounding_kernel on a pair differing by: The span changes from 'a  b' (two spaces) to 'a b' (one space); all other fields are identical. -> the check answered unrunnable
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: (unsaid) -> the check answered unrunnable
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: The rewritten text is the inner object extracted from the input's string value, removing the outer object wrapper and th -> the check answered unrunnable
+- open:creib.forge.conformance.oracle._grounding_kernel on a pair differing by: moves -> the check answered unrunnable
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+The conjecture misreads the rule, not the code. The docstring says 'an object nested inside another is not a candidate of its own,' but 'another' means another object the decoder actually parses, not merely a pair of enclosing braces around an invalid outer object. In Reply A the outer span fails raw_decode, so the cursor is not advanced; the inner object is then the first parseable object at that position and is collected as a top-level candidate. The code's behavior therefore matches the rule as written: the inner object is not nested inside a recovered object. The next conjecture should test a valid outer object containing an inner object, e.g. '{"a": {"b": 1}}', and expect only the outer object to be recovered, with the inner object skipped because the cursor advances past it. It should avoid repeating the assumption that an unparseable outer object's braces make the inner object 'nested' for this rule.

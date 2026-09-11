@@ -6,11 +6,11 @@ A pair the check tells apart where the rule says it should not is a different an
 
 ## What this inquiry has already run
 
-- open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unrunnable
-- open:creib.forge.conformance.oracle._grounding_kernel on a pair differing by: The span changes from 'a  b' (two spaces) to 'a b' (one space); all other fields are identical. -> the check answered unrunnable
+- open:creib.forge.conformance.records.refusal_phrase_in on a pair differing by: moves -> the check answered unrunnable
+- open:creib.forge.conformance.oracle._grounding_kernel on a pair differing by: moves -> the check answered unrunnable
 
 Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
 
 ## The standing criticism of the last attempt
 
-The conjecture misread the rule. The rule says the verdict is given "with no relaxation and the value-in-span check on"; it does not say whitespace must be compared character-for-character. In the source, `_span_occurs` normalizes whitespace before any check, even when `relaxations` is empty, and calls a normalized match "verbatim". So `'a  b'` in `'a b'` is treated as present, and the first reply is GROUNDED, not SPAN_NOT_IN_DOCUMENT. The execution was unrunnable because the kernel path was wrong, but the source confirms the predicted behavior. A next conjecture should assert GROUNDED for both inputs and use a runnable kernel path (or the source's `mini.kernel-source.v1`), avoiding the misreading that "no relaxation" forbids whitespace normalization and avoiding the `open:creib.forge.conformance.oracle._grounding_kernel` path.
+The execution was unrunnable: the kernel `open:creib.forge.conformance.oracle._grounding_kernel` was not found (`MINI_OPEN_KERNEL_NOT_FOUND: 'oracle' has no '_grounding_kernel'`), so there is no machine output to compare against the conjecture's predicted GROUNDED/SPAN_NOT_IN_DOCUMENT. The conjecture did not misread the rule; it correctly read the source's `_span_occurs`, which normalizes whitespace before checking, so Reply B would be GROUNDED under the code as written. The rule says 'with no relaxation and the value-in-span check on,' but the code applies whitespace normalization even when relaxations is empty, so the rule as written and the code part company. A next conjecture should target a runnable kernel identifier—perhaps the actual `_grounding_verdict` in `oracle.py` or whatever path the harness exposes—and avoid repeating the nonexistent `open:creib.forge.conformance.oracle._grounding_kernel` path.

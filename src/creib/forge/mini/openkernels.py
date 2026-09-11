@@ -170,11 +170,31 @@ def _with_second_argument(function: Any, name: str) -> Callable[[str], str] | No
     return lambda text: function(text, value)
 
 
+def _candidate(path: str) -> Kernel | None:
+    """One resolution attempt: the path as given, then with its declared second argument bound."""
+
+    try:
+        return resolve_open_kernel(path)
+    except MiniError as error:
+        if error.code != OPEN_ARITY:
+            return None
+    inner = path[len(OPEN_PREFIX):]
+    module_name, _, function_name = inner.rpartition(".")
+    function = getattr(importlib.import_module(module_name), function_name, None)
+    bound = _with_second_argument(function, function_name) if function is not None else None
+    if bound is None:
+        return None
+    return Kernel(kernel_id=path, description=f"{inner}, second argument declared",
+                  verdict=_answer_of(bound), unreadable=RAISED)
+
+
 def relocate(kernel_id: str) -> str | None:
     """The same function name under another open module, when its stated module does not hold it.
 
     A conjecture that names the right function in the wrong file is misfiled, not false, and
-    refusing it teaches a criticism stage nothing about the subject.
+    refusing it teaches a criticism stage nothing about the subject. A candidate that needs its
+    second argument bound counts as found: the two widenings have to compose, and the first version
+    of this function rejected exactly the case both were written for.
     """
 
     if not is_open_kernel_id(kernel_id):
@@ -182,40 +202,30 @@ def relocate(kernel_id: str) -> str | None:
     name = kernel_id.rpartition(".")[2]
     for module_name in OPEN_MODULES:
         candidate = f"{OPEN_PREFIX}{OPEN_PACKAGE}{module_name}.{name}"
-        if candidate == kernel_id:
-            continue
-        try:
-            resolve_open_kernel(candidate)
-        except MiniError:
-            continue
-        return candidate
+        if candidate != kernel_id and _candidate(candidate) is not None:
+            return candidate
     return None
 
 
 def resolve_any_kernel(kernel_id: str) -> Kernel:
     """The registry first, then import, then a declared second argument, then another module.
 
-    The last two are widenings CREATIVITY-ARMS-1 measured the need for: they turn a claim the
-    executor would have refused into a result the loop can read. Applied to every arm equally.
+    The widenings after the first are ones CREATIVITY-ARMS-1 measured the need for: they turn a
+    claim the executor would have refused into a result the loop can read. Applied to every arm
+    equally, and an unknown name is still refused.
     """
 
     if not is_open_kernel_id(kernel_id):
         return resolve_kernel(kernel_id)
-    try:
-        return resolve_open_kernel(kernel_id)
-    except MiniError as first:
-        if first.code == OPEN_ARITY:
-            path = kernel_id[len(OPEN_PREFIX):]
-            module_name, _, function_name = path.rpartition(".")
-            function = getattr(importlib.import_module(module_name), function_name, None)
-            bound = _with_second_argument(function, function_name) if function is not None else None
-            if bound is not None:
-                return Kernel(kernel_id=kernel_id, description=f"{path}, second argument declared",
-                              verdict=_answer_of(bound), unreadable=RAISED)
-        elsewhere = relocate(kernel_id)
-        if elsewhere is not None:
-            return resolve_open_kernel(elsewhere)
-        raise
+    direct = _candidate(kernel_id)
+    if direct is not None:
+        return direct
+    elsewhere = relocate(kernel_id)
+    if elsewhere is not None:
+        moved = _candidate(elsewhere)
+        if moved is not None:
+            return moved
+    return resolve_open_kernel(kernel_id)
 
 
 def _answer_of(call: Callable[[str], Any]) -> Callable[[str], str]:

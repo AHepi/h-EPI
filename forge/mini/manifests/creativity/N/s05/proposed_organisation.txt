@@ -1,0 +1,19 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unrunnable
+- open:creib.forge.conformance.oracle._grounding_kernel on a pair differing by: The span changes from 'a  b' (two spaces) to 'a b' (one space); all other fields are identical. -> the check answered unrunnable
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: (unsaid) -> the check answered unrunnable
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: The rewritten text is the inner object extracted from the input's string value, removing the outer object wrapper and th -> the check answered unrunnable
+- open:creib.forge.conformance.oracle._grounding_kernel on a pair differing by: moves -> the check answered unrunnable
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+The conjecture did not test the rule it quoted; it tested a kernel path that does not exist. The machine returned `unrunnable` with `MINI_OPEN_KERNEL_NOT_FOUND: 'oracle' has no '_grounding_kernel'`, so no output was produced for either A or B. The source defines `_grounding_kernel` in `mini.kernel-source.v1`, not in `oracle`. The rule's words are: 'The grounding verdict as the harness gives it, with no relaxation and the value-in-span check on.' Because the execution was unrunnable, the conjecture's claim that the function normalises whitespace and returns GROUNDED for both is not supported by this pair. The conjecture misread the rule's location, not its content; the rule as written and the code cannot be compared on this pair because the code was never executed. A next conjecture should target the actual kernel identifier from the source, and avoid repeating the wrong `oracle._grounding_kernel` path and avoid treating an unrunnable execution as evidence about whitespace behavior.

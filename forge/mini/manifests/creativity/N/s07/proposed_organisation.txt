@@ -1,0 +1,21 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unrunnable
+- open:creib.forge.conformance.oracle._grounding_kernel on a pair differing by: The span changes from 'a  b' (two spaces) to 'a b' (one space); all other fields are identical. -> the check answered unrunnable
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: (unsaid) -> the check answered unrunnable
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: The rewritten text is the inner object extracted from the input's string value, removing the outer object wrapper and th -> the check answered unrunnable
+- open:creib.forge.conformance.oracle._grounding_kernel on a pair differing by: moves -> the check answered unrunnable
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unrunnable
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+The conjecture did not get a runnable execution, so its predicted return values were never observed. The execution record says `MINI_OPEN_KERNEL_NOT_FOUND: 'records' has no 'recover_json_object'`, which means the conjecture pointed at a kernel path that does not expose the function. That is a misread of the available source: the function is defined in the source block `[66cd5f2a4e19968e] (mini.kernel-source.v1)`, not at `open:creib.forge.conformance.records.recover_json_object`. On the substantive point, the conjecture is right that the code and the documented rule part company. The rule says 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' The code's fence regex is `re.compile('```(?:json|JSON)?\s*(.*?)```', re.DOTALL)`, which recognizes only bare, ```json, or ```JSON fences. A ```python fence is not a fence under that regex, so Text 1 would fall through to the last top-level object, `{"b": 2}`, exactly as the conjecture predicted. But because the execution was unrunnable, the next conjecture should first target the correct kernel that actually contains `recover_json_object`, and then rerun the same two texts. It should avoid repeating the nonexistent `open:creib.forge.conformance.records.recover_json_object` path and avoid claiming the function returned anything until an execution actually runs.

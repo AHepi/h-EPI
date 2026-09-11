@@ -100,6 +100,12 @@ class OpenKernelResolutionTests(MiniTestCase):
         self.assertEqual(relocate("open:creib.forge.conformance.records.recover_json_object"),
                          "open:creib.forge.conformance.oracle.recover_json_object")
         self.assertIsNone(relocate("open:creib.forge.conformance.oracle.no_such_name_anywhere"))
+
+        # The two widenings must COMPOSE: the first version of relocate() rejected a candidate that
+        # needed its second argument bound, which is exactly the case both were written for, and a
+        # rerun meant to feed the loop results fed it refusals again.
+        composed = resolve_any_kernel("open:creib.forge.conformance.records.refusal_phrase_in")
+        self.assertEqual(composed.verdict("I'm sorry. I cannot do that."), repr("I cannot"))
         with self.assertRaises(MiniError):
             resolve_any_kernel("open:creib.forge.conformance.oracle.no_such_name_anywhere")
 
