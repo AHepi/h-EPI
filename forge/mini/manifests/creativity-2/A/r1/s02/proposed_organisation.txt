@@ -1,0 +1,22 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A has a fenced block containing two JSON objects followed by a third object outside the fence; Reply B has three t -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A includes a fenced span with two objects and a trailing top-level object; Reply B is only the trailing top-level  -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## What has been refuted, computed from the attacks that landed
+
+- 41cb58915f3739b9 was refuted on the ground reading-misrenders-conjecture: The reading claims 'No uncertainty' but the conjecture explicitly allows the fallback reading, so it overstates the conjecture's commitment.
+
+A refuted conjecture is not merely criticised: an attack on it landed and nothing has yet overturned that attack. Do not re-propose one.
+
+## The standing criticism of the last attempt
+
+The conjecture misreads the rule. The rule says "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text" and "A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over". A fenced span containing two objects does not parse as one object, so it is passed over; the fence does not "hold one" object, and the fallback to the last top-level object is what the rule prescribes. The code returns {'c':3} for both, matching the rule. The reading 41cb58915f3739b9 also overstates by saying "No uncertainty" when the conjecture explicitly allows the fallback reading. A next conjecture should test a fence holding exactly one object plus a trailing top-level object, expecting the fenced object, and avoid repeating the claim that a fence with two objects must score the last fenced object.

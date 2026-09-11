@@ -1,0 +1,21 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A has a fenced block containing two JSON objects followed by a third object outside the fence; Reply B has three t -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## What has been refuted, computed from the attacks that landed
+
+- 3448341d9d0fbd13 was refuted on the ground reading-misrenders-conjecture: The reading sets `expect: moves`, but the conjecture states the function returns {"c":3} for both and the check gives the same answer, so a faithful rendering s
+
+A refuted conjecture is not merely criticised: an attack on it landed and nothing has yet overturned that attack. Do not re-propose one.
+
+## The standing criticism of the last attempt
+
+The reading [3448341d9d0fbd13] claims to render the conjecture but sets `expect: moves`, which is the opposite of what the conjecture states. The conjecture says 'The function, however, returns {\"c\":3} for both' and 'Thus the check gives the same answer on a pair the rule requires it to tell apart'; a faithful pair proposal should expect the kernel to stay unchanged, not to move. The rule's words are 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text' and 'A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over'. The conjecture does not misread this rule: for Reply A the last top-level object inside the fence is {\"b\":2}, and the code's fenced pool is the whole fenced span, which fails to parse, so it falls through to {\"c\":3}. That is a rule-and-code divergence, not a misreading. A next conjecture should keep the same pair but set the expectation to `unchanged` (or `same`), and should avoid repeating the error of encoding the normative 'must distinguish' as an execution expectation of movement.

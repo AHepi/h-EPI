@@ -1,0 +1,33 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Conjecture: open:creib.forge.conformance.oracle.recover_json_object fails to distinguish two replies that its documented rule requires it to tell apart. The rule I am reading is: “The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.” The first reply text is exactly the following four lines: a line with three backticks followed by the word python, a line with {"a":1}, a line with three backticks, and a line with {"b":2}. The second reply text is exactly the one line {"b":2}. For the first reply, the rule requires the answer {"a":1}, because the reply contains a code fence (the python fence) holding that object, and that is the last fenced object. For the second reply, the rule requires the answer {"b":2}, because there is no code fence, so the last top-level object is {"b":2}. The function, however, gives the same answer for both: it returns {"b":2}, because its fence regex only recognizes fences with no language or with json/JSON, so the python fence is not collected, and the top-level scan then picks the last top-level object, which is {"b":2} in both replies. I would be wrong if recover_json_object on the first reply returns {"a":1} rather than {"b":2}, or if the documented rule is read to exclude non-JSON language fences from the phrase “code fence.”
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

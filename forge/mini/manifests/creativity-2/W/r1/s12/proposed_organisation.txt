@@ -1,0 +1,30 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply one contains a fenced code block with {"a":1} before the top-level {"b":2}; reply two contains only the top-level  -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply one contains a ```python code fence with {"a":1} followed by {"b":2}; reply two contains only {"b":2}. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second object inside the code fence changes from {"b":2} to {"d":4}; the rest is identical. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second fenced object changes from {"y":2} to {"w":4}; the trailing top-level object {"z":3} is unchanged. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second reply changes the value of q from 2 to 5 inside the fenced object; the top-level object remains {"r":3}. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The fenced object's "n" value changes from 20 to 30. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second object inside the code fence changes from {"y":2} to {"y":4}; the first object and the top-level object remai -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second reply changes the value of y from 20 to 21 inside the code fence; the top-level object with z 30 is unchanged -> the check answered unrunnable
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second object inside the code fence changes from {"b": 2} to {"b": 4}; the top-level object {"c": 3} is unchanged. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second reply changes the value of \"t\" inside the fenced object from 20 to 40; all else is identical. -> the check answered unrunnable
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second object inside the code fence changes from {"t": 20} to {"t": 40}; all else is identical. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The fenced JSON object's "a" value changes from 1 to 2; all else is identical. -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+The conjecture does not misread the rule; the rule as written and the code part company. The rule says, "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." That wording does not restrict the fence's info string to `json`, `JSON`, or empty. The implementation's `_FENCE` regex only matches ```json, ```JSON, or a fence with no language, so a fence written ```Json is not recognised as a fence. The machine returned `({'b': 2}, ())` for both inputs, exactly as the conjecture predicted: the fenced object is ignored and the last top-level object is scored. Therefore the defect is in the code, not in the conjecture.
+
+A next conjecture should try a pair where the fence language is one the regex does recognise (```json, ```JSON, or no language) and the fenced object differs, to confirm the code scores the fenced object when its regex matches; or, better, propose making `_FENCE` case-insensitive and then test ```Json again. It should avoid repeating the same ```Json pair without changing the regex, because the current execution already shows the fallback and repeating it adds no information.
+
+Reading 4876c2556b13d657 renders the conjecture faithfully. It quotes the pair as input and rewritten with ```Json and {"a":1}/{"a":2}, which matches the conjecture's "Reply one is: ```Json\n{\"a\":1}\n```\n{\"b\":2}\n. Reply two is: ```Json\n{\"a\":2}\n```\n{\"b\":2}\n." It names the kernel `open:creib.forge.conformance.oracle.recover_json_object`, which the conjecture names, and its expectation "moves" matches the conjecture's "I would be wrong if the check returns {"a":1} for reply one and {"a":2} for reply two, or otherwise returns different answers for the two replies." The reading is not defective.

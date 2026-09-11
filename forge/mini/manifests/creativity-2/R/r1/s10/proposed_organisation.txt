@@ -1,0 +1,20 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The first is a JSON array containing one object; the second is that object alone. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: The two replies contain the same two refusal phrases but in opposite order: Reply A starts with 'I can't' and ends with  -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The first reply includes a fenced block containing two JSON objects followed by a top-level object; the second reply con -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The first reply has a python code fence containing an object followed by a top-level object; the second has only the top -> the check answered unchanged
+- None on a pair differing by: A wraps the first two objects in a code fence; B has no fence and all three objects are top-level. -> the check answered unrunnable
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A wraps the first two objects in a json code fence and leaves the third outside; Reply B has no fence. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Text A includes a fenced block with two JSON objects before the later top-level object; Text B omits the fence and the f -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A wraps the first two objects in a ```json code fence; Reply B has no fence. -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.

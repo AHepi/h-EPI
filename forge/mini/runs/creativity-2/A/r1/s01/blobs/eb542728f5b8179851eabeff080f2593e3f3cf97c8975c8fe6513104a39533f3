@@ -1,0 +1,52 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+Your commitments are a STRING holding JSON of the form {"attacks": "<the first 16 characters of the artifact id you are attacking>", "ground": "<one of: reading-misrenders-conjecture, conjecture-misreads-rule, rule-and-code-diverge, test-is-unsound, cannot-tell>", "why": "<one sentence>"} and nothing else.
+
+The id must be one printed in square brackets beside an artifact you were shown; a name matching nothing resolves to no attack.
+
+Use "test-is-unsound" when the fault is in the RUN rather than in what was claimed: the executor refused a claim it should have been able to run, bound the wrong thing, or answered on something other than what the claim named. Its target is the EXECUTION artifact, not the conjecture. The machine has already recorded, against each reading, whether the run bore its claim out; attacking the execution as unsound is how a reading the machine wrongly refused gets back up.
+
+Use "cannot-tell" when you cannot decide -- it is an honest answer and it mints no attack, which is better than inventing a target.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The conjecture misreads the rule. The rule says "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text" and "A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over". A fenced span containing two objects does not parse as one object, so it is passed over; the fence does not "hold one" object, and the fallback to the last top-level object is what the rule prescribes. The code returns {'c':3} for both, matching the rule. The reading 41cb58915f3739b9 also overstates by saying "No uncertainty" when the conjecture explicitly allows the fallback reading. A next conjecture should test a fence holding exactly one object plus a trailing top-level object, expecting the fenced object, and avoid repeating the claim that a fence with two objects must score the last fenced object.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.
+
+## The shape this answer must take
+`commitments` must be a STRING whose content is JSON text fitting exactly this schema (the field itself is a string, not an object):
+{
+  "additionalProperties": false,
+  "properties": {
+    "attacks": {
+      "maxLength": 64,
+      "minLength": 8,
+      "type": "string"
+    },
+    "ground": {
+      "pattern": "^(reading-misrenders-conjecture|conjecture-misreads-rule|rule-and-code-diverge|test-is-unsound|cannot-tell)$",
+      "type": "string"
+    },
+    "why": {
+      "maxLength": 2000,
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "attacks",
+    "ground",
+    "why"
+  ],
+  "type": "object"
+}

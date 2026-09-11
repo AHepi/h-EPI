@@ -1,0 +1,8 @@
+The function open:creib.forge.conformance.oracle.recover_json_object, whose documented rule states “Every top-level balanced object in the text is a candidate… an object nested inside another is not a candidate of its own,” fails to distinguish a reply that is a JSON array containing an object from a reply that is that object alone. The two replies are:
+
+Reply A: `[{"a":1}]`
+Reply B: `{"a":1}`
+
+The rule requires that Reply A, having no top-level object (the only object is nested inside an array), yield no scoreable candidate and therefore raise RecordError. The rule requires that Reply B, having a top-level object, return the dict `{"a":1}` with no duplicates. The function, however, scans for every `{` and attempts to parse from that position without checking whether it is inside an array, so it treats the object inside the array in Reply A as a top-level candidate and returns `({"a":1}, ())` for both replies. Thus the check gives the same answer where the rule requires different answers.
+
+What would make me wrong: if the maintainers interpret “top-level” to include objects directly inside arrays (i.e., not nested inside another object), then Reply A’s object would be a valid candidate and the function’s identical answers would be correct. Alternatively, if the function is modified to skip `{` characters that occur inside an array, the pair would be told apart as the rule requires.
