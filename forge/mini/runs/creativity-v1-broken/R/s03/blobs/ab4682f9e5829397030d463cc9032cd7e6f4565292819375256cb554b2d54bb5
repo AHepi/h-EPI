@@ -1,0 +1,7 @@
+I am testing open:creib.forge.conformance.oracle.recover_json_object. The documented rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text" and "Every top-level balanced object in the text is a candidate... an object nested inside another is not a candidate of its own." The two replies are:
+
+Reply 1: ```json\n{"a":1}\n```\n{"b":2}
+
+Reply 2: ```json\n{"a":1} {"b":2}\n```\n{"a":1}
+
+For Reply 1, the only fenced object is {"a":1}, so the rule requires the answer {"a":1}. For Reply 2, the fence holds two top-level objects, {"a":1} and {"b":2}; the last one inside the fence is {"b":2}, so the rule requires {"b":2}. The function returns {"a":1} for both replies, because in Reply 2 the fenced pool candidate is the whole fence content '{"a":1} {"b":2}', which is not a single JSON object and is passed over, and the top-level pool then scores the last top-level object, which is the trailing {"a":1}. This makes the check give the same answer on a pair the rule requires it to tell apart. I would be wrong if the phrase 'the last one inside a code fence' is read as referring to the last fenced candidate as a whole rather than to each top-level object inside the fence, so that a fence containing multiple objects has no scoreable fenced candidate and the top-level fallback is correct.

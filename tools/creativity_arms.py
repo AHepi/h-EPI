@@ -78,7 +78,14 @@ READING_INSTRUCTION = (
     "machine needs it. If the prose is unclear, render your best reading of it and say in the body "
     "where you were unsure; do not substitute a conjecture of your own.\n\n"
     "The commitments are a STRING holding JSON of the form "
-    '{"kernel": "<id>", "expect": "moves" or "unchanged"} and nothing else. This artifact carries '
+    '{"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.\n\n'
+    '"kernel" is the FUNCTION\'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, '
+    "beginning open:creib.forge.conformance. -- for example "
+    "open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed "
+    "hexadecimal identifier printed beside an artifact.** That identifies the artifact you are "
+    "reading; it is not the function the artifact is about. If the conjecture names no such path, "
+    "write the path it most nearly names.\n\n"
+    'This artifact carries '
     '"input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and '
     '"rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how '
     "they differ. Use \"moves\" when the rule requires the two answers to differ."

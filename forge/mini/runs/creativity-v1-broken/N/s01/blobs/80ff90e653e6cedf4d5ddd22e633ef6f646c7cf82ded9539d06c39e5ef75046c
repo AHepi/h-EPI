@@ -1,0 +1,13 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<id>", "expect": "moves" or "unchanged"} and nothing else. This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+## The conjecture, as written (conj)
+[2cef9abdc4ae64b9] (mini.conjecture.v1)
+Conjecture: The function parse_content is being tested. Its documented rule says: "The refusal heuristic decides the verdict only when no object can be recovered; whether a phrase occurred at all is a separate fact, refusal_phrase_in, recorded beside a recovered object (H36: a refusal followed by a form is a refusal and a form)." The two reply texts are [1,2] and {"a":1}. For [1,2], no JSON object is recovered and no refusal phrase is present, so the rule requires INVALID_JSON. For {"a":1}, a strict JSON object is recovered, so the rule requires JSON_OBJECT. The function gives JSON_OBJECT for both, because its first step loads_strict succeeds on any JSON value, not only objects. I would be wrong if parse_content actually checked that the parsed value is a dict before returning JSON_OBJECT, or if the documented rule considered any JSON value an object.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.

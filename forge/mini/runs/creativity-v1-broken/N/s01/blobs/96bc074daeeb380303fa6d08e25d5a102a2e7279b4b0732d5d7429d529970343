@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The machine returned unrunnable, so the claimed outputs were not observed. The conjecture did not misread the rule. The rule says: "The refusal heuristic decides the verdict only when no object can be recovered". For the reply [1,2], no JSON object can be recovered—it is a JSON array, not an object—so the rule requires INVALID_JSON. The code parts company because parse_content's first branch calls loads_strict(content) and returns JSON_OBJECT for any successfully parsed JSON value, without checking that the value is a dict. Thus [1,2] would yield JSON_OBJECT, contradicting the rule's 'object' requirement. A next conjecture should try instead: parse_content must verify type(value) is dict before returning JSON_OBJECT; if the parsed value is not a dict, it should proceed to recover_json_object or the refusal heuristic. It should avoid repeating the assumption that loads_strict only accepts objects, and avoid conflating any JSON value with a JSON object.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

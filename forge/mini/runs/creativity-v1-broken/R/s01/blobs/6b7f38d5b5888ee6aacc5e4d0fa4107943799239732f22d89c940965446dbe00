@@ -1,0 +1,6 @@
+I am testing open:creib.forge.conformance.records.refusal_phrase_in. Its documented rule says: “The first refusal phrase the text contains, typographic quotes read as straight ones, or None.” The two reply texts are:
+
+Reply A: “I'm sorry, I cannot help with that.”
+Reply B: “I cannot help with that, I'm sorry.”
+
+For Reply A, the first refusal phrase the text contains is “I'm sorry”, because it appears at the start before “I cannot”. For Reply B, the first refusal phrase the text contains is “I cannot”, because it appears at the start before “I'm sorry”. So the rule requires the check to return “I'm sorry” for A and “I cannot” for B. But the implementation iterates over the fixed refusal phrase list in order and returns the first phrase from that list that appears anywhere in the text. Since “I cannot” precedes “I'm sorry” in the list, both replies return “I cannot”. Thus the check gives the same answer on a pair the rule requires it to tell apart. I would be wrong if the function actually returned the first phrase by position in the text rather than by list order, or if the documented rule were read as “the first phrase in the refusal list that occurs” rather than “the first phrase in the text”; observing either would show this conjecture false.

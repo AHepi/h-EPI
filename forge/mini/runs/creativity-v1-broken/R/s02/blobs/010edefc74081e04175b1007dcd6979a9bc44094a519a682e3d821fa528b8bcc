@@ -1,0 +1,13 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<id>", "expect": "moves" or "unchanged"} and nothing else. This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+## The conjecture, as written (conj)
+[ff17f1579345408e] (mini.conjecture.v1)
+Conjecture: parse_content (open:creib.forge.conformance.oracle.parse_content) returns the same verdict for the reply texts "3.14" and "{}". The documented rule says: "The refusal heuristic decides the verdict only when no object can be recovered; whether a phrase occurred at all is a separate fact, refusal_phrase_in, recorded beside a recovered object (H36: a refusal followed by a form is a refusal and a form)." For "3.14", no object is recovered (a float is not an object, and recover_json_object passes over floats), and no refusal phrase is present, so the rule requires INVALID_JSON. For "{}", an object is recovered, so the rule requires JSON_OBJECT. The function, however, first tries loads_strict(content) and returns JSON_OBJECT on any successful strict parse, so it returns JSON_OBJECT for both. I would be wrong if parse_content returns INVALID_JSON for "3.14" (for example, if loads_strict rejects non-object JSON values or if recover_json_object is consulted before the verdict is set).
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.

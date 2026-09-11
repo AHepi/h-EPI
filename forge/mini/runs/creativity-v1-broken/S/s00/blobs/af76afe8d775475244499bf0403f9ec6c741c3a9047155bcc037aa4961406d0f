@@ -1,0 +1,13 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<id>", "expect": "moves" or "unchanged"} and nothing else. This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+## The conjecture, as written (conj)
+[804daf8670f6df95] (mini.conjecture.v1)
+I am testing open:creib.forge.conformance.oracle.refusal_phrase_in. Its documented rule says: 'The first refusal phrase the text contains, typographic quotes read as straight ones, or None.' The two reply texts are: (1) 'I can't do that. I cannot assist.' and (2) 'I cannot assist. I can't do that.' For text (1), the rule requires the answer 'I can't', because that phrase appears first in the text. For text (2), the rule requires the answer 'I cannot', because that phrase appears first in the text. The function, however, returns 'I cannot' for both texts, because its implementation iterates over the refusal phrase list in a fixed order and returns the first phrase in that list that is present, not the first phrase in the text. The observation that would show this conjecture false is if refusal_phrase_in returned 'I can't' for text (1) and 'I cannot' for text (2), or otherwise gave different answers for the two texts.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.

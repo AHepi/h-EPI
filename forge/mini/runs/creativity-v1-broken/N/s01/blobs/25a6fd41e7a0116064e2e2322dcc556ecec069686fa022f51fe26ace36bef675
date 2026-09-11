@@ -1,0 +1,7 @@
+{
+  "body": "The conjecture reads parse_content's documented rule as: the refusal heuristic decides the verdict only when no object can be recovered; whether a phrase occurred at all is a separate fact, refusal_phrase_in, recorded beside a recovered object (H36: a refusal followed by a form is a refusal and a form). For reply [1,2], no JSON object is recovered and no refusal phrase is present, so the rule requires INVALID_JSON. For reply {\"a\":1}, a strict JSON object is recovered, so the rule requires JSON_OBJECT. The function gives JSON_OBJECT for both, because its first step loads_strict succeeds on any JSON value, not only objects. The conjecture would be wrong if parse_content actually checked that the parsed value is a dict before returning JSON_OBJECT, or if the documented rule considered any JSON value an object.",
+  "commitments": "{\"kernel\": \"2cef9abdc4ae64b9\", \"expect\": \"moves\"}",
+  "input": "[1,2]",
+  "rewritten": "{\"a\":1}",
+  "rewrite": "The first reply is a JSON array, the second is a JSON object; the rule requires INVALID_JSON for the first and JSON_OBJECT for the second, so the expected outputs differ."
+}

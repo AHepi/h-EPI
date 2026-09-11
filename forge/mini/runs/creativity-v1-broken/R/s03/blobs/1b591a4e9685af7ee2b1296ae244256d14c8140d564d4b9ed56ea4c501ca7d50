@@ -1,0 +1,19 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<id>", "expect": "moves" or "unchanged"} and nothing else. This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+## The conjecture, as written (conj)
+[afbc08318641170a] (mini.conjecture.v1)
+I am testing open:creib.forge.conformance.oracle.recover_json_object. The documented rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text" and "Every top-level balanced object in the text is a candidate... an object nested inside another is not a candidate of its own." The two replies are:
+
+Reply 1: ```json\n{"a":1}\n```\n{"b":2}
+
+Reply 2: ```json\n{"a":1} {"b":2}\n```\n{"a":1}
+
+For Reply 1, the only fenced object is {"a":1}, so the rule requires the answer {"a":1}. For Reply 2, the fence holds two top-level objects, {"a":1} and {"b":2}; the last one inside the fence is {"b":2}, so the rule requires {"b":2}. The function returns {"a":1} for both replies, because in Reply 2 the fenced pool candidate is the whole fence content '{"a":1} {"b":2}', which is not a single JSON object and is passed over, and the top-level pool then scores the last top-level object, which is the trailing {"a":1}. This makes the check give the same answer on a pair the rule requires it to tell apart. I would be wrong if the phrase 'the last one inside a code fence' is read as referring to the last fenced candidate as a whole rather than to each top-level object inside the fence, so that a fence containing multiple objects has no scoreable fenced candidate and the top-level fallback is correct.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.

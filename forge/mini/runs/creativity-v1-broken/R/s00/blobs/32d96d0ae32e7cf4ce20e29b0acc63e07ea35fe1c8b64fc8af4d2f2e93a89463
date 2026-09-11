@@ -1,0 +1,23 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<id>", "expect": "moves" or "unchanged"} and nothing else. This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+## The conjecture, as written (conj)
+[aa2042ed2fad7f46] (mini.conjecture.v1)
+Conjecture: open:creib.forge.conformance.records.recover_json_object gives the same answer for two replies that its documented rule requires to be different. The rule says: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text'. Reply A is:
+```json
+{"a":1} {"b":2}
+```
+{"outside": 3}
+Reply B is:
+```json
+{"a":1} {"c":4}
+```
+{"outside": 3}
+For Reply A the last object inside the fence is {"b":2}, so the rule requires recover_json_object to return {"b":2}. For Reply B the last object inside the fence is {"c":4}, so the rule requires {"c":4}. But the function treats the whole fenced content as one candidate; since '{"a":1} {"b":2}' is not a single JSON object, that candidate is passed over, and the function falls back to the last top-level object, which is {"outside":3} in both replies. Thus it returns {"outside":3} for both, the same answer where the rule requires different answers. I would be wrong if recover_json_object(Reply A) returned {"b":2} and recover_json_object(Reply B) returned {"c":4}, or if the fenced content were parsed as a single object, or if top-level extraction excluded fenced content.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.

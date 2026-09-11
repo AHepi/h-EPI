@@ -1,0 +1,13 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<id>", "expect": "moves" or "unchanged"} and nothing else. This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+## The conjecture, as written (conj)
+[d5f9cd6096f01e80] (mini.conjecture.v1)
+Conjecture: The function open:creib.forge.conformance.records.recover_json_object, whose documented rule says "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text" and "A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over", gives the same answer on two replies that the rule requires it to tell apart. Reply A is the string: ```json\n{"a":1} {\"b\":2}\n```\n{"c":3}. Reply B is the string: {"a":1} {\"b\":2} {\"c\":3}. For Reply A, the rule requires the last object inside the code fence, which is {\"b\":2}, because the fence holds two objects and the last one is {\"b\":2}; the function instead passes over the fenced candidate (the whole fence content is not a single JSON object) and returns the last top-level object {\"c\":3}. For Reply B, the rule requires the last top-level object {\"c\":3}, and the function returns {\"c\":3}. Thus both replies get the same answer {\"c\":3}, even though the rule requires {\"b\":2} for Reply A and {\"c\":3} for Reply B. What would make me wrong: if recover_json_object on Reply A actually returns {\"b\":2} (for example because the fenced pool is parsed object-by-object rather than as one candidate), or if the documented rule is read as requiring {\"c\":3} for Reply A because no single scoreable object is inside the fence, then the pair is not a violation.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.

@@ -1,0 +1,15 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: Reply B removes the fenced block and the first top-level object, leaving only the final top-level object {"c":3}. -> the check answered unrunnable
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+The conjecture does not misread the rule; the rule as written and the code part company. The rule says: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' For Reply A the fence holds two objects, so the last one inside the fence is {"b":2}. The code's fenced pool appends the whole fenced content as one candidate and tries to parse it as a single JSON object; '{"a":1}\n{"b":2}' fails, so it falls through to the top-level pool and returns the last top-level object in the whole text, {"c":3}. Thus the code does not implement the rule for a fence containing more than one object. The execution was unrunnable because the kernel path 'open:creib.forge.conformance.records.recover_json_object' does not exist, so no actual return was observed. A next conjecture should target the actual recover_json_object under mini.kernel-source.v1 and assert that Reply A returns {"c":3} while the documented rule requires {"b":2}. It should avoid repeating the nonexistent 'records' kernel path and avoid treating the fenced pool's whole-content candidate as if it were the individual fenced objects.

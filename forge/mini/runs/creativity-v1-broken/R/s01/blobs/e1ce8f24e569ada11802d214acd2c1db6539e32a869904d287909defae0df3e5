@@ -1,0 +1,12 @@
+# Execute
+
+## Readings (reads)
+[85388b8db30bc7cf] (mini.pair-proposal.reading.v1)
+The conjecture identifies a pair of inputs to _grounding_kernel: the first with value "Hello" and span/document "hello", the second with value "hello" and span/document "hello". Under the documented rule (no relaxation, case-sensitive value-in-span check), the first should yield VALUE_NOT_IN_SPAN and the second GROUNDED, but the harness returns GROUNDED for both because it casefolds before containment. This is a valid find unless the harness's value-in-span check is case-insensitive or 'no relaxation' does not govern it.
+input: {"value": "Hello", "span": "hello", "document": "hello"}
+rewrite: value changed from 'Hello' to 'hello' (case change only)
+rewritten: {"value": "hello", "span": "hello", "document": "hello"}
+commitments: {"kernel": "3e4460ec8c89ad03", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

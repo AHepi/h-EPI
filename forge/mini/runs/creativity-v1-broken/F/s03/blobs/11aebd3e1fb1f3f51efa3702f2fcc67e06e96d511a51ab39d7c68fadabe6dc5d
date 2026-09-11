@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The machine returned `unrunnable` because the kernel id `2b3571b1d946dff1` is unknown, so no execution output exists to compare. Reading the source, the conjecture's claim about the code is accurate: `refusal_phrase_in` loops over `REFUSAL_PHRASES` in fixed order and returns the first list phrase that appears, so both `I'm sorry, I cannot do that.` and `I cannot do that. I'm sorry.` return `"I cannot"`. The rule as written is "The first refusal phrase the text contains, typographic quotes read as straight ones, or None." Under the natural reading of 'first' as first in the text, Reply A should return `"I'm sorry"` and Reply B `"I cannot"`; the code parts company with that rule. The conjecture did not misread the rule; it read 'first' as first in the text, which the wording supports. A next conjecture should use a known kernel such as `conformance.kernel.refusal-phrase`, and propose a pair where the first-in-text phrase is not first in the list, to test the discrepancy. It should avoid repeating the unknown kernel id and avoid treating an unrunnable execution as evidence.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

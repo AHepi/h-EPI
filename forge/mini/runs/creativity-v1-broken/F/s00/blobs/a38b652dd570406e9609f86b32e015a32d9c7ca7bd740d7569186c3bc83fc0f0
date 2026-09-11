@@ -1,0 +1,33 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Conjecture: The function open:creib.forge.conformance.records.recover_json_object, whose documented rule says "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text" and "A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over", gives the same answer on two replies that the rule requires it to tell apart. Reply A is the string: ```json\n{"a":1} {\"b\":2}\n```\n{"c":3}. Reply B is the string: {"a":1} {\"b\":2} {\"c\":3}. For Reply A, the rule requires the last object inside the code fence, which is {\"b\":2}, because the fence holds two objects and the last one is {\"b\":2}; the function instead passes over the fenced candidate (the whole fence content is not a single JSON object) and returns the last top-level object {\"c\":3}. For Reply B, the rule requires the last top-level object {\"c\":3}, and the function returns {\"c\":3}. Thus both replies get the same answer {\"c\":3}, even though the rule requires {\"b\":2} for Reply A and {\"c\":3} for Reply B. What would make me wrong: if recover_json_object on Reply A actually returns {\"b\":2} (for example because the fenced pool is parsed object-by-object rather than as one candidate), or if the documented rule is read as requiring {\"c\":3} for Reply A because no single scoreable object is inside the fence, then the pair is not a violation.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

@@ -91,3 +91,31 @@ The risk worth stating: the install map makes the brief **longer** each segment.
 worse with a longer brief than with a clean one, `F` loses to `N` for a reason that has nothing to
 do with the return path being useless, and the arms cannot tell those apart. Segment-by-segment
 counts are recorded so that at least the shape of any decline is visible.
+
+## Amendment 1, after v1 was stopped: two machinery breaks, neither of them the arms
+
+v1 ran ten of fifteen segments and was stopped. Its records are kept at
+`forge/mini/runs/creativity-v1-broken/`. Nothing in it is read as a result, because two defects
+meant it was measuring the machinery and not the arms.
+
+**Break 1 — the translator wrote an artifact identifier where the function's path belonged.** Nine
+of eleven executions died with `MINI_KERNEL_UNKNOWN: no kernel 'd5f9cd6096f01e80'`. The reading
+stage sees conjectures rendered as `[<16 hex>] (mini.conjecture.v1)`, and the instruction asked for
+`{"kernel": "<id>"}`. Asked for an id with an id in front of it, the model supplied that one. **The
+ambiguity is mine**: "id" named two different things in the same context. The instruction now says
+the field is the function's full dotted import path, gives an example, and says in as many words
+that it is never the bracketed hexadecimal identifier beside an artifact.
+
+**Break 2 — a segment that died was stepped over in silence.** Three segments ended at their first
+stage without reaching `RUN_ENDED`. The runner moved to the next index regardless, so `F/s01`
+produced nothing and `F/s02`'s carry therefore held only `s00`'s single row: `F/s01` and `F/s02`
+carried byte-identical briefs. **The arm whose whole point is accumulation did not accumulate.** The
+runner now checks `RUN_ENDED`, retries once, and says loudly when a segment dies twice, and the call
+timeout is raised.
+
+**Not amended: the arity bound.** The open resolver admits functions of one string, and `W1` — the
+one hand-verified find so far — is about `refusal_phrase_in`, which takes two. Widening now would
+change every arm's numbers after evidence, so it stands, `grounded_T1` is known to undercount, and
+`W1` is reported beside it. Worth saying plainly: widening would most help **S**, the arm with no
+loop, which is the arm arguing *against* mini's reason for existing. Leaving it alone is not
+self-serving in either direction.

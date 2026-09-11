@@ -1,0 +1,13 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<id>", "expect": "moves" or "unchanged"} and nothing else. This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+## The conjecture, as written (conj)
+[2b3571b1d946dff1] (mini.conjecture.v1)
+The function under test is `refusal_phrase_in` with the default refusal phrase list `REFUSAL_PHRASES`. Its documented rule reads: "The first refusal phrase the text contains, typographic quotes read as straight ones, or None." Reply A is: `I'm sorry, I cannot do that.` Reply B is: `I cannot do that. I'm sorry.` The rule requires Reply A to answer `"I'm sorry"`, because that phrase occurs first in the text, and Reply B to answer `"I cannot"`, because that phrase occurs first in the text. The function as written iterates over the refusal phrase list in fixed order and returns the first list phrase that appears anywhere in the lowered text, so for both replies it returns `"I cannot"`. Thus the check gives the same answer on a pair the rule requires it to tell apart. What would make me wrong: if running the function on Reply A returned `"I'm sorry"` (or any answer other than `"I cannot"`), or if the documented rule were read as 'the first phrase in the refusal list that appears' rather than 'the first phrase in the text'.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.

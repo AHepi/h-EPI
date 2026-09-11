@@ -1,0 +1,9 @@
+I am testing open:creib.forge.conformance.oracle._grounding_kernel. Its documented rule says: “The grounding verdict as the harness gives it, with no relaxation and the value-in-span check on.” I read that as requiring the span to occur in the document exactly as written, with no whitespace normalisation, because no relaxation is allowed. The two reply texts are:
+
+{"value": "a b", "span": "a  b", "document": "a b"}
+
+and
+
+{"value": "a b", "span": "a b", "document": "a b"}
+
+For the first, the span “a  b” (two spaces) does not occur in the document “a b” (one space), so the rule requires SPAN_NOT_IN_DOCUMENT. For the second, the span “a b” occurs exactly, and the value “a b” is in the span, so the rule requires GROUNDED. The function, however, normalises whitespace before checking occurrence, so it returns GROUNDED for both. What would make me wrong: if the documented rule’s “no relaxation” does not forbid whitespace normalisation, or if the harness’s own _grounding_verdict also normalises whitespace before the span check, then the two texts are not required to be told apart and the function’s identical GROUNDED answers are correct.
