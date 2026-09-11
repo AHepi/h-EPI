@@ -1,0 +1,103 @@
+{
+  "schema_version": "creib.mini.config-registry.v1",
+  "note": "Configurations this repository has run or intends to run, each tagged against docs/mini/CONFIG_MAP.md, docs/mini/CONFOUNDS.md and docs/mini/ERRATA.md. Audited by tools/config_map.py. A status is about the CONFIGURATION, never about the subject: 'fails' means the config could not measure, not that the loop is worthless.",
+  "statuses": {
+    "works": "ran, produced a reading, and no fatal confound applies to that reading",
+    "confounded": "ran, but a named confound makes its reading unattributable",
+    "fails": "could not measure: the machinery stopped, starved, or refused",
+    "designed": "specified and not yet run"
+  },
+  "configs": [
+    {
+      "config_id": "CONF-ARMS-S",
+      "title": "Single shot: one conjecture, no loop, no criticism",
+      "manifest": "forge/mini/manifests/creativity/S/s00/manifest.json",
+      "status": "works",
+      "sets": {"CFG-MAX-CYCLES": "1", "CFG-STAGES": "source, conjecture, reading, execute, verdict"},
+      "evidence": ["forge/mini/runs/creativity/S"],
+      "shows": "1 verified T1 witness at 2 model calls, 0.50 per call: the best yield per call in the block.",
+      "proven": "The conjecture step produces a real kernel boundary without any loop. Verified by hand against the rule.",
+      "not_proven": "Nothing about coverage: one target, one witness, one draw.",
+      "confounds": ["CON-DRAW-VARIANCE", "CON-ARITY-HIDES-FINDS"],
+      "errata": ["C9"]
+    },
+    {
+      "config_id": "CONF-ARMS-R",
+      "title": "Equal-budget repetition: six independent conjectures, no loop",
+      "manifest": "forge/mini/manifests/creativity/R/s00/manifest.json",
+      "status": "works",
+      "sets": {"CFG-MAX-CYCLES": "1", "CFG-PROBLEM": "identical every segment"},
+      "evidence": ["forge/mini/runs/creativity/R"],
+      "shows": "4 witnesses at 12 calls, 0.33 per call, 2 distinct targets.",
+      "proven": "Repetition alone reaches both targets the block ever reached. No loop arm beat it per call.",
+      "not_proven": "That repetition is a ceiling: it was never run at 24 calls.",
+      "confounds": ["CON-DRAW-VARIANCE"],
+      "errata": []
+    },
+    {
+      "config_id": "CONF-ARMS-N",
+      "title": "No-return: loop with criticism, organisation never changes",
+      "manifest": "forge/mini/manifests/creativity/N/s00/manifest.json",
+      "status": "confounded",
+      "sets": {"CFG-INPUT-PORTS": "critic reads source, conj, execs", "CFG-PROBLEM": "never rewritten"},
+      "evidence": ["forge/mini/runs/creativity/N", "forge/mini/runs/creativity-starved/N"],
+      "shows": "3 witnesses at 24 calls, 0.12 per call, 1 target.",
+      "proven": "Nothing about the loop. Its critic read 7 unrunnable rows against 1 result.",
+      "not_proven": "That a loop without a return path is worthless; this one was starved.",
+      "confounds": ["CON-STARVED-CRITIC", "CON-DRAW-VARIANCE"],
+      "errata": ["A1"]
+    },
+    {
+      "config_id": "CONF-ARMS-F",
+      "title": "Full: loop, criticism, and the organisation rewritten between segments",
+      "manifest": "forge/mini/manifests/creativity/F/s00/manifest.json",
+      "status": "confounded",
+      "sets": {"CFG-INPUT-PORTS": "critic reads source, conj, execs", "CFG-PROBLEM": "rewritten from the previous record"},
+      "evidence": ["forge/mini/runs/creativity/F", "forge/mini/runs/creativity-starved/F"],
+      "shows": "3 witnesses at 24 calls, equal to N; and repeated an earlier pair TWICE while being told not to.",
+      "proven": "The carry is not inert: it was obeyed toward the wrong target, because the critic could not see the layer the errors were in.",
+      "not_proven": "That the return path buys nothing. That reading was WITHDRAWN.",
+      "confounds": ["CON-CARRY-AMPLIFIES", "CON-STARVED-CRITIC", "CON-DRAW-VARIANCE"],
+      "errata": ["A1"]
+    },
+    {
+      "config_id": "CONF-ARMS-W",
+      "title": "Wired: F with the critic able to see the reading and the conjecture's commitment",
+      "manifest": "forge/mini/manifests/creativity/W/s00/manifest.json",
+      "status": "works",
+      "sets": {"CFG-INPUT-PORTS": "critic reads source, conj, reads, execs", "CFG-RENDER": "conj renders list_bodies_and_commitments"},
+      "evidence": ["forge/mini/runs/creativity/W"],
+      "shows": "7 witnesses at 24 calls, 0.29 per call, 2 targets, zero repeats, zero identical-text claims, zero invented functions. Six witnesses found by no other arm.",
+      "proven": "Wiring alone more than doubles the yield with the kinds, the commitments, the install map and the budget all held fixed. The critic discusses the reading in 7 of 8 segments where F does so in 0 of 8.",
+      "not_proven": "That it beats repetition: 0.29 per call against R's 0.33, same two targets.",
+      "confounds": ["CON-DRAW-VARIANCE"],
+      "errata": ["A2"]
+    },
+    {
+      "config_id": "CONF-ARMS-A",
+      "title": "Adjudicated: W plus a criticism that names a target and a ground, and a computed status",
+      "manifest": "forge/mini/manifests/creativity/A/s00/manifest.json",
+      "status": "confounded",
+      "sets": {"CFG-STAGES": "adjudicate added", "CFG-INSTRUCTION": "critic commitment names attacks and ground", "CFG-FORMAT": "NONE DECLARED"},
+      "evidence": ["forge/mini/runs/creativity/A"],
+      "shows": "5 witnesses at 24 calls, 0.21 per call. 2 attacks landed; cannot-tell used once and minted no attack.",
+      "proven": "An attack can land, and the one that did caught the reading misrendering the conjecture: the error class structurally invisible to N, F and W.",
+      "not_proven": "That adjudication does not beat wiring. Four of eight criticism commitments did not parse, so the machinery engaged in under half the arm.",
+      "confounds": ["CON-FORMAT-KILLS-RUN", "CON-DRAW-VARIANCE"],
+      "errata": ["C6"]
+    },
+    {
+      "config_id": "CONF-BASELINE-E",
+      "title": "Mechanical enumeration over a fixed seed set, no model",
+      "manifest": null,
+      "status": "fails",
+      "sets": {},
+      "evidence": ["forge/mini/runs/creativity/E"],
+      "shows": "460 collapses at zero model calls, over 8 functions.",
+      "proven": "Nothing. 458 of the 460 are on functions whose entire range over the seeds is one value.",
+      "not_proven": "Anything about what a mechanical search can do: the seeds, not the search, were the limit.",
+      "confounds": ["CON-BASELINE-SEEDS", "CON-MEASURE-EXCLUDES-BASELINE"],
+      "errata": ["A3", "A4"]
+    }
+  ]
+}

@@ -96,6 +96,20 @@ def alarms_for(root: Path, previous_brief: str | None = None, brief: str | None 
     else:
         found.append(Alarm("NOTHING_EXECUTED", FATAL, "the segment ran no pair at all"))
 
+    refused = sum(1 for line in (root / "log.jsonl").read_text(encoding="utf-8").splitlines()
+                  if '"FORMAT_FAILURE"' in line)
+    submitted = sum(1 for line in (root / "log.jsonl").read_text(encoding="utf-8").splitlines()
+                    if '"ARTIFACT_SUBMITTED"' in line)
+    if refused and refused >= submitted:
+        # CON-FORMAT-KILLS-RUN: a stricter form and a shorter run are one knob with two effects, so
+        # an arm dying young looks worse for a reason that is not what it was testing.
+        found.append(Alarm("FORMAT_FAILURES_RISING", FATAL,
+                           f"{refused} submissions refused against {submitted} accepted; a run this "
+                           "close to its failure tolerance ends on the form rather than on the subject"))
+    elif refused:
+        found.append(Alarm("FORMAT_FAILURES_RISING", WARN,
+                           f"{refused} submissions refused against {submitted} accepted"))
+
     criticisms = [r for r in records if str(r["kind_id"]).startswith(CRITICISM_KIND_PREFIX)]
     unparsed = 0
     for record in criticisms:

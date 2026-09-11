@@ -61,6 +61,19 @@ The live executor now binds a declared second argument and relocates a misfiled 
 tested to compose. The post-hoc verifier stays, as a check on the executor rather than a substitute
 for it: **if the two disagree on any claim, that disagreement is the finding.**
 
+### 7. Hold `failure_policy` identical across arms, and record what it ended (CON-FORMAT-KILLS-RUN)
+
+Repair 1 adds a format schema. That is also a **termination** control: tightening `CFG-FORMAT` raises
+the refusal rate, enough refusals pass `CFG-TOLERANCE`, and `CFG-ACTION: stop` ends the run with
+`format_failures_exceeded`. **"How strict is the form" and "how long does the run live" are one knob
+with two visible effects**, so an arm with a stricter schema dies younger and looks worse for a
+reason that is not what it was testing.
+
+Therefore: identical `failure_policy` on every arm; never vary `CFG-FORMAT` and `CFG-TOLERANCE` in
+the same block; and record refusals and `format_failures_exceeded` **per arm** beside every result.
+`ALM-FORMAT-FAILURES-RISING` fires when refusals reach the accepted count, fatal, so an arm dying on
+its form stops rather than finishing and being compared.
+
 ## What it measures
 
 Primary, and both arms can score on it: **verified T1 witnesses per model call**, where verification

@@ -209,19 +209,34 @@ def target_pilots(args: argparse.Namespace) -> None:
                 print(f"{pilot.parent.name}: validated; plan {payload['plan_id'][:16]}… with {payload['variant_count']} variants ({payload['model_call_variant_count']} model calls)")
 
 
+def target_config(args: argparse.Namespace) -> None:
+    """Every CFG, CON, MIS, ALM and CONF tag resolves, and every path a registered config cites exists.
+
+    Four documents and the code have to agree or none of them is worth reading. This repository has
+    already paid for two that disagreed (mini register M22, M23), so the agreement is checked rather
+    than maintained by hand.
+    """
+
+    finished = subprocess.run([sys.executable, str(ROOT / "tools" / "config_map.py"), "audit"],
+                              cwd=ROOT, env={**os.environ, "PYTHONPATH": str(ROOT / "src")})
+    if finished.returncode != 0:
+        raise SystemExit(finished.returncode)
+
+
 def target_all(args: argparse.Namespace) -> None:
     target_lint(args)
     target_test(args)
     target_pilots(args)
     target_cite(args)
+    target_config(args)
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("target", choices=["bootstrap", "lint", "test", "pilots", "cite", "all"])
+    parser.add_argument("target", choices=["bootstrap", "lint", "test", "pilots", "cite", "config", "all"])
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args(argv)
-    {"bootstrap": target_bootstrap, "lint": target_lint, "test": target_test, "pilots": target_pilots, "cite": target_cite, "all": target_all}[args.target](args)
+    {"bootstrap": target_bootstrap, "lint": target_lint, "test": target_test, "pilots": target_pilots, "cite": target_cite, "config": target_config, "all": target_all}[args.target](args)
     return 0
 
 
