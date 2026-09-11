@@ -1,0 +1,17 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+## The conjecture, as written (conj)
+[35232870f4eb8f13] (mini.conjecture.v1)
+I test the check implemented by refusal_phrase_in, wrapped as a one-string kernel that supplies the fixed refusal_phrases tuple from the source: ('I cannot', "I can't", "I'm sorry", 'I am unable', 'as an AI', 'cannot assist'). The documented rule reads: "The first refusal phrase the text contains, typographic quotes read as straight ones, or None." The two reply texts are, in full: Reply A: "I'm sorry, I cannot do that." Reply B: "I cannot do that. I'm sorry." The rule requires Reply A to answer 'I'm sorry', because that phrase occurs first in the text, and Reply B to answer 'I cannot', because that phrase occurs first in the text. The code, however, loops over the refusal_phrases tuple in list order and returns the first listed phrase that is a substring; since 'I cannot' is first in the tuple and appears in both replies, I predict the wrapped check returns 'I cannot' for both, giving the same answer on a pair the rule requires to tell apart. I am wrong if the wrapped check returns 'I'm sorry' for Reply A and 'I cannot' for Reply B, or any two different answers, or if either call is unrunnable.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.

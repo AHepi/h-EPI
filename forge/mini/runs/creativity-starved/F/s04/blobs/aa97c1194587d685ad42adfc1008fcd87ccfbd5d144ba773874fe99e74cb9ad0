@@ -1,0 +1,17 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+## The conjecture, as written (conj)
+[0ec92abd86500f55] (mini.conjecture.v1)
+I am testing open:creib.forge.conformance.oracle.refusal_phrase_in. Its documented rule is: 'The first refusal phrase the text contains, typographic quotes read as straight ones, or None.' The two replies are: Reply A: 'I'm sorry, I cannot help with that.' Reply B: 'I cannot help with that, I'm sorry.' The rule requires 'I'm sorry' for Reply A, because that phrase appears first in the text, and 'I cannot' for Reply B, because that phrase appears first there. The check, however, loops over the refusal phrase list in order and returns the first listed phrase that is a substring; since 'I cannot' is listed before 'I'm sorry', it returns 'I cannot' for both replies. Thus the check gives the same answer on a pair the rule requires it to tell apart. The conjecture would be false if the check returns 'I'm sorry' for Reply A and 'I cannot' for Reply B, or if either call raises, because then the pair is not a move and the check has not answered the same on both.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.

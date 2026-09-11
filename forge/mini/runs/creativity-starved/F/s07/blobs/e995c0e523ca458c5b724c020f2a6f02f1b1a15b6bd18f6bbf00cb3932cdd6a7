@@ -1,0 +1,9 @@
+Conjecture: The function open:creib.forge.conformance.oracle.recover_json_object, whose documented rule says "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text" and "Every top-level balanced object in the text is a candidate", will return the same object for the following two replies even though the rule requires different objects. Reply A is the string: 'Here is my answer:
+```json
+Some prose before {"a":1}
+```
+And outside {"b":2}'. Reply B is the string: 'Here is my answer:
+```json
+Some prose before {"c":3}
+```
+And outside {"b":2}'. For Reply A the rule requires the fenced object {"a":1} to be scored, because the fence holds an object and it is the last object inside a fence. For Reply B the rule requires {"c":3} for the same reason. The check, however, stores each fenced span as a single candidate; the span 'Some prose before {"a":1}' does not parse as a single JSON object, so the fenced pool is skipped, and the fallback top-level pool returns the last top-level object in the whole text, which is {"b":2} for both replies. Thus the check gives the same answer on a pair the rule requires it to tell apart. The conjecture would be false if recover_json_object returns {"a":1} for Reply A and {"c":3} for Reply B, or if the documented rule is read as not requiring the fenced object to win when the fenced span contains prose around the object.

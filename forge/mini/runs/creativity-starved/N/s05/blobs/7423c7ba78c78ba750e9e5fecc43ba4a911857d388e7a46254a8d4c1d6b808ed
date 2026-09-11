@@ -1,0 +1,17 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+## The conjecture, as written (conj)
+[6e0f095ead205cbe] (mini.conjecture.v1)
+Conjecture: The function recover_json_object (in the oracle module) is documented as: "an object nested inside another is not a candidate of its own." The two replies are: Reply A: '{"a": {"b": 1}, "c": }' and Reply B: '{"b": 1}'. The rule requires Reply A to yield no JSON object recovered (RecordError), because the only balanced object is nested inside an invalid outer object, and nested objects are not candidates. The rule requires Reply B to yield the object {"b": 1}. The check, however, returns {"b": 1} for both: in Reply A the outer object fails to parse, so the cursor is not advanced past the nested object, and the nested object is then parsed as a top-level candidate. I would be wrong if recover_json_object raises RecordError for Reply A, or if the documented rule is read as allowing a nested object to be scored when its outer object is invalid.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.

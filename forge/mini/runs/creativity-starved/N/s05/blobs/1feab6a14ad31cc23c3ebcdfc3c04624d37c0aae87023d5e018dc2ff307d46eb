@@ -1,0 +1,12 @@
+# Execute
+
+## Readings (reads)
+[b567024c5d3d8c68] (mini.pair-proposal.reading.v1)
+The conjecture concerns open:creib.forge.conformance.oracle.recover_json_object. It states the documented rule is that an object nested inside another is not a candidate of its own. For Reply A '{"a": {"b": 1}, "c": }' the outer object is invalid, so the nested {"b": 1} should not be recovered; recover_json_object should raise RecordError. For Reply B '{"b": 1}' it should recover {"b": 1}. The observed check returns {"b": 1} for both, because the failed outer parse leaves the cursor before the nested object, which is then parsed as top-level. The conjecture would be wrong if recover_json_object raises RecordError for Reply A, or if the documented rule allows a nested object to be scored when its outer object is invalid.
+input: {"a": {"b": 1}, "c": }
+rewrite: moves
+rewritten: {"b": 1}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

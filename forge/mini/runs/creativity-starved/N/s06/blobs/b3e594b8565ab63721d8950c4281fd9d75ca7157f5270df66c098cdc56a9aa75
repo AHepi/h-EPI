@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The conjecture did not get a runnable execution, so its predicted return values were never observed. The execution record says `MINI_OPEN_KERNEL_NOT_FOUND: 'records' has no 'recover_json_object'`, which means the conjecture pointed at a kernel path that does not expose the function. That is a misread of the available source: the function is defined in the source block `[66cd5f2a4e19968e] (mini.kernel-source.v1)`, not at `open:creib.forge.conformance.records.recover_json_object`. On the substantive point, the conjecture is right that the code and the documented rule part company. The rule says 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' The code's fence regex is `re.compile('```(?:json|JSON)?\s*(.*?)```', re.DOTALL)`, which recognizes only bare, ```json, or ```JSON fences. A ```python fence is not a fence under that regex, so Text 1 would fall through to the last top-level object, `{"b": 2}`, exactly as the conjecture predicted. But because the execution was unrunnable, the next conjecture should first target the correct kernel that actually contains `recover_json_object`, and then rerun the same two texts. It should avoid repeating the nonexistent `open:creib.forge.conformance.records.recover_json_object` path and avoid claiming the function returned anything until an execution actually runs.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

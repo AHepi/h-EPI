@@ -1,0 +1,13 @@
+Conjecture: open:creib.forge.conformance.oracle.recover_json_object, whose documented rule says "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text", gives the same answer on the following two replies. Reply A is:
+```json
+{"a":1}
+{"b":2}
+```
+{"c":3}
+Reply B is:
+```json
+{"a":1}
+{"d":4}
+```
+{"c":3}
+The rule requires Reply A to yield {"b":2}, the last object inside its fence, and Reply B to yield {"d":4}, the last object inside its fence. The check, however, returns {"c":3} for both, because the fenced candidate in each reply is the multi-object string '{"a":1}\n{"b":2}' or '{"a":1}\n{"d":4}', which fails to parse as a single JSON object, so the fenced pool is skipped and the last top-level object in the whole text, {"c":3}, is returned. I would be wrong if the check returns {"b":2} for Reply A and {"d":4} for Reply B, or if the documented rule does not require those objects.

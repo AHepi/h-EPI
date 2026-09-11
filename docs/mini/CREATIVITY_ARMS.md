@@ -160,3 +160,57 @@ numbers cannot be read as a fresh block chosen after seeing the first.
 
 **If `F` and `N` remain within one witness of each other at eight draws a side, C1 is settled null**
 for this task, this model and this budget.
+
+## The extension, and why its null cannot be read as the answer
+
+Eight draws a side. **`F` 4 verified witnesses, `N` 4.** The pre-registered criterion — within one
+witness at eight a side — is met, so C1 is null *as measured*.
+
+| arm | calls | verified T1 | per call | distinct targets |
+|---|---|---|---|---|
+| **S** | 2 | 1 | **0.50** | 1 |
+| **R** | 12 | 4 | 0.33 | 2 |
+| **N** | 24 | 4 | 0.17 | 1 |
+| **F** | 24 | 4 | 0.17 | 2 |
+
+Twelve distinct witnesses across the block, over **two** targets of the six eligible. `F` and `N`
+share none of their witnesses, which at these numbers says only that the pairs differ, not that the
+arms do.
+
+**And then the number that disqualifies the reading.** What did the criticism stages actually see?
+
+| arm | `unrunnable` rows the loop read | rows carrying a result |
+|---|---|---|
+| **N** | **7** | 1 |
+| **F** | **6** | 2 |
+
+The loop was fed refusals. Nearly every criticism stage had nothing to criticise but machinery
+failure, and the install map duly carried "the check answered unrunnable" into the next brief. **The
+return path was not tested; it was starved**, by the same arity bound and wrong-module naming that
+made `grounded_T1` read zero for arms that found real boundaries.
+
+So C1's null does not support "the return path buys nothing". It supports "the return path was never
+given anything to return", and the cause is this block's executor, not its arms. Following
+DeepReason's own rule that *undetermined is a legitimate and frequent verdict*, the return path is
+**undetermined here**, and the block that would settle it is the one that feeds the loop results
+instead of refusals.
+
+What does survive without qualification is the part that never depended on the executor: **the
+conjecture step produces real kernel boundaries**, verified by hand, at the best rate per call in
+the block, in the arm with no loop at all.
+
+## Extension 2, declared before it runs: feed the loop results
+
+The starved records are kept at `forge/mini/runs/creativity-starved/`. The live executor now does
+what the post-hoc verifier did — binds a declared second argument, and relocates a function named in
+the wrong module — so a conjecture the machinery would have refused becomes a row the criticism
+stage can read. Both changes are in `openkernels.py` with tests, and both apply to every arm
+identically.
+
+`N` and `F` are rerun at eight segments each. Nothing else changes: same manifests, same install
+map, same contract, same model, same budget.
+
+**This is the test C1 was meant to be.** If `F` and `N` come out within one witness of each other
+again, now that the loop is reading results rather than refusals, **the return path is out** for
+this task, model and budget. If `F` pulls ahead, serialisation is doing the thing mini exists for
+and the earlier null was the starvation.

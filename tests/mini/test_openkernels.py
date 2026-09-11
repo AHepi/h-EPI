@@ -81,6 +81,28 @@ class OpenKernelResolutionTests(MiniTestCase):
         self.assertIn("MINI_OPEN_KERNEL_ARITY", str(caught.exception))
         self.assertIn("2 required arguments", str(caught.exception))
 
+    def test_a_two_argument_check_is_reachable_once_its_second_argument_is_declared(self) -> None:
+        """CREATIVITY-ARMS-1 measured the loop starved because these came back unrunnable."""
+
+        from creib.forge.mini.openkernels import SECOND_ARGUMENT
+
+        self.assertIn("refusal_phrase_in", SECOND_ARGUMENT)
+        kernel = resolve_any_kernel("open:creib.forge.conformance.oracle.refusal_phrase_in")
+        self.assertEqual(kernel.verdict("I'm sorry. I cannot do that."), repr("I cannot"))
+        with self.assertRaises(MiniError):
+            resolve_any_kernel("open:creib.forge.conformance.oracle.parse_content")
+
+    def test_a_function_named_in_the_wrong_module_is_relocated_not_refused(self) -> None:
+        from creib.forge.mini.openkernels import relocate
+
+        moved = resolve_any_kernel("open:creib.forge.conformance.records.recover_json_object")
+        self.assertEqual(moved.verdict('{"c":3}'), repr(({"c": 3}, ())))
+        self.assertEqual(relocate("open:creib.forge.conformance.records.recover_json_object"),
+                         "open:creib.forge.conformance.oracle.recover_json_object")
+        self.assertIsNone(relocate("open:creib.forge.conformance.oracle.no_such_name_anywhere"))
+        with self.assertRaises(MiniError):
+            resolve_any_kernel("open:creib.forge.conformance.oracle.no_such_name_anywhere")
+
     def test_the_brief_names_the_modules_and_not_the_functions(self) -> None:
         brief = open_kernel_brief()
         for module in OPEN_MODULES:

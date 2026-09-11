@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The execution did not run: the machine returned `unrunnable` with `MINI_OPEN_KERNEL_NOT_FOUND: 'records' has no 'recover_json_object'`, so there is no observed output to compare. Reading the supplied source, however, the conjecture's predicted behavior is what the code does. The top-level scan iterates characters and calls `raw_decode` at every `{` without skipping string contents; for `"prefix {"a":1} suffix"` it will start at the `{` inside the quoted prefix and recover `{"a":1}`, the same dictionary as for `{"a":1}`. The rule as written says: "Every top-level balanced object in the text is a candidate, not only the span from the first ``{`` to the last ``}``: reasoning prose before or after the answer frequently contains stray braces, and an object nested inside another is not a candidate of its own." An object-like span inside a string is not a top-level balanced object, so the rule and the code part company; the conjecture did not misread the rule. The next conjecture should use the correct kernel path for `recover_json_object` (the source block is `mini.kernel-source.v1`, not `records`) and avoid repeating the nonexistent path `open:creib.forge.conformance.records.recover_json_object`.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

@@ -1,0 +1,17 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+## The conjecture, as written (conj)
+[33136de4384dc86c] (mini.conjecture.v1)
+Conjecture: I am testing open:creib.forge.conformance.records.recover_json_object. Its documented rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." I give two reply texts. Text 1: ```python\n{"a": 1}\n```\n{"b": 2}. Text 2: {"b": 2}. The rule requires Text 1 to score {"a": 1} because it is inside a code fence, and Text 2 to score {"b": 2} because there is no fence. The function returns {"b": 2} for both, because its fence regex only recognizes ```json, ```JSON, or bare ``` fences, not ```python, so it ignores the python fence and falls through to the last top-level object. I would be wrong if the function returned {"a": 1} for Text 1, or if the documented rule were read as restricting "code fence" to json/JSON/bare fences only.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.

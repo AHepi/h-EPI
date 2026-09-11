@@ -150,12 +150,82 @@ def open_kernel_brief() -> str:
 PAIR_EXECUTION_OPEN_KIND = f"{PAIR_EXECUTION_PREFIX}open.v1"
 
 
-def resolve_any_kernel(kernel_id: str) -> Kernel:
-    """The registry first, then import. A registered id never changes meaning because of this file."""
+#: Configuration a two-argument check takes in this codebase. A kernel is a function of one string,
+#: so a check whose second argument is a fixed table is unreachable without this: CREATIVITY-ARMS-1
+#: found the loop starved because every conjecture about such a check came back unrunnable, and a
+#: criticism stage fed refusals is criticising the machinery rather than the subject.
+SECOND_ARGUMENT: dict[str, str] = {
+    "refusal_phrase_in": "creib.forge.mini.conformance_kernels.REFUSAL_PHRASES",
+}
 
-    if is_open_kernel_id(kernel_id):
+
+def _with_second_argument(function: Any, name: str) -> Callable[[str], str] | None:
+    """A one-string view of a two-argument check, when its second argument is declared above."""
+
+    target = SECOND_ARGUMENT.get(name)
+    if target is None:
+        return None
+    holder, _, attribute = target.rpartition(".")
+    value = getattr(importlib.import_module(holder), attribute)
+    return lambda text: function(text, value)
+
+
+def relocate(kernel_id: str) -> str | None:
+    """The same function name under another open module, when its stated module does not hold it.
+
+    A conjecture that names the right function in the wrong file is misfiled, not false, and
+    refusing it teaches a criticism stage nothing about the subject.
+    """
+
+    if not is_open_kernel_id(kernel_id):
+        return None
+    name = kernel_id.rpartition(".")[2]
+    for module_name in OPEN_MODULES:
+        candidate = f"{OPEN_PREFIX}{OPEN_PACKAGE}{module_name}.{name}"
+        if candidate == kernel_id:
+            continue
+        try:
+            resolve_open_kernel(candidate)
+        except MiniError:
+            continue
+        return candidate
+    return None
+
+
+def resolve_any_kernel(kernel_id: str) -> Kernel:
+    """The registry first, then import, then a declared second argument, then another module.
+
+    The last two are widenings CREATIVITY-ARMS-1 measured the need for: they turn a claim the
+    executor would have refused into a result the loop can read. Applied to every arm equally.
+    """
+
+    if not is_open_kernel_id(kernel_id):
+        return resolve_kernel(kernel_id)
+    try:
         return resolve_open_kernel(kernel_id)
-    return resolve_kernel(kernel_id)
+    except MiniError as first:
+        if first.code == OPEN_ARITY:
+            path = kernel_id[len(OPEN_PREFIX):]
+            module_name, _, function_name = path.rpartition(".")
+            function = getattr(importlib.import_module(module_name), function_name, None)
+            bound = _with_second_argument(function, function_name) if function is not None else None
+            if bound is not None:
+                return Kernel(kernel_id=kernel_id, description=f"{path}, second argument declared",
+                              verdict=_answer_of(bound), unreadable=RAISED)
+        elsewhere = relocate(kernel_id)
+        if elsewhere is not None:
+            return resolve_open_kernel(elsewhere)
+        raise
+
+
+def _answer_of(call: Callable[[str], Any]) -> Callable[[str], str]:
+    def verdict(text: str) -> str:
+        try:
+            return repr(call(text))
+        except Exception:  # noqa: BLE001 - any raise is one verdict: the check could not answer
+            return RAISED
+
+    return verdict
 
 
 def _execute_pairs_open(context: MachineContext) -> str:

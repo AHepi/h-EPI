@@ -1,0 +1,20 @@
+# Execute
+
+## Readings (reads)
+[5500bfec7008d028] (mini.pair-proposal.reading.v1)
+The conjecture claims the function returns the same answer for both replies, but the documented rule as interpreted requires different answers; the check currently returns {"c":3} for both because the fenced content is treated as a single JSON object and fails to parse. I am unsure whether the intended expectation is 'unchanged' (as the conjecture states) or 'moves' (as the rule requires); I set expect to 'moves' because the rule requires the two answers to differ.
+input: ```json
+{"a":1}
+{"b":2}
+```
+{"c":3}
+rewrite: Reply B replaces {"b":2} with {"d":4} inside the code fence; all else identical.
+rewritten: ```json
+{"a":1}
+{"d":4}
+```
+{"c":3}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

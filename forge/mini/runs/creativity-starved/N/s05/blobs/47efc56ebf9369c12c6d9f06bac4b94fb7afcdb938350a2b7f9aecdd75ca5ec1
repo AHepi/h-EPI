@@ -1,0 +1,4 @@
+{
+  "body": "Conjecture: The function recover_json_object (in the oracle module) is documented as: \"an object nested inside another is not a candidate of its own.\" The two replies are: Reply A: '{\"a\": {\"b\": 1}, \"c\": }' and Reply B: '{\"b\": 1}'. The rule requires Reply A to yield no JSON object recovered (RecordError), because the only balanced object is nested inside an invalid outer object, and nested objects are not candidates. The rule requires Reply B to yield the object {\"b\": 1}. The check, however, returns {\"b\": 1} for both: in Reply A the outer object fails to parse, so the cursor is not advanced past the nested object, and the nested object is then parsed as a top-level candidate. I would be wrong if recover_json_object raises RecordError for Reply A, or if the documented rule is read as allowing a nested object to be scored when its outer object is invalid.",
+  "commitments": ""
+}
