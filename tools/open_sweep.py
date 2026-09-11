@@ -100,6 +100,11 @@ def _summary(rows: Sequence[dict[str, Any]], rules: str) -> dict[str, Any]:
         "contradicted": len(contra),
         "quoted": sum(1 for entry in contra
                       if arch_sweep._quotes(str(entry.get("reading", "")) + str(entry.get("rewrite", "")), rules)),
+        # Contradictions per executed row, not per run: the open arm pays a notation tax the closed
+        # arm cannot pay (a path written without the open: prefix is refused), and a rate separates
+        # that tax from anything the wider answer space did. Reported beside the count, never
+        # instead of it.
+        "contradicted_per_100_ran": round(100.0 * len(contra) / len(ran), 1) if ran else 0.0,
         "behaviours": len({(str(e.get("kernel")), str(e.get("before")), str(e.get("after"))) for e in ran}),
         "probes": len({(str(e.get("kernel")), str(e.get("expect")), str(e.get("executed"))) for e in ran}),
         "distinct_kernels": len({str(e.get("kernel")) for e in rows}),

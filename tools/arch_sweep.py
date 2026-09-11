@@ -137,7 +137,10 @@ def _executions(root: Path) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for key in state.artifact_order:
         record = state.artifacts[key]
-        if str(record["kind_id"]) != EXEC:
+        # Any pair-execution kind, not just the registry one: OPEN-SWEEP-1's seat produces
+        # mini.pair-execution.open.v1, and a reader keyed to one kind silently reports a run that
+        # worked as a run that executed nothing.
+        if not str(record["kind_id"]).startswith("mini.pair-execution."):
             continue
         payload = json.loads(blobs.get(str(record["commitments_ref"])).decode("utf-8"))
         out.extend(payload.get("executions", []))
