@@ -1,0 +1,11 @@
+The function under test is open:creib.forge.conformance.records.recover_json_object. Its documented rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." I read that as: if any code fence contains a JSON object, the answer is the last such fenced object, even if the fenced block also contains prose.
+
+The two replies are:
+
+First reply text: "```json\n{\"a\": 1}\n```"
+
+Second reply text: "```json\n{\"a\": 1}\n```\n```json\nHere is the corrected answer: {\"a\": 2}\n```"
+
+For the first reply, the rule requires the object {"a": 1}. For the second reply, the rule requires the object {"a": 2}, because the second fenced block holds a top-level object {"a": 2} and it is the last fenced object. The implementation, however, treats each fenced block's entire content as a single candidate; the second block's content is not pure JSON, so it is skipped, and the first block's {"a": 1} is returned. Thus both replies get the same answer {"a": 1}.
+
+What would make me wrong: if recover_json_object on the second reply returns {"a": 2} (or any object other than {"a": 1}), or if the documented rule is interpreted as requiring the first fenced object when the last fenced block is not a pure JSON object.

@@ -1,0 +1,7 @@
+The function I am testing is `open:creib.forge.conformance.oracle.recover_json_object`. The documented rule I am reading says: “The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction.”
+
+The first reply is the string consisting of three backticks followed by `json`, a newline, the object `{"a": 1}`, a newline, the object `{"b": 2}`, a newline, three backticks, a newline, and the object `{"c": 3}`. The second reply is the string consisting only of the object `{"c": 3}`.
+
+The rule requires the first reply to be scored as `{"b": 2}`, because the code fence holds two objects and the last one inside that fence is `{"b": 2}`. The rule requires the second reply to be scored as `{"c": 3}`, because there is no code fence, so the last top-level object is `{"c": 3}`. The check, however, gives the same answer for both: it returns `{"c": 3}` for the first reply as well, because the fenced candidate containing two objects is not a single dict and is passed over, so the function falls back to the last top-level object in the whole text, which is `{"c": 3}`.
+
+I would be wrong if `recover_json_object`, given the first reply, returns `{"b": 2}` or any answer other than `{"c": 3}`, or if the rule is read as applying only when a fence contains exactly one object, so that the first reply’s fence does not trigger the fenced-object priority.

@@ -1,0 +1,17 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+## The conjecture, as written (conj)
+[f40669692b6c8948] (mini.conjecture.v1)
+I am testing open:creib.forge.conformance.records.recover_json_object. The documented rule I am reading says: "Every top-level balanced object in the text is a candidate, not only the span from the first ``{`` to the last ``}``: reasoning prose before or after the answer frequently contains stray braces, and an object nested inside another is not a candidate of its own." The two reply texts are, in full, `{"a": "{"b":1}"}` and `{"b":1}`. For the first, the rule requires no object to be recovered: the outer object is not strict JSON, and the inner object is nested inside another object's string value, so it is not a candidate; the function should raise RecordError. For the second, the rule requires the object `{"b":1}` to be recovered. The check gives the same answer for both: it returns the dict `{"b":1}`. What would make me wrong: if the function actually raises on the first text, or returns a different object for the second, or if the documented rule is read as allowing the inner object as a top-level candidate despite being inside a string.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.

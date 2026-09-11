@@ -119,3 +119,44 @@ change every arm's numbers after evidence, so it stands, `grounded_T1` is known 
 `W1` is reported beside it. Worth saying plainly: widening would most help **S**, the arm with no
 loop, which is the arm arguing *against* mini's reason for existing. Leaving it alone is not
 self-serving in either direction.
+
+## The block, read
+
+Fifteen segments, all reaching `RUN_ENDED`. Read twice: by the pre-registered mechanical measure,
+and by the post-hoc verifier that binds a declared second argument and relocates a function named in
+the wrong module. The verifier is the honest reading — the live executor refused nearly everything
+for reasons that have nothing to do with whether a claim is true.
+
+| arm | calls | claims | executable | **verified T1 witnesses** | distinct targets | per call |
+|---|---|---|---|---|---|---|
+| **S** single shot | 2 | 1 | 1 | **1** | 1 | **0.50** |
+| **R** repeated | 12 | 6 | 4 | **4** | **2** | 0.33 |
+| **N** no-return | 12 | 4 | 2 | **2** | 1 | 0.17 |
+| **F** full | 12 | 4 | 2 | **2** | 1 | 0.17 |
+| **E** enumeration | 0 | — | 1211 | 460 collapses, **0 grounded** | 8 | — |
+
+- **C1 fails.** `F` and `N` are equal at two apiece. **The return path produced no difference in the
+  measure it exists for.**
+- **C2 holds.** Every model arm produced verified T1 witnesses; the enumerator produced 460
+  collapses and grounded none. The model contributes the reading, exactly as the baseline predicted.
+- **C3 fails.** `F` and `N` each reached one distinct target — and *different* ones. `F` stayed on
+  `refusal_phrase_in` for all four segments; `N` stayed on `recover_json_object`.
+- **C4 fails.** `S` yields 0.50 witnesses per call, `R` 0.33, `N` and `F` 0.17. **Adding the loop
+  halved the yield; adding the return path changed nothing.**
+
+Only `R` — no criticism, no carry — reached both targets. But at four draws apiece, one arm holding
+one target is within chance if the target is near-evenly drawn, so **the locking is not claimed**;
+what is claimed is the equality of `F` and `N`, which is the pre-registered comparison.
+
+The union over every model arm is **two** distinct targets of the six eligible.
+
+## Extension 1, declared before it runs
+
+`C1` came out null on four draws a side. A null at that size is thin, so the decisive pair is
+extended by four segments each — same manifests, same install map, same everything — to sixteen
+total draws across `N` and `F`. Nothing else changes and no other arm is extended: this is more of
+the same comparison, not a new one, and it is declared here before it is run so that the enlarged
+numbers cannot be read as a fresh block chosen after seeing the first.
+
+**If `F` and `N` remain within one witness of each other at eight draws a side, C1 is settled null**
+for this task, this model and this budget.

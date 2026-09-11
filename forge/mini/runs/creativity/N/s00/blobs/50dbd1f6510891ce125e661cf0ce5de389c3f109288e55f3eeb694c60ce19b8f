@@ -1,0 +1,40 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Conjecture: The function open:creib.forge.conformance.records.recover_json_object, whose documented rule says 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text', gives the same answer for the following two replies. Reply 1: ```json
+{"a":1}
+{"b":2}
+```
+{"c":3}
+Reply 2: {"c":3}
+The rule requires Reply 1 to be scored as {"b":2} because that is the last object inside the code fence, and Reply 2 to be scored as {"c":3} because it is the last top-level object. But the function returns {"c":3} for both: for Reply 1, the fenced pool candidate is the entire fenced content '{"a":1}
+{"b":2}', which fails to parse as a single JSON object, so the function falls back to the top-level pool and returns the last top-level object {"c":3}. I would be wrong if the function's fenced pool were able to parse multiple objects inside a fence and return the last one, or if the documented rule were interpreted to mean only a fence containing exactly one object triggers fenced priority.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

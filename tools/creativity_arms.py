@@ -168,8 +168,8 @@ def manifest(arm: str, index: int, problem: str, with_criticism: bool) -> dict[s
 #: six of its segments cost what four of N's or F's do: the arms are matched on CALLS, not segments.
 ARMS = {"S": {"segments": 1, "criticism": False, "install": False},
         "R": {"segments": 6, "criticism": False, "install": False},
-        "N": {"segments": 4, "criticism": True, "install": False},
-        "F": {"segments": 4, "criticism": True, "install": True}}
+        "N": {"segments": 8, "criticism": True, "install": False},
+        "F": {"segments": 8, "criticism": True, "install": True}}
 
 
 def _plan(args: argparse.Namespace) -> int:

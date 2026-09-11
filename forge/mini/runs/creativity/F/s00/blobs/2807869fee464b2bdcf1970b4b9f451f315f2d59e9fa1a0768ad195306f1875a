@@ -1,0 +1,22 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+## The conjecture, as written (conj)
+[584fb9fb6413ca62] (mini.conjecture.v1)
+The function under test is open:creib.forge.conformance.records.refusal_phrase_in. Its documented rule says: "The first refusal phrase the text contains, typographic quotes read as straight ones, or None." The two reply texts are:
+
+A: "I'm sorry, I cannot do that."
+B: "I cannot help; I'm sorry."
+
+For A, the first refusal phrase in the text is "I'm sorry", so the rule requires the answer "I'm sorry". For B, the first refusal phrase in the text is "I cannot", so the rule requires the answer "I cannot". The implementation, however, iterates over REFUSAL_PHRASES in list order and returns the first phrase that is a substring anywhere in the text. Since "I cannot" appears before "I'm sorry" in the list, it returns "I cannot" for both A and B, giving the same answer where the rule requires different answers. This would be shown false if running the function on A returned "I'm sorry" rather than "I cannot", or if the documented rule were read as first in the refusal_phrases list order rather than first in the text.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.

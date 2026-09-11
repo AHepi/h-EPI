@@ -1,0 +1,17 @@
+# Execute
+
+## Readings (reads)
+[c71c4960b4ed9733] (mini.pair-proposal.reading.v1)
+The conjecture asserts that open:creib.forge.conformance.records.recover_json_object returns {"c":3} for both replies, but the documented rule requires Reply 1 to be scored as {"b":2} and Reply 2 as {"c":3}, so the two answers should differ. The claimed cause is that the fenced pool candidate is the entire fenced content '{"a":1}
+{"b":2}', which fails to parse as a single JSON object, causing fallback to the top-level pool. The conjecture would be wrong if the fenced pool could parse multiple objects and return the last one, or if the rule were interpreted to require exactly one object in a fence to trigger fenced priority.
+input: ```json
+{"a":1}
+{"b":2}
+```
+{"c":3}
+rewrite: moves
+rewritten: {"c":3}
+commitments: {"kernel": "open:creib.forge.conformance.records.recover_json_object", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

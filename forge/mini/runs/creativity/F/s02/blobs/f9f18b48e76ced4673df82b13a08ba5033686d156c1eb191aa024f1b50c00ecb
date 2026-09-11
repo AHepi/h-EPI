@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The execution is unrunnable, so there is no returned output to compare with the conjecture's predicted GROUNDED/GROUNDED. The conjecture misread the rule by addressing `open:creib.forge.conformance.oracle._grounding_kernel`; the executor reports `MINI_OPEN_KERNEL_NOT_FOUND: 'oracle' has no '_grounding_kernel'`, and the source block defines `_grounding_kernel` in `mini.kernel-source.v1`, not under `oracle`. The rule's words are: "The grounding verdict as the harness gives it, with no relaxation and the value-in-span check on." That wording does not name the path the conjecture used. Even if the path were corrected, the conjecture's expected distinction is not what the source code does: the value-in-span check is `_normalise_whitespace(fields["value"]).casefold() not in _normalise_whitespace(fields["span"]).casefold()`, so it is case-insensitive, and both Reply A and Reply B would be GROUNDED. The conjecture itself identified this possibility: "if the harness's own value-in-span check is case-insensitive, so that 'no relaxation' does not govern the value-in-span comparison, then the rule does not require these two replies to be told apart." That is the correct reading. Thus the rule as written and the code part company only under the conjecture's overbroad reading of 'no relaxation'; the code's casefold is not one of the `_span_occurs` relaxations. A next conjecture should target the correct kernel path and should not expect case-only differences to change the verdict. It should avoid repeating the wrong `oracle._grounding_kernel` path and the assumption that 'no relaxation' makes the value-in-span check case-sensitive.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

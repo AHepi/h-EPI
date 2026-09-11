@@ -1,0 +1,17 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unrunnable
+- open:creib.forge.conformance.oracle._grounding_kernel on a pair differing by: The span changes from 'a  b' (two spaces) to 'a b' (one space); all other fields are identical. -> the check answered unrunnable
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: (unsaid) -> the check answered unrunnable
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+The conjecture did not get to test the rule because it named a kernel that does not exist: the execution returned MINI_OPEN_KERNEL_NOT_FOUND: 'records' has no 'recover_json_object'. The source block is mini.kernel-source.v1, so the next conjecture should target that kernel, not open:creib.forge.conformance.records.recover_json_object. On the substantive point, the conjecture misreads the code's fenced-pool step. The rule says 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction.' But the code builds fenced from match.group(1) for each fence and then tries loads_strict on the whole candidate; it does not extract a top-level object from within a fence that also contains garbage. So for Reply A the second fence's whole content '{"b":2} garbage' fails to parse and is skipped, and the code returns the first fence's {"a":1}. That is a case where the rule as written and the code part company, not a misread of the rule by the conjecture. A next conjecture should use the correct kernel path and assert the actual behavior: recover_json_object(Reply A) returns {"a":1} under the current code, while noting the docstring's 'last one inside a code fence' language would suggest {"b":2}. It should avoid repeating the wrong kernel path and avoid assuming the fenced pool scans for top-level objects inside fences.

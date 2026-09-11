@@ -1,0 +1,17 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+## The conjecture, as written (conj)
+[a6b390e6ebb0607a] (mini.conjecture.v1)
+Conjecture: the function open:creib.forge.conformance.records.recover_json_object, whose documented rule says 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text', gives the same answer for two replies that the rule requires it to tell apart. Reply A is the text that starts with a line of three backticks followed by 'python', then a line containing {"a": 1}, then a line of three backticks, then a line containing {"b": 2}. Reply B is the text containing only the line {"b": 2}. The rule requires Reply A to be scored as {"a": 1}, because it is the last object inside a code fence, and Reply B to be scored as {"b": 2}, because there is no fence and it is the last top-level object. But recover_json_object returns {"b": 2} for both, because its fence regex does not match a python fence, so it falls through to the top-level scan and takes the last top-level object. I would be wrong if recover_json_object on Reply A returned {"a": 1}, or if the rule's 'any fence' is read to exclude fences with a language tag other than json or JSON.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.

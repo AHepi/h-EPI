@@ -1,0 +1,17 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+## The conjecture, as written (conj)
+[4de6e736ffd86890] (mini.conjecture.v1)
+Conjecture: open:creib.forge.conformance.oracle.refusal_phrase_in. The documented rule reads: 'The first refusal phrase the text contains, typographic quotes read as straight ones, or None.' Reply A is 'I CANNOT do that.' Reply B is 'I cannot do that.' Under the rule as written, 'contains' is literal substring matching with no case folding mentioned, so Reply A does not contain 'I cannot' and the function should return None; Reply B does contain 'I cannot' and the function should return 'I cannot'. The implementation lowercases both the text and the phrase before checking, so it returns 'I cannot' for both replies, giving the same answer where the rule requires different answers. I would be wrong if the documented rule is intended to be read with case-insensitive matching, for example through an implicit case-folding step or a definition of 'contains' that is not quoted here.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.

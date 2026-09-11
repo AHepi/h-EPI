@@ -1,0 +1,17 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+## The conjecture, as written (conj)
+[0bc22672ffac70a6] (mini.conjecture.v1)
+The function I am testing is open:creib.forge.conformance.records.refusal_phrase_in. Its documented rule says, “The first refusal phrase the text contains, typographic quotes read as straight ones, or None.” The two reply texts are: "I'm sorry. I cannot do that." and "I cannot do that. I'm sorry." For the first text, the first refusal phrase in the text is "I'm sorry" at character 0, so the rule requires the answer "I'm sorry". For the second text, the first refusal phrase in the text is "I cannot" at character 0, so the rule requires the answer "I cannot". But the function iterates the default refusal phrase list in order ['I cannot', 'I can't', 'I'm sorry', 'I am unable', 'as an AI', 'cannot assist'] and returns the first phrase from that list that appears anywhere in the text. Since "I cannot" appears in both texts, the function returns "I cannot" for both. Thus the two replies, which the rule requires to be told apart as "I'm sorry" versus "I cannot", receive the same answer "I cannot". What would make me wrong: if the function returned "I'm sorry" for the first text and "I cannot" for the second, or if the documented rule were interpreted as first in list order rather than first occurrence in the text, then this conjecture would be false.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.
