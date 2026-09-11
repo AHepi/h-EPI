@@ -864,3 +864,39 @@ enumeration was load-bearing rather than redundant.
 not widen them to six, or to ten, or to the 69. A block that asks whether a loop finds boundary
 points nobody wrote down, while naming the points it may look at, has answered a smaller question
 than the one it asked.
+
+## M25 — The seat the tests import is not the seat the command line has
+
+A machine seat exists because a module-level `register_machine_seat` call ran, which happens only
+if something imported the module it lives in. `tests/mini/test_openkernels.py` imports
+`creib.forge.mini.openkernels` directly, so every offline check passed. `tools/run_mini.py` did not
+import it. `check.py all` was green — 776 tests — on a seat the command line could not resolve.
+
+**What it cost.** OPEN-SWEEP-1's first thirty-six runs. Each reached `rules`, `source` and
+`propose`, then died at `execute` with
+
+```
+MINI_MACHINE_SEAT_UNKNOWN: a stage declares a machine seat for 'mini.pair-execution.open.v1',
+which nothing registers
+```
+
+**Thirty-six proposer calls were spent**, one per run — 108 artifacts across the 36 logs. It was not
+free, and the first report of it in this session said no model calls were made, which was wrong:
+the failure is at the fourth stage, not at compile.
+
+**What the spent calls bought, since they exist.** All 36 proposals named a function outside the
+four kernels ARCH-SWEEP-1 enumerated, which is the widening being used. Only **two distinct
+functions** of the 66 reachable were named — `oracle.recover_json_object` 30 times and
+`oracle._grounding_kernel` 6 — and **10 of the 36 dropped the `open:` prefix**, which the registry
+would refuse. Both numbers are read from `forge/mini/runs/open-sweep-aborted/`, they are proposals
+that were never executed, and they are not O1, O2, O3 or O4, which are read from a block that runs.
+
+**The repair, and why it is not just an import line.** `tools/run_mini.py` now imports
+`openkernels`. On its own that fixes this seat and nothing else, so the test added with it asks the
+general question: it loads `tools/run_mini.py` as the command line loads it, then checks that every
+machine seat named by every shipped manifest under `forge/mini/manifests/` resolves. It fails
+without the import line and passes with it.
+
+**The general form.** A test that imports what it is testing proves the thing works when imported.
+It proves nothing about whether the program under test imports it. Anywhere behaviour is registered
+by import side-effect, the test has to enter through the same door the program does.
