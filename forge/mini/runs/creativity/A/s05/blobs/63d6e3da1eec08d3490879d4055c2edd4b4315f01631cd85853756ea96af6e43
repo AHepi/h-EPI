@@ -1,0 +1,18 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+## The conjecture, as written (conj)
+[d95d6dd69037ea25] (mini.conjecture.v1)
+I am testing open:creib.forge.conformance.records.recover_json_object. The documented rule says: "Every top-level balanced object in the text is a candidate, not only the span from the first ``{`` to the last ``}``: reasoning prose before or after the answer frequently contains stray braces, and an object nested inside another is not a candidate of its own." Text A is exactly: The value is "{"a":1}" and nothing else. Text B is exactly: The value is {"a":1} and nothing else. Under the rule, Text A has no top-level balanced object: the only brace is inside a string literal, so it is not a candidate, and recover_json_object must raise RecordError. Text B has the top-level balanced object {"a":1}, which parses as strict JSON, so the rule requires recover_json_object to return ({'a':1}, ()). The check, however, scans every ``{`` without checking whether it is inside a string, so on Text A it will raw_decode the quoted ``{"a":1}`` and return ({'a':1}, ()), the same answer it gives for Text B. The conjecture would be false if recover_json_object raises RecordError on Text A and returns ({'a':1}, ()) on Text B, or if Text A is found to contain a top-level balanced object outside the quoted string.
+commitments: The writing commits to the claim that open:creib.forge.conformance.records.recover_json_object, when given Text A (The value is "{"a":1}" and nothing else) and Text B (The value is {"a":1} and nothing else), returns ({'a':1}, ()) for both, because the implementation scans every '{' without checking whether it is inside a string literal, and that this violates the documented rule requiring Text A to raise RecordError and Text B to return ({'a':1}, ()).
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.

@@ -1,0 +1,33 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+I am testing open:creib.forge.conformance.records.recover_json_object. The documented rule says: "Every top-level balanced object in the text is a candidate, not only the span from the first ``{`` to the last ``}``: reasoning prose before or after the answer frequently contains stray braces, and an object nested inside another is not a candidate of its own." Text A is exactly: The value is "{"a":1}" and nothing else. Text B is exactly: The value is {"a":1} and nothing else. Under the rule, Text A has no top-level balanced object: the only brace is inside a string literal, so it is not a candidate, and recover_json_object must raise RecordError. Text B has the top-level balanced object {"a":1}, which parses as strict JSON, so the rule requires recover_json_object to return ({'a':1}, ()). The check, however, scans every ``{`` without checking whether it is inside a string, so on Text A it will raw_decode the quoted ``{"a":1}`` and return ({'a':1}, ()), the same answer it gives for Text B. The conjecture would be false if recover_json_object raises RecordError on Text A and returns ({'a':1}, ()) on Text B, or if Text A is found to contain a top-level balanced object outside the quoted string.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

@@ -1,0 +1,33 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Conjecture: the function open:creib.forge.conformance.records.recover_json_object, whose documented rule says "Every top-level balanced object in the text is a candidate, not only the span from the first ``{`` to the last ``}``: reasoning prose before or after the answer frequently contains stray braces, and an object nested inside another is not a candidate of its own. The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text...", is required to tell apart the following two replies. Text A is the string {"b":2} and "{"a":1}". Text B is the string {"a":1}. Under the rule, Text A has only one top-level balanced object, {"b":2}, because the quoted {"a":1} is inside a string literal and is not a top-level object; so the rule requires the answer {'b': 2} for Text A. Text B has the top-level object {"a":1}, so the rule requires the answer {'a': 1} for Text B. The check, however, returns the same answer for both: it scans every { without regard to string literals, so for Text A it finds the quoted {"a":1} as a later top-level candidate and returns {'a': 1}, and for Text B it returns {'a': 1}. This conjecture would be false if executing recover_json_object on Text A returned {'b': 2} or raised instead of {'a': 1}, or if executing it on Text B did not return {'a': 1}, or if the documented rule were read to count a brace inside a string literal as a top-level balanced object.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

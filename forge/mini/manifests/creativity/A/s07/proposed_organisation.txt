@@ -1,0 +1,28 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: Text A adds a fenced block containing {"a":1} and {"b":2} before the final {"c":3}; Text B is only the final {"c":3}. -> the check answered unchanged
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered moved
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: Text B changes the second fenced object's second key-value pair from {"b":2} to {"c":3}. -> the check answered unchanged
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: (unsaid) -> the check answered unrunnable
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## What has been refuted, computed from the attacks that landed
+
+- cff1fef80a810854 was refuted on the ground reading-misrenders-conjecture: The reading claims the function expects 'moves', but the conjecture's prose says it returns {'b': 2} unchanged, so the expectation is not in the prose.
+- 66cd5f2a4e19968e was refuted on the ground rule-and-code-diverge: The source code returns {'a':1} for Text A, but the rule's 'last one inside a code fence when any fence holds one' yields {'c':3} because the second fence holds
+
+A refuted conjecture is not merely criticised: an attack on it landed and nothing has yet overturned that attack. Do not re-propose one.
+
+## The standing criticism of the last attempt
+
+The execution record [1ba9ee74a867fb67] does not run the conjecture's pair: it reports proposal 454d66477ac8c110 as unrunnable with empty input and no output for Text A or Text B. The rule's words are 'Every top-level balanced object in the text is a candidate... The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' Without an execution of recover_json_object on Text A and Text B, I cannot tell whether the conjecture misread the rule or the rule and code diverge. A next conjecture should actually execute the function on both texts and avoid repeating the assumption that a brace inside a string literal is parsed as a top-level candidate.

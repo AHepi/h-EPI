@@ -1,0 +1,18 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+## The conjecture, as written (conj)
+[3eb332e2b9e93d4a] (mini.conjecture.v1)
+Conjecture: the function open:creib.forge.conformance.records.recover_json_object, whose documented rule says "Every top-level balanced object in the text is a candidate, not only the span from the first ``{`` to the last ``}``: reasoning prose before or after the answer frequently contains stray braces, and an object nested inside another is not a candidate of its own. The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text...", is required to tell apart the following two replies. Text A is the string {"b":2} and "{"a":1}". Text B is the string {"a":1}. Under the rule, Text A has only one top-level balanced object, {"b":2}, because the quoted {"a":1} is inside a string literal and is not a top-level object; so the rule requires the answer {'b': 2} for Text A. Text B has the top-level object {"a":1}, so the rule requires the answer {'a': 1} for Text B. The check, however, returns the same answer for both: it scans every { without regard to string literals, so for Text A it finds the quoted {"a":1} as a later top-level candidate and returns {'a': 1}, and for Text B it returns {'a': 1}. This conjecture would be false if executing recover_json_object on Text A returned {'b': 2} or raised instead of {'a': 1}, or if executing it on Text B did not return {'a': 1}, or if the documented rule were read to count a brace inside a string literal as a top-level balanced object.
+commitments: The conjecture that open:creib.forge.conformance.records.recover_json_object returns {'a': 1} for both Text A ({"b":2} and "{"a":1}") and Text B ({"a":1}), thereby failing to distinguish them as its documented rule requires.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.
