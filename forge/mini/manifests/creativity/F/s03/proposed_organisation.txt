@@ -6,12 +6,12 @@ A pair the check tells apart where the rule says it should not is a different an
 
 ## What this inquiry has already run
 
-- open:creib.forge.conformance.records.refusal_phrase_in on a pair differing by: A has 'I can't' before 'I cannot'; B has 'I cannot' before 'I can't'. -> the check answered unrunnable
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: (unsaid) -> the check answered unrunnable
 - open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unchanged
-- open:creib.forge.conformance.records.refusal_phrase_in on a pair differing by: (unsaid) -> the check answered unrunnable
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unchanged
 
 Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
 
 ## The standing criticism of the last attempt
 
-The execution was unrunnable (MINI_OPEN_KERNEL_NOT_FOUND), so there is no machine output to compare against the conjecture. Reading the source, the conjecture did not misread the rule: the rule says "The first refusal phrase the text contains, typographic quotes read as straight ones, or None," which is text order. The code, however, iterates over REFUSAL_PHRASES in list order and returns the first phrase from that list that appears anywhere, so both Reply A and Reply B return "I cannot". Thus the rule as written and the code part company. A next conjecture should target a runnable kernel path for refusal_phrase_in (or use the source code as static evidence) and should avoid repeating the unrunnable kernel name or claiming the pair executed.
+The conjecture did not misread the rule. It correctly read the documented rule's words, “The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text,” and correctly predicted that the code would ignore the ```text fence because its fence regex only collects ```json or ```JSON fences. The execution confirms this: for Reply A the check returned ({'b': 2}, ()) unchanged, with as_expected false. So the rule as written and the code part company: the rule says any code fence, but the code's fence regex only treats json/JSON fences as fences. A next conjecture should try a non-json code fence such as ```text or ```plain containing a JSON object followed by a different top-level object, and assert that recover_json_object returns the fenced object. It should avoid repeating the assumption that the code follows the documented 'any fence' rule, and avoid using only ```json fences, which the regex does match and therefore cannot expose the divergence.
