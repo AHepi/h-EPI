@@ -1,0 +1,21 @@
+# Verdict
+
+## Executions (execs)
+[05a530746ce04ada] (mini.pair-execution.open.v1)
+Executed this cycle's pair proposals.
+a283be562488b5c0: open:creib.forge.conformance.oracle.recover_json_object -> moved, expected moves
+commitments: {"executions": [{"after": "({'a': 2}, ())", "as_expected": true, "before": "({'a': 1}, ())", "executed": "moved", "expect": "moves", "input": "{\"a\":1}", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "a283be562488b5c0", "rewrite": "changed the JSON object from {\"a\":1} to {\"a\":2}", "rewritten": "{\"a\":2}"}]}
+[19d9a64934d4c8a3] (mini.pair-execution.open.v1)
+Executed this cycle's pair proposals.
+a283be562488b5c0: duplicate
+f41fdf43315f6016: open:creib.forge.conformance.oracle.recover_json_object -> unchanged, expected unchanged
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "{\"a\":1}", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "a283be562488b5c0", "rewrite": "changed the JSON object from {\"a\":1} to {\"a\":2}", "rewritten": "{\"a\":2}"}, {"after": "({'b': 2}, ())", "as_expected": true, "before": "({'b': 2}, ())", "executed": "unchanged", "expect": "unchanged", "input": "Here is a draft: {\"a\":1}\n```json\n{\"b\":2}\n```", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "f41fdf43315f6016", "rewrite": "Added a top-level JSON object after the fenced object.", "rewritten": "Here is a draft: {\"a\":1}\n```json\n{\"b\":2}\n```\n{\"c\":3}"}]}
+
+## Criticisms (crits)
+[c6e6003ddb6377f3] (mini.criticism.v1)
+No failed expectations to critique. The proposal expected the recovered object to move from {"a":1} to {"a":2}, and the execution reports moved with after ({'a': 2}, ()), matching the rule and code.
+[bb1f9edd10befe15] (mini.criticism.v1)
+No expectation failed. Both proposals executed as expected: a283be562488b5c0 moved (before {'a':1}, after {'a':2}) and f41fdf43315f6016 stayed unchanged (before and after {'b':2}). The duplicate execution of a283be562488b5c0 in the second run is not a failed expectation, just a repeated run. There is therefore no misreading of the rule and no divergence between the rule as written and the code to report, and no next build to prescribe.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

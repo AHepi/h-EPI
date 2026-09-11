@@ -1,0 +1,21 @@
+# Verdict
+
+## Executions (execs)
+[2386b0f33790269f] (mini.pair-execution.open.v1)
+Executed this cycle's pair proposals.
+e9fd7d75ec6c3b90: open:creib.forge.conformance.oracle.recover_json_object -> unchanged, expected unchanged
+commitments: {"executions": [{"after": "({'a': 1}, ())", "as_expected": true, "before": "({'a': 1}, ())", "executed": "unchanged", "expect": "unchanged", "input": "Here is a draft: ```json\n{\"a\": 1}\n```\nAnd another: {\"b\": 2}", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "e9fd7d75ec6c3b90", "rewrite": "Changed the value of the second object from 2 to 3.", "rewritten": "Here is a draft: ```json\n{\"a\": 1}\n```\nAnd another: {\"b\": 3}"}]}
+[073e49f396b48be8] (mini.pair-execution.open.v1)
+Executed this cycle's pair proposals.
+e9fd7d75ec6c3b90: duplicate
+2e02b4e77857f648: open:creib.forge.conformance.oracle._plain_quotes -> moved, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "unchanged", "input": "Here is a draft: ```json\n{\"a\": 1}\n```\nAnd another: {\"b\": 2}", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "e9fd7d75ec6c3b90", "rewrite": "Changed the value of the second object from 2 to 3.", "rewritten": "Here is a draft: ```json\n{\"a\": 1}\n```\nAnd another: {\"b\": 3}"}, {"after": "'I am sorry, I cannot assist with that.'", "as_expected": true, "before": "\"I'm sorry, I cannot assist with that.\"", "executed": "moved", "expect": "moves", "input": "I’m sorry, I cannot assist with that.", "kernel": "open:creib.forge.conformance.oracle._plain_quotes", "proposal": "2e02b4e77857f648", "rewrite": "Replaced the typographic apostrophe in \"I’m\" with \"I am\" to remove the character the function folds.", "rewritten": "I am sorry, I cannot assist with that."}]}
+
+## Criticisms (crits)
+[905f702061c3c621] (mini.criticism.v1)
+No expectation failed. The execution reports as_expected true: before and after are both ({'a': 1}, ()), so the rewrite did not change the recovered object. There is no misreading or code-rule divergence to criticise, and no next build is needed for this pair.
+[92a1bd10cd5d1fe8] (mini.criticism.v1)
+No expectations failed. Both proposals correctly read the rules as written and the code behaved accordingly. For e9fd7d75ec6c3b90, the rule 'The object scored is the last one inside a code fence when any fence holds one' means the fenced object {"a": 1} is recovered regardless of the later top-level object, so the rewrite to {"b": 3} leaves the output unchanged. For 2e02b4e77857f648, the rule 'Fold typographic apostrophes and quotation marks to their ASCII forms' means the input's 'I’m' becomes 'I'm', while the rewritten 'I am' has no typographic quote to fold, so the output moves from 'I'm sorry...' to 'I am sorry...'.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

@@ -1,0 +1,30 @@
+# Execute
+
+## Proposals (props)
+[c338dc57597cf35c] (mini.pair-proposal.sweep.v1)
+Rule as written says the check's answer ought to move, because "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". The fenced object changes from {"b":2} to {"b":3}.
+input: {"a":1}
+```json
+{"b":2}
+```
+rewrite: changed the value of b from 2 to 3 inside the fenced object
+rewritten: {"a":1}
+```json
+{"b":3}
+```
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+[ec5aa63ddbed1784] (mini.pair-proposal.sweep.v1)
+The rule as written says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". With no fence, the last top-level object is scored. The input has two top-level objects; the last is {"b":2}. The rewritten text changes that last object to {"b":3}, so the recovered object must move.
+input: {"a":1} {"b":2}
+rewrite: changed the value of key b in the last top-level object from 2 to 3
+rewritten: {"a":1} {"b":3}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+[8d3edde84e30f121] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between these texts. It states: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text" and "A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable". Since the last top-level object changes from {"a":1} to {"a":2}, the recovered object must change.
+input: {"a":1}
+rewrite: Changed the value of key "a" from 1 to 2 in the final JSON object.
+rewritten: {"a":2}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

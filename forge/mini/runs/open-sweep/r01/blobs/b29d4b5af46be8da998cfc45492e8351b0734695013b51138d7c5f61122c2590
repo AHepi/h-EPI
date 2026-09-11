@@ -1,0 +1,29 @@
+# Verdict
+
+## Executions (execs)
+[eae8ef8318da14c0] (mini.pair-execution.open.v1)
+Executed this cycle's pair proposals.
+c338dc57597cf35c: open:creib.forge.conformance.oracle.recover_json_object -> moved, expected moves
+commitments: {"executions": [{"after": "({'b': 3}, ())", "as_expected": true, "before": "({'b': 2}, ())", "executed": "moved", "expect": "moves", "input": "{\"a\":1}\n```json\n{\"b\":2}\n```", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "c338dc57597cf35c", "rewrite": "changed the value of b from 2 to 3 inside the fenced object", "rewritten": "{\"a\":1}\n```json\n{\"b\":3}\n```"}]}
+[8b9cdc1d1be92a25] (mini.pair-execution.open.v1)
+Executed this cycle's pair proposals.
+c338dc57597cf35c: duplicate
+ec5aa63ddbed1784: open:creib.forge.conformance.oracle.recover_json_object -> moved, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "{\"a\":1}\n```json\n{\"b\":2}\n```", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "c338dc57597cf35c", "rewrite": "changed the value of b from 2 to 3 inside the fenced object", "rewritten": "{\"a\":1}\n```json\n{\"b\":3}\n```"}, {"after": "({'b': 3}, ())", "as_expected": true, "before": "({'b': 2}, ())", "executed": "moved", "expect": "moves", "input": "{\"a\":1} {\"b\":2}", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "ec5aa63ddbed1784", "rewrite": "changed the value of key b in the last top-level object from 2 to 3", "rewritten": "{\"a\":1} {\"b\":3}"}]}
+[b145f40e9a02a9bd] (mini.pair-execution.open.v1)
+Executed this cycle's pair proposals.
+c338dc57597cf35c: duplicate
+ec5aa63ddbed1784: duplicate
+8d3edde84e30f121: open:creib.forge.conformance.oracle.recover_json_object -> moved, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "{\"a\":1}\n```json\n{\"b\":2}\n```", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "c338dc57597cf35c", "rewrite": "changed the value of b from 2 to 3 inside the fenced object", "rewritten": "{\"a\":1}\n```json\n{\"b\":3}\n```"}, {"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "{\"a\":1} {\"b\":2}", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "ec5aa63ddbed1784", "rewrite": "changed the value of key b in the last top-level object from 2 to 3", "rewritten": "{\"a\":1} {\"b\":3}"}, {"after": "({'a': 2}, ())", "as_expected": true, "before": "({'a': 1}, ())", "executed": "moved", "expect": "moves", "input": "{\"a\":1}", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "8d3edde84e30f121", "rewrite": "Changed the value of key \"a\" from 1 to 2 in the final JSON object.", "rewritten": "{\"a\":2}"}]}
+
+## Criticisms (crits)
+[a060f1ecc07af12e] (mini.criticism.v1)
+No expectation failed in this pair. The proposal expected the check's answer to move, and the execution reports moved as expected (before ({'b': 2}, ()), after ({'b': 3}, ())). There is no misreading or code divergence to report.
+[0e4342924527b17c] (mini.criticism.v1)
+Both proposals expected the recovered object to move, and both executions show moved as expected. There are no failed expectations to criticise. The duplicate execution for c338dc57597cf35c in the second run is not a failure; the first run already executed that kernel on that pair. The proposers correctly read the rule: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text'. The code line `for pool in (fenced, top_level): for candidate in reversed(pool):` implements this. A proposer should next build a case where the rule and code part company, such as a fenced object that is not the last top-level object, or a top-level object after a fence, to test the precedence.
+[e64687a3a0941472] (mini.criticism.v1)
+No expectations failed. All three proposals executed as expected: c338dc57597cf35c moved from {'b': 2} to {'b': 3}; ec5aa63ddbed1784 moved from {'b': 2} to {'b': 3}; 8d3edde84e30f121 moved from {'a': 1} to {'a': 2}. The duplicate entries in later execution blocks are not failures; they are recorded as 'duplicate' because the kernel had already been executed on those pairs.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

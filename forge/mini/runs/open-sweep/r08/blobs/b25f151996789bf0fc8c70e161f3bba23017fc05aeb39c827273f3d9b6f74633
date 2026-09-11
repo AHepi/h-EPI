@@ -1,0 +1,24 @@
+# Execute
+
+## Proposals (props)
+[dc50866bd0601688] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between these two texts. The grounding kernel returns one of GROUNDED, SPAN_MISSING, SPAN_NOT_IN_DOCUMENT or VALUE_NOT_IN_SPAN, with no relaxation and the value-in-span check on. Changing the cited span from a verbatim occurrence to a span not in the document changes the verdict from GROUNDED to SPAN_NOT_IN_DOCUMENT.
+input: {"value": "hello", "span": "hello", "document": "hello world"}
+rewrite: Changed the span from a verbatim occurrence to a span not in the document.
+rewritten: {"value": "hello", "span": "goodbye", "document": "hello world"}
+commitments: {"kernel": "open:creib.forge.conformance.oracle._grounding_kernel", "expect": "moves"}
+[446fc21b5b3ec099] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between these two texts. The recovery function scores "the last one inside a code fence when any fence holds one" (recover_json_object docstring). Both texts contain a single fenced JSON object; the input's fenced object is {"b":2} and the rewritten's is {"b":3}, so the recovered object changes.
+input: Here is a draft: {"a":1}
+```json
+{"b":2}
+```
+rewrite: Changed the value of key b from 2 to 3 inside the fenced JSON object.
+rewritten: Here is a draft: {"a":1}
+```json
+{"b":3}
+```
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

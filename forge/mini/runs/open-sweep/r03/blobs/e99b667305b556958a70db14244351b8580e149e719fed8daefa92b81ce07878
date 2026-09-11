@@ -1,0 +1,33 @@
+# Execute
+
+## Proposals (props)
+[3c49f5eb43656cbb] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between these two texts. It states: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". In the input, the last object inside a code fence is {"a":1}; in the rewritten text, the last object inside a code fence is {"b":2}. Therefore the recovered object changes.
+input: ```json
+{"a":1}
+```
+{"b":2}
+rewrite: {"a":1}
+```json
+{"b":2}
+```
+rewritten: {"a":1}
+```json
+{"b":2}
+```
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+[ec6b9e749ea47fb6] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between these two texts. From the docstring: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". In the input, the last top-level object is {"b":2}; in the rewritten, the last top-level object is {"a":1}, so the recovered object changes.
+input: {"a":1} {"b":2}
+rewrite: Swap the order of the two JSON objects.
+rewritten: {"b":2} {"a":1}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+[93d9c6eca5fe0a4a] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between these texts. It says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". The last top-level object changes from {"a":2} to {"a":3}, so recovery should move.
+input: Here is a draft: {"a":1} and final: {"a":2}
+rewrite: changed final object value from 2 to 3
+rewritten: Here is a draft: {"a":1} and final: {"a":3}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
