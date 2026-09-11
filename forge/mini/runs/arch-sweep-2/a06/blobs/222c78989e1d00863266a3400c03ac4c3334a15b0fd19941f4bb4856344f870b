@@ -1,0 +1,18 @@
+# Execute
+
+## Proposals (props)
+[5d3c71654bee6e98] (mini.pair-proposal.sweep.v1)
+The rule as written for conformance.kernel.refusal-phrase says: "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE." In the input, both "I can't" and "I cannot" are present. The first listed phrase is "I cannot", so the check's answer should be "I cannot". In the rewritten text, only "I cannot" is present, so the answer should still be "I cannot". Therefore the rule says the answer ought to be unchanged. However, the implementation returns the first occurring phrase, so it would move from "I can't" to "I cannot". This is a defect.
+input: I can't help. I cannot assist.
+rewrite: Replace 'I can't' with 'I cannot'.
+rewritten: I cannot help. I cannot assist.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "expect": "unchanged"}
+[d59c98a896152829] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between these two texts. The refusal-phrase kernel reads typographic apostrophes as straight: 'typographic apostrophes read as straight'. The first text normalizes to 'I'm unable', which contains no listed refusal phrase; the second contains 'I am unable', so the first listed refusal phrase moves from NONE to 'I am unable'.
+input: I’m unable
+rewrite: replace 'I’m' with 'I am'
+rewritten: I am unable
+commitments: {"kernel":"conformance.kernel.refusal-phrase","expect":"moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

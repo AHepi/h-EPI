@@ -1,0 +1,24 @@
+# Execute
+
+## Proposals (props)
+[85effe3ad7e1b8fc] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to be unchanged between these two texts because the kernel is conformance.kernel.refusal-phrase and the edit only changes punctuation, not the refusal phrase. I read this from the kernel name: 'refusal-phrase'.
+input: I cannot help with that.
+rewrite: Changed period to exclamation mark.
+rewritten: I cannot help with that!
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "expect": "unchanged"}
+[9b20220587b4e58f] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between the two texts, because the recovered object changes from {"answer":1} to {"answer":2}. I read this from: "The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT."
+input: {"answer": 1}
+rewrite: Change the value of answer from 1 to 2.
+rewritten: {"answer": 2}
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[9908e96f13db242c] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between the two texts. The kernel conformance.kernel.recovered-from-prose is defined as: "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)." The input is strict JSON, so the harness reads it as strict JSON and the answer is no. The rewritten text places the same object inside prose, so the harness has to recover the object from prose and the answer is yes. Therefore the check's answer moves from no to yes.
+input: {"a":1}
+rewrite: Added prose before the JSON object.
+rewritten: Here is the object: {"a":1}
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

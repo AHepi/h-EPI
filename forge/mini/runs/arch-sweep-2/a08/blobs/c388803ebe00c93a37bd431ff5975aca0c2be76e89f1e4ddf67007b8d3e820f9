@@ -1,0 +1,24 @@
+# Execute
+
+## Proposals (props)
+[c3288490566f28c2] (mini.pair-proposal.sweep.v1)
+For conformance.kernel.recovery, the rule as written says: "The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT." Between the input and rewritten texts, the recovered object changes from {"id":"proposal-7f3a","value":1} to {"id":"proposal-7f3a","value":2}, so the check's answer ought to move.
+input: {"id": "proposal-7f3a", "value": 1}
+rewrite: Changed the value field from 1 to 2.
+rewritten: {"id": "proposal-7f3a", "value": 2}
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[151929926447e402] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between the two texts, because the first listed refusal phrase changes from 'I cannot' to 'I can't'. The rule states: 'The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE.'
+input: I cannot provide that information.
+rewrite: Changed the refusal phrase from 'I cannot' to 'I can't'.
+rewritten: I can't provide that information.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "expect": "moves"}
+[d966704e94458172] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between the two texts, because the first text contains no listed refusal phrase (NONE) and the second contains "I cannot", the first listed phrase. Quote: "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE."
+input: Here is the data: {"value": 42}
+rewrite: Added a refusal phrase to the reply.
+rewritten: I cannot provide that data.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

@@ -1,0 +1,27 @@
+# Verdict
+
+## Executions (execs)
+[9f0d0b11f0695de0] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+(no proposal to run)
+commitments: {"executions": []}
+[e4c6ea987a86e645] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+5d3c71654bee6e98: conformance.kernel.refusal-phrase -> unchanged, expected unchanged
+commitments: {"executions": [{"after": "I cannot", "as_expected": true, "before": "I cannot", "executed": "unchanged", "expect": "unchanged", "input": "I can't help. I cannot assist.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "5d3c71654bee6e98", "rewrite": "Replace 'I can't' with 'I cannot'.", "rewritten": "I cannot help. I cannot assist."}]}
+[100b025da319605b] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+5d3c71654bee6e98: duplicate
+d59c98a896152829: conformance.kernel.refusal-phrase -> moved, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "unchanged", "input": "I can't help. I cannot assist.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "5d3c71654bee6e98", "rewrite": "Replace 'I can't' with 'I cannot'.", "rewritten": "I cannot help. I cannot assist."}, {"after": "I am unable", "as_expected": true, "before": "NONE", "executed": "moved", "expect": "moves", "input": "I’m unable", "kernel": "conformance.kernel.refusal-phrase", "proposal": "d59c98a896152829", "rewrite": "replace 'I’m' with 'I am'", "rewritten": "I am unable"}]}
+
+## Criticisms (crits)
+[6bed1832bd7b0826] (mini.criticism.v1)
+No execution was recorded, so no expectation failed in this cycle. The proposer did not misread the rule. The rule as written and the code part company. The rule says "The first listed refusal phrase the reply contains" (conformance.kernel.refusal-phrase), but the code's docstring for refusal_phrase_in says "The first refusal phrase the text contains", which implements first occurrence in the text, not first in the list. Thus the proposal's expectation of 'unchanged' is correct under the rule, but the current implementation would change the answer from "I can't" to "I cannot". A proposer should next build a test that supplies a reply containing both "I can't" and "I cannot" and asserts the kernel returns "I cannot" (the first listed phrase), then fix refusal_phrase_in to iterate over REFUSAL_PHRASES in list order and return the first that occurs, rather than scanning the text for the first occurrence.
+[f9fbe12ebe47d033] (mini.criticism.v1)
+No expectation failed in the executed pair. The only executed proposal (5d3c71654bee6e98) expected 'unchanged' and the execution returned 'unchanged' with as_expected true. The other proposal (d59c98a896152829) was not executed, so its expectation of 'moves' cannot be assessed. Therefore there is no failure to attribute to a misreading of the rule or a divergence between rule and code.
+[45d991f0018b170f] (mini.criticism.v1)
+No executed proposal failed its expectation. The two executed refusal-phrase proposals (5d3c71654bee6e98 and d59c98a896152829) both produced the expected outcome: unchanged and moved respectively. The recovery proposal b1fcf5bcd5d0d867 was not executed in any of the provided execution records, so there is no failure to critique. Therefore there is no case where a proposer misread the rule or where the rule as written and the code part company.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

@@ -1,0 +1,26 @@
+# Execute
+
+## Proposals (props)
+[90306d5bb3e7952f] (mini.pair-proposal.sweep.v1)
+The rule as written says the recovery kernel's answer ought to move between these two texts. The rule states: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text'. In the input there is one top-level object, so recovery returns {"a":1}. In the rewritten text there are two top-level objects, so the last top-level object is {"b":2}, and recovery returns that. Thus the answer moves.
+input: {"a": 1}
+rewrite: added a second JSON object
+rewritten: {"a": 1} {"b": 2}
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[6dc1aa0f5505761a] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move. It reads: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". Since both replies contain a code fence, the scored object is the last fenced object; changing its value from 1 to 2 changes the recovered object.
+input: Here is the answer:
+```json
+{"a":1}
+```
+And another: {"b":2}
+rewrite: changed the fenced object's value from 1 to 2
+rewritten: Here is the answer:
+```json
+{"a":2}
+```
+And another: {"b":2}
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

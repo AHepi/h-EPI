@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. Read the executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule or the rule as written and the code part company. Quote the rule's words and name the line of code. Say what a proposer should build next.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+No execution was recorded, so no expectation failed in this cycle. The proposer did not misread the rule. The rule as written and the code part company. The rule says "The first listed refusal phrase the reply contains" (conformance.kernel.refusal-phrase), but the code's docstring for refusal_phrase_in says "The first refusal phrase the text contains", which implements first occurrence in the text, not first in the list. Thus the proposal's expectation of 'unchanged' is correct under the rule, but the current implementation would change the answer from "I can't" to "I cannot". A proposer should next build a test that supplies a reply containing both "I can't" and "I cannot" and asserts the kernel returns "I cannot" (the first listed phrase), then fix refusal_phrase_in to iterate over REFUSAL_PHRASES in list order and return the first that occurs, rather than scanning the text for the first occurrence.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

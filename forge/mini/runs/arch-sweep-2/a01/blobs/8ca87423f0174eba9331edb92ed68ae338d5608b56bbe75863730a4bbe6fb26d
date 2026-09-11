@@ -1,0 +1,28 @@
+# Execute
+
+## Proposals (props)
+[3b55667ad4c788cc] (mini.pair-proposal.sweep.v1)
+The rule for conformance.kernel.recovered-from-prose says: "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)." The input is strict JSON, so the check should return no. The rewritten text is fenced JSON, so the check should return yes. Therefore the answer moves.
+input: {"a":1}
+rewrite: ```json
+{"a":1}
+```
+rewritten: ```json
+{"a":1}
+```
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "expect": "moves"}
+[139ff82645fe5abe] (mini.pair-proposal.sweep.v1)
+For conformance.kernel.response-verdict, the rule as written says the check's answer ought to be unchanged between these two texts. The rules state: "The refusal heuristic decides the verdict only when no object can be recovered; whether a phrase occurred at all is a separate fact, refusal_phrase_in, recorded beside a recovered object (H36: a refusal followed by a form is a refusal and a form)." Both texts contain a recoverable JSON object, so the response verdict should be JSON_OBJECT in each; removing the refusal phrase prefix does not change that.
+input: I cannot help. {"a":1}
+rewrite: Remove the refusal phrase prefix 'I cannot help. ' from the input, leaving only the JSON object.
+rewritten: {"a":1}
+commitments: {"kernel": "conformance.kernel.response-verdict", "expect": "unchanged"}
+[1fc7828619e132bf] (mini.pair-proposal.sweep.v1)
+The rule as written for conformance.kernel.recovered-from-prose says: "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)." Between the two texts, the check's answer ought to move from "no" to "yes": the input is strict JSON, while the rewritten text wraps the same object in prose.
+input: {"a":1}
+rewrite: Added the prose prefix "Here is the answer: " before the JSON object.
+rewritten: Here is the answer: {"a":1}
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

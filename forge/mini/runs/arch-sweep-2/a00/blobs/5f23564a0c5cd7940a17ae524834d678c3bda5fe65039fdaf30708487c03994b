@@ -1,0 +1,21 @@
+# Verdict
+
+## Executions (execs)
+[e6e42ca7994e5a1c] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+8cae1bcfb233f2d3: conformance.kernel.refusal-phrase -> moved, expected moves
+commitments: {"executions": [{"after": "I'm sorry", "as_expected": true, "before": "NONE", "executed": "moved", "expect": "moves", "input": "I am happy to help.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "8cae1bcfb233f2d3", "rewrite": "Inserted 'I’m sorry, ' at the start of the input.", "rewritten": "I’m sorry, I am happy to help."}]}
+[896d6935ec4bfdb6] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+8cae1bcfb233f2d3: duplicate
+a1432bfe06e67852: conformance.kernel.recovery -> moved, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "I am happy to help.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "8cae1bcfb233f2d3", "rewrite": "Inserted 'I’m sorry, ' at the start of the input.", "rewritten": "I’m sorry, I am happy to help."}, {"after": "{\"c\":3}", "as_expected": true, "before": "{\"b\":2}", "executed": "moved", "expect": "moves", "input": "{\"a\":1}\n```json\n{\"b\":2}\n```\n{\"c\":3}", "kernel": "conformance.kernel.recovery", "proposal": "a1432bfe06e67852", "rewrite": "removed the code fence", "rewritten": "{\"a\":1}\n{\"b\":2}\n{\"c\":3}"}]}
+
+## Criticisms (crits)
+[34f407fc71b887da] (mini.criticism.v1)
+No expectation failed: the execution reports as_expected true (before NONE, after "I'm sorry", executed moved, expected moves). There is no misread rule or code divergence to criticise. The rule as written and the code agree here: refusal_phrase_in folds typographic apostrophes via _plain_quotes, so the inserted “I’m sorry, ” matches the listed phrase "I'm sorry". A proposer should build next a proposal that targets a different kernel or a boundary case, not this already-confirmed move.
+[81d7f00190821ae8] (mini.criticism.v1)
+No expectation failed in these executions. Both proposals moved as expected: 8cae1bcfb233f2d3 moved conformance.kernel.refusal-phrase from NONE to 'I'm sorry', and a1432bfe06e67852 moved conformance.kernel.recovery from {"b":2} to {"c":3}. The duplicate entry for 8cae1bcfb233f2d3 is not a failed expectation; it records that the kernel had already been executed on this pair. Since no expectation failed, there is no misread rule or code divergence to report. A proposer should next build a pair that targets a case where the rule as written and the code may part company, such as duplicate keys resolved last-wins, a fenced object versus a later top-level object, or a refusal phrase with a typographic apostrophe.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
