@@ -1,0 +1,33 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Conjecture: The function open:creib.forge.conformance.oracle.recover_json_object, whose documented rule says, "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction." I test two replies. Reply one is the text: '```json\n{\"x\":1}\n{\"y\":2}\n```\n{\"z\":3}'. Reply two is the text: '```json\n{\"x\":1}\n{\"w\":4}\n```\n{\"z\":3}'. For reply one, the rule requires the last object inside the code fence, which is {\"y\":2}. For reply two, the rule requires the last object inside the code fence, which is {\"w\":4}. The check, however, will return {\"z\":3} for both, because the fenced span is not a single valid JSON object, so the fenced pool yields no candidate, and the top-level pool's last candidate is {\"z\":3}. Thus the check gives the same answer on a pair the rule requires to tell apart. The observation that would show this conjecture false is if the check returns {\"y\":2} for reply one and {\"w\":4} for reply two, or if it returns any different pair of answers.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

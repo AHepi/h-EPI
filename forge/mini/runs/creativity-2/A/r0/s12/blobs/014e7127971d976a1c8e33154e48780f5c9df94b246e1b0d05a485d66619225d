@@ -1,0 +1,11 @@
+I am testing open:creib.forge.conformance.oracle.refusal_phrase_in. Its documented rule reads: “The first refusal phrase the text contains, typographic quotes read as straight ones, or None.” I read “first” as first in the order the phrases appear in the text, not first in the refusal_phrases list.
+
+The two reply texts are:
+
+Reply A: “I can't comply. I cannot help.”
+
+Reply B: “I cannot help. I can't comply.”
+
+For Reply A, the first refusal phrase the text contains is “I can't”, so the rule requires the check to return “I can't”. For Reply B, the first refusal phrase the text contains is “I cannot”, so the rule requires the check to return “I cannot”. The check, however, loops over the refusal_phrases list in its fixed order, where “I cannot” appears before “I can't”, and therefore returns “I cannot” for both replies, collapsing the difference the rule requires.
+
+What would make me wrong: if the check returns “I can't” for Reply A and “I cannot” for Reply B, or if the rule is authoritatively read as “first in the refusal_phrases list” rather than first in text order, then this conjecture is false.

@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The execution was unrunnable (expect must be one of ['moves','unchanged']), so the claimed output was not actually observed. Reading the source, the conjecture's predicted output is what the code would produce: the fenced pool candidate is the entire fence content `{"x": 1} prose`, which fails strict JSON and last-wins, so it falls through to the top-level pool and returns the outside `{"y": 2}`. The conjecture did not misread the rule. The rule says 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text,' and earlier 'Every top-level balanced object in the text is a candidate.' A fence holding `{"x": 1} prose` still holds the top-level object `{"x": 1}`; the rule does not require the entire fenced content to be exactly one JSON object. The code parts company with the rule as written because it treats the whole fenced content as the candidate instead of extracting top-level objects inside the fence. A next conjecture should run a valid execution (expect 'moves' or 'unchanged') on A and assert recover_json_object(A) returns `{"x": 1}`, not `{"y": 2}`. It should avoid repeating the invalid expect value and avoid entertaining the alternative reading that a fence holds one only when its entire content is exactly one object.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

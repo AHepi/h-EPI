@@ -1,0 +1,20 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply one contains a fenced code block with {"a":1} before the top-level {"b":2}; reply two contains only the top-level  -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+Rule as written and code part company. The conjecture correctly quotes the rule: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." The code's fence regex is '```(?:json|JSON)?\s*(.*?)```', so a ```javascript fence is not recognized; reply one yields no fenced candidates, and the last top-level object is {"b":2}. That contradicts the rule, which says any code fence. The conjecture did not misread the rule; the implementation is narrower than the rule. Next conjecture should try a different non-json fence, e.g. ```python
+{"a":1}
+```
+{"b":2}, and state the expected outputs explicitly: {"a":1} for reply one, {"b":2} for reply two. Avoid repeating the same ```javascript example and avoid the reading's vague 'moves' expectation; also write the reply literally with actual newlines and quotes rather than backslash escapes.
+
+Reading e64b14913f3d0e5f claims to render the conjecture's words. The conjecture says: "The rule requires recover_json_object to return {\"a\":1} for reply one, because the object {\"a\":1} is inside a code fence and is the last fenced object, and to return {\"b\":2} for reply two, because there is no fenced object and the last top-level object is {\"b\":2}." The reading's rewrite says "Reply one contains a fenced code block with {\"a\":1} before the top-level {\"b\":2}; reply two contains only the top-level {\"b\":2}." It renders the layout but omits the rule-required outputs and the discrepancy. Its commitment 'expect': 'moves' is not stated in the prose; the prose says the function gives the same answer for both, not that it moves. The reading is wrong, not the conjecture.

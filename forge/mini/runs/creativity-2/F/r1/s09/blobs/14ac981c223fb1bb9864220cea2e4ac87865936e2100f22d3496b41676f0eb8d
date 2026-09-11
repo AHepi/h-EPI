@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The execution returned {'c': 3} for Reply A, so the conjecture's prediction about the code is correct. But the conjecture misread the rule. The rule says 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' 'Holds one' means a fence holds exactly one scoreable JSON object, not at least one. Reply A's fence holds two objects, so no fence holds one; the fallback to the last top-level object applies, and the code's return of {'c': 3} is what the rule requires. The code's fenced pool treats the entire fence content as a single candidate, so a fence with two objects fails to parse and is skipped, which matches 'no fence holds one'. Thus the rule as written and the code do not part company. A next conjecture should try a fence holding exactly one object followed by a later top-level object, to confirm the fenced object is preferred, or two fences each holding one object to confirm the last fence wins. It should avoid repeating the misreading of 'holds one' as 'holds at least one' and should not use a fence containing multiple objects while claiming the last inside must win.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

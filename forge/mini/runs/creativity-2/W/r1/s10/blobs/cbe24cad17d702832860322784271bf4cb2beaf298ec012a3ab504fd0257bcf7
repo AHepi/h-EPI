@@ -1,0 +1,45 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Conjecture: The function open:creib.forge.conformance.oracle.recover_json_object, whose documented rule states, "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction," fails to distinguish two replies that differ only in the value of the second object inside a code fence. Reply one is the text:
+```json
+{"s": 10}
+{"t": 20}
+```
+{"u": 30}
+Reply two is the text:
+```json
+{"s": 10}
+{"t": 40}
+```
+{"u": 30}
+The rule requires recover_json_object to return {"t": 20} for reply one and {"t": 40} for reply two, because the last object inside the fence is the one to score. However, the implementation's fenced pool stores the entire fenced span as a single candidate, which is not a valid JSON object, so the fenced pool is skipped; the top-level pool then collects all three objects and returns the last top-level object, {"u": 30}, for both replies. Thus the check gives the same answer on a pair the rule requires it to tell apart. The observation that would show this conjecture false is if recover_json_object returns {"t": 20} for reply one and {"t": 40} for reply two, or otherwise returns different answers for the two replies.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

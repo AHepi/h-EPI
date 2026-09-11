@@ -1,0 +1,195 @@
+# Criticism
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+## The source of the checks (source)
+[3145b9e536590f37] (mini.kernel-source.v1)
+_FENCE = re.compile('```(?:json|JSON)?\\s*(.*?)```', re.DOTALL)
+
+REFUSAL_PHRASES = ['I cannot', "I can't", "I'm sorry", 'I am unable', 'as an AI', 'cannot assist']
+
+# creib.forge.conformance.oracle.recover_json_object -- name it as open:creib.forge.conformance.oracle.recover_json_object
+def recover_json_object(content: str) -> Any:
+    """Project import: extract a JSON object from fences or surrounding prose.
+
+    Every top-level balanced object in the text is a candidate, not only the span from the
+    first ``{`` to the last ``}``: reasoning prose before or after the answer frequently
+    contains stray braces, and an object nested inside another is not a candidate of its own.
+    The object scored is the last one inside a code fence when any fence holds one, else the
+    last top-level object in the text, because a model places its final answer last and marks
+    it: a reply that quotes its previous answer and then gives a corrected one is scored on the
+    correction. Until 9 September 2026 the object with the most keys was taken, ties to the
+    last, and nine cycle replies that dropped a criticised key were scored on the draft that
+    still carried it (``docs/failure-modes.md``, H40). A candidate that parses as strict JSON,
+    or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float,
+    for instance) is passed over, so a final answer refused for a float loses to an earlier
+    draft that parsed (``docs/kernel.md``, P-06).
+    """
+
+    decoder = json.JSONDecoder()
+    fenced: list[str] = []
+    for match in _FENCE.finditer(content):
+        fenced.append(match.group(1))
+    top_level: list[str] = []
+    cursor = 0
+    for index, character in enumerate(content):
+        if character != "{" or index < cursor:
+            continue
+        try:
+            _value, end = decoder.raw_decode(content, index)
+        except (ValueError, RecursionError):
+            continue
+        top_level.append(content[index:end])
+        cursor = end
+    for pool in (fenced, top_level):
+        for candidate in reversed(pool):
+            duplicates: tuple[str, ...] = ()
+            try:
+                value = loads_strict(candidate.strip())
+            except (RecordError, ValueError, RecursionError):
+                # Strict JSON refuses duplicate keys. A reply that is otherwise one well-formed object with a
+                # repeated key is still scoreable: take the last value for each key, and say which keys repeated.
+                parsed = _loads_last_wins(candidate.strip())
+                if parsed is None:
+                    continue
+                value, duplicates = parsed
+            if type(value) is dict:
+                return value, duplicates
+    raise RecordError("no JSON object could be recovered from the response")
+
+# creib.forge.conformance.oracle._loads_last_wins -- name it as open:creib.forge.conformance.oracle._loads_last_wins
+def _loads_last_wins(candidate: str) -> tuple[Any, tuple[str, ...]] | None:
+    """Parse JSON that strict parsing refused only because of repeated keys; last value wins."""
+
+    seen_duplicates: list[str] = []
+
+    def pairs_hook(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        counts: dict[str, int] = {}
+        for key, _ in pairs:
+            counts[key] = counts.get(key, 0) + 1
+        seen_duplicates.extend(key for key, n in counts.items() if n > 1)
+        return dict(pairs)
+
+    try:
+        value = json.loads(candidate, object_pairs_hook=pairs_hook, parse_float=_refuse_float, parse_constant=_refuse_constant)
+    except (ValueError, RecursionError):
+        return None
+    if not seen_duplicates:
+        return None
+    return value, tuple(sorted(set(seen_duplicates)))
+
+# creib.forge.conformance.oracle.parse_content -- open:creib.forge.conformance.oracle.parse_content names it, but a claim about it CANNOT BE RUN as it stands: MINI_OPEN_KERNEL_ARITY: 'oracle.parse_content' takes 2 required arguments; a kernel takes one string
+def parse_content(content: str, refusal_phrases: tuple[str, ...]) -> tuple[Any, str, str | None, bool]:
+    """Return (parsed, response_verdict, detail, recovered_from_prose).
+
+    The refusal heuristic decides the verdict only when no object can be recovered; whether a
+    phrase occurred at all is a separate fact, :func:`refusal_phrase_in`, recorded beside a
+    recovered object (H36: a refusal followed by a form is a refusal and a form).
+    """
+
+    try:
+        return loads_strict(content), "JSON_OBJECT", None, False
+    except (RecordError, ValueError, RecursionError) as strict_error:
+        try:
+            recovered, duplicates = recover_json_object(content)
+        except RecordError:
+            phrase = refusal_phrase_in(content, refusal_phrases)
+            if phrase is not None:
+                return None, "REFUSAL_SUSPECTED", f"matched refusal phrase {phrase!r}; heuristic", False
+            return None, "INVALID_JSON", str(strict_error), False
+        if duplicates:
+            detail = (
+                f"strict parse failed ({strict_error}); object recovered with duplicate keys "
+                f"{list(duplicates)!r} resolved last-wins"
+            )
+        else:
+            detail = f"strict parse failed ({strict_error}); object recovered from prose"
+        return recovered, "JSON_OBJECT", detail, True
+
+# creib.forge.conformance.oracle.refusal_phrase_in -- name it as open:creib.forge.conformance.oracle.refusal_phrase_in
+def refusal_phrase_in(content: str, refusal_phrases: tuple[str, ...]) -> str | None:
+    """The first refusal phrase the text contains, typographic quotes read as straight ones, or None."""
+
+    lowered = _plain_quotes(content).lower()
+    for phrase in refusal_phrases:
+        if _plain_quotes(phrase).lower() in lowered:
+            return phrase
+    return None
+
+# creib.forge.conformance.oracle._plain_quotes -- name it as open:creib.forge.conformance.oracle._plain_quotes
+def _plain_quotes(text: str) -> str:
+    """Fold typographic apostrophes and quotation marks to their ASCII forms.
+
+    The refusal phrase list is written with straight apostrophes; a model that writes
+    "I\u2019m sorry" is refusing all the same, and the first live refusal in these
+    records was missed for exactly that reason (H22).
+    """
+
+    return text.translate(_TYPOGRAPHIC_QUOTES)
+
+# creib.forge.conformance.oracle._normalise_whitespace -- name it as open:creib.forge.conformance.oracle._normalise_whitespace
+def _normalise_whitespace(value: str) -> str:
+    return " ".join(value.split())
+
+# creib.forge.conformance.oracle._span_occurs -- open:creib.forge.conformance.oracle._span_occurs names it, but a claim about it CANNOT BE RUN as it stands: MINI_OPEN_KERNEL_ARITY: 'oracle._span_occurs' takes 3 required arguments; a kernel takes one string
+def _span_occurs(span: str, document: str, relaxations: tuple[str, ...]) -> str | None:
+    """Return None when the span is not in the document, else how it was matched ("verbatim" or a relaxation)."""
+
+    normal_span, normal_document = _normalise_whitespace(span), _normalise_whitespace(document)
+    if normal_span in normal_document:
+        return "verbatim"
+    if "case_insensitive" in relaxations and normal_span.casefold() in normal_document.casefold():
+        return "case_insensitive"
+    if "date_range_completion" in relaxations:
+        completions = _date_range_completions(normal_document)
+        if normal_span in completions or ("case_insensitive" in relaxations and normal_span.casefold() in {c.casefold() for c in completions}):
+            return "date_range_completion"
+    return None
+
+# creib.forge.mini.conformance_kernels._grounding_kernel -- this is mini's own wrapper, NOT a function of the harness under test. There is no open: name for it and a claim about it cannot be run.
+def _grounding_kernel(text: str) -> str:
+    """The grounding verdict as the harness gives it, with no relaxation and the value-in-span check on.
+
+    The three lines are the harness's own (``_grounding_verdict`` in ``oracle.py``), read here
+    over one JSON object rather than over a variant and its output.
+    """
+
+    fields = _fields(text, "value", "span", "document")
+    if fields is None:
+        return UNREADABLE
+    if not fields["span"].strip():
+        return "SPAN_MISSING"
+    if _span_occurs(fields["span"], fields["document"], ()) is None:
+        return "SPAN_NOT_IN_DOCUMENT"
+    if _normalise_whitespace(fields["value"]).casefold() not in _normalise_whitespace(fields["span"]).casefold():
+        return "VALUE_NOT_IN_SPAN"
+    return "GROUNDED"
+
+
+## The conjecture, as written (conj)
+[83c82b02b8f31d39] (mini.conjecture.v1)
+Conjecture: The function open:creib.forge.conformance.oracle.recover_json_object, whose documented rule states "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text" and "Every top-level balanced object in the text is a candidate", will return the same answer for the following two replies even though the rule requires different answers.
+
+Reply A is the text: ```json
+{"x":1}
+{"y":2}
+```
+{"z":3}
+Reply B is the text: ```json
+{"x":1}
+{"y":9}
+```
+{"z":3}
+
+For Reply A, the fenced content contains two top-level objects, {"x":1} and {"y":2}; the rule says the last one inside the fence is {"y":2}, so the required answer is the dict {"y":2} (with no duplicate keys). For Reply B, the fenced content contains {"x":1} and {"y":9}; the last one inside the fence is {"y":9}, so the required answer is the dict {"y":9}. The rule therefore requires the function to tell these two replies apart, returning {"y":2} for A and {"y":9} for B.
+
+The observation that would show this conjecture false is if the function returns {"y":2} for A and {"y":9} for B, or otherwise returns different answers for the two replies. If it returns the same answer for both, the conjecture is confirmed.
+
+## What the machine returned (execs)
+[596044a99de7b438] (mini.pair-execution.open.v1)
+Executed this cycle's pair proposals.
+a71a09380d1b4eac: open:creib.forge.conformance.oracle.recover_json_object -> unchanged, expected moves
+commitments: {"executions": [{"after": "({'z': 3}, ())", "as_expected": false, "before": "({'z': 3}, ())", "executed": "unchanged", "expect": "moves", "input": "```json\n{\"x\":1}\n{\"y\":2}\n```\n{\"z\":3}", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "a71a09380d1b4eac", "rewrite": "The second top-level object inside the code fence changes from {\"y\":2} to {\"y\":9}.", "rewritten": "```json\n{\"x\":1}\n{\"y\":9}\n```\n{\"z\":3}"}]}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

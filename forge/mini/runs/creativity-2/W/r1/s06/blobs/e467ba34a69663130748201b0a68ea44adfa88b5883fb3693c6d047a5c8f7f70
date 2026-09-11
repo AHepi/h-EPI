@@ -1,0 +1,20 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Conjecture c04653fa3b7a7bd2 did not misread the rule. The rule as written says 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' In reply one the fence holds two objects, so the last one inside the fence is {'y':2}; in reply two it is {'y':4}. The code's fenced pool takes the whole fenced span as one candidate, which is not a valid JSON object, so it skips that pool and falls through to the top-level pool, whose last candidate is {'z':3} in both replies. Thus the rule as written and the code part company: the code returns {'z':3} for both, where the rule requires {'y':2} and {'y':4}. The conjecture's description of the code's behavior is accurate.
+
+Reading cd4c8a057f73c679 is defective. It claims to render the conjecture's expectation as 'expect moves', but the conjecture says the opposite: 'The conjecture would be false if recover_json_object returned {"y":2} for reply one and {"y":4} for reply two, because then it would be telling the replies apart as the rule requires.' That means the conjecture expects the check to be unchanged, not to move. The reading inverted the expectation; the defect is in the reading, not the conjecture.
+
+A next conjecture should try the same two replies but commit to 'unchanged' (the check returns {'z':3} for both), and it should avoid repeating the reading's 'expect moves' error.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

@@ -1,0 +1,32 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: The order of the two refusal phrases is swapped. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: The second reply prepends "I'm sorry, " to the first reply. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: The order of the two refusal phrases is swapped: the first reply begins with 'I'm sorry' and the second begins with 'I a -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: The two replies contain the same two refusal phrases but in opposite order; the first reply has 'I'm sorry' before 'I ca -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: The two refusal phrases are swapped in order. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: The two replies differ in the order of refusal phrases: the first begins with 'I am unable' and ends with 'I'm sorry', w -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## What has been refuted, computed from the attacks that landed
+
+- 794a7aa5c23e2657 was refuted on the ground reading-misrenders-conjecture: The reading commits to expect 'moves' but the conjecture states the check returns 'I cannot' for both replies, so the reading inverts the predicted outcome.
+
+A refuted conjecture is not merely criticised: an attack on it landed and nothing has yet overturned that attack. Do not re-propose one.
+
+## The standing criticism of the last attempt
+
+The reading [794a7aa5c23e2657] claims the conjecture is clear and commits to expect 'moves', but the conjecture says the check 'returns 'I cannot' for both' replies, which is unchanged, not moves. The reading therefore inverts the predicted outcome. A next conjecture should test whether refusal_phrase_in returns the first phrase in the refusal_phrases list that appears anywhere, or the first phrase in text order, and should avoid assuming 'first' means text order without checking the list order. The rule's words are: 'The first refusal phrase the text contains, typographic quotes read as straight ones, or None.'

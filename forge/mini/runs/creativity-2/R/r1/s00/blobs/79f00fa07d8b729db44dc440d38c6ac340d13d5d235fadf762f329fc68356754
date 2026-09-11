@@ -1,0 +1,33 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Conjecture: The function open:creib.forge.conformance.oracle.recover_json_object fails to tell apart two replies that its documented rule requires it to tell apart. The rule says: 'Every top-level balanced object in the text is a candidate, not only the span from the first ``{`` to the last ``}``: reasoning prose before or after the answer frequently contains stray braces, and an object nested inside another is not a candidate of its own.' The first reply text is `[{"a":1}]` and the second reply text is `{"a":1}`. For the first, the rule requires no JSON object to be recovered, because the text is a top-level array, not an object, and the only object is nested inside the array, which the rule says is not a candidate; so the function should raise RecordError. For the second, the rule requires the object `{"a":1}` to be recovered. But the check gives the same answer for both: it returns `({"a":1}, ())` for each, because its top-level scan treats the nested object in the array as a top-level candidate. What would make me wrong: if running recover_json_object on `[{"a":1}]` actually raises RecordError, or if it returns a different value for `{"a":1}`, then this conjecture is false.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

@@ -1,0 +1,48 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Conjecture: The function open:creib.forge.conformance.oracle.recover_json_object, whose documented rule states "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text" and "Every top-level balanced object in the text is a candidate", will return the same answer for the following two replies even though the rule requires different answers.
+
+Reply A is the text: ```json
+{"x":1}
+{"y":2}
+```
+{"z":3}
+Reply B is the text: ```json
+{"x":1}
+{"y":9}
+```
+{"z":3}
+
+For Reply A, the fenced content contains two top-level objects, {"x":1} and {"y":2}; the rule says the last one inside the fence is {"y":2}, so the required answer is the dict {"y":2} (with no duplicate keys). For Reply B, the fenced content contains {"x":1} and {"y":9}; the last one inside the fence is {"y":9}, so the required answer is the dict {"y":9}. The rule therefore requires the function to tell these two replies apart, returning {"y":2} for A and {"y":9} for B.
+
+The observation that would show this conjecture false is if the function returns {"y":2} for A and {"y":9} for B, or otherwise returns different answers for the two replies. If it returns the same answer for both, the conjecture is confirmed.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

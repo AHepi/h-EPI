@@ -1,0 +1,20 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Conjecture 72e930e32bd17cec did not misread the rule. The rule as written says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." In reply one the fence holds two objects, {"m":10} and {"n":20}; the last one inside the fence is {"n":20}, and in reply two it is {"n":30}. The code's fenced pool takes the whole fenced span as one candidate, which is not a single valid JSON object, so it skips it and falls through to the top-level pool, whose last candidate is {"t":40} in both replies. Thus the rule as written and the code part company; the conjecture is right that the check returns {"t":40} for both.
+
+Next conjecture should try a minimal case with exactly one object inside a fence followed by a top-level object, e.g. '```json\n{"a":1}\n```\n{"b":2}', to see whether the fenced pool ever returns the fenced object. It should avoid repeating the current two-objects-in-one-fence input, because that already establishes the fallback to the top-level pool and adds no new information.
+
+Reading 12a8f4e6118193a3 claims to render the conjecture's words "the rule requires the check to return {\"n\":20}" and "{\"n\":30}", but its commitment "expect": "moves" does not render them. "Moves" only says the output should change, which would be satisfied by any different outputs, not the specific objects the conjecture named. The conjecture is correct; the reading is defective. The input and rewritten strings match the conjecture's reply one and reply two, and the kernel name is correct, but the expectation is under-specified.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

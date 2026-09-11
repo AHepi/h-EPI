@@ -1,0 +1,24 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply one contains a fenced code block with {"a":1} before the top-level {"b":2}; reply two contains only the top-level  -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply one contains a ```python code fence with {"a":1} followed by {"b":2}; reply two contains only {"b":2}. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second object inside the code fence changes from {"b":2} to {"d":4}; the rest is identical. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second fenced object changes from {"y":2} to {"w":4}; the trailing top-level object {"z":3} is unchanged. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second reply changes the value of q from 2 to 5 inside the fenced object; the top-level object remains {"r":3}. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The fenced object's "n" value changes from 20 to 30. -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+Conjecture 72e930e32bd17cec did not misread the rule. The rule as written says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." In reply one the fence holds two objects, {"m":10} and {"n":20}; the last one inside the fence is {"n":20}, and in reply two it is {"n":30}. The code's fenced pool takes the whole fenced span as one candidate, which is not a single valid JSON object, so it skips it and falls through to the top-level pool, whose last candidate is {"t":40} in both replies. Thus the rule as written and the code part company; the conjecture is right that the check returns {"t":40} for both.
+
+Next conjecture should try a minimal case with exactly one object inside a fence followed by a top-level object, e.g. '```json\n{"a":1}\n```\n{"b":2}', to see whether the fenced pool ever returns the fenced object. It should avoid repeating the current two-objects-in-one-fence input, because that already establishes the fallback to the top-level pool and adds no new information.
+
+Reading 12a8f4e6118193a3 claims to render the conjecture's words "the rule requires the check to return {\"n\":20}" and "{\"n\":30}", but its commitment "expect": "moves" does not render them. "Moves" only says the output should change, which would be satisfied by any different outputs, not the specific objects the conjecture named. The conjecture is correct; the reading is defective. The input and rewritten strings match the conjecture's reply one and reply two, and the kernel name is correct, but the expectation is under-specified.

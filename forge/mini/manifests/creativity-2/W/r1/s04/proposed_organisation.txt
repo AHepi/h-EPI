@@ -1,0 +1,22 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply one contains a fenced code block with {"a":1} before the top-level {"b":2}; reply two contains only the top-level  -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply one contains a ```python code fence with {"a":1} followed by {"b":2}; reply two contains only {"b":2}. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second object inside the code fence changes from {"b":2} to {"d":4}; the rest is identical. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second fenced object changes from {"y":2} to {"w":4}; the trailing top-level object {"z":3} is unchanged. -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+Conjecture cccaf3025077c181 does not misread the rule. It quotes the rule's words "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text" and correctly observes that for reply one the last object inside the fence is {"y":2} and for reply two {"w":4}. The code parts company with the rule as written: recover_json_object builds its fenced pool from the entire fenced span, not from individual objects inside the fence. In reply one the fenced span is '{"x":1}\n{"y":2}\n', which is not a single valid JSON object, so loads_strict and _loads_last_wins both fail, the fenced pool yields no candidate, and the function falls through to the top-level pool, whose last candidate is {"z":3}. The execution confirms this: before and after both return ({'z': 3}, ()). So the rule as written and the code part company; the conjecture is not the defective party.
+
+Reading 30625c53a66dab9e is defective. It claims to render the conjecture as stated, but its commitment 'expect': 'moves' is the opposite of the conjecture's prediction. The conjecture says 'The check, however, will return {"z":3} for both' and identifies a different pair as the observation that would show it false. The reading therefore states an expectation the prose did not state as the expected outcome; the reading is wrong, not the conjecture. The execution's 'expected moves, as_expected false' is an artifact of that misreading.
+
+A next conjecture should try a fence that contains exactly one valid JSON object followed by a top-level object, e.g. '```json\n{"x":1}\n```\n{"z":3}', and expect the fenced object {"x":1} to win over the top-level {"z":3}. It should avoid repeating the multi-object fence with a trailing top-level object, because that only exercises the fallback path and cannot show whether the fenced pool is preferred when it does hold a single object.

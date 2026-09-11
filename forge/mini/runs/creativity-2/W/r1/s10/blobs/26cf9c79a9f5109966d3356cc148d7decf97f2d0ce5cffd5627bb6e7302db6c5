@@ -1,0 +1,13 @@
+Conjecture: The function open:creib.forge.conformance.oracle.recover_json_object, whose documented rule states, "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction," fails to distinguish two replies that differ only in the value of the second object inside a code fence. Reply one is the text:
+```json
+{"s": 10}
+{"t": 20}
+```
+{"u": 30}
+Reply two is the text:
+```json
+{"s": 10}
+{"t": 40}
+```
+{"u": 30}
+The rule requires recover_json_object to return {"t": 20} for reply one and {"t": 40} for reply two, because the last object inside the fence is the one to score. However, the implementation's fenced pool stores the entire fenced span as a single candidate, which is not a valid JSON object, so the fenced pool is skipped; the top-level pool then collects all three objects and returns the last top-level object, {"u": 30}, for both replies. Thus the check gives the same answer on a pair the rule requires it to tell apart. The observation that would show this conjecture false is if recover_json_object returns {"t": 20} for reply one and {"t": 40} for reply two, or otherwise returns different answers for the two replies.

@@ -1,0 +1,4 @@
+{
+  "body": "The conjecture did not misread the rule. It read \"any fence\" correctly. The rule as written and the code part company: the docstring says \"The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text\", but the source regex `_FENCE = re.compile('```(?:json|JSON)?\\\\s*(.*?)```', re.DOTALL)` only recognises fences labelled `json` or `JSON` (or unlabelled). A `python` fence is not collected, so the fenced pool is empty and the top-level scan returns the later `{\"b\": 2}`. The execution confirms this. A next conjecture should try instead a fence labelled `json` (or unlabelled) containing an object followed by a later top-level object, and assert the fenced object is returned; that would test the recognised-label path. It should avoid repeating a non-json label like `python`, because that only re-demonstrates the same regex gap.",
+  "commitments": ""
+}

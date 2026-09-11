@@ -1,0 +1,21 @@
+The function under test is open:creib.forge.conformance.oracle.recover_json_object. Its documented rule states: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." I read that as: if a code fence contains at least one JSON object, the scored object is the last such object inside that fence, and any top-level objects outside the fence are ignored.
+
+Reply one is the text:
+"```json
+{"p":10}
+{"q":20}
+```
+{"r":30}"
+
+Reply two is the text:
+"```json
+{"p":10}
+{"q":21}
+```
+{"r":30}"
+
+For reply one, the rule requires the answer to be the object {"q":20}, because that is the last object inside the code fence. For reply two, the rule requires the answer to be {"q":21}, for the same reason. The two required answers differ.
+
+The check as implemented, however, returns the same answer for both replies. Its fenced pool takes the entire fenced span as a single candidate: the string '{"p":10}\n{"q":20}' for reply one and '{"p":10}\n{"q":21}' for reply two. Neither of those is a valid JSON object, so the fenced pool is skipped. The check then falls through to the top-level pool, whose last candidate is {"r":30} in both replies. Thus the check returns {"r":30} for both, collapsing a difference the rule requires it to preserve.
+
+What would make me wrong is the observation that the check returns {"q":20} for reply one and {"q":21} for reply two. If that happens, the check is telling the pair apart as the rule requires, and my conjecture is false.

@@ -1,0 +1,8 @@
+Conjecture: The function open:creib.forge.conformance.oracle.recover_json_object, whose documented rule states, “The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction,” is required to return {"a":1} for reply one and {"b":2} for reply two. Reply one is:
+```python
+{"a":1}
+```
+{"b":2}
+Reply two is:
+{"b":2}
+The rule requires {"a":1} for reply one because the object {"a":1} is inside a code fence (a ```python fence) and is the last fenced object; it requires {"b":2} for reply two because there is no fenced object and the last top-level object is {"b":2}. The check, however, gives the same answer for both: its fence regex is '```(?:json|JSON)?\s*(.*?)```', so the ```python fence is not recognized, the fenced pool is empty, and the last top-level object in reply one is {"b":2}, matching reply two. This conjecture would be false if running recover_json_object on reply one returned {"a":1} (or any answer different from {"b":2}), or if the documented rule were not the one quoted.

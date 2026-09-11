@@ -1,0 +1,35 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+The three texts are fields of the REPLY, beside "body" and "commitments", not inside the commitments string. A reply that omits any of them is refused and you are asked again. In full, a well formed reply looks exactly like this:
+
+{"body": "<what you were unsure of, in prose>",
+ "commitments": "{\"kernel\": \"<the full dotted path>\", \"expect\": \"moves\"}",
+ "input": "<the first reply text, in full>",
+ "rewritten": "<the second reply text, in full>",
+ "rewrite": "<how the two differ>"}
+
+## The conjecture, as written (conj)
+[7dee2ac12fb17cad] (mini.conjecture.v1)
+The function is open:creib.forge.conformance.oracle.recover_json_object. Its documented rule says, 'Every top-level balanced object in the text is a candidate, not only the span from the first { to the last }: reasoning prose before or after the answer frequently contains stray braces, and an object nested inside another is not a candidate of its own.' It also says, 'A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over.' The two replies are Text A: '"{"a":1}"' (a nine-character string: double quote, left brace, double quote, a, double quote, colon, 1, right brace, double quote) and Text B: '{"a":1}' (a seven-character string: left brace, double quote, a, double quote, colon, 1, right brace). For Text A, the only balanced object is inside a string literal, so it is not a top-level candidate; the rule requires recover_json_object to raise RecordError('no JSON object could be recovered from the response'). For Text B, the object is top-level and parses as strict JSON, so the rule requires recover_json_object to return ({'a': 1}, ()). The check gives the same answer for both: it returns ({'a': 1}, ()) for Text A as well, because its top-level scan uses raw_decode at the left brace and does not notice that the brace is inside a string. I would be wrong if recover_json_object('"{"a":1}"') actually raises RecordError, or if the documented rule is read to count an object inside a string literal as a top-level candidate.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.
+
+## The shape this answer must take
+`input` must contain something matching this expression:
+  \S
+
+`rewrite` must contain something matching this expression:
+  \S
+
+`rewritten` must contain something matching this expression:
+  \S

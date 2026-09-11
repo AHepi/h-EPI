@@ -1,0 +1,24 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: The order of the two refusal phrases is swapped. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: The second reply prepends "I'm sorry, " to the first reply. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: The order of the two refusal phrases is swapped: the first reply begins with 'I'm sorry' and the second begins with 'I a -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## What has been refuted, computed from the attacks that landed
+
+- 95b2d89be0ab43f5 was refuted on the ground reading-misrenders-conjecture: The reading expects 'moves' while the conjecture claims sameness, so it misrenders the conjecture.
+
+A refuted conjecture is not merely criticised: an attack on it landed and nothing has yet overturned that attack. Do not re-propose one.
+
+## The standing criticism of the last attempt
+
+The conjecture misreads the rule. The docstring says "The first refusal phrase the text contains, typographic quotes read as straight ones, or None." Here "first" is governed by the order of the refusal_phrases tuple, not by the position of the phrase in the reply text. The code iterates that tuple and returns the first listed phrase that appears, so rule and code agree. A next conjecture should not claim the two replies must be told apart; it should instead test that the function returns the earliest phrase in the refusal_phrases list that occurs, regardless of where it appears in the text. The reading 58972677d01c6391 renders the conjecture's claim "the check gives the same answer on a pair the rule requires it to tell apart" as expecting "moves"; that is a faithful rendering, but the conjecture's premise is false.

@@ -1,0 +1,20 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The pair is a rule-code mismatch, not a misread by the conjecture. The conjecture quotes the rule as saying "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text" and reads "code fence" as any fenced block, including ```python. That is the natural reading of the rule's words. The code's fence regex is '```(?:json|JSON)?\s*(.*?)```', so it only recognizes ```json or ```JSON fences; a ```python fence is not a fenced pool candidate, and the last top-level object in reply one is {"b":2}. The execution confirms this: before and after are both {'b': 2}, as_expected false. So the rule as written and the code part company; the conjecture did not misread the rule.
+
+A next conjecture should try a case where the fence is ```json or ```JSON, e.g. ```json\n{"a":1}\n```\n{"b":2}, and expect {"a":1}; or a no-fence case with multiple top-level objects to test the last-top-level fallback. It should avoid repeating the ```python fence assumption, because the code's regex does not recognize that fence, and avoid claiming the rule requires any code fence when the implementation only accepts json/JSON fences.
+
+Reading 2efa2e0fd72e6eb1 quotes the conjecture's words "is required to return {"a":1} for reply one and {"b":2} for reply two" and says it renders them, but it does not: its input field contains only reply one, and its commitments say only 'expect': 'moves'. The conjecture requires two specific outputs for two different inputs; the reading supplies one input and a weaker expectation. The defect is in the reading, not the conjecture. You can tell them apart because the conjecture's prose explicitly names both inputs and both required outputs, while the reading omits reply two and replaces the exact outputs with 'moves'.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

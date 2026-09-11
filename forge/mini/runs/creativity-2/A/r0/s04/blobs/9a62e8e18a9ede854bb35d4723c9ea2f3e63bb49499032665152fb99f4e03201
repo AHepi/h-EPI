@@ -1,0 +1,9 @@
+Conjecture: The function open:creib.forge.conformance.oracle.recover_json_object, whose documented rule says "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text", gives the same answer on the following two replies, although the rule requires different answers.
+
+The first reply is the string '```python\n{"a":1}\n```\n{"b":2}'. It contains a Python code fence holding the object {"a":1}, followed by a top-level object {"b":2}. The rule requires the answer to be {"a":1}, because a code fence holds an object and the last object inside that fence is {"a":1}.
+
+The second reply is the string '{"b":2}'. It contains only a top-level object and no code fence. The rule requires the answer to be {"b":2}, because there is no code fence, so the last top-level object is {"b":2}.
+
+The check gives the same answer for both replies: {"b":2}. It does this because its fence regex only matches ```json, ```JSON, or a fence with no language, not ```python. As a result, the first reply's fenced object is not placed in the fenced pool, and the function falls through to the top-level pool, where the last object is {"b":2}.
+
+What would make me wrong: if the function returns {"a":1} for the first reply and {"b":2} for the second, then the check tells the pair apart as the rule requires, and the conjecture is false.

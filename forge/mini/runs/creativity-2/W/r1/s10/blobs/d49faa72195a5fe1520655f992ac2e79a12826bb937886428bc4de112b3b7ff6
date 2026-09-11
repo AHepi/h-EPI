@@ -1,0 +1,18 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Pair e9e1ecdcc42661ea: the conjecture misread the rule. The rule says "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". The condition "when any fence holds one" means a fence containing exactly one JSON object. In both replies the fence contains two objects, so no fence holds one; the else branch applies and the last top-level object, {"u": 30}, is the correct score. The machine returned {"u": 30} for both, which is what the rule as written requires. The conjecture's demand for {"t": 20}/{"t": 40} reads "last one inside a code fence" as applying to multi-object fences, but the rule's condition excludes that case. Next conjecture should try a pair where a single fence contains exactly one object and a later top-level object exists, changing the fenced object's value; the rule then requires the fenced object to be scored, and the code's fenced pool should parse it and move. Avoid repeating the mistake of putting multiple objects inside one fence and expecting the fenced pool to pick among them.
+
+Reading e9e1ecdcc42661ea quotes the conjecture's "The rule requires recover_json_object to return {"t": 20} for reply one and {"t": 40} for reply two, because the last object inside the fence is the one to score." It renders this as expect "moves". That is a lossy but not defective rendering, because the conjecture itself says "or otherwise returns different answers", so "moves" is a stated expectation. The reading names the function the prose named and the module is correct. The defect is in the conjecture, not the reading: the prose's expectation is based on the misreading of "when any fence holds one".
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

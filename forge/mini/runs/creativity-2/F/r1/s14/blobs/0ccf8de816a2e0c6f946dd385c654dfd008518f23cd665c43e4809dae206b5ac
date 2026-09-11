@@ -1,0 +1,16 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The conjecture did not misread the rule. It quoted the rule correctly: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." For Reply A the last object inside the fence is {"y":2}; for Reply B it is {"y":9}, so the rule requires different answers. The machine returned the same answer for both, {'z':3}. That is because the code's fenced pool contains the entire fenced content as one candidate string, '{"x":1}\n{"y":2}', which fails to parse as a single JSON object; it then falls through to the top-level pool and returns the last top-level object in the whole text, {"z":3}. So the rule as written and the code part company: the code does not split fenced content into separate top-level objects, and therefore never scores the last object inside a fence when the fence holds more than one object. The conjecture's prediction of identical outputs is confirmed, but the execution record's 'expect: moves' is not the conjecture's expectation; it is the pair proposal's expectation and is irrelevant to the conjecture's truth.
+
+A next conjecture should try: for a reply whose code fence contains two top-level objects and whose text has a later object outside the fence, recover_json_object returns the outside object, not the last fenced object, because the fenced candidate is treated as one unparsed string. It should avoid repeating the framing that the function will follow the documented rule; instead assert the observed violation and name the exact fallback path (fenced candidate fails, top-level pool wins).
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

@@ -1,0 +1,33 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Conjecture: the function open:creib.forge.conformance.oracle.recover_json_object, whose documented rule says "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text", gives the same answer on two replies that the rule requires it to tell apart. Reply A is a code fence containing the JSON object {"a":1} followed by the words 'extra prose', and then the JSON object {"b":2} outside the fence. Reply B is just the JSON object {"b":2}. The rule requires recover_json_object(A) to return {"a":1}, because a fence holds an object, and recover_json_object(B) to return {"b":2}, because there is no fence and the last top-level object is {"b":2}. But the implementation's fenced pool contains the whole fence content '{"a":1} extra prose', which fails to parse, so it falls through to the top-level pool, where the last candidate is {"b":2}; thus it returns {"b":2} for both A and B. I would be wrong if the check returns {"a":1} for A and {"b":2} for B, or if the two answers differ in any way.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

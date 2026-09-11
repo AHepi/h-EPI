@@ -1,0 +1,27 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply one contains a fenced code block with {"a":1} before the top-level {"b":2}; reply two contains only the top-level  -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply one contains a ```python code fence with {"a":1} followed by {"b":2}; reply two contains only {"b":2}. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second object inside the code fence changes from {"b":2} to {"d":4}; the rest is identical. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second fenced object changes from {"y":2} to {"w":4}; the trailing top-level object {"z":3} is unchanged. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second reply changes the value of q from 2 to 5 inside the fenced object; the top-level object remains {"r":3}. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The fenced object's "n" value changes from 20 to 30. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second object inside the code fence changes from {"y":2} to {"y":4}; the first object and the top-level object remai -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second reply changes the value of y from 20 to 21 inside the code fence; the top-level object with z 30 is unchanged -> the check answered unrunnable
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second object inside the code fence changes from {"b": 2} to {"b": 4}; the top-level object {"c": 3} is unchanged. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second reply changes the value of \"t\" inside the fenced object from 20 to 40; all else is identical. -> the check answered unrunnable
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second object inside the code fence changes from {"t": 20} to {"t": 40}; all else is identical. -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+Pair e9e1ecdcc42661ea: the conjecture misread the rule. The rule says "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". The condition "when any fence holds one" means a fence containing exactly one JSON object. In both replies the fence contains two objects, so no fence holds one; the else branch applies and the last top-level object, {"u": 30}, is the correct score. The machine returned {"u": 30} for both, which is what the rule as written requires. The conjecture's demand for {"t": 20}/{"t": 40} reads "last one inside a code fence" as applying to multi-object fences, but the rule's condition excludes that case. Next conjecture should try a pair where a single fence contains exactly one object and a later top-level object exists, changing the fenced object's value; the rule then requires the fenced object to be scored, and the code's fenced pool should parse it and move. Avoid repeating the mistake of putting multiple objects inside one fence and expecting the fenced pool to pick among them.
+
+Reading e9e1ecdcc42661ea quotes the conjecture's "The rule requires recover_json_object to return {"t": 20} for reply one and {"t": 40} for reply two, because the last object inside the fence is the one to score." It renders this as expect "moves". That is a lossy but not defective rendering, because the conjecture itself says "or otherwise returns different answers", so "moves" is a stated expectation. The reading names the function the prose named and the module is correct. The defect is in the conjecture, not the reading: the prose's expectation is based on the misreading of "when any fence holds one".

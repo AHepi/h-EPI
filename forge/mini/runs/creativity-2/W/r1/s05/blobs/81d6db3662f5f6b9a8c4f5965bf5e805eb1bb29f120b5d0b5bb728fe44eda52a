@@ -1,0 +1,33 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+I am testing open:creib.forge.conformance.oracle.recover_json_object. The documented rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." Reply one is the string "```json\n{\"m\":10}\n{\"n\":20}\n```\n{\"t\":40}". Reply two is the string "```json\n{\"m\":10}\n{\"n\":30}\n```\n{\"t\":40}". For reply one, the last object inside a code fence is {\"n\":20}, so the rule requires the check to return {\"n\":20}. For reply two, the last object inside a code fence is {\"n\":30}, so the rule requires the check to return {\"n\":30}. The check gives the same answer for both: its fenced pool treats the entire fenced span as one candidate, which is not a single valid JSON object, so it falls through to the top-level pool, whose last candidate is {\"t\":40} in both replies, and the check returns {\"t\":40} for both. What would make me wrong is the observation that the check returns {\"n\":20} for reply one and {\"n\":30} for reply two.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

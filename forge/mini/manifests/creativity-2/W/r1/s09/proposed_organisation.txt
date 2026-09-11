@@ -1,0 +1,23 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply one contains a fenced code block with {"a":1} before the top-level {"b":2}; reply two contains only the top-level  -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply one contains a ```python code fence with {"a":1} followed by {"b":2}; reply two contains only {"b":2}. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second object inside the code fence changes from {"b":2} to {"d":4}; the rest is identical. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second fenced object changes from {"y":2} to {"w":4}; the trailing top-level object {"z":3} is unchanged. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second reply changes the value of q from 2 to 5 inside the fenced object; the top-level object remains {"r":3}. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The fenced object's "n" value changes from 20 to 30. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second object inside the code fence changes from {"y":2} to {"y":4}; the first object and the top-level object remai -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second reply changes the value of y from 20 to 21 inside the code fence; the top-level object with z 30 is unchanged -> the check answered unrunnable
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second object inside the code fence changes from {"b": 2} to {"b": 4}; the top-level object {"c": 3} is unchanged. -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+The conjecture did not misread the rule. The rule as written and the code part company. The rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." The code's fenced pool stores the entire fenced span as one candidate (`{"a": 1}\n{"b": 2}`), not the individual objects inside the fence. That span is not a valid JSON object, so strict parse and last-wins both fail, the fenced pool is skipped, and the function falls through to the top-level pool, whose last candidate is `{"c": 3}`. Thus both replies return `({'c': 3}, ())`, unchanged. A next conjecture should try a reply with one fenced object and one top-level object after it, expecting the fenced object, or two separate fences each holding one object, expecting the last fence's object. This isolates whether the fenced pool is ever used. Avoid repeating the two-objects-in-one-fence case, because it conflates an invalid fenced span with the top-level fallback and does not distinguish "last object inside a fence" from "last top-level object". Reading 3579fdeb9cf4a90a names open:creib.forge.conformance.oracle.recover_json_object, which the conjecture names. It renders the conjecture's falsification condition: "The conjecture would be false if recover_json_object returned {\"b\": 2} for reply one and {\"b\": 4} for reply two, or any different answers for the two replies." Its expect "moves" is exactly that condition. It does not introduce a function or expectation not in the prose. The reading is faithful; the defect is in the code, not the reading.

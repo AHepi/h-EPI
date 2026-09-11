@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Read the execution: for both inputs the kernel returned ({'r': 3}, ()), so the conjecture's factual claim is confirmed. The conjecture did not misread the rule. The rule says 'Every top-level balanced object in the text is a candidate' and 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text'. The code's fenced pool stores the entire fenced content as one candidate string, not the individual top-level objects inside the fence. When that single candidate fails to parse, the code falls through to the top-level pool and returns the last top-level object in the whole text, which is outside the fence. That is the rule as written and the code parting company. A next conjecture should try a pair where the fenced block contains multiple top-level objects and a later top-level object outside the fence, and assert that recover_json_object returns the last object inside the fence, so changing that last fenced object changes the result. It should avoid repeating a fenced block with a single object or with no outside object, because those cases do not expose the divergence.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

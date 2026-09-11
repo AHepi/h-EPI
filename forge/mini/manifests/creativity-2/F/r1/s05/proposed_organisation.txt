@@ -1,0 +1,19 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A contains a Python code fence with {"a": 1} followed by a top-level {"b": 2}; Reply B omits the fence and the {"a -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A adds a fenced block with two adjacent JSON objects before the final object; Reply B is only the final object. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A includes a draft code fence with two JSON objects before the final answer; Reply B omits the draft and fence. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A has a code fence containing {"a": 1} before the final answer; Reply B has no fence and only the final answer {"c -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+The conjecture did not misread the rule. The rule as written and the code part company. The rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". For Reply A, the object {"a": 1} is inside a code fence, so the rule would score it. The machine returned ({"c": 3}, ()) for Reply A, exactly as the conjecture predicted: the fenced pool stores the entire fence content as a single candidate that includes the language tag 'json' before the object, so it fails to parse as one JSON object, and the code falls through to the top-level pool and returns the last top-level object, {"c": 3}. Thus the code does not implement the rule for fences whose content includes a language tag separated by a space. A next conjecture should try a fence with no space before the language, e.g. a fence starting ```json immediately, to see whether the fenced pool then parses and returns {"a": 1}. It should avoid repeating the space-before-language variant, because that variant is already explained by the regex's optional language group not matching when a space precedes it, and the whitespace matcher then captures the language tag into the candidate. It should also avoid claiming the regex does not match the fence at all; it does match, but the captured group includes the language tag.

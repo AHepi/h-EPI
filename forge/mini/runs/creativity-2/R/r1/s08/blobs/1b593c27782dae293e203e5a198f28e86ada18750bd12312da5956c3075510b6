@@ -1,0 +1,19 @@
+# Execute
+
+## Readings (reads)
+[b48b174a78624149] (mini.pair-proposal.reading.v1)
+I was not unsure about the reading. The rule requires Text A to return the last object inside the code fence ({"b": 2}) and Text B to return the last top-level object ({"c": 3}); the function returns {"c": 3} for both, so the pair must move.
+input: Here is a fence:
+```json
+{"a": 1}
+{"b": 2}
+```
+And here is a later top-level object:
+{"c": 3}
+rewrite: Text A includes a fenced block with two JSON objects before the later top-level object; Text B omits the fence and the first two objects, leaving only the later top-level object.
+rewritten: Here is a top-level object:
+{"c": 3}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
