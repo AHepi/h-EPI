@@ -781,3 +781,86 @@ already running when the audit was done, the reading takes its rows from the exe
 and never from a verdict, and in this wiring no port draws from `mini.verdict.v1` at all, so the
 artifact is terminal and read by nobody. It is inert for this block and it is still a seat ignoring
 its declaration. It stays named here, unfixed, rather than folded into a running experiment.
+
+## M23 — The compared arms were not allowed to name the same things
+
+MINI-USE-TEST-1 compares a direct-audit arm against four mini arms on the same drawn instance. The
+mini arms' proposal kind carries, at `src/creib/forge/mini/usetest.py:1163`:
+
+> Your kernel is one of recovery, recovered-from-prose, response-verdict.
+
+and, at `:1217`, the same three ids again as a check the runner refuses on:
+
+```python
+"kernel": {"type": "string", "pattern": "^(recovery|recovered-from-prose|response-verdict)$"},
+```
+
+The subject registers **six** kernels (`usetest.py:203-209`), and `run_kernel` (`:367-376`) runs
+any of them on any string. Arm A is handed no kernel list at all.
+
+**What it cost, measured.** `forge/mini/runs/usetest/v4-s2-3/sealed.json` carries
+`mutation_id: s2-span-normalised-one-side`, `kernel: span-occurs`, reproducer
+`{"span": "five  days", "document": "Amara was away for five days."}`. **The seeded defect of that
+instance lives in a kernel the four mini arms are refused from naming.** Counted from the
+transcripts of that instance: arm C named `recovery` 19 times and `response-verdict` once, arm
+C-rules `recovery` 20 times, arms D and E `recovery` 14 times each. Zero proposals named
+`span-occurs`, in any arm, on any instance. Arm A, on the same instance, names the span check six
+times.
+
+**Why this is not the coverage finding already recorded.** `USE_TEST.md:83` marks the span and
+grounding families non-enumerable, and `:202-207` reports that the arms never walked far enough
+into the twenty-cell grid — "machine-enumerated coverage is not an advantage, it is a tax". Both
+are about **budget and grid coverage**. Neither says the arms were *refused permission*. The
+document nowhere states the three-kernel pattern; a reader of `USE_TEST.md` learns that the grid
+does not systematically cover the span family, not that a proposal naming it is a
+`MINI_FORMAT_FAILURE` before anything runs.
+
+The two are different defects with different remedies, and the difference matters because
+`USE_TEST.md:209-212` proposes the remedy for the one it saw: "A block at a ceiling that lets the
+grid be walked, held equal across arms, would test H1." **That remedy does not touch this.** At any
+ceiling whatever, arms C, C-rules, D and E cannot name `span-occurs`, so on instance 3 they cannot
+state the defect they are being scored on finding while the arm they are compared against can.
+
+**What follows for the block.** "Nought of three, for every arm" (`USE_TEST.md:274`) stands as a
+count. It does not stand as a comparison on instance 3, where the arms were not asked the same
+question. Two of the six seeded mutations — `s1-whitespace-strip` and
+`s2-span-normalised-one-side` — live in the families the pattern excludes. The block is not
+withdrawn here, because withdrawing it is a person's decision and because nothing above shows what
+the arms would have done with permission; it is marked as carrying an asymmetry its own document
+does not disclose.
+
+**The general form.** An arm comparison is only a comparison where the arms may say the same
+things. A restriction that lives in a format schema rather than in prose is invisible to everyone
+reading the write-up, and this one survived every earlier review of the block.
+
+## M24 — The pre-registration forbade the grid and the instruction contained one
+
+ARCH-SWEEP-1's pre-registration says, in its own words (`docs/mini/ARCH_SWEEP.md:24-26`):
+
+> **No grid.** BUILD-TEST-1 measured an enumerated answer space driving contradictions to zero on
+> both arms while construction stayed perfect. Handing one over here would make every architecture
+> look alike for a reason that has nothing to do with architecture.
+
+The proposer instruction in `tools/arch_sweep.py:60-67` then said: *"Your kernel is one of recovery,
+recovered-from-prose, response-verdict, refusal-phrase."* Four ids. The rules artifact the proposer
+reads describes **six** (`kernel_rules_text`), and the registry holds **ten** at runtime
+(the six `conformance.kernel.*` plus four `mini.kernel.*`). A repository-wide count finds **69**
+single-argument `str`-taking functions under `src/creib/` that a kernel could in principle be.
+
+An enumeration is a grid with the cells written into prose instead of a source file. The
+pre-registration refused one and the instruction carried one.
+
+**What it cost.** K1 predicted at least one contradiction quoting the rule and got **zero across 72
+runs** — the sweep's 36 and the control's 36 — which is the outcome BUILD-TEST-1's measurement
+predicts for an enumerated answer space. The attribution written when the block was read ("a fact
+about the brief") is correct and too weak: it is a fact about **the enumeration in** the brief, and
+the pre-registration had already said so before the instruction was written.
+
+`r33` of the control proposed `conformance.kernel.span-occurs` — described in the rules artifact,
+excluded by the instruction. One proposal in 72 runs left the enumeration, which is evidence the
+enumeration was load-bearing rather than redundant.
+
+**Not repaired by editing the instruction.** M21's repair wrote the four ids out in full; it did
+not widen them to six, or to ten, or to the 69. A block that asks whether a loop finds boundary
+points nobody wrote down, while naming the points it may look at, has answered a smaller question
+than the one it asked.

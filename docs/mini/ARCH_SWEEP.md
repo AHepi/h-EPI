@@ -125,6 +125,24 @@ ran that no other architecture ran, and whether it exposes a divergence between 
 code is a reading a person makes. And 36 runs of three cycles is one sample of each architecture —
 Theorem 7 bounds what more cycles could add, it says nothing about what a second sample would.
 
+## Amendment 4, after the block was read: the instruction carried the grid this block refused
+
+Registered M24. The section above says "No grid", and the proposer instruction named four of six
+kernels. An enumeration is a grid with its cells written into prose. The registry holds ten kernels
+at runtime and the repository holds 69 single-argument `str`-taking functions a kernel could be, so
+the answer space the block actually offered was four.
+
+K1's failure is therefore attributed more precisely than it was when the runs were first read.
+"A fact about the brief" is correct and too weak: **it is a fact about the enumeration in the
+brief**, which this document had already refused in writing before the instruction was composed.
+One proposal in 72 runs left the enumeration anyway (`r33`, naming `conformance.kernel.span-occurs`,
+which the rules artifact describes and the instruction excluded), which is evidence the enumeration
+was doing work rather than sitting idle.
+
+M21's repair wrote the four ids out in full. It did not widen them. K2, K3 and K4 are readings of a
+block whose proposer was told where to look, and they are left standing as that, with this said
+beside them.
+
 ## What the 36 runs show, and what the control does to it
 
 All 36 architectures reached `RUN_ENDED`. 162 executor rows, 72 correctly named as cross-cycle

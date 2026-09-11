@@ -271,6 +271,23 @@ timeout 600 s. Records under `forge/mini/runs/usetest/v4-s2-1`, `v4-s2-2`, `v4-s
 | v4-s2-3 | D | 41 | 3 | 11 | `call_budget_spent` | no |
 | v4-s2-3 | E | 41 | 3 | 11 | `call_budget_spent` | no |
 
+**The arms were not allowed to name the same things (found 11 September, registered M23).** The
+mini arms' proposal kind carries a schema pattern, `usetest.py:1217`, admitting three kernel ids:
+`recovery`, `recovered-from-prose`, `response-verdict`. The subject registers six and `run_kernel`
+runs any of them. Arm A is handed no kernel list.
+
+Instance 3's seeded defect is `s2-span-normalised-one-side`, **in `span-occurs`** — one of the three
+the pattern refuses. On `v4-s2-3` arm C named `recovery` 19 times and `response-verdict` once,
+C-rules `recovery` 20 times, D and E `recovery` 14 times each; no arm named `span-occurs` anywhere
+in the block. Arm A names the span check six times on that instance.
+
+This is **not** finding 4 above. Finding 4 is about budget and grid coverage, and its proposed
+remedy is a higher ceiling. No ceiling removes a format refusal. On instance 3 the mini arms could
+not state the defect they were scored on finding, and the arm they were compared against could.
+
+The count below stands. The comparison on instance 3 does not, and neither does any reading of this
+block that treats the arms as having been asked the same question.
+
 **Nought of three, for every arm.** Including arm A, which recovered three of three in block 1.
 That is the first thing to explain, and until it is explained nothing else in the table can be
 read as being about mini.
