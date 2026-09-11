@@ -6,11 +6,11 @@ A pair the check tells apart where the rule says it should not is a different an
 
 ## What this inquiry has already run
 
-- open:creib.forge.conformance.records.refusal_phrase_in on a pair differing by: moves -> the check answered unrunnable
-- open:creib.forge.conformance.oracle._grounding_kernel on a pair differing by: moves -> the check answered unrunnable
+- open:creib.forge.conformance.oracle._grounding_kernel on a pair differing by: (unsaid) -> the check answered unrunnable
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: (unsaid) -> the check answered unrunnable
 
 Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
 
 ## The standing criticism of the last attempt
 
-The execution was unrunnable: the kernel `open:creib.forge.conformance.oracle._grounding_kernel` was not found (`MINI_OPEN_KERNEL_NOT_FOUND: 'oracle' has no '_grounding_kernel'`), so there is no machine output to compare against the conjecture's predicted GROUNDED/SPAN_NOT_IN_DOCUMENT. The conjecture did not misread the rule; it correctly read the source's `_span_occurs`, which normalizes whitespace before checking, so Reply B would be GROUNDED under the code as written. The rule says 'with no relaxation and the value-in-span check on,' but the code applies whitespace normalization even when relaxations is empty, so the rule as written and the code part company. A next conjecture should target a runnable kernel identifier—perhaps the actual `_grounding_verdict` in `oracle.py` or whatever path the harness exposes—and avoid repeating the nonexistent `open:creib.forge.conformance.oracle._grounding_kernel` path.
+The execution record is unrunnable ('the rewritten text is the input unchanged'), so the conjecture's claim that the check returns {"b": 2} for both replies is not observed here. Reading the source, the conjecture misreads the code, not the rule. The fence regex is ```(?:json|JSON)?\s*(.*?)```; it does match a ```python fence, but the captured group is `python\n{"a": 1}\n`, which is not a JSON object and is passed over. The rule says 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' For Reply A the code finds no fence whose captured inner text parses as JSON, so it falls to the last top-level object and returns {"b": 2}. Thus the rule as written and the code part company for a ```python fence containing a JSON object: the rule would take {"a": 1}, the code takes {"b": 2}. A next conjecture should test a ```json fence containing {"a": 1} followed by {"b": 2} (expect {"a": 1}) and a ```python fence with the same content (expect the mismatch), and should avoid repeating the false claim that the regex only recognizes plain/json fences.

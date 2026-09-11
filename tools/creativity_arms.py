@@ -98,13 +98,30 @@ CRITICISM_INSTRUCTION = (
     "Quote the rule's words."
 )
 
+#: Arm W's critic differs from F's in what it is told to do with the reading it can now see. The
+#: kinds, their commitments and the install map are untouched; only ports and this text move.
+CRITICISM_WIRED = CRITICISM_INSTRUCTION + (
+    "\n\nYou are also shown the READING: the structured commitment a translator made of the "
+    "conjecture's prose, naming the function and what it expected. Attack it. Name the reading's "
+    "artifact id, quote the words of the conjecture it claims to render, and say whether it renders "
+    "them. A reading that names a function the prose did not name, or a module the function does not "
+    "live in, or an expectation the prose did not state, is a defect in the reading and not in the "
+    "conjecture -- say which of the two is wrong, and how you can tell them apart."
+)
 
-def _kinds_and_ports(with_criticism: bool) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+
+def _kinds_and_ports(with_criticism: bool, wired: bool = False) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """``wired`` gives the critic the reading, and shows it the conjecture's own commitment.
+
+    Nothing else moves: the same kinds, the same commitment_call on each, the same install map. The
+    block's whole point is that this is a WIRING change and can be read as one.
+    """
     port_types = [
         {"port_type": "source", "draws_from": {"artifact_kinds": [SOURCE]},
          "render": {"rule": "list_bodies", "header": "The source of the checks"}},
         {"port_type": "conj", "draws_from": {"artifact_kinds": [CONJECTURE]},
-         "render": {"rule": "list_bodies", "header": "The conjecture, as written"}},
+         "render": {"rule": "list_bodies_and_commitments" if wired else "list_bodies",
+                    "header": "The conjecture, as written"}},
         {"port_type": "reads", "draws_from": {"artifact_kinds": [READING]},
          "render": {"rule": "list_bodies_and_commitments", "header": "Readings"}},
         {"port_type": "execs", "draws_from": {"artifact_kinds": [PAIR_EXECUTION_OPEN_KIND]},
@@ -132,18 +149,20 @@ def _kinds_and_ports(with_criticism: bool) -> tuple[list[dict[str, Any]], list[d
         port_types.append({"port_type": "crits", "draws_from": {"artifact_kinds": [CRITICISM]},
                            "render": {"rule": "list_bodies", "header": "Criticism"}})
         kinds.insert(4, {
-            "kind_id": CRITICISM, "title": "Criticism", "instruction": CRITICISM_INSTRUCTION,
+            "kind_id": CRITICISM, "title": "Criticism",
+            "instruction": CRITICISM_WIRED if wired else CRITICISM_INSTRUCTION,
             "input_ports": [{"port_id": "source", "port_type": "source", "window": "all"},
                             {"port_id": "conj", "port_type": "conj", "window": "this_cycle"},
+                            *([{"port_id": "reads", "port_type": "reads", "window": "this_cycle"}] if wired else []),
                             {"port_id": "execs", "port_type": "execs", "window": "this_cycle"}],
             "output_port": {"port_id": "out", "produces_kind": CRITICISM}})
     return kinds, port_types
 
 
-def manifest(arm: str, index: int, problem: str, with_criticism: bool) -> dict[str, Any]:
+def manifest(arm: str, index: int, problem: str, with_criticism: bool, wired: bool = False) -> dict[str, Any]:
     """One segment's organisation. ``problem`` is what the install map may rewrite; nothing else is."""
 
-    kinds, port_types = _kinds_and_ports(with_criticism)
+    kinds, port_types = _kinds_and_ports(with_criticism, wired)
     stages = [
         {"stage_id": "source", "kind_id": SOURCE, "seat": "machine", "ports": []},
         {"stage_id": "conjecture", "kind_id": CONJECTURE, "ports": ["problem", "source"]},
@@ -169,7 +188,8 @@ def manifest(arm: str, index: int, problem: str, with_criticism: bool) -> dict[s
 ARMS = {"S": {"segments": 1, "criticism": False, "install": False},
         "R": {"segments": 6, "criticism": False, "install": False},
         "N": {"segments": 8, "criticism": True, "install": False},
-        "F": {"segments": 8, "criticism": True, "install": True}}
+        "F": {"segments": 8, "criticism": True, "install": True},
+        "W": {"segments": 8, "criticism": True, "install": True, "wired": True}}
 
 
 def _plan(args: argparse.Namespace) -> int:
@@ -180,7 +200,8 @@ def _plan(args: argparse.Namespace) -> int:
             target = out / arm / f"s{index:02d}" / "manifest.json"
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(
-                json.dumps(manifest(arm, index, PROBLEM, spec["criticism"]), indent=2, ensure_ascii=False) + "\n",
+                json.dumps(manifest(arm, index, PROBLEM, spec["criticism"], spec.get("wired", False)),
+                           indent=2, ensure_ascii=False) + "\n",
                 encoding="utf-8")
             written += 1
     calls = {a: s["segments"] * (3 if s["criticism"] else 2) for a, s in ARMS.items()}
@@ -344,7 +365,8 @@ def _install(args: argparse.Namespace) -> int:
     (target / "proposed_organisation.txt").write_text(text, encoding="utf-8")
     installed = text if spec["install"] else PROBLEM
     (target / "manifest.json").write_text(
-        json.dumps(manifest(arm, args.index, installed, spec["criticism"]), indent=2, ensure_ascii=False) + "\n",
+        json.dumps(manifest(arm, args.index, installed, spec["criticism"], spec.get("wired", False)),
+                   indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8")
     print(f"{arm} s{args.index:02d}: {'INSTALLED' if spec['install'] else 'retained, not installed'} "
           f"({len(text)} chars, {len(previous)} prior segments)", flush=True)
@@ -425,7 +447,7 @@ def _read(args: argparse.Namespace) -> int:
                       "distinct_pairs": summary["collapses"]}
     keys = ["segments_run", "model_calls", "executor_rows", "executed", "unrunnable",
             "collapse_T1", "grounded_T1", "oversensitive", "distinct_targets", "distinct_pairs"]
-    order = [a for a in ("S", "R", "N", "F", "E") if a in table]
+    order = [a for a in ("S", "R", "N", "F", "W", "E") if a in table]
     print(f"{'measure':<18}" + "".join(f"{a:>10}" for a in order), flush=True)
     for key in keys:
         print(f"{key:<18}" + "".join(f"{table[a][key]:>10}" for a in order), flush=True)

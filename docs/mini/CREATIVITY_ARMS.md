@@ -251,3 +251,30 @@ internally valid and makes it a comparison between two crippled loops. The repai
 change with the artifact kinds untouched — the critic gains the `reads` port and is asked to attack
 the commitment it finds there — and it is run as a declared third condition rather than folded into
 `F`, so that what the wiring buys is measured rather than assumed.
+
+## Arm W, declared before it runs: the same machine, wired so the commitment can be attacked
+
+`W` is `F` with two wires moved and nothing else:
+
+1. the criticism kind gains a `reads` port, so the critic sees the reading — the structured
+   commitment a translator made of the conjecture's prose;
+2. the `conj` port renders `list_bodies_and_commitments` instead of `list_bodies`, so the
+   conjecture's own commitment is visible beside its prose.
+
+Verified against `F`'s manifest: **the same kinds, the same `commitment_call` on every one, the same
+install map, the same contract, the same budget.** Only ports and the critic's instruction move. The
+instruction gains one paragraph telling the critic to name the reading's artifact id, quote the
+conjecture's words it claims to render, and say **which of the two is wrong** when they disagree.
+
+This is the operator's claim put to a test: *the way artifacts are wired up matters more than which
+artifact types exist*. `F` against `W` holds the types fixed and moves the wiring.
+
+- **C5.** `W` produces more verified T1 witnesses than `F` at equal calls.
+- **C6.** `W`'s criticisms actually use the new port: their text names a reading's artifact id.
+  Mechanically checkable, and if it fails the wiring was added and not used — the arm then says
+  nothing about wiring and everything about the instruction.
+- **C7 — the sharp one.** The rate of readings that name the wrong module or a function that does
+  not exist **falls across `W`'s segments** and does not fall across `F`'s. That is the specific
+  error the blind critic could not see, and it is the one the new wire exposes.
+
+C6 gates C5 and C7: a wire nothing reads is not a wiring change.

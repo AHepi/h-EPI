@@ -6,18 +6,14 @@ A pair the check tells apart where the rule says it should not is a different an
 
 ## What this inquiry has already run
 
-- open:creib.forge.conformance.records.refusal_phrase_in on a pair differing by: A has 'I can't' before 'I cannot'; B has 'I cannot' before 'I can't'. -> the check answered unrunnable
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: (unsaid) -> the check answered unrunnable
 - open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unchanged
-- open:creib.forge.conformance.records.refusal_phrase_in on a pair differing by: (unsaid) -> the check answered unrunnable
-- open:creib.forge.conformance.records.refusal_phrase_in on a pair differing by: moves -> the check answered unrunnable
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: (unsaid) -> the check answered unrunnable
 - open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unchanged
 
 Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
 
 ## The standing criticism of the last attempt
 
-The conjecture did not misread the rule. The rule as written and the code part company. The rule says: “The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.” For Reply B the fence holds the object `{"b": 2}`, so the rule requires that object, not the later top-level `{"a": 1}`. The code, however, only accepts a fenced candidate that parses as a single JSON object; the fenced content `{"b": 2} extra` fails to parse, so the fenced pool yields nothing and the code falls back to the top-level pool, returning `{"a": 1}`. The execution confirms this: both the input and the rewritten reply return `({'a': 1}, ())`, so the prediction is correct and the mismatch is real. A next conjecture should try a reply where a code fence contains two JSON objects, for example ```json
-{"b": 2}
-{"c": 3}
-```
-{"a": 1}. The rule would score the last object inside the fence, `{"c": 3}`; the code will likely fail to parse the fenced content as one object and fall back to `{"a": 1}`. Avoid repeating the exact “one object plus extra text” pattern already used; instead vary the fenced content to contain multiple objects or a trailing comma, to test whether the code ever extracts an object from a fence that is not a single parseable object.
+The conjecture did not misread the rule. The rule as written says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." The code parts company with that rule: its _FENCE regex is '```(?:json|JSON)?\\s*(.*?)```', which only collects ```json or ```JSON fences, not ```text. For Reply A the fenced pool is therefore empty, and the reversed top-level pool yields {"b": 2}. The execution confirms this: before and after are both ("{'b': 2}", ()), executed unchanged, expected moves, as_expected false. So the current code does not move on A. The B half of the conjecture was not executed, so it is neither confirmed nor refuted here. A next conjecture should assert the current behavior directly: recover_json_object on a reply whose only fenced object is in a ```text fence returns the last top-level object, because _FENCE does not match that fence. It should avoid repeating the claim that the docstring's generic 'code fence' includes ```text when predicting the current output; instead test a ```json fence if the fenced pool is meant to be non-empty.

@@ -1,7 +1,7 @@
 {
   "schema_version": "creib.mini.manifest.v1",
-  "manifest_id": "mini.creativity.f.s04",
-  "problem": "The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.\n\nFind a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.\n\nA pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.\n\n## What this inquiry has already run\n\n- open:creib.forge.conformance.records.recover_json_object on a pair differing by: (unsaid) -> the check answered unrunnable\n- open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unchanged\n- open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unchanged\n- open:creib.forge.conformance.records.recover_json_object on a pair differing by: (unsaid) -> the check answered unrunnable\n\nDo not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.\n\n## The standing criticism of the last attempt\n\nThe conjecture does not misread the rule; the rule as written and the code part company. The docstring says \"The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text,\" but `_FENCE = re.compile('```(?:json|JSON)?\\\\s*(.*?)```', re.DOTALL)` only matches fences whose opening is bare ``` or ```json/```JSON. A ```text fence is not collected, so Reply A falls through to the last top-level object and the check returns {\"b\": 2} for both replies, exactly as the conjecture says. The execution was unrunnable, but the source already establishes the mismatch. A next conjecture should try a pair where the fenced object is not the last top-level object and assert the code returns the last top-level object despite the docstring's 'any fence' language, or directly assert that `_FENCE` fails to match ```text. Avoid repeating the same pair while expecting different outputs; instead quote the regex and the docstring to show the divergence.",
+  "manifest_id": "mini.creativity.w.s00",
+  "problem": "The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.\n\nFind a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.\n\nA pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.",
   "cycles": {
     "max_cycles": 1
   },
@@ -26,7 +26,7 @@
         ]
       },
       "render": {
-        "rule": "list_bodies",
+        "rule": "list_bodies_and_commitments",
         "header": "The conjecture, as written"
       }
     },
@@ -138,7 +138,7 @@
     {
       "kind_id": "mini.criticism.v1",
       "title": "Criticism",
-      "instruction": "Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.",
+      "instruction": "Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.\n\nYou are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.",
       "input_ports": [
         {
           "port_id": "source",
@@ -148,6 +148,11 @@
         {
           "port_id": "conj",
           "port_type": "conj",
+          "window": "this_cycle"
+        },
+        {
+          "port_id": "reads",
+          "port_type": "reads",
           "window": "this_cycle"
         },
         {

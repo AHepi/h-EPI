@@ -6,16 +6,16 @@ A pair the check tells apart where the rule says it should not is a different an
 
 ## What this inquiry has already run
 
-- open:creib.forge.conformance.records.refusal_phrase_in on a pair differing by: moves -> the check answered unrunnable
-- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: (unsaid) -> the check answered unrunnable
-- open:creib.forge.conformance.oracle._grounding_kernel on a pair differing by: (unsaid) -> the check answered unrunnable
-- open:creib.forge.conformance.records.refusal_phrase_in on a pair differing by: The two replies differ in the order of the refusal phrases: Reply A begins with 'I'm sorry' then 'I cannot'; Reply B beg -> the check answered unrunnable
-- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: (unsaid) -> the check answered unrunnable
-- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: (unsaid) -> the check answered unrunnable
-- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply B replaces {"b":2} with {"d":4} inside the code fence; all else identical. -> the check answered unchanged
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: (unsaid) -> the check answered unrunnable
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: (unsaid) -> the check answered unrunnable
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: Reply A contains a text-marked code fence with {"a": 1} followed by {"b": 2} outside; Reply B is only {"b": 2}. -> the check answered unchanged
+- open:creib.forge.conformance.records._grounding_kernel on a pair differing by: moves -> the check answered unrunnable
 
 Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
 
 ## The standing criticism of the last attempt
 
-The conjecture did not misread the rule; the rule as written and the code part company. The code's fenced pool stores each fenced span as a single candidate, so a fence containing two objects ('{"a":1}\n{"b":2}') fails to parse and is skipped; the fallback top-level pool then returns the last top-level object in the whole text, {"c":3}. That is what the execution shows: before and after are both {'c': 3}. But the rule says "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text", and the docstring also says "Every top-level balanced object in the text is a candidate". Under that rule the last object inside the fence is {"b":2} for Reply A and {"d":4} for Reply B, so the code should not fall through to {"c":3}. A next conjecture should test a fence containing exactly one object plus an outside object, expecting the fenced object to win, and separately two fenced blocks each containing one object, expecting the last fenced block's object. It should avoid repeating a single fence with multiple objects, because that case is already shown to be skipped and returns the outside object.
+The machine returned unrunnable, not the predicted outputs. The conjecture misread the kernel path: it named open:creib.forge.conformance.records._grounding_kernel, but the execution says 'records' has no '_grounding_kernel'. The rule as written and the code in the source block may part company—the source's _span_occurs normalizes whitespace before checking, which would make the span-in-document check not verbatim—but this was not tested because the kernel was not found. The conjecture did not misread the rule; it misidentified where the kernel lives. A next conjecture should try the correct kernel identifier from the source block (mini.kernel-source.v1) and avoid repeating the wrong path; it should also avoid assuming the kernel exists without first checking that the execution can find it. Quote: 'The grounding verdict as the harness gives it, with no relaxation and the value-in-span check on.' and 'Return None when the span is not in the document, else how it was matched ("verbatim" or a relaxation).'
