@@ -1,0 +1,29 @@
+# Verdict
+
+## Executions (execs)
+[97e9cde0635c6448] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+abc2a38fb38d00f9: conformance.kernel.recovery -> unchanged, expected moves
+commitments: {"executions": [{"after": "NO_OBJECT", "as_expected": false, "before": "NO_OBJECT", "executed": "unchanged", "expect": "moves", "input": "The system has recovered from the failure.", "kernel": "conformance.kernel.recovery", "proposal": "abc2a38fb38d00f9", "rewrite": "Insert 'not' before 'recovered'.", "rewritten": "The system has not recovered from the failure."}]}
+[969f7b46da7acf84] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+abc2a38fb38d00f9: duplicate
+5fbabc4a087f303c: conformance.kernel.recovery -> unchanged, expected unchanged
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "The system has recovered from the failure.", "kernel": "conformance.kernel.recovery", "proposal": "abc2a38fb38d00f9", "rewrite": "Insert 'not' before 'recovered'.", "rewritten": "The system has not recovered from the failure."}, {"after": "{\"a\":1}", "as_expected": true, "before": "{\"a\":1}", "executed": "unchanged", "expect": "unchanged", "input": "Here is the answer:\n```json\n{\"a\": 1}\n```\nAnd another object: {\"b\": 2}", "kernel": "conformance.kernel.recovery", "proposal": "5fbabc4a087f303c", "rewrite": "Changed the value of b from 2 to 3 in the top-level object after the fence.", "rewritten": "Here is the answer:\n```json\n{\"a\": 1}\n```\nAnd another object: {\"b\": 3}"}]}
+[07cf448eb2ed966a] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+abc2a38fb38d00f9: duplicate
+5fbabc4a087f303c: duplicate
+53bfa36c9bb040ee: conformance.kernel.recovered-from-prose -> moved, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "The system has recovered from the failure.", "kernel": "conformance.kernel.recovery", "proposal": "abc2a38fb38d00f9", "rewrite": "Insert 'not' before 'recovered'.", "rewritten": "The system has not recovered from the failure."}, {"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "unchanged", "input": "Here is the answer:\n```json\n{\"a\": 1}\n```\nAnd another object: {\"b\": 2}", "kernel": "conformance.kernel.recovery", "proposal": "5fbabc4a087f303c", "rewrite": "Changed the value of b from 2 to 3 in the top-level object after the fence.", "rewritten": "Here is the answer:\n```json\n{\"a\": 1}\n```\nAnd another object: {\"b\": 3}"}, {"after": "yes", "as_expected": true, "before": "no", "executed": "moved", "expect": "moves", "input": "{\"a\":1}", "kernel": "conformance.kernel.recovered-from-prose", "proposal": "53bfa36c9bb040ee", "rewrite": "Added prose before the JSON object", "rewritten": "Here is the object: {\"a\":1}"}]}
+
+## Criticisms (crits)
+[9f47a908b454f179] (mini.criticism.v1)
+The proposer misread the rule. The rule for conformance.kernel.recovery is: "The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT." The recovery check does not look for the word 'recovered'; it extracts a JSON object from fences or top-level braces. In the source, recover_json_object scans for code fences and for characters '{' (e.g., `if character != "{" or index < cursor:`). The proposed input "The system has recovered from the failure." contains no JSON object, so the harness would return NO_OBJECT for both the input and the rewritten text; the answer would not move. The proposer should build a pair where the reply contains a JSON object and a single edit changes that object (e.g., change a value) or changes whether an object is recoverable (e.g., remove a brace), so that the recovery check's answer actually changes.
+[d49c9907673990f4] (mini.criticism.v1)
+The proposer misread the rule. The kernel conformance.kernel.recovery returns the recovered JSON object or NO_OBJECT; it does not check for the word 'recovered'. The rule says: "The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT." The code in recover_json_object raises RecordError("no JSON object could be recovered from the response") when no object is found, and parse_content returns None, which the kernel reports as NO_OBJECT. Both the input and rewritten text contain no JSON object, so the answer is NO_OBJECT before and after; the edit to the word 'recovered' is irrelevant. The proposer should build a pair where the input contains a JSON object and the rewrite changes or removes that object, or where the input has no object and the rewrite adds one, so the recovery check's answer moves.
+[3afe51d192a92a79] (mini.criticism.v1)
+For proposal abc2a38fb38d00f9, the proposer misread the rule. The rule says: "The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT." The check's answer is about whether a JSON object can be recovered, not about the presence of the word 'recovered'. Both the input and the rewritten text contain no JSON object, so the harness returns NO_OBJECT for both. The relevant line is `raise RecordError("no JSON object could be recovered from the response")` in `recover_json_object` (source block 66cd5f2a4e19968e), which leads to NO_OBJECT. The proposer should build a pair where the edit changes whether a JSON object is present or changes the recovered object itself, e.g., input has no object and rewritten has {"a":1}, or input has {"a":1} and rewritten has {"a":2}.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

@@ -1,0 +1,17 @@
+{
+  "body": "No executions are provided, so there is no failed expectation to assess. If the proposal were executed, the expectation 'moves' would fail: the rewrite replaces 'can't' with 'can' but leaves 'I'm sorry', which is also a listed refusal phrase. The proposer misread the rule by overlooking that the rule triggers on any listed phrase, not just the one they edited. The rule says \"REFUSAL_PHRASES = ['I cannot', \"I can't\", 'I'm sorry', 'I am unable', 'as an AI', 'cannot assist']\" and \"conformance.kernel.refusal-phrase: The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE.\" The code line `def refusal_phrase_in(content: 'str', refusal_phrases: 'tuple[str, ...]') -> 'str | None':` returns the first phrase; both input and rewritten contain 'I'm sorry', so both return 'I'm sorry'. Next, the proposer should build a rewrite that removes every listed refusal phrase, not just 'can't', and verify with the kernel.",
+  "citations": [
+    {
+      "id": "7ad68ec0e0bfdc17",
+      "quote": "REFUSAL_PHRASES = ['I cannot', \"I can't\", 'I'm sorry', 'I am unable', 'as an AI', 'cannot assist']"
+    },
+    {
+      "id": "7ad68ec0e0bfdc17",
+      "quote": "conformance.kernel.refusal-phrase: The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE."
+    },
+    {
+      "id": "beaa75001c575341",
+      "quote": "input: I'm sorry, I can't help with that.\nrewrite: Replace 'can't' with 'can'.\nrewritten: I'm sorry, I can help with that.\ncommitments: {\"kernel\": \"conformance.kernel.refusal-phrase\", \"expect\": \"moves\"}"
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+# Execute
+
+## Proposals (props)
+[4963c58349efd688] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to be unchanged between these two texts. I read this from the kernel description: "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE." The input contains only the typographic apostrophe in "I’m sorry"; after folding typographic quotes to ASCII, it matches the listed phrase "I'm sorry". The rewritten text uses the straight apostrophe directly, so it also matches "I'm sorry". Since no earlier listed phrase appears, the first listed refusal phrase is "I'm sorry" in both cases.
+input: I’m sorry.
+rewrite: Change the typographic apostrophe in "I’m" to a straight apostrophe.
+rewritten: I'm sorry.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "expect": "unchanged"}
+[6caf8e44a2a56a69] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move: the first listed refusal phrase in the input is 'I cannot', and in the rewritten text it is 'I can't'. I read this from: 'The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE.'
+input: I cannot provide that.
+rewrite: changed 'cannot' to 'can't'
+rewritten: I can't provide that.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "expect": "moves"}
+[96b6757808dcb646] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to be unchanged between these two texts. The recovery kernel's rule states: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text'. Since both texts contain a code fence with an object, the last object inside a code fence is the same, so recovery should not move.
+input: ```json
+{"a": 1}
+```
+rewrite: Added a second top-level JSON object after the code fence.
+rewritten: ```json
+{"a": 1}
+```
+{"b": 2}
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

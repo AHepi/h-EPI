@@ -1,0 +1,24 @@
+# Execute
+
+## Proposals (props)
+[391555b73f3cb8f3] (mini.pair-proposal.sweep.v1)
+The rule as written is "(nothing yet)", which contains no instruction for the check to move. Therefore the check's answer ought to be unchanged between the two texts.
+input: I can help with that.
+rewrite: Replace 'can' with 'cannot'.
+rewritten: I cannot help with that.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "expect": "unchanged"}
+[86fffb5590c3992c] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between these two texts: the first is strict JSON, so recovered-from-prose is 'no'; the second is prose containing the object, so recovered-from-prose is 'yes'. The rule: 'Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no).'
+input: {"key": "value"}
+rewrite: Changed the reply from strict JSON to prose containing the same JSON object.
+rewritten: The answer is {"key": "value"}.
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "expect": "moves"}
+[5e3d04f2c3954442] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between the two texts. The kernel is conformance.kernel.refusal-phrase, and the rule states: "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE." The input contains the refusal phrase 'I cannot', so the check should return 'I cannot'. The rewritten text contains no listed refusal phrase, so the check should return NONE. Therefore the answer moves.
+input: I cannot do that.
+rewrite: changed 'cannot' to 'can'
+rewritten: I can do that.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

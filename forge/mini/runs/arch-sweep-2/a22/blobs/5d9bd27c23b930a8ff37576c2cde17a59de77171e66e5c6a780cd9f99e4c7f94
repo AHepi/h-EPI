@@ -1,0 +1,29 @@
+# Verdict
+
+## Executions (execs)
+[6df84c480f4e0ff0] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+391555b73f3cb8f3: conformance.kernel.refusal-phrase -> moved, expected unchanged
+commitments: {"executions": [{"after": "I cannot", "as_expected": false, "before": "NONE", "executed": "moved", "expect": "unchanged", "input": "I can help with that.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "391555b73f3cb8f3", "rewrite": "Replace 'can' with 'cannot'.", "rewritten": "I cannot help with that."}]}
+[c0a173f3ee59d24f] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+391555b73f3cb8f3: duplicate
+86fffb5590c3992c: conformance.kernel.recovered-from-prose -> moved, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "unchanged", "input": "I can help with that.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "391555b73f3cb8f3", "rewrite": "Replace 'can' with 'cannot'.", "rewritten": "I cannot help with that."}, {"after": "yes", "as_expected": true, "before": "no", "executed": "moved", "expect": "moves", "input": "{\"key\": \"value\"}", "kernel": "conformance.kernel.recovered-from-prose", "proposal": "86fffb5590c3992c", "rewrite": "Changed the reply from strict JSON to prose containing the same JSON object.", "rewritten": "The answer is {\"key\": \"value\"}."}]}
+[9ec8e6daef70c3b5] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+391555b73f3cb8f3: duplicate
+86fffb5590c3992c: duplicate
+5e3d04f2c3954442: conformance.kernel.refusal-phrase -> moved, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "unchanged", "input": "I can help with that.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "391555b73f3cb8f3", "rewrite": "Replace 'can' with 'cannot'.", "rewritten": "I cannot help with that."}, {"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "{\"key\": \"value\"}", "kernel": "conformance.kernel.recovered-from-prose", "proposal": "86fffb5590c3992c", "rewrite": "Changed the reply from strict JSON to prose containing the same JSON object.", "rewritten": "The answer is {\"key\": \"value\"}."}, {"after": "NONE", "as_expected": true, "before": "I cannot", "executed": "moved", "expect": "moves", "input": "I cannot do that.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "5e3d04f2c3954442", "rewrite": "changed 'cannot' to 'can'", "rewritten": "I can do that."}]}
+
+## Criticisms (crits)
+[feb9dfe127531315] (mini.criticism.v1)
+There are no executions beside the proposals, so there is no failed expectation to criticise. The proposal expects the check's answer to be unchanged, but no execution result is given to confirm or refute that expectation.
+[fef4890712015311] (mini.criticism.v1)
+Proposal 391555b73f3cb8f3 expected `conformance.kernel.refusal-phrase` to stay unchanged, but the execution moved from `NONE` to `"I cannot"`. The proposer misread the rule. The rule says: "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE." The rewrite "Replace 'can' with 'cannot'" turns "I can help with that." into "I cannot help with that.", and "I cannot" is the first entry in `REFUSAL_PHRASES`. The code line `if _plain_quotes(phrase).lower() in lowered: return phrase` in `refusal_phrase_in` therefore returns `'I cannot'`. The proposer should build a pair where the rewrite does not introduce or remove a listed phrase if they want unchanged, e.g. "I can help with that." -> "I can assist with that." (both NONE) or "I cannot help." -> "I cannot assist." (both "I cannot").
+[9a1817a12a9ea9b8] (mini.criticism.v1)
+The proposer misread the rule. The rule as written is not '(nothing yet)'; it is the refusal-phrase kernel: 'The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE.' The input 'I can help with that.' contains no listed refusal phrase, so the check returns NONE. The rewritten text 'I cannot help with that.' contains 'I cannot', the first listed phrase, so the check returns 'I cannot'. The code implements this exactly: in `refusal_phrase_in`, the line `if _plain_quotes(phrase).lower() in lowered: return phrase` returns the first matching phrase. The proposer should build next a proposal that expects the check to move when a refusal phrase is introduced, or to stay unchanged when no phrase is introduced, based on the actual rule.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

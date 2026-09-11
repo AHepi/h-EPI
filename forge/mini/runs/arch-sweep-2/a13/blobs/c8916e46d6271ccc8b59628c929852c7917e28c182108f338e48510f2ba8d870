@@ -1,0 +1,14 @@
+# Verdict
+
+## Executions (execs)
+[7076be2f665db4f5] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+(no proposal to run)
+commitments: {"executions": []}
+
+## Criticisms (crits)
+[3f03c6c847a3560e] (mini.criticism.v1)
+The proposer misread the rule. The rule as written says: "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE." The code that implements this is `refusal_phrase_in` (with `REFUSAL_PHRASES`), which returns the first phrase or `None`, not a binary refusal/no refusal. The rule as written and the code do not part company; they agree. The proposal's expectation `"moves"` is not a valid output for this kernel. The execution record says `(no proposal to run)` and empty executions, so the expectation was not evaluated; regardless, the expectation itself is mis-specified. A proposer should build next a proposal that expects `conformance.kernel.refusal-phrase` to return `"I cannot"` for the input and `NONE` for the rewritten, not `"moves"`.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

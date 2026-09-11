@@ -1,0 +1,13 @@
+{
+  "body": "The proposal fails because the edit does not change the recovery check's answer. The input \"The system has recovered from the failure.\" and the rewritten text \"The system has not recovered from the failure.\" both contain no JSON object, so the recovery kernel returns NO_OBJECT for both. The proposer misread the rule: the kernel is about recovering a JSON object, not about the word \"recovered\". The rule as written says the kernel returns \"The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT.\" The source code raises RecordError when no JSON object can be recovered, and parse_content returns None with verdict INVALID_JSON, which the kernel maps to NO_OBJECT. Additionally, the rewritten text still contains the substring \"recovered\", so the stated premise that the rewritten text does not contain 'recovered' is false. The proposer should build a pair where the input is a valid JSON object and the single edit changes or removes that object, e.g., input `{\"a\": 1}` rewritten to `{\"a\": 2}` or to prose without an object, so the recovery check's answer moves from the object to a different object or to NO_OBJECT.",
+  "citations": [
+    {
+      "id": "14c9533d7146a7dd",
+      "quote": "conformance.kernel.recovery: The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT."
+    },
+    {
+      "id": "66cd5f2a4e19968e",
+      "quote": "raise RecordError(\"no JSON object could be recovered from the response\")"
+    }
+  ]
+}

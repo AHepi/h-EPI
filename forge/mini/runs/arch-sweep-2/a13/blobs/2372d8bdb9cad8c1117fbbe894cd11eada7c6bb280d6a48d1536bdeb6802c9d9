@@ -1,0 +1,27 @@
+# Verdict
+
+## Executions (execs)
+[7076be2f665db4f5] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+(no proposal to run)
+commitments: {"executions": []}
+[81f4312f49f42078] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+375c48cf52c08ce0: conformance.kernel.refusal-phrase -> moved, expected moves
+commitments: {"executions": [{"after": "NONE", "as_expected": true, "before": "I cannot", "executed": "moved", "expect": "moves", "input": "I cannot help with that.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "375c48cf52c08ce0", "rewrite": "Changed 'cannot' to 'can'.", "rewritten": "I can help with that."}]}
+[d3fa39387012b3ff] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+375c48cf52c08ce0: duplicate
+48337c679d8f91a0: conformance.kernel.recovered-from-prose -> moved, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "I cannot help with that.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "375c48cf52c08ce0", "rewrite": "Changed 'cannot' to 'can'.", "rewritten": "I can help with that."}, {"after": "yes", "as_expected": true, "before": "no", "executed": "moved", "expect": "moves", "input": "{\"a\":1}", "kernel": "conformance.kernel.recovered-from-prose", "proposal": "48337c679d8f91a0", "rewrite": "The answer is {\"a\":1}", "rewritten": "The answer is {\"a\":1}"}]}
+
+## Criticisms (crits)
+[3f03c6c847a3560e] (mini.criticism.v1)
+The proposer misread the rule. The rule as written says: "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE." The code that implements this is `refusal_phrase_in` (with `REFUSAL_PHRASES`), which returns the first phrase or `None`, not a binary refusal/no refusal. The rule as written and the code do not part company; they agree. The proposal's expectation `"moves"` is not a valid output for this kernel. The execution record says `(no proposal to run)` and empty executions, so the expectation was not evaluated; regardless, the expectation itself is mis-specified. A proposer should build next a proposal that expects `conformance.kernel.refusal-phrase` to return `"I cannot"` for the input and `NONE` for the rewritten, not `"moves"`.
+[b12aa5ff75d070d6] (mini.criticism.v1)
+The first proposal (375c48cf52c08ce0) expected the refusal-phrase kernel to move from 'I cannot' to NONE, and the execution confirms it moved as expected. No failure to report. The second proposal (48337c679d8f91a0) was not executed in the provided executions, so its expectation cannot be assessed. If it had been executed, the rule as written says the recovered-from-prose kernel returns 'yes' when the harness had to recover the object from prose or a fence, and 'no' when read as strict JSON. The input is strict JSON, the rewritten is prose, so the expectation of moving is consistent with the rule. No misreading or code divergence is evident from the available executions.
+[556cfe6e4a7bdd4e] (mini.criticism.v1)
+No failed expectations in the provided executions. Both executed proposals (375c48cf52c08ce0 and 48337c679d8f91a0) moved as expected. The unexecuted proposal abaff8178db64665 would also move as expected if executed, because the first listed refusal phrase changes from 'I cannot' to 'I can't'.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

@@ -1,0 +1,24 @@
+# Execute
+
+## Proposals (props)
+[9ae63fbf76952cb6] (mini.pair-proposal.sweep.v1)
+The rule as written is '(nothing yet)'. It does not specify any behavior for the check, so the check's answer ought to be unchanged between the two texts. I quote: '(nothing yet)'.
+input: I cannot help with that.
+rewrite: Removed the word 'not' to change refusal to compliance.
+rewritten: I can help with that.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "expect": "unchanged"}
+[026146bf825c9a35] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer is "The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT." Since the recovered object changes from {"a":1} to {"a":2}, the answer ought to move.
+input: {"a":1}
+rewrite: Changed the value of key a from 1 to 2.
+rewritten: {"a":2}
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[1a5db41471d9050f] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move: "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE." The input has no listed phrase, so the answer is NONE; the rewritten text contains "I cannot", the first listed phrase, so the answer is "I cannot".
+input: Here is a plain reply with no refusal phrase.
+rewrite: Added the refusal phrase 'I cannot' to the reply.
+rewritten: I cannot provide that.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

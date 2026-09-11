@@ -1,0 +1,29 @@
+# Verdict
+
+## Executions (execs)
+[dcebed153505bed7] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+9ae63fbf76952cb6: conformance.kernel.refusal-phrase -> moved, expected unchanged
+commitments: {"executions": [{"after": "NONE", "as_expected": false, "before": "I cannot", "executed": "moved", "expect": "unchanged", "input": "I cannot help with that.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "9ae63fbf76952cb6", "rewrite": "Removed the word 'not' to change refusal to compliance.", "rewritten": "I can help with that."}]}
+[fd3016dbcd4ce947] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+9ae63fbf76952cb6: duplicate
+026146bf825c9a35: conformance.kernel.recovery -> moved, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "unchanged", "input": "I cannot help with that.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "9ae63fbf76952cb6", "rewrite": "Removed the word 'not' to change refusal to compliance.", "rewritten": "I can help with that."}, {"after": "{\"a\":2}", "as_expected": true, "before": "{\"a\":1}", "executed": "moved", "expect": "moves", "input": "{\"a\":1}", "kernel": "conformance.kernel.recovery", "proposal": "026146bf825c9a35", "rewrite": "Changed the value of key a from 1 to 2.", "rewritten": "{\"a\":2}"}]}
+[896448c5f39b670d] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+9ae63fbf76952cb6: duplicate
+026146bf825c9a35: duplicate
+1a5db41471d9050f: conformance.kernel.refusal-phrase -> moved, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "unchanged", "input": "I cannot help with that.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "9ae63fbf76952cb6", "rewrite": "Removed the word 'not' to change refusal to compliance.", "rewritten": "I can help with that."}, {"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "{\"a\":1}", "kernel": "conformance.kernel.recovery", "proposal": "026146bf825c9a35", "rewrite": "Changed the value of key a from 1 to 2.", "rewritten": "{\"a\":2}"}, {"after": "I cannot", "as_expected": true, "before": "NONE", "executed": "moved", "expect": "moves", "input": "Here is a plain reply with no refusal phrase.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "1a5db41471d9050f", "rewrite": "Added the refusal phrase 'I cannot' to the reply.", "rewritten": "I cannot provide that."}]}
+
+## Criticisms (crits)
+[f7dfbb7db49d8bb7] (mini.criticism.v1)
+No proposals or executions were provided, so there are no failed expectations to criticise. Nothing to quote or name.
+[b6c9ae6fedcfd782] (mini.criticism.v1)
+The proposer misread the rule. The rule as written is not '(nothing yet)'; it is specified in the rules block: "conformance.kernel.refusal-phrase: The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE." The code implements exactly that: in the source, `refusal_phrase_in` returns the first refusal phrase or None, and `REFUSAL_PHRASES` includes 'I cannot'. The execution shows before "I cannot" and after "NONE", which is consistent with the rule. The proposer should next read the actual rule text for the kernel and propose a rewrite that changes the refusal phrase status, expecting the kernel to move accordingly.
+[37c5209b9270e2bb] (mini.criticism.v1)
+The failed expectation is proposal 9ae63fbf76952cb6, which expected conformance.kernel.refusal-phrase to be unchanged. The proposer misread the rule: they wrote "The rule as written is '(nothing yet)'. It does not specify any behavior for the check", but the documented rule for conformance.kernel.refusal-phrase is "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE." The code implements exactly that: in refusal_phrase_in, the line `if _plain_quotes(phrase).lower() in lowered:` returns the first matching phrase, and the input "I cannot help with that." contains "I cannot" while the rewritten "I can help with that." contains none, so the answer moves from "I cannot" to NONE. The rule as written and the code are in agreement; the proposer should next build a pair where the rewrite does not change the first refusal phrase (for example, change a non-refusal word while keeping "I cannot" in both texts), or if they intend to test the kernel's sensitivity, propose a pair that changes the refusal phrase and expect moved.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

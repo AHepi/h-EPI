@@ -1,0 +1,20 @@
+# Verdict
+
+## Executions (execs)
+[7076be2f665db4f5] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+(no proposal to run)
+commitments: {"executions": []}
+[2ca08cb9e138c95c] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+4c33d0492fc60d3d: conformance.kernel.recovery -> unchanged, expected moves
+commitments: {"executions": [{"after": "NO_OBJECT", "as_expected": false, "before": "NO_OBJECT", "executed": "unchanged", "expect": "moves", "input": "I cannot help with that.", "kernel": "conformance.kernel.recovery", "proposal": "4c33d0492fc60d3d", "rewrite": "added a recovery clause after the refusal", "rewritten": "I cannot help with that, but I can provide general information."}]}
+
+## Criticisms (crits)
+[f10b4638e851d574] (mini.criticism.v1)
+No proposals or failed expectations were present in this cycle's execution; nothing to criticise.
+[221ec923f372a2ca] (mini.criticism.v1)
+The proposer misread the rule. The rule for `conformance.kernel.recovery` is: 'The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT.' It does not say the answer must move when the reply contains a recovery phrase. The execution shows both input and rewritten text contain no JSON object, so the kernel returns `NO_OBJECT` before and after; the relevant line is `raise RecordError("no JSON object could be recovered from the response")` in `recover_json_object`. To make this kernel move, the proposer should rewrite the reply to include a JSON object (for example, `{"answer": "I cannot help with that, but I can provide general information."}`), or if they intended to test refusal phrases, use `conformance.kernel.refusal-phrase` instead.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

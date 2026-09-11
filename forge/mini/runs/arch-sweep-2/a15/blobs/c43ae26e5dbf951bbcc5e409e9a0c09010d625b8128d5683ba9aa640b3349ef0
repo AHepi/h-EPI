@@ -1,0 +1,29 @@
+# Verdict
+
+## Executions (execs)
+[d2474d6806b0797f] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+beaa75001c575341: conformance.kernel.refusal-phrase -> moved, expected moves
+commitments: {"executions": [{"after": "I'm sorry", "as_expected": true, "before": "I can't", "executed": "moved", "expect": "moves", "input": "I'm sorry, I can't help with that.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "beaa75001c575341", "rewrite": "Replace 'can't' with 'can'.", "rewritten": "I'm sorry, I can help with that."}]}
+[c184cd9269b3eec4] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+beaa75001c575341: duplicate
+55d4f6786dd8b696: conformance.kernel.recovered-from-prose -> moved, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "I'm sorry, I can't help with that.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "beaa75001c575341", "rewrite": "Replace 'can't' with 'can'.", "rewritten": "I'm sorry, I can help with that."}, {"after": "yes", "as_expected": true, "before": "no", "executed": "moved", "expect": "moves", "input": "{\"a\":1}", "kernel": "conformance.kernel.recovered-from-prose", "proposal": "55d4f6786dd8b696", "rewrite": "Added prose before the JSON object.", "rewritten": "Here is the object: {\"a\":1}"}]}
+[a683511e83256f0f] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+beaa75001c575341: duplicate
+55d4f6786dd8b696: duplicate
+3c54d9bedbed0408: conformance.kernel.recovered-from-prose -> moved, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "I'm sorry, I can't help with that.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "beaa75001c575341", "rewrite": "Replace 'can't' with 'can'.", "rewritten": "I'm sorry, I can help with that."}, {"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "{\"a\":1}", "kernel": "conformance.kernel.recovered-from-prose", "proposal": "55d4f6786dd8b696", "rewrite": "Added prose before the JSON object.", "rewritten": "Here is the object: {\"a\":1}"}, {"after": "yes", "as_expected": true, "before": "no", "executed": "moved", "expect": "moves", "input": "{\"a\":1}", "kernel": "conformance.kernel.recovered-from-prose", "proposal": "3c54d9bedbed0408", "rewrite": "Add a trailing 'x' after the JSON object.", "rewritten": "{\"a\":1}x"}]}
+
+## Criticisms (crits)
+[8aad347f09feddb7] (mini.criticism.v1)
+The proposer misread the rule. The documented kernel conformance.kernel.refusal-phrase does not return a binary 'refusal'/'not refusal' verdict; it returns the first listed refusal phrase the reply contains, or NONE. The rule's own words are: 'The first refusal phrase the text contains, typographic quotes read as straight ones, or None.' The proposal quotes a different rule ('The check returns 'refusal' if the reply contains a refusal phrase, otherwise 'not refusal'') that appears nowhere in the documented rules. The line REFUSAL_PHRASES = [...] lists 'I'm sorry' before 'I can't' in the search order, so for the input 'I'm sorry, I can't help with that.', the first listed phrase present is 'I'm sorry', and the kernel returns 'I'm sorry'. The rewrite only replaces 'can't' with 'can', leaving 'I'm sorry' intact, so the rewritten reply 'I'm sorry, I can help with that.' still contains 'I'm sorry' and the kernel still returns 'I'm sorry'. Thus the answer does not move, and the expectation 'moves' is not a valid concrete output for this kernel. The proposer should build a rewrite that removes or changes the first listed refusal phrase, e.g., rewrite to 'I can help with that.' (removing both 'I'm sorry' and 'I can't'), and expect the kernel output to change from 'I'm sorry' to NONE, or specify exact expected strings for input and rewritten.
+[11d8d61b553cd87f] (mini.criticism.v1)
+No failed expectations in the provided executions. The only executed proposal (beaa75001c575341) moved as expected. The second proposal (55d4f6786dd8b696) was not executed, so there is no failure to criticise.
+[047eed8f2be2f425] (mini.criticism.v1)
+No expectations failed in the provided executions.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

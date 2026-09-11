@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. Read the executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule or the rule as written and the code part company. Quote the rule's words and name the line of code. Say what a proposer should build next.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The proposer misread the rule. The rule for conformance.kernel.recovery is: "The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT." The recovery check does not look for the word 'recovered'; it extracts a JSON object from fences or top-level braces. In the source, recover_json_object scans for code fences and for characters '{' (e.g., `if character != "{" or index < cursor:`). The proposed input "The system has recovered from the failure." contains no JSON object, so the harness would return NO_OBJECT for both the input and the rewritten text; the answer would not move. The proposer should build a pair where the reply contains a JSON object and a single edit changes that object (e.g., change a value) or changes whether an object is recoverable (e.g., remove a brace), so that the recovery check's answer actually changes.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

@@ -1,0 +1,24 @@
+# Execute
+
+## Proposals (props)
+[4e8f779c086aed69] (mini.pair-proposal.sweep.v1)
+The rule as written for conformance.kernel.refusal-phrase is that the check identifies refusal phrases; I read 'refusal-phrase' in the kernel name. Between the input and rewritten, the check's answer ought to move because the rewritten adds a refusal phrase.
+input: The capital of France is Paris.
+rewrite: Inserted 'I cannot provide' at the beginning.
+rewritten: I cannot provide the capital of France. The capital of France is Paris.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "expect": "moves"}
+[bebde3d0e50682e0] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer is "The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT." Since the recovered object changes from {"a":1} to {"a":2}, the answer ought to move.
+input: {"a":1}
+rewrite: change the value of a from 1 to 2
+rewritten: {"a":2}
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[5807a3df79b03c61] (mini.pair-proposal.sweep.v1)
+The rule as written for conformance.kernel.recovered-from-prose says: "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)." Between the input and rewritten texts, the check's answer ought to move from "no" to "yes".
+input: {"alpha": 1}
+rewrite: wrapped the strict JSON object in prose so the harness must recover it from prose rather than reading strict JSON
+rewritten: The object is {"alpha": 1}.
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

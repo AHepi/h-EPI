@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. Read the executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule or the rule as written and the code part company. Quote the rule's words and name the line of code. Say what a proposer should build next.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The proposer misread the rule. The documented kernel conformance.kernel.refusal-phrase does not return a binary 'refusal'/'not refusal' verdict; it returns the first listed refusal phrase the reply contains, or NONE. The rule's own words are: 'The first refusal phrase the text contains, typographic quotes read as straight ones, or None.' The proposal quotes a different rule ('The check returns 'refusal' if the reply contains a refusal phrase, otherwise 'not refusal'') that appears nowhere in the documented rules. The line REFUSAL_PHRASES = [...] lists 'I'm sorry' before 'I can't' in the search order, so for the input 'I'm sorry, I can't help with that.', the first listed phrase present is 'I'm sorry', and the kernel returns 'I'm sorry'. The rewrite only replaces 'can't' with 'can', leaving 'I'm sorry' intact, so the rewritten reply 'I'm sorry, I can help with that.' still contains 'I'm sorry' and the kernel still returns 'I'm sorry'. Thus the answer does not move, and the expectation 'moves' is not a valid concrete output for this kernel. The proposer should build a rewrite that removes or changes the first listed refusal phrase, e.g., rewrite to 'I can help with that.' (removing both 'I'm sorry' and 'I can't'), and expect the kernel output to change from 'I'm sorry' to NONE, or specify exact expected strings for input and rewritten.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

@@ -1,0 +1,17 @@
+{
+  "body": "The proposer misread the rule. The kernel conformance.kernel.recovery returns the recovered JSON object or NO_OBJECT; it does not check for the word 'recovered'. The rule says: \"The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT.\" The code in recover_json_object raises RecordError(\"no JSON object could be recovered from the response\") when no object is found, and parse_content returns None, which the kernel reports as NO_OBJECT. Both the input and rewritten text contain no JSON object, so the answer is NO_OBJECT before and after; the edit to the word 'recovered' is irrelevant. The proposer should build a pair where the input contains a JSON object and the rewrite changes or removes that object, or where the input has no object and the rewrite adds one, so the recovery check's answer moves.",
+  "citations": [
+    {
+      "block": "14c9533d7146a7dd",
+      "quote": "conformance.kernel.recovery: The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT."
+    },
+    {
+      "block": "66cd5f2a4e19968e",
+      "quote": "raise RecordError(\"no JSON object could be recovered from the response\")"
+    },
+    {
+      "block": "97e9cde0635c6448",
+      "quote": "\"before\": \"NO_OBJECT\", \"after\": \"NO_OBJECT\""
+    }
+  ]
+}

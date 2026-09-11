@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. Read the executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule or the rule as written and the code part company. Quote the rule's words and name the line of code. Say what a proposer should build next.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+For proposal abc2a38fb38d00f9, the proposer misread the rule. The rule says: "The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT." The check's answer is about whether a JSON object can be recovered, not about the presence of the word 'recovered'. Both the input and the rewritten text contain no JSON object, so the harness returns NO_OBJECT for both. The relevant line is `raise RecordError("no JSON object could be recovered from the response")` in `recover_json_object` (source block 66cd5f2a4e19968e), which leads to NO_OBJECT. The proposer should build a pair where the edit changes whether a JSON object is present or changes the recovered object itself, e.g., input has no object and rewritten has {"a":1}, or input has {"a":1} and rewritten has {"a":2}.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.
