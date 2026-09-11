@@ -32,6 +32,7 @@ import argparse
 import json
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -714,6 +715,11 @@ STARVED_RUN = 3
 #: run again, so the record never holds a half-written run.
 TRANSPORT_ATTEMPTS = 3
 
+#: Seconds to wait before each retry. Without a pause the three attempts are spent in seconds, which
+#: rides out nothing: four cells stopped together on ``Connection refused`` from the local proxy
+#: while it was restarting, and every one of them had burnt its three attempts before it was back.
+TRANSPORT_BACKOFF: tuple[int, ...] = (0, 20, 90)
+
 
 #: The alarm names that say this segment executed nothing at all.
 STARVED_NAMES = frozenset({"LOOP_STARVED", "NOTHING_EXECUTED"})
@@ -754,6 +760,10 @@ def _run_segment(arm: str, repeat: int, index: int, manifest_path: Path, segment
     """Run one segment, retrying a transport failure into a clean root. True when it finished."""
 
     for attempt in range(TRANSPORT_ATTEMPTS):
+        pause = TRANSPORT_BACKOFF[min(attempt, len(TRANSPORT_BACKOFF) - 1)]
+        if pause:
+            print(f"{arm}.r{repeat} s{index:02d}: waiting {pause}s before attempt {attempt + 1}", flush=True)
+            time.sleep(pause)
         dead = _set_aside(segment)
         if dead is not None:
             print(f"{arm}.r{repeat} s{index:02d}: a half-written root was set aside as {dead.name}", flush=True)
