@@ -46,6 +46,9 @@ PAIR_PROPOSAL_KIND = "mini.pair-proposal.v1"
 #: target, each with its own instruction, and the executor reads them all.
 PAIR_PROPOSAL_PREFIX = "mini.pair-proposal."
 PAIR_EXECUTION_KIND = "mini.pair-execution.v1"
+#: Every pair-execution kind shares this prefix, so a verdict stage reads the executions of its own
+#: run whichever executor produced them (M24: an open-kernel block needs no verdict of its own).
+PAIR_EXECUTION_PREFIX = "mini.pair-execution."
 
 EXPECTATIONS: tuple[str, ...] = ("moves", "unchanged")
 #: A prediction is a second reading of a pair: a seat that read something other than what the
@@ -332,7 +335,28 @@ COLUMN_UNCHANGED = "unchanged"
 COLUMNS: tuple[str, ...] = (COLUMN_MOVES, COLUMN_UNCHANGED)
 
 
+def _pair_executions_of_cycle(context: MachineContext) -> tuple[Any, ...]:
+    """This cycle's pair executions, under any pair-execution kind."""
+
+    return tuple(
+        context.state.artifacts[key]
+        for key in context.state.artifact_order
+        if str(context.state.artifacts[key]["kind_id"]).startswith(PAIR_EXECUTION_PREFIX)
+        and int(context.state.artifacts[key].get("cycle", 0)) == context.cycle
+    )
+
+
 def _execute_pairs(context: MachineContext) -> str:
+    """The registry-resolved pair executor: every kernel a person registered, and nothing else."""
+
+    return execute_pairs_with(context, resolve_kernel, PAIR_EXECUTION_KIND)
+
+
+def execute_pairs_with(
+    context: MachineContext,
+    resolve: "Callable[[str], Kernel]",
+    execution_kind: str,
+) -> str:
     """Run the pair proposals its stage's ``props`` window admits: the kernel on the input and on the rewrite.
 
     A stage that declares no ``props`` port gets this cycle's proposals, which is what every
@@ -344,7 +368,7 @@ def _execute_pairs(context: MachineContext) -> str:
 
     executions: list[dict[str, Any]] = []
     lines: list[str] = []
-    seen = _executed_before(context, PAIR_EXECUTION_KIND, ("kernel", "input", "rewritten"))
+    seen = _executed_before(context, execution_kind, ("kernel", "input", "rewritten"))
     admits = context.admits(PAIR_PROPOSAL_PREFIX)
     proposals = [
         context.state.artifacts[key]
@@ -370,7 +394,7 @@ def _execute_pairs(context: MachineContext) -> str:
             lines.append(f"{entry['proposal']}: unrunnable")
             continue
         try:
-            kernel = resolve_kernel(kernel_id)
+            kernel = resolve(kernel_id)
         except MiniError as error:
             entry.update({"executed": "unrunnable", "detail": str(error)})
             executions.append(entry)
@@ -618,7 +642,7 @@ def _verdict(context: MachineContext) -> str:
         for item in verdicts
     ]
     predictions = predictions_of(context)
-    for record in context.artifacts_of_kind(PAIR_EXECUTION_KIND, cycle=context.cycle):
+    for record in _pair_executions_of_cycle(context):
         parsed = _proposal_of(context, record) or {}
         for entry in parsed.get("executions", []):
             executed, expect = str(entry.get("executed")), str(entry.get("expect", ""))
