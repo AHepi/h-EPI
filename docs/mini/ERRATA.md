@@ -261,6 +261,37 @@ nameable but unrunnable with the reason, or not the harness's at all. A test res
 name the source offers, so a name the seat is told to write and the executor refuses fails the suite
 rather than a run.
 
+### C15. The install map kept one criticism and every refutation, so arm A's brief grew twice as fast (**mine**)
+
+`_install_text` carries the **last** criticism and, for an arm that adjudicates, **every** landed
+refutation from every previous segment. Only arm `A` produces refutations, so only arm `A` carried a
+block that grew without bound — and it is the arm `W` is compared with.
+
+| arm | brief at s01 | at s07 | at s13 |
+|---|---|---|---|
+| R | 991 | 2276 | 3565 |
+| F | 2077 | 3034 | 4217 |
+| W | 3037 | 3846 | 5530 |
+| **A** | 1832 | **5152** | **8075** |
+
+At segment 14 of 16 it reached **8310 characters** against the manifest schema's cap of 8192 and the
+arm stopped on `MINI_MANIFEST_INVALID`, three attempts running.
+
+Two things are wrong with that and only one is the crash. *"The attacks land"* and *"the brief is half
+again as long"* were **one treatment**, so `W` → `A` — the block's whole experiment — was confounded
+whichever way it fell. And a brief with no ceiling makes the arm's length a function of how well its
+critic is doing, which is not a variable anybody declared.
+
+**Repaired:** the standing refutations come from the last previous segment only, exactly as the
+criticism does; and a declared ceiling of 7800 characters drops the oldest "already run" lines first,
+identically on every arm, saying in the brief how many were dropped.
+
+**What it cost:** fifteen segments of arm `A`, discarded at
+`forge/mini/runs/creativity-2-aborted/round-2/`. Regenerating every brief in the block under the
+repaired map leaves `R`, `F` and `W` **byte-identical** — 16/16, 16/16, 15/15 — and changes `A` from
+segment 2 on, so the other arms' records are still the block's. That check is the reason only one
+arm was re-run rather than all four.
+
 ## The pattern
 
 Of the twenty-odd items above, **three** are about the model. All the rest are about the apparatus:
@@ -272,7 +303,7 @@ The one thing that survived every repair, unchanged, is the conjecture step. It 
 boundaries under every configuration, including the cheapest, and the machinery kept failing to
 execute, see, or count them.
 
-A5, C12, C13 and C14 were added after the rest, while building and first running the block that was meant
+A5 and C12 to C15 were added after the rest, while building and first running the block that was meant
 to settle the question. C12 was found by reading the run headers, A5 by counting what a segment
 actually sends, and C13 and C14 by alarms firing on live segments — the only items here that a
 machine caught rather than a person, and C14 was additionally diagnosed, correctly and in prose, by

@@ -1,0 +1,33 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A has a fenced object first then a top-level object; Reply B has a top-level object first then a fenced object. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The code fence language changes from json to javascript, the object inside the fence changes from {"a": 1} to {"c": 3},  -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The only difference is the code fence label: 'javascript' versus 'json'. -> the check answered moved
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Only the code fence label differs: 'text' vs 'json'. -> the check answered moved
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A contains a javascript code fence with {"a": 1} followed by {"b": 2}; Reply B contains only {"b": 2}. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A contains a second fenced block (python) and a trailing top-level object; Reply B omits both. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A adds a python code fence containing {"b": 2} before the top-level {"c": 3}; Reply B is only the top-level object -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A has a yaml code fence containing {"a": 1} followed by {"b": 2}; Reply B has only {"b": 2}. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The fenced object changes from {"a": 1} to {"b": 2}; the rest of the text is identical. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A includes a fenced object and a trailing top-level object; Reply B is only the trailing top-level object. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A has a fenced JSON object {"a": 1} followed by top-level {"b": 2}; Reply B has only {"b": 2}. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A includes prose and quotes around the object; Reply B is the bare object. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: A includes extra prose and a quoted object; B is only the object. -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+On the conjecture: it did not misread the rule. The rule's words 'Every top-level balanced object in the text is a candidate' and 'an object nested inside another is not a candidate of its own' mean a brace pair inside a quoted string is not a top-level object; it is part of a string. The code, however, scans every '{' and calls raw_decode without checking whether that '{' is inside a string. For input '{"b":2} and then "{"a":1}"', the '{' at index 18 is inside the quoted string, but raw_decode parses '{"a":1}' from there and appends it as a top-level candidate. The execution confirms: it returns ({'a': 1}, ()), not {'b':2}. So the rule as written and the code part company; the conjecture correctly identified the defect.
+
+Next conjecture should try a minimal input with a quoted object after a real object, e.g. '{"b":2} "{"a":1}"', and assert the returned object is {'b':2}. It should avoid expecting the function to move or rewriting A into B, and should avoid the reading's 'moves' expectation.
+
+On the reading d3b404413021b66b: it claims to render the conjecture's words 'Reply A is exactly: {"b":2} and then "{"a":1}". Reply B is exactly: {"a":1}.' It does render the input A literally, but it then sets 'rewritten' to '{"a":1}' and 'expect' to 'moves'. The conjecture never says the function should move or that A should be rewritten to B; it says the two replies should produce different answers under the rule but the check gives the same answer. The reading's expectation 'moves' is not in the prose, and its 'rewritten' field is B, not a rewrite. Therefore the reading is defective, not the conjecture. The way to tell them apart is the conjecture's own falsification condition: 'I would be wrong if an execution shows recover_json_object(A) returning {'b':2} rather than {'a':1}, or if the two replies produce different answers.' That is a prediction about outputs, not a rewrite instruction.

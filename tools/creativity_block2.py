@@ -255,15 +255,33 @@ def manifest(arm: str, repeat: int, index: int, problem: str) -> dict[str, Any]:
 # ---------------------------------------------------------------------------------------------
 
 
+#: The most a carried brief may grow to. The manifest schema caps ``problem`` at 8192 characters and
+#: arm A reached 8310 at segment 14 of 16, which ended the arm on a schema refusal rather than on
+#: anything about the subject. The ceiling is declared, applies identically to every arm, and drops
+#: the OLDEST "already run" lines first, because the standing refutations and the last criticism are
+#: the part of the brief that is about what to do next.
+BRIEF_CEILING = 7800
+
+
 def _install_text(previous: Sequence[Path]) -> str:
-    """What the next segment's operative brief becomes. Byte-identical logic to block 1's map."""
+    """What the next segment's operative brief becomes.
+
+    The standing refutations come from the LAST previous segment only, exactly as the criticism
+    does. Accumulating every landed attack from every segment forever was an inconsistency in this
+    map's own design: it kept one criticism and all refutations, so arm A's brief grew at twice the
+    rate of the arms it is compared with, and "the attacks land" and "the brief is much longer" were
+    one treatment.
+    """
 
     tried: list[str] = []
     last_criticism = ""
     standing: list[str] = []
     for root in previous:
         executions, _, criticisms = _record(root)
-        standing.extend(_standing_of(root))
+        # rstripped here rather than in block 1's tool, which stays as it ran: the truncation at
+        # 160 characters can cut mid-word and leave a trailing space, which then reaches a record
+        # blob and stays there for good, because a record is never edited.
+        standing = [line.rstrip() for line in _standing_of(root)] or standing
         for entry in executions:
             kernel = str(entry.get("kernel", "?"))
             outcome = str(entry.get("executed", "?"))
@@ -285,7 +303,37 @@ def _install_text(previous: Sequence[Path]) -> str:
                      "nothing has yet overturned that attack. Do not re-propose one.")
     if last_criticism:
         parts.extend(["", "## The standing criticism of the last attempt", "", last_criticism.strip()])
-    return "\n".join(parts)
+    return _under_ceiling(parts, len(tried))
+
+
+def _under_ceiling(parts: list[str], tried: int) -> str:
+    """Hold the brief to the ceiling: drop the oldest attempts first, then trim the tail.
+
+    The oldest "already run" lines go first because the standing refutations and the last criticism
+    are the part of the brief that is about what to do next. If dropping every attempt but one still
+    leaves it over, the tail is cut, because a brief the schema refuses ends the arm and a brief that
+    is one paragraph short does not.
+    """
+
+    def joined(rows: list[str]) -> str:
+        return "\n".join(rows)
+
+    if len(joined(parts)) <= BRIEF_CEILING:
+        return joined(parts)
+    note = "- ({} earlier attempt(s) dropped: this brief is held to {} characters)"
+    rows = list(parts)
+    first = next((i for i, line in enumerate(rows) if line.startswith("- ")), None)
+    dropped = 0
+    while first is not None and dropped < max(tried - 1, 0) and len(joined(rows)) > BRIEF_CEILING:
+        rows.pop(first)
+        dropped += 1
+    if dropped:
+        rows.insert(first, note.format(dropped, BRIEF_CEILING))
+    text = joined(rows)
+    if len(text) > BRIEF_CEILING:
+        cut = "\n\n(this brief was cut to fit its ceiling)"
+        text = text[:BRIEF_CEILING - len(cut)].rstrip() + cut
+    return text
 
 
 def _segment_dir(root: Path, arm: str, repeat: int, index: int) -> Path:

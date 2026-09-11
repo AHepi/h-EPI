@@ -166,3 +166,34 @@ class StarvationStreakTests(unittest.TestCase):
 
     def test_the_stop_needs_more_than_one_segment(self) -> None:
         self.assertGreater(BLOCK.STARVED_RUN, 1)
+
+
+class BriefCeilingTests(unittest.TestCase):
+    """A brief the manifest schema refuses ends the arm; one paragraph shorter does not.
+
+    Arm A reached 8310 characters at segment 14 of 16 and MINI_MANIFEST_INVALID stopped it three
+    attempts running. The schema caps `problem` at 8192.
+    """
+
+    def test_a_short_brief_is_returned_unchanged(self) -> None:
+        self.assertEqual(BLOCK._under_ceiling(["a", "b"], 0), "a\nb")
+
+    def test_the_oldest_attempts_go_first_and_the_brief_says_how_many(self) -> None:
+        parts = ["head", ""] + [f"- attempt {i} {'z' * 200}" for i in range(60)] + ["tail"]
+        out = BLOCK._under_ceiling(list(parts), 60)
+        self.assertLessEqual(len(out), BLOCK.BRIEF_CEILING)
+        self.assertIn("earlier attempt(s) dropped", out)
+        self.assertIn("tail", out, "the newest information is what the ceiling protects")
+
+    def test_a_brief_with_nothing_droppable_is_cut_rather_than_left_over(self) -> None:
+        out = BLOCK._under_ceiling(["head", "", "- one", "q" * 9000], 1)
+        self.assertLessEqual(len(out), BLOCK.BRIEF_CEILING)
+        self.assertIn("cut to fit", out)
+
+    def test_the_ceiling_leaves_room_under_the_schema(self) -> None:
+        import json as _json
+        from pathlib import Path as _Path
+
+        schema = _json.loads((ROOT / "forge/mini/schema/mini-manifest.schema.json").read_text())
+        self.assertLess(BLOCK.BRIEF_CEILING, schema["properties"]["problem"]["maxLength"])
+        _ = _Path

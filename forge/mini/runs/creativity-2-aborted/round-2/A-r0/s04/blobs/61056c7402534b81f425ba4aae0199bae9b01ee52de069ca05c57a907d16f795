@@ -1,0 +1,33 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+I am testing open:creib.forge.conformance.oracle.recover_json_object. Its documented rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." Reply A is the text that begins with a line containing three backtick characters followed by the word ruby, then a newline, then the characters {"a": 1}, then a newline, then a line containing three backtick characters, then a newline, then the characters {"b": 2}. Reply B is the text consisting only of the characters {"b": 2}. The rule requires Reply A to score {"a": 1}, because the ruby fence is a code fence and it holds {"a": 1}, and that is the last object inside any fence. The rule requires Reply B to score {"b": 2}, because there is no fence, so the last top-level object is {"b": 2}. The check, however, returns {"b": 2} for both replies: its _FENCE regex only matches ```json, ```JSON, or a bare ```, so it does not recognize the ruby fence, and it falls through to the top-level pool for Reply A, returning the last top-level object {"b": 2}. This makes the check give the same answer on a pair the rule requires it to tell apart. I would be wrong if the check returned {"a": 1} for Reply A and {"b": 2} for Reply B, or if the documented rule were read to exclude language-tagged fences other than json/JSON/bare.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

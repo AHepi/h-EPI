@@ -1,0 +1,16 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+The conjecture did not misread the rule. The rule says 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' 'Any fence' includes a ```text fence, so Reply A's fenced object {"a":1} should be scored. The code's _FENCE regex only matches fences tagged json or JSON or with no tag, so it does not see the ```text fence and returns the later top-level object {"a":2}. The execution confirms this: it returns ({'a': 2}, ()) unchanged. Thus the rule as written and the code part company. A next conjecture should test a fence with a non-json tag such as ```text or ```python and assert recover_json_object returns the fenced object, not a later top-level object. It should avoid repeating the assumption that the regex matches all fences, and avoid using only json/JSON/no-tag fences.

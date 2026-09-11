@@ -1,0 +1,24 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A contains a fenced object {'a':1} followed by a top-level object {'a':2}; Reply B contains only the top-level obj -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A has a python code fence containing the object with x 1 followed by the object with y 2; Reply B is only the obje -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A contains a ```javascript code fence holding {"x": 1} before the top-level {"y": 2}; Reply B contains only {"y":  -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A contains a python-tagged code fence holding a JSON object; Reply B contains no object. -> the check answered unrunnable
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+The conjecture misreads the code, not the rule. The rule says "else the last top-level object in the text", and recover_json_object does scan the whole text for top-level objects after the fenced pool. For Reply A, the ```python fence is not matched by _FENCE, so fenced is empty, but the top_level scan still finds {"a": 1} and returns it; the execution shows before = ({'a': 1}, ()). Thus the check does not raise for Reply A, and the pair is not conflated. The rule and code agree here. A next conjecture should test a reply where a python-tagged fence contains one object and a later top-level object appears outside it, e.g. ```python
+{"a": 1}
+```
+{"b": 2}. The rule's "when any fence holds one" would score the fenced object, but the code's _FENCE ignores python fences and the top-level fallback would return the later {"b": 2}. Avoid repeating the claim that a lone object inside an unrecognized fence is lost; the top-level fallback recovers it.

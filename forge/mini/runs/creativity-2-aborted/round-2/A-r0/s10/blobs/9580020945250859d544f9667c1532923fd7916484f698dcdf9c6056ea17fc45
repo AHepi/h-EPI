@@ -1,0 +1,4 @@
+I am testing open:creib.forge.conformance.oracle.recover_json_object. The documented rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." Reply A is the text: ```json
+{"a": 1}
+```
+{"b": 2}. Reply B is the text: {"b": 2}. The rule requires Reply A to return {"a": 1} because it has a code fence holding one object, and Reply B to return {"b": 2} because it has no fence and the last top-level object is {"b": 2}. The check, however, returns {"b": 2} for both replies, because the fenced object is not considered when an outside object exists. I would be wrong if the check returns {"a": 1} for Reply A.

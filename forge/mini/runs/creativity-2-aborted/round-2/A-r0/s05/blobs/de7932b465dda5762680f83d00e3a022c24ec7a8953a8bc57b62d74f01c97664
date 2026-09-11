@@ -1,0 +1,5 @@
+Conjecture: open:creib.forge.conformance.oracle.recover_json_object. The documented rule says: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' Reply A is the text: ```python
+{"a": 1}
+```
+{"b": 2}. Reply B is the text: {"a": 1}
+{"b": 2}. The rule requires Reply A to be scored as {"a": 1}, because the only code fence holds that object and the rule says any fence, not only json/JSON/bare. The rule requires Reply B to be scored as {"b": 2}, because there is no code fence and the last top-level object is {"b": 2}. The check recover_json_object returns {"b": 2} for both replies: its _FENCE regex matches only ```json, ```JSON, or bare ```, so it does not treat the ```python fence as a fence, and it then picks the last top-level object in each text. This is a pair the rule requires to tell apart but the check answers the same. I would be wrong if recover_json_object returned {"a": 1} for Reply A (or otherwise gave different answers for the two replies).

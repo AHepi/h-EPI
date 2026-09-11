@@ -1,0 +1,15 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A contains a Python code fence with {"a": 1} followed by a top-level {"b": 2}; Reply B omits the fence and the {"a -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+The conjecture did not misread the rule. The rule as written and the code part company. The rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." For Reply A, the ```python fence contains {"a": 1}, so the rule requires {"a": 1}. The code's fence regex `_FENCE = re.compile('```(?:json|JSON)?\\s*(.*?)```', re.DOTALL)` only treats a fence as a fence when the info string is absent or exactly json/JSON; for ```python it does not skip the language tag, so the captured candidate is `python\n{"a": 1}\n`, which fails to parse. The code then falls through to the top-level pool and returns the last top-level object, {"b": 2}. The execution confirms this: input Reply A returned {'b': 2}. A next conjecture should try the same two replies but with a ```json fence (or a bare ``` fence) instead of ```python, expecting Reply A to return {"a": 1} and Reply B {"b": 2}; it should avoid repeating the ```python input as if it were a misread of the rule, and avoid claiming the regex captures only fenced content without the language tag.

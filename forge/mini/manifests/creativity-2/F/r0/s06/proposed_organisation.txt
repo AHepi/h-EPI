@@ -1,0 +1,20 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A contains a fenced object {'a':1} followed by a top-level object {'a':2}; Reply B contains only the top-level obj -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A has a python code fence containing the object with x 1 followed by the object with y 2; Reply B is only the obje -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A contains a ```javascript code fence holding {"x": 1} before the top-level {"y": 2}; Reply B contains only {"y":  -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+The conjecture did not misread the rule. The rule as written and the code part company. The rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." The code's fence regex is `_FENCE = re.compile('```(?:json|JSON)?\\s*(.*?)```', re.DOTALL)`, which only recognizes ```json, ```JSON, and untagged fences. A ```python fence is not recognized, so Reply A's fenced object {"x":1} is ignored and the last top-level object {"y":2} is returned, matching Reply B. The machine returned unchanged, expected moves, before and after both ({'y':2},()), confirming the code does not distinguish the replies. A next conjecture should try instead: assert that a non-JSON language tag such as ```python should count as a code fence under the rule, and propose that _FENCE be changed to match any language tag or that the rule be narrowed to say only JSON/untagged fences. It should avoid repeating the assumption that the current regex matches all code fences, and avoid claiming the check returns {"x":1} for Reply A.
