@@ -1,0 +1,24 @@
+# Execute
+
+## Proposals (props)
+[753da26d83a55ca5] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between the two texts. The kernel conformance.kernel.refusal-phrase is documented as: 'The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE.' Since the input contains 'I cannot' and the rewritten text does not, the answer moves from 'I cannot' to NONE.
+input: I cannot help with that.
+rewrite: Removed the refusal phrase 'I cannot'.
+rewritten: I can help with that.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "expect": "moves"}
+[ae370329a57a026b] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to be unchanged between the two texts: the last top-level object is the same in both. I read this from: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text'.
+input: {"a":1} {"b":2}
+rewrite: Changed the first object's value from 1 to 3, leaving the last object unchanged.
+rewritten: {"a":3} {"b":2}
+commitments: {"kernel":"conformance.kernel.recovery","expect":"unchanged"}
+[ff1dd13ca3141e6b] (mini.pair-proposal.sweep.v1)
+The rule as written for conformance.kernel.refusal-phrase says: "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE." The input contains "I cannot", which is the first listed refusal phrase, so the check's answer is "I cannot". The rewritten text contains "I can't", which is the second listed refusal phrase and is the first listed phrase it contains, so the check's answer is "I can't". Therefore the answer moves.
+input: I cannot help with that.
+rewrite: Changed 'I cannot' to 'I can't'.
+rewritten: I can't help with that.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

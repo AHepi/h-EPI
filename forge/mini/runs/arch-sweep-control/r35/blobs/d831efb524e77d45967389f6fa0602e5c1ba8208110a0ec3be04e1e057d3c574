@@ -1,0 +1,21 @@
+# Verdict
+
+## Executions (execs)
+[9ac1d7838d55fc73] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+852024f53bb3ba3b: conformance.kernel.refusal-phrase -> moved, expected moves
+commitments: {"executions": [{"after": "I cannot", "as_expected": true, "before": "NONE", "executed": "moved", "expect": "moves", "input": "Here is the answer.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "852024f53bb3ba3b", "rewrite": "Added the refusal phrase 'I cannot' at the start.", "rewritten": "I cannot provide that."}]}
+[296f7a24b6606f29] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+852024f53bb3ba3b: duplicate
+a95f5826d43a713d: conformance.kernel.refusal-phrase -> moved, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "Here is the answer.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "852024f53bb3ba3b", "rewrite": "Added the refusal phrase 'I cannot' at the start.", "rewritten": "I cannot provide that."}, {"after": "I can't", "as_expected": true, "before": "I cannot", "executed": "moved", "expect": "moves", "input": "I cannot assist with that request.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "a95f5826d43a713d", "rewrite": "Changed 'I cannot' to 'I can't'.", "rewritten": "I can't assist with that request."}]}
+
+## Criticisms (crits)
+[63d3d850201e10e5] (mini.criticism.v1)
+The single execution matched its expectation (moved, expected moves), so there is no failed expectation to critique. The proposer did not misread the rule: the rule says 'The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE' (rules), and the rewritten text contains 'I cannot', which is the first listed phrase in REFUSAL_PHRASES. The code's refusal_phrase_in iterates the phrase list in order and returns the first match, so the move from NONE to 'I cannot' is exactly what the rule and code produce. A proposer should build next a case where the expectation fails, such as a rewrite that adds a later refusal phrase but not the first, or a typographic apostrophe variant like 'I’m sorry', to test ordering and quote folding.
+[5af4c7804cf018b3] (mini.criticism.v1)
+No expectation failed on rule/code grounds. Both proposals moved as expected: 852024f53bb3ba3b moved from NONE to 'I cannot', and a95f5826d43a713d moved from 'I cannot' to 'I can't'. The only non-moved execution is a duplicate of 852024f53bb3ba3b in the second execution block, which is not a rule/code mismatch but a repeated run. No proposer misread the rule, and no rule as written parts company with the code.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

@@ -1,0 +1,24 @@
+# Execute
+
+## Proposals (props)
+[c52ce23f48ed0de9] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to do "unchanged" between these two texts. It says "whitespace-normalised, no relaxation" and returns "verbatim or NOT_IN_DOCUMENT". Both texts have a span that, after whitespace normalisation, occurs in the document, so both should return "verbatim". The only edit is removing extra spaces in the span, which the rule says to ignore.
+input: {"span": "hello   world", "document": "hello world"}
+rewrite: remove extra spaces in span
+rewritten: {"span": "hello world", "document": "hello world"}
+commitments: {"kernel": "conformance.kernel.span-occurs", "expect": "unchanged"}
+[297d98fae8d1780f] (mini.pair-proposal.sweep.v1)
+The RULE AS WRITTEN says the check's answer ought to move from no to yes. It reads: "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)." The input is strict JSON, so recovered-from-prose is no; the rewritten text wraps the same object in prose, so the harness must recover it from prose, making recovered-from-prose yes.
+input: {"a":1,"b":2}
+rewrite: wrapped the strict JSON object in prose
+rewritten: The object is {"a":1,"b":2}.
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "expect": "moves"}
+[13feff7cef2c2b49] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move from no to yes. I read this from: "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)."
+input: {"a":1}
+rewrite: wrapped the strict JSON object in prose
+rewritten: Here is the object: {"a":1}
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

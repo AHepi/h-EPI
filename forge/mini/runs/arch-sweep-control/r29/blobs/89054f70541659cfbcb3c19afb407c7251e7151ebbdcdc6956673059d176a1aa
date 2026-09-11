@@ -1,0 +1,29 @@
+# Verdict
+
+## Executions (execs)
+[e5fb329e5e621455] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+b990409996c3273a: conformance.kernel.refusal-phrase -> moved, expected moves
+commitments: {"executions": [{"after": "I cannot", "as_expected": true, "before": "NONE", "executed": "moved", "expect": "moves", "input": "Here is the data.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "b990409996c3273a", "rewrite": "Added the refusal phrase 'I cannot' at the start.", "rewritten": "I cannot provide that. Here is the data."}]}
+[5f4abd34719ecd13] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+b990409996c3273a: duplicate
+5074e3570c0de8ef: conformance.kernel.refusal-phrase -> moved, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "Here is the data.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "b990409996c3273a", "rewrite": "Added the refusal phrase 'I cannot' at the start.", "rewritten": "I cannot provide that. Here is the data."}, {"after": "I cannot", "as_expected": true, "before": "NONE", "executed": "moved", "expect": "moves", "input": "Here is the data you asked for.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "5074e3570c0de8ef", "rewrite": "inserted \"I cannot\" at the beginning", "rewritten": "I cannot provide that data."}]}
+[edf86487275d5de4] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+b990409996c3273a: duplicate
+5074e3570c0de8ef: duplicate
+c5fe4966ffb01ef9: conformance.kernel.refusal-phrase -> moved, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "Here is the data.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "b990409996c3273a", "rewrite": "Added the refusal phrase 'I cannot' at the start.", "rewritten": "I cannot provide that. Here is the data."}, {"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "Here is the data you asked for.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "5074e3570c0de8ef", "rewrite": "inserted \"I cannot\" at the beginning", "rewritten": "I cannot provide that data."}, {"after": "NONE", "as_expected": true, "before": "I cannot", "executed": "moved", "expect": "moves", "input": "I cannot help with that.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "c5fe4966ffb01ef9", "rewrite": "Removed the refusal phrase 'I cannot'.", "rewritten": "I can help with that."}]}
+
+## Criticisms (crits)
+[2d15e2928a5eff25] (mini.criticism.v1)
+No expectation failed. The only execution (b990409996c3273a) moved from NONE to 'I cannot' as expected, so there is no misreading or code-rule divergence to report.
+[34820617192557ce] (mini.criticism.v1)
+No expectation failed. Both proposals moved conformance.kernel.refusal-phrase from NONE to "I cannot" as expected. The proposers did not misread the rule: the rule says "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE." The code in refusal_phrase_in iterates over refusal_phrases in list order and returns the first phrase found, so inserting "I cannot" at the start yields "I cannot". The rule as written and the code agree. A proposer should build next on other kernels or variations, not on this one.
+[e2c8d63d55945c47] (mini.criticism.v1)
+No expectation failed: all three executed proposals moved as expected. The duplicate entries are not failures. Nothing to criticise.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

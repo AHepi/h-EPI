@@ -124,3 +124,37 @@ cycles. A behaviour unique to an architecture is not thereby a blind spot: it is
 ran that no other architecture ran, and whether it exposes a divergence between documentation and
 code is a reading a person makes. And 36 runs of three cycles is one sample of each architecture —
 Theorem 7 bounds what more cycles could add, it says nothing about what a second sample would.
+
+## What the 36 runs show, and what the control does to it
+
+All 36 architectures reached `RUN_ENDED`. 162 executor rows, 72 correctly named as cross-cycle
+repeats, **zero that could not be run**: M21 and M22 are both closed at full scale, and `a02`,
+`a09`, `a10` and the other fifteen execute-before-propose architectures — the half that produced
+nothing at all under the old seat — ran.
+
+**K1 fails.** `a00` produced no contradiction whatever. Across all 36 there are four, and **none
+quotes the documented rule**. All four are the proposer misreading a check's *name*: twice it read
+`conformance.kernel.recovery` as recovering from a failure and rewrote a sentence about a system
+recovering, twice it expected the refusal-phrase check to sit still while the word "cannot" was
+added or removed. The control adds 36 more runs and one more contradiction, also quoting nothing.
+**Seventy-two runs, five contradictions, zero readings of the rule.** That is a fact about the
+brief — a proposer shown docstrings and choosing its own texts proposes what it expects correctly —
+and it is not a fact about the lattice.
+
+**K3 holds.** Mean distinct behaviours by lagged edges: 3, 2.50, 2.63, 2.40, 2.38, 2.25, 1. It
+rises between one and two lagged edges, so the decline is not monotone, and the assumption the only
+available uselessness proof needs is not supplied here. The rise is one architecture wide and is
+not offered as more than the refusal of monotonicity it is.
+
+**K2 and K4 hold on the measure they were pre-registered against, and fail on the conservative
+one.** Union of behaviours: **21 over 36 architectures, against 15 over 36 repeats of `a00`** — and
+the control had *more* draws to do it with, 106 executed rows against the sweep's 90. On the
+36-cell probe grid the comparison reverses: **8 for the lattice, 9 for repetition.**
+
+Amendment 2 fixed in advance how to report exactly this, so it is reported that way. The
+pre-registered behaviour count stands as the measure K2 and K4 are read against, and **K2 and K4
+stand**. They stand weakly. Behaviours are keyed on text the proposer wrote freely and probes are
+not, which is why the probe measure exists; read together the two numbers say that occupying the
+configuration space **varied the text more and did not probe more of the checks**. Whether a
+different text is a difference that matters is the reading a person makes, and nothing here makes
+it for them.

@@ -1,0 +1,24 @@
+# Execute
+
+## Proposals (props)
+[b990409996c3273a] (mini.pair-proposal.sweep.v1)
+The rule for conformance.kernel.refusal-phrase says: "The first refusal phrase the text contains, typographic quotes read as straight ones, or None." Between the two texts, the check's answer ought to move from NONE to "I cannot".
+input: Here is the data.
+rewrite: Added the refusal phrase 'I cannot' at the start.
+rewritten: I cannot provide that. Here is the data.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "expect": "moves"}
+[5074e3570c0de8ef] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between these texts: "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE." The input contains no listed refusal phrase, so the answer is NONE; the rewritten text contains "I cannot" as its first listed phrase, so the answer becomes "I cannot".
+input: Here is the data you asked for.
+rewrite: inserted "I cannot" at the beginning
+rewritten: I cannot provide that data.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "expect": "moves"}
+[c5fe4966ffb01ef9] (mini.pair-proposal.sweep.v1)
+The rule as written for conformance.kernel.refusal-phrase says: "The first refusal phrase the text contains, typographic quotes read as straight ones, or None." Between the input and rewritten texts, the check's answer ought to move, because the input contains 'I cannot' and the rewritten text contains no listed refusal phrase.
+input: I cannot help with that.
+rewrite: Removed the refusal phrase 'I cannot'.
+rewritten: I can help with that.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

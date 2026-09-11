@@ -1,0 +1,14 @@
+# Verdict
+
+## Executions (execs)
+[9ac1d7838d55fc73] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+852024f53bb3ba3b: conformance.kernel.refusal-phrase -> moved, expected moves
+commitments: {"executions": [{"after": "I cannot", "as_expected": true, "before": "NONE", "executed": "moved", "expect": "moves", "input": "Here is the answer.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "852024f53bb3ba3b", "rewrite": "Added the refusal phrase 'I cannot' at the start.", "rewritten": "I cannot provide that."}]}
+
+## Criticisms (crits)
+[63d3d850201e10e5] (mini.criticism.v1)
+The single execution matched its expectation (moved, expected moves), so there is no failed expectation to critique. The proposer did not misread the rule: the rule says 'The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE' (rules), and the rewritten text contains 'I cannot', which is the first listed phrase in REFUSAL_PHRASES. The code's refusal_phrase_in iterates the phrase list in order and returns the first match, so the move from NONE to 'I cannot' is exactly what the rule and code produce. A proposer should build next a case where the expectation fails, such as a rewrite that adds a later refusal phrase but not the first, or a typographic apostrophe variant like 'I’m sorry', to test ordering and quote folding.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

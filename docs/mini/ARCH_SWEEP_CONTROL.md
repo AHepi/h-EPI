@@ -49,3 +49,41 @@ A union that is smaller does not make the difference *architectural* — it make
 the-draw, which is weaker and is all a single control buys. One wiring, one model, one task, three
 cycles, one repeat count. And nothing here is `Origin`: `New` remains unestablishable, as it was
 before.
+
+## What the control shows
+
+36 repeats of `a00`, all reaching `RUN_ENDED`. 216 executor rows, 110 named as repeats, **zero that
+could not be run**, 106 executed.
+
+- **C1 holds.** The 36 repeats produced **28 distinct behaviour sets**. Running one architecture
+  thirty-six times is thirty-six different runs, so the control measures the draw, which is what it
+  was for.
+- **C2 holds.** Union of behaviours over 36 repeats of `a00` is **15**, against **21** over the 36
+  distinct architectures — and the control had more executed rows to reach it with, 106 against 90.
+  **K2 and K4 are not withdrawn.**
+- **C3 holds, and by more than it predicted.** The prediction was at least 2 distinct cycle-1
+  proposals from a byte-identical prompt; there are **6 by content** (7 by bytes — one differs only
+  in the JSON's whitespace, which is worth saying once rather than counting twice). Among them a
+  kernel the brief never named, `conformance.kernel.span-occurs`. ARCH-SWEEP-1 saw 3 across its own
+  18 byte-identical prompts; 36 draws of the same prompt find 6.
+
+## The result C2 does not cover
+
+C2 was written against the pre-registered behaviour measure. The probe measure from ARCH-SWEEP-1's
+Amendment 2 answers the opposite way: **9 probe cells for 36 repeats of one architecture, 8 for 36
+distinct architectures.** On the finite grid — which kernel was probed, what was expected, what
+happened — repetition covered slightly *more* than the lattice did, with more draws.
+
+So the two measures split, and the split is the finding. Occupying the configuration space produced
+more distinct behaviour triples per run than repeating one corner of it, and did not produce more
+distinct probe cells. Since a behaviour triple is keyed on text the proposer chose and a probe cell
+is not, the plainest reading is that the lattice **varies what gets written and not what gets
+tested**. K2 and K4 survive their own test on the record; they survive it holding a result that
+says what surviving it is worth.
+
+## What this still cannot settle
+
+A smaller union under repetition does not make the difference architectural — it makes it
+not-obviously-the-draw, which is weaker, and is all one control buys. One wiring, one model, one
+task, three cycles, one repeat count, and a proposer whose answer to a byte-identical prompt varies
+six ways. Nothing here is `Origin`; `New` remains unestablishable.

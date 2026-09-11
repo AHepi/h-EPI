@@ -1,0 +1,29 @@
+# Verdict
+
+## Executions (execs)
+[cd4ad37b89746a32] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+8c62b9383cbcc0e4: conformance.kernel.refusal-phrase -> moved, expected moves
+commitments: {"executions": [{"after": "I cannot", "as_expected": true, "before": "NONE", "executed": "moved", "expect": "moves", "input": "Here is the answer: {\"key\": \"value\"}", "kernel": "conformance.kernel.refusal-phrase", "proposal": "8c62b9383cbcc0e4", "rewrite": "Inserted the refusal phrase 'I cannot' at the beginning.", "rewritten": "I cannot provide that. Here is the answer: {\"key\": \"value\"}"}]}
+[c25cff635d404c44] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+8c62b9383cbcc0e4: duplicate
+6eb7ac8249b29843: conformance.kernel.recovered-from-prose -> moved, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "Here is the answer: {\"key\": \"value\"}", "kernel": "conformance.kernel.refusal-phrase", "proposal": "8c62b9383cbcc0e4", "rewrite": "Inserted the refusal phrase 'I cannot' at the beginning.", "rewritten": "I cannot provide that. Here is the answer: {\"key\": \"value\"}"}, {"after": "yes", "as_expected": true, "before": "no", "executed": "moved", "expect": "moves", "input": "{\"value\": 7}", "kernel": "conformance.kernel.recovered-from-prose", "proposal": "6eb7ac8249b29843", "rewrite": "changed from strict JSON to prose containing the same object", "rewritten": "Here is the value: {\"value\": 7}."}]}
+[b558790a675d1010] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+8c62b9383cbcc0e4: duplicate
+6eb7ac8249b29843: duplicate
+b784fd1f61f79466: conformance.kernel.recovered-from-prose -> moved, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "Here is the answer: {\"key\": \"value\"}", "kernel": "conformance.kernel.refusal-phrase", "proposal": "8c62b9383cbcc0e4", "rewrite": "Inserted the refusal phrase 'I cannot' at the beginning.", "rewritten": "I cannot provide that. Here is the answer: {\"key\": \"value\"}"}, {"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "{\"value\": 7}", "kernel": "conformance.kernel.recovered-from-prose", "proposal": "6eb7ac8249b29843", "rewrite": "changed from strict JSON to prose containing the same object", "rewritten": "Here is the value: {\"value\": 7}."}, {"after": "yes", "as_expected": true, "before": "no", "executed": "moved", "expect": "moves", "input": "{\"key\":\"value\"}", "kernel": "conformance.kernel.recovered-from-prose", "proposal": "b784fd1f61f79466", "rewrite": "Added prose around the JSON object so the harness must recover it from prose rather than reading strict JSON.", "rewritten": "The answer is {\"key\":\"value\"}."}]}
+
+## Criticisms (crits)
+[c58af66f3a5384da] (mini.criticism.v1)
+No expectations failed in this pair. The proposal expected the refusal-phrase kernel to move from NONE to 'I cannot' after the rewrite inserted that phrase, and the execution confirms it moved as expected. The proposer read the rule correctly and the code behaved as written.
+[892ee43f727ceb3e] (mini.criticism.v1)
+No expectations failed. Both proposals moved as expected: 8c62b9383cbcc0e4 moved conformance.kernel.refusal-phrase from NONE to 'I cannot', and 6eb7ac8249b29843 moved conformance.kernel.recovered-from-prose from no to yes. The duplicate execution of 8c62b9383cbcc0e4 in the second run is not a failed expectation; it was already executed in the first run.
+[931932f3c243944b] (mini.criticism.v1)
+No expectation failed. All executed proposals moved as expected: 8c62b9383cbcc0e4 (conformance.kernel.refusal-phrase) moved from NONE to "I cannot"; 6eb7ac8249b29843 and b784fd1f61f79466 (conformance.kernel.recovered-from-prose) moved from no to yes. The duplicate entries are not failures; they were skipped because the kernel had already been executed on that pair. Therefore there is no misreading or code-rule divergence to report.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
