@@ -29,6 +29,7 @@ from creib.errors import CREIBError
 from creib.strict_json import load_strict
 from creib.forge.mini import conformance_kernels  # noqa: F401  registers the conformance harness's checks as kernels
 from creib.forge.mini import openkernels  # noqa: F401  registers the open-kernel execution seat
+from creib.forge.mini import adjudication  # noqa: F401  registers the adjudication seat
 from creib.forge.mini.executor import LiveResponder, ScriptedResponder, endpoint_with_overrides
 from creib.forge.mini.compare import UNSUPPORTED, compare_roots
 from creib.forge.mini.common import MiniError, digest_bytes

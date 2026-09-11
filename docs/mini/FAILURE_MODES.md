@@ -914,3 +914,35 @@ without the import line and passes with it.
 **The general form.** A test that imports what it is testing proves the thing works when imported.
 It proves nothing about whether the program under test imports it. Anywhere behaviour is registered
 by import side-effect, the test has to enter through the same door the program does.
+
+## M26 — The test written to catch M25 was defeated by M25's own mechanism
+
+M25 recorded a seat the tests imported and the command line did not, and the repair was a test that
+loads `tools/run_mini.py` and checks every machine seat named by a shipped manifest resolves. Arm A
+of CREATIVITY-ARMS-1 then died with
+
+```
+MINI_MACHINE_SEAT_UNKNOWN: a stage declares a machine seat for 'mini.adjudication.v1'
+```
+
+with that test passing.
+
+**Why.** `register_machine_seat` writes to a module-level dict, so registration is a **process-global
+side effect**. `tests/mini/test_adjudication.py` imports `creib.forge.mini.adjudication`, and the
+suite runs both tests in one interpreter. By the time the registration test ran, the seat was
+registered — by a *test*, not by the tool. Run alone, the same test **failed**; run in the suite, it
+**passed**. It was defeated by precisely the mechanism it exists to catch.
+
+**Measured.** Arm A's first three segments were spent before the log showed the error, and the
+install map dutifully carried an empty result forward.
+
+**The repair.** The check now runs in a **fresh interpreter**: a subprocess imports
+`tools/run_mini.py` and reports the registry, so nothing another test imported can mask the answer.
+Verified both ways — with the import removed the test fails *even alongside the adjudication test
+that used to hide it*, and passes when restored.
+
+**The general form, and it is worse than M25's.** A test of global state is only valid in a process
+whose global state the test controls. Any in-process assertion about "what has been registered", or
+any other import-time side effect, is an assertion about the whole test run rather than about the
+thing under test, and the larger the suite the more likely it is vacuously true. This suite grew
+from 776 to 786 tests over the session; the assertion got weaker as it grew.
