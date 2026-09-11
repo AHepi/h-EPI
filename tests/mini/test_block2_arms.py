@@ -153,3 +153,16 @@ class BaselineTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StarvationStreakTests(unittest.TestCase):
+    """Whether an ARM is starved is a run of segments, and only the caller can see a run."""
+
+    def test_the_streak_counts_up_and_resets(self) -> None:
+        self.assertEqual(BLOCK.starved_streak(0, {"LOOP_STARVED"}), 1)
+        self.assertEqual(BLOCK.starved_streak(1, {"NOTHING_EXECUTED"}), 2)
+        self.assertEqual(BLOCK.starved_streak(2, {"FORMAT_FAILURES_RISING"}), 0)
+        self.assertEqual(BLOCK.starved_streak(0, set()), 0)
+
+    def test_the_stop_needs_more_than_one_segment(self) -> None:
+        self.assertGreater(BLOCK.STARVED_RUN, 1)

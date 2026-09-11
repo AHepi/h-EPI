@@ -56,6 +56,28 @@ def _executions(records: Sequence[Any], blobs: Any, kind_prefix: str) -> list[di
     return out
 
 
+def starvation_alarm(rows: int, ran: int) -> Alarm | None:
+    """Whether a segment's executions starved, and whether that is a stop or only a warning.
+
+    Fatal needs enough rows for the ratio to mean something. One proposal naming a function the
+    harness does not have is the MODEL being wrong, which is a result; stopping an arm on it is the
+    alarm doing the very thing alarms exist to stop, and it happened on block 2's ``R.r0.s02``.
+    Whether an ARM is starved is a RUN of such segments, which one record cannot see: the caller
+    counts it.
+    """
+
+    if ran * 2 >= rows or rows == 0:
+        return None
+    if rows > 1:
+        return Alarm("LOOP_STARVED", FATAL,
+                     f"{rows - ran} of {rows} executions did not run, so this segment measures the "
+                     "machinery rather than the subject, and any critic downstream reads refusals "
+                     "rather than results")
+    return Alarm("LOOP_STARVED", WARN,
+                 f"{rows - ran} of {rows} executions did not run; one row is too few for the ratio "
+                 "to say whose fault that is, so a RUN of such segments is what the caller must watch")
+
+
 def alarms_for(root: Path, previous_brief: str | None = None, brief: str | None = None) -> list[Alarm]:
     """Every signal one finished segment raises. Cheap: it reads the record and calls no model."""
 
@@ -99,11 +121,9 @@ def alarms_for(root: Path, previous_brief: str | None = None, brief: str | None 
 
     if rows:
         ran = [e for e in rows if e.get("executed") in ("moved", "unchanged")]
-        if len(ran) * 2 < len(rows):
-            found.append(Alarm("LOOP_STARVED", FATAL,
-                                f"{len(rows) - len(ran)} of {len(rows)} executions did not run, so this segment "
-                                "measures the machinery rather than the subject, and any critic downstream "
-                                "reads refusals rather than results"))
+        alarm = starvation_alarm(len(rows), len(ran))
+        if alarm is not None:
+            found.append(alarm)
     else:
         found.append(Alarm("NOTHING_EXECUTED", FATAL, "the segment ran no pair at all"))
 

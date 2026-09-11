@@ -655,6 +655,75 @@ def _verify(args: argparse.Namespace) -> int:
 # ---------------------------------------------------------------------------------------------
 
 
+#: Consecutive segments that executed nothing before the arm is stopped. One is the model naming a
+#: function that is not there, which is a result; a run of them is a loop reading only refusals,
+#: which is not a measurement of anything. The alarm cannot tell those apart from inside one
+#: segment, so the caller counts.
+STARVED_RUN = 3
+
+#: Transport failures tolerated per segment. A closed connection is not a measurement, and stopping
+#: an arm on one throws away the segments after it; a dead root is moved aside and the segment is
+#: run again, so the record never holds a half-written run.
+TRANSPORT_ATTEMPTS = 3
+
+
+#: The alarm names that say this segment executed nothing at all.
+STARVED_NAMES = frozenset({"LOOP_STARVED", "NOTHING_EXECUTED"})
+
+
+def starved_streak(previous: int, names: "set[str] | frozenset[str]") -> int:
+    """Consecutive segments that executed nothing, counted by the caller and not by one record.
+
+    One segment cannot tell a loop reading refusals from a model naming a function the harness does
+    not have. A run of them can. So the alarm reports the row ratio and this counts the run.
+    """
+
+    return previous + 1 if STARVED_NAMES & set(names) else 0
+
+
+def _finished(segment: Path) -> bool:
+    """Whether this root holds a run that reached RUN_ENDED, rather than a half-written one."""
+
+    log = segment / "log.jsonl"
+    return log.is_file() and "RUN_ENDED" in log.read_text(encoding="utf-8")
+
+
+def _set_aside(segment: Path) -> Path | None:
+    """Move a half-written root out of the block, so the segment can be run again into a clean one."""
+
+    if not segment.exists():
+        return None
+    for n in range(1, 100):
+        target = segment.with_name(f"{segment.name}.dead{n}")
+        if not target.exists():
+            segment.rename(target)
+            return target
+    raise MiniError("MINI_BLOCK_ROOT_CROWDED", f"{segment} has too many dead roots beside it")
+
+
+def _run_segment(arm: str, repeat: int, index: int, manifest_path: Path, segment: Path,
+                 args: argparse.Namespace) -> bool:
+    """Run one segment, retrying a transport failure into a clean root. True when it finished."""
+
+    for attempt in range(TRANSPORT_ATTEMPTS):
+        dead = _set_aside(segment)
+        if dead is not None:
+            print(f"{arm}.r{repeat} s{index:02d}: a half-written root was set aside as {dead.name}", flush=True)
+        segment.mkdir(parents=True, exist_ok=True)
+        command = [sys.executable, str(ROOT / "tools" / "run_mini.py"), "live",
+                   "--manifest", str(manifest_path), "--model", args.model,
+                   "--output-dir", str(segment), "--retries", str(args.retries)]
+        if args.timeout_seconds:
+            command += ["--timeout-seconds", str(args.timeout_seconds)]
+        completed = subprocess.run(command, cwd=ROOT, env={**__import__("os").environ,
+                                                           "PYTHONPATH": str(ROOT / "src")})
+        if completed.returncode == 0 and _finished(segment):
+            return True
+        print(f"{arm}.r{repeat} s{index:02d}: attempt {attempt + 1} of {TRANSPORT_ATTEMPTS} did not "
+              f"finish (exit {completed.returncode})", flush=True)
+    return False
+
+
 def _block(args: argparse.Namespace) -> int:
     """Run one arm's one repeat, segment by segment, stopping on any fatal alarm.
 
@@ -662,15 +731,20 @@ def _block(args: argparse.Namespace) -> int:
     finishes with its critic reading nothing, or its translator writing artifact ids where function
     paths belong, produces a null that means nothing about the subject; ``docs/mini/ERRATA.md``
     records two such blocks. So the run stops rather than finishing.
+
+    What it does NOT stop on: one segment whose single claim named a function the harness does not
+    have. That is the model being wrong, which is a result. Only a RUN of such segments is a loop
+    reading refusals, and only the caller can see a run.
     """
 
     from creib.forge.mini.alarms import FATAL, alarms_for, preflight
 
     runs, manifests = Path(args.runs), Path(args.manifests)
     arm, repeat = args.arm, args.repeat
+    starved = 0
     for index in range(ARMS[arm]["segments"]):
         segment = _segment_dir(runs, arm, repeat, index)
-        if (segment / "log.jsonl").is_file():
+        if _finished(segment):
             print(f"{arm}.r{repeat} s{index:02d}: already run", flush=True)
             continue
         path = _build(arm, repeat, index, runs, manifests)
@@ -680,15 +754,9 @@ def _block(args: argparse.Namespace) -> int:
         if any(a.severity == FATAL for a in found):
             print(f"{arm}.r{repeat}: STOPPING before segment {index:02d}; the machinery is unfit to measure", flush=True)
             return 1
-        segment.mkdir(parents=True, exist_ok=True)
-        command = [sys.executable, str(ROOT / "tools" / "run_mini.py"), "live",
-                   "--manifest", str(path), "--model", args.model, "--output-dir", str(segment)]
-        if args.timeout_seconds:
-            command += ["--timeout-seconds", str(args.timeout_seconds)]
-        completed = subprocess.run(command, cwd=ROOT, env={**__import__("os").environ,
-                                                           "PYTHONPATH": str(ROOT / "src")})
-        if completed.returncode != 0:
-            print(f"{arm}.r{repeat} s{index:02d}: the runner exited {completed.returncode}; STOPPING", flush=True)
+        if not _run_segment(arm, repeat, index, path, segment, args):
+            print(f"{arm}.r{repeat}: STOPPING at segment {index:02d}; {TRANSPORT_ATTEMPTS} attempts "
+                  "did not reach RUN_ENDED", flush=True)
             return 1
         previous = _segment_dir(manifests, arm, repeat, index - 1) / "proposed_organisation.txt"
         found = alarms_for(segment,
@@ -698,6 +766,11 @@ def _block(args: argparse.Namespace) -> int:
             print(f"{arm}.r{repeat} s{index:02d} {alarm}", flush=True)
         if any(a.severity == FATAL for a in found):
             print(f"{arm}.r{repeat}: STOPPING after segment {index:02d}; the machinery is unfit to measure", flush=True)
+            return 1
+        starved = starved_streak(starved, {a.name for a in found})
+        if starved >= STARVED_RUN:
+            print(f"{arm}.r{repeat}: STOPPING after segment {index:02d}; {starved} segments in a row "
+                  "executed nothing, which is a loop reading refusals rather than results", flush=True)
             return 1
         print(f"{arm}.r{repeat} s{index:02d}: done", flush=True)
     print(f"{arm}.r{repeat}: {ARMS[arm]['segments']} segments complete", flush=True)
@@ -737,6 +810,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     runner.add_argument("--manifests", required=True)
     runner.add_argument("--runs", required=True)
     runner.add_argument("--timeout-seconds", type=int, default=None)
+    runner.add_argument("--retries", type=int, default=4,
+                        help="transport retries per call; a closed connection is not a measurement")
     runner.set_defaults(handler=_block)
     reader = sub.add_parser("read", help="read every cell on the pre-registered measures")
     reader.add_argument("--root", required=True)

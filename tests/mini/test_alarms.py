@@ -23,15 +23,35 @@ def _names(alarms: list[Alarm]) -> set[str]:
 class AlarmsOnRealRecordsTests(unittest.TestCase):
     """Committed records this session produced, so the alarms are tested against what happened."""
 
-    def test_a_starved_loop_raises_a_fatal_alarm(self) -> None:
-        """CREATIVITY-ARMS-1's first blocks spent two whole arms on this without noticing."""
+    def test_a_starved_segment_is_named_and_a_one_row_segment_is_not_a_stop(self) -> None:
+        """CREATIVITY-ARMS-1's first blocks spent two whole arms on this without noticing.
+
+        The severity changed after block 2's `R.r0.s02`: one proposal that named a function the
+        harness does not have is the MODEL being wrong, which is a result, and stopping the arm on
+        it is the alarm doing the thing alarms exist to stop. The mode is still named on every such
+        segment; whether an ARM is starved is a run of them, which one record cannot see and the
+        caller counts (`creativity_block2.starved_streak`).
+        """
 
         starved = ROOT / "forge/mini/runs/creativity-starved/F/s00"
         if not starved.is_dir():
             self.skipTest("the starved records are not in this checkout")
         alarms = alarms_for(starved)
         self.assertIn("LOOP_STARVED", _names(alarms))
-        self.assertEqual([a.severity for a in alarms if a.name == "LOOP_STARVED"], [FATAL])
+        self.assertEqual([a.severity for a in alarms if a.name == "LOOP_STARVED"], [WARN])
+        self.assertIn("one row is too few", next(a.detail for a in alarms if a.name == "LOOP_STARVED"))
+
+    def test_where_the_starvation_stop_sits(self) -> None:
+        """The boundary, stated as the smallest change of input the verdict moves under."""
+
+        from creib.forge.mini.alarms import starvation_alarm
+
+        self.assertIsNone(starvation_alarm(0, 0))
+        self.assertIsNone(starvation_alarm(2, 1), "half is not starved")
+        self.assertIsNone(starvation_alarm(1, 1))
+        self.assertEqual(starvation_alarm(1, 0).severity, WARN, "one bad guess is a result")
+        self.assertEqual(starvation_alarm(2, 0).severity, FATAL, "two of two is the machinery")
+        self.assertEqual(starvation_alarm(3, 1).severity, FATAL)
 
     def test_a_healthy_segment_raises_nothing_fatal(self) -> None:
         healthy = ROOT / "forge/mini/runs/creativity/A/s00"
