@@ -139,6 +139,40 @@ undercount and was reported beside a hand reading throughout.
 It pinned a terminal stage (`n!` orderings, not `(n-1)!`), held the artifact kinds fixed, and held
 the wiring fixed for a whole run. The third removed the thing the Blueprint locates creativity in.
 
+### C12. "Wired" never wired anything: `W`'s critic never saw a reading (**mine**)
+
+Found while building block 2, by reading the run headers rather than the source.
+`_kinds_and_ports` declared a `reads` input port on `W`'s and `A`'s criticism **kind**, and
+`manifest()` then built the criticise **stage** with `ports: ["source", "conj", "execs"]` in every
+arm. Only a stage's ports are rendered. So the readings were never in the prompt, in either arm, in
+any of the sixteen segments. `STAGE_ENTERED` says so in every record:
+
+```
+W/s00 criticise {"ports": ["source", "conj", "execs"]}
+A/s00 criticise {"ports": ["source", "conj", "execs"]}
+```
+
+What actually differed between `F` and `W` was two things bundled: the `conj` port type rendered
+`list_bodies_and_commitments` where `F` rendered `list_bodies`, and the instruction told the critic
+to attack a reading it could not see — naming its artifact id, quoting its words, saying whether it
+renders the prose.
+
+**What it cost:** the one effect this session claimed to have established. `W` did double `F`'s
+yield, and that number stands; what it is an effect *of* does not. It is now unattributed between
+three candidates — seeing the conjecture's commitments, being asked to separate a defect in the
+reading from a defect in the conjecture, and the readings themselves, which were absent. The third
+was the one I named, and it is the only one that was definitely not operating.
+
+**What it means for what I wrote:** `docs/mini/CONFIG_MAP.md`'s `CFG-INPUT-PORTS`, the registry
+entries for `CONF-ARMS-W` and `CONF-ARMS-A`, and my summary of C5 and C6 all describe a critic
+reading the readings. None of them did. The numbers in those entries are what the records say; the
+mechanism beside them is withdrawn. Block 2 declares the port on the stage and holds the conjecture
+render constant, so `F`→`W` there is the wiring change alone.
+
+**My own rule, broken.** `docs/mini/CONFOUNDS.md` opens: *"Two settings that move together cannot be
+told apart by a result that moves with both."* I wrote that, and the arm I wrote it about varied two
+settings together and named the effect after a third that was not varying at all.
+
 ### C11. My own hand-verification of W2 was criticised by the machine and may be wrong (**mine**)
 
 `W/s02`'s critic argues the fence rule is determinate under *"holds exactly one object"*, that the
@@ -157,3 +191,8 @@ rather than about the loop.
 The one thing that survived every repair, unchanged, is the conjecture step. It found real kernel
 boundaries under every configuration, including the cheapest, and the machinery kept failing to
 execute, see, or count them.
+
+C12 was added after the rest, while building the block that was meant to settle the question. It is
+the only item here that withdraws the *mechanism* of a positive result rather than a null, and it
+found its way in the same way as all the others: by reading what the record says the run did,
+instead of what the code that wrote it was supposed to do.

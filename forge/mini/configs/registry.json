@@ -102,24 +102,27 @@
     },
     {
       "config_id": "CONF-ARMS-W",
-      "title": "Wired: F with the critic able to see the reading and the conjecture's commitment",
+      "title": "Wired (misnamed): F with the conjecture's commitments rendered, told to attack a reading it could not see",
       "manifest": "forge/mini/manifests/creativity/W/s00/manifest.json",
-      "status": "works",
+      "status": "confounded",
       "sets": {
-        "CFG-INPUT-PORTS": "critic reads source, conj, reads, execs",
-        "CFG-RENDER": "conj renders list_bodies_and_commitments"
+        "CFG-RENDER": "conj renders list_bodies_and_commitments where F renders list_bodies",
+        "CFG-INSTRUCTION": "critic told to attack the reading by artifact id",
+        "CFG-STAGES": "criticise ports source, conj, execs -- the reads port is on the KIND and on no stage"
       },
       "evidence": [
         "forge/mini/runs/creativity/W"
       ],
       "shows": "7 witnesses at 24 calls, 0.29 per call, 2 targets, zero repeats, zero identical-text claims, zero invented functions. Six witnesses found by no other arm.",
-      "proven": "Wiring alone more than doubles the yield with the kinds, the commitments, the install map and the budget all held fixed. The critic discusses the reading in 7 of 8 segments where F does so in 0 of 8.",
-      "not_proven": "That it beats repetition: 0.29 per call against R's 0.33, same two targets.",
+      "proven": "That two settings moved together and the yield doubled. Which of them did it is not shown. The reading itself was never rendered: the criticise stage declares source, conj, execs in every segment of the arm (ERRATA C12).",
+      "not_proven": "The mechanism, withdrawn. Also that it beats repetition: 0.29 per call against R's 0.33, same two targets.",
       "confounds": [
+        "CON-PORT-NOT-DECLARED",
         "CON-DRAW-VARIANCE"
       ],
       "errata": [
-        "A2"
+        "A2",
+        "C12"
       ]
     },
     {
@@ -128,7 +131,7 @@
       "manifest": "forge/mini/manifests/creativity/A/s00/manifest.json",
       "status": "confounded",
       "sets": {
-        "CFG-STAGES": "adjudicate added",
+        "CFG-STAGES": "adjudicate added; criticise ports source, conj, execs -- the reads port is on the KIND and on no stage",
         "CFG-INSTRUCTION": "critic commitment names attacks and ground",
         "CFG-FORMAT": "NONE DECLARED"
       },
@@ -136,14 +139,16 @@
         "forge/mini/runs/creativity/A"
       ],
       "shows": "5 witnesses at 24 calls, 0.21 per call. 2 attacks landed; cannot-tell used once and minted no attack.",
-      "proven": "An attack can land, and the one that did caught the reading misrendering the conjecture: the error class structurally invisible to N, F and W.",
+      "proven": "An attack can land, and the one that did caught the reading misrendering the conjecture: the error class structurally invisible to N and F. It was caught from the conjecture alone -- the reading was never rendered to this arm either (ERRATA C12).",
       "not_proven": "That adjudication does not beat wiring. Four of eight criticism commitments did not parse, so the machinery engaged in under half the arm.",
       "confounds": [
         "CON-FORMAT-KILLS-RUN",
+        "CON-PORT-NOT-DECLARED",
         "CON-DRAW-VARIANCE"
       ],
       "errata": [
-        "C6"
+        "C6",
+        "C12"
       ]
     },
     {
@@ -176,7 +181,7 @@
         "CFG-FORMAT": "none; mechanical, no model"
       },
       "evidence": [],
-      "tests": "Whether a mechanical search, given inputs that actually make each function vary, finds collapses a model arm does not. CONF-BASELINE-E could not: 458 of its 460 collapses were on functions constant over its seeds.",
+      "tests": "Whether a mechanical search, given inputs that actually make each function vary, finds collapses a model arm does not. CONF-BASELINE-E could not: 458 of its 460 collapses were on functions constant over its seeds. The repaired pool is 62 seeds and still leaves only 10 of 66 functions non-constant, which is the honest denominator.",
       "not_proven": "It will not show what a model contributes beyond search unless the primary measure is one this arm can also score on. grounded_T1 was not (CON-MEASURE-EXCLUDES-BASELINE).",
       "confounds": [
         "CON-BASELINE-SEEDS",
@@ -190,7 +195,7 @@
     {
       "config_id": "CONF-B2-R",
       "title": "Repeated, repaired: no loop, resolution inside the arm",
-      "manifest": null,
+      "manifest": "forge/mini/manifests/creativity-2/R/r0/s00/manifest.json",
       "status": "designed",
       "sets": {
         "CFG-MAX-CYCLES": "1",
@@ -207,11 +212,12 @@
     {
       "config_id": "CONF-B2-F",
       "title": "Full, repaired: return path with a critic that cannot see the reading",
-      "manifest": null,
+      "manifest": "forge/mini/manifests/creativity-2/F/r0/s00/manifest.json",
       "status": "designed",
       "sets": {
         "CFG-PROBLEM": "rewritten from the previous record",
-        "CFG-INPUT-PORTS": "critic reads source, conj, execs"
+        "CFG-STAGES": "criticise ports source, conj, execs",
+        "CFG-RENDER": "conj renders list_bodies, as on every arm of this block"
       },
       "evidence": [],
       "tests": "Replication of the F-against-W contrast with a stochastic floor under it, so the wiring effect is not one draw.",
@@ -226,41 +232,47 @@
     },
     {
       "config_id": "CONF-B2-W",
-      "title": "Wired, repaired: the critic sees the reading and the conjecture's commitment",
-      "manifest": null,
+      "title": "Wired, and actually wired: the readings port declared on the criticise STAGE",
+      "manifest": "forge/mini/manifests/creativity-2/W/r0/s00/manifest.json",
       "status": "designed",
       "sets": {
-        "CFG-INPUT-PORTS": "critic reads source, conj, reads, execs",
-        "CFG-RENDER": "conj renders list_bodies_and_commitments"
+        "CFG-STAGES": "criticise ports source, conj, reads, execs",
+        "CFG-INSTRUCTION": "critic told to attack the reading it is now shown",
+        "CFG-RENDER": "conj renders list_bodies, as on every arm of this block"
       },
       "evidence": [],
-      "tests": "Whether the one effect this session established -- wiring more than doubling the yield -- replicates with repeats under it, and whether it beats CONF-B2-R per call, which CONF-ARMS-W did not.",
-      "not_proven": "That citation is the mechanism. C6 measured correctly shows the critic discusses the reading in 7 of 8 segments, which is being shown rather than a proven causal route.",
+      "tests": "Whether the critic seeing the readings raises the yield. This is a FIRST test, not a replication: CONF-ARMS-W never rendered a reading (ERRATA C12), so its doubling is unattributed and no number here is compared with it.",
+      "not_proven": "Nothing about block 1's effect, which stays unattributed whichever way this falls. And the port and the instruction that uses it move together by design: a port a seat is not told to read is not a treatment, so this measures the pair.",
       "confounds": [
+        "CON-PORT-NOT-DECLARED",
         "CON-DRAW-VARIANCE"
       ],
       "errata": [
-        "A2"
+        "A2",
+        "C12"
       ]
     },
     {
       "config_id": "CONF-B2-A",
       "title": "Adjudicated, repaired: a format schema with an escape road, and a test that can be attacked",
-      "manifest": null,
+      "manifest": "forge/mini/manifests/creativity-2/A/r0/s00/manifest.json",
       "status": "designed",
       "sets": {
-        "CFG-FORMAT": "json_schema on the criticism commitment, ground enum including cannot-tell",
-        "CFG-STAGES": "adjudicate",
-        "CFG-TOLERANCE": "identical to every other arm"
+        "CFG-FORMAT": "json_schema on the criticism commitment, ground enum including cannot-tell and test-is-unsound",
+        "CFG-STAGES": "criticise ports source, conj, reads, execs; adjudicate added",
+        "CFG-RETRIES": "3, identical on every kind of every arm",
+        "CFG-TOLERANCE": "null, identical on every kind of every arm"
       },
       "evidence": [],
       "tests": "The experiment. Whether criticism that LANDS beats criticism that is only read, at a point where the format no longer suppresses it -- CONF-ARMS-A had four of eight commitments unparseable -- and where a test-is-unsound ground lets the executor itself be attacked.",
       "not_proven": "It will not settle whether mini needs untyped interface dispatch or commitments carrying an eval and a budget. Those stand unrepaired (ERRATA C3, C4) and a block that fixed them is a different machine.",
       "confounds": [
         "CON-FORMAT-KILLS-RUN",
+        "CON-PORT-NOT-DECLARED",
         "CON-DRAW-VARIANCE"
       ],
       "errata": [
+        "C5",
         "C6"
       ]
     },

@@ -1,0 +1,147 @@
+"""CREATIVITY-ARMS-2's arms differ in exactly what the block says they differ in.
+
+Written because they did not, last time. Block 1's ``W`` and ``A`` declared a ``reads`` port on the
+criticism KIND and never listed it on the criticise STAGE, so the readings were never rendered while
+the instruction told the critic to attack one by name; two other settings moved at the same time and
+the effect was named after the one that was not operating (ERRATA C12, CON-PORT-NOT-DECLARED).
+
+A stage's ``ports`` is the operative list, so these assertions read that and nothing else. What they
+pin is the contrast the block is for: ``F`` -> ``W`` is the readings port and the instruction that
+uses it, ``W`` -> ``A`` is the warrant and the adjudication, and nothing else moves in either step.
+"""
+
+from __future__ import annotations
+
+import importlib.util
+import json
+import sys
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(ROOT / "src"))
+if str(ROOT / "tools") not in sys.path:
+    sys.path.insert(0, str(ROOT / "tools"))
+
+
+def _module():
+    spec = importlib.util.spec_from_file_location("creativity_block2", ROOT / "tools" / "creativity_block2.py")
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
+
+
+BLOCK = _module()
+
+
+def _stage(manifest: dict, stage_id: str) -> dict | None:
+    for stage in manifest["stages"]:
+        if stage.get("stage_id") == stage_id:
+            return stage
+    return None
+
+
+def _kind(manifest: dict, kind_id: str) -> dict:
+    return next(k for k in manifest["kinds"] if k["kind_id"] == kind_id)
+
+
+class ArmDifferenceTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.arm = {a: BLOCK.manifest(a, 0, 0, BLOCK.PROBLEM) for a in BLOCK.ARMS}
+
+    def test_the_readings_port_is_on_the_criticise_STAGE_and_not_only_on_the_kind(self) -> None:
+        """The assertion block 1 needed and did not have."""
+
+        for name in ("W", "A"):
+            stage = _stage(self.arm[name], "criticise")
+            self.assertIsNotNone(stage)
+            self.assertIn("reads", stage["ports"], f"{name}'s critic would never see a reading")
+
+    def test_F_is_the_same_stage_without_that_one_port(self) -> None:
+        self.assertEqual(_stage(self.arm["F"], "criticise")["ports"], ["source", "conj", "execs"])
+        self.assertEqual(_stage(self.arm["W"], "criticise")["ports"], ["source", "conj", "reads", "execs"])
+
+    def test_every_stage_lists_every_port_its_kind_declares(self) -> None:
+        """A port on a kind that its stage does not list is silent, compiles, and renders nothing."""
+
+        for name, manifest in self.arm.items():
+            for stage in manifest["stages"]:
+                if stage.get("end") or stage.get("kind_id") is None:
+                    continue
+                declared = {p["port_type"] for p in _kind(manifest, stage["kind_id"])["input_ports"]}
+                listed = set(stage.get("ports", ()))
+                self.assertEqual(declared - {"problem"}, listed - {"problem"},
+                                 f"{name}.{stage['stage_id']} declares {declared} and lists {listed}")
+
+    def test_the_conjecture_is_rendered_the_same_way_for_every_arm(self) -> None:
+        """Block 1 varied this together with the wiring, which is how the effect lost its cause."""
+
+        rules = {name: next(p["render"]["rule"] for p in manifest["port_types"] if p["port_type"] == "conj")
+                 for name, manifest in self.arm.items()}
+        self.assertEqual(set(rules.values()), {"list_bodies"}, rules)
+
+    def test_one_failure_policy_on_every_kind_of_every_arm(self) -> None:
+        """CON-FORMAT-KILLS-RUN: strictness and lifetime are one knob unless the policy is held."""
+
+        for name, manifest in self.arm.items():
+            for kind in manifest["kinds"]:
+                self.assertEqual(kind["failure_policy"], BLOCK.FAILURE_POLICY, f"{name}.{kind['kind_id']}")
+            self.assertIsNone(BLOCK.FAILURE_POLICY["tolerance"], "an arm could die younger for being asked more")
+
+    def test_only_arm_A_declares_a_format_and_it_keeps_the_escape_road(self) -> None:
+        for name, manifest in self.arm.items():
+            formats = [k for k in manifest["kinds"] if k.get("format")]
+            self.assertEqual([k["kind_id"] for k in formats],
+                             [BLOCK.CRITICISM] if name == "A" else [], name)
+        pattern = BLOCK.CRITICISM_SCHEMA["schema"]["properties"]["ground"]["pattern"]
+        self.assertIn("cannot-tell", pattern)
+        self.assertIn("test-is-unsound", pattern)
+
+    def test_the_schema_admits_exactly_the_grounds_the_adjudicator_admits(self) -> None:
+        """Two copies of a closed vocabulary drift; this is the test that says they have not."""
+
+        from creib.forge.mini.adjudication import GROUNDS
+
+        pattern = BLOCK.CRITICISM_SCHEMA["schema"]["properties"]["ground"]["pattern"]
+        self.assertEqual(pattern, "^(" + "|".join(GROUNDS) + ")$")
+
+    def test_the_adjudicate_stage_is_arm_A_alone(self) -> None:
+        for name, manifest in self.arm.items():
+            self.assertEqual(_stage(manifest, "adjudicate") is not None, name == "A", name)
+
+    def test_repeats_differ_in_the_endpoint_seed_and_in_nothing_else(self) -> None:
+        """A declared stochastic floor, and a declaration a reader can check (ERRATA C7)."""
+
+        first = BLOCK.manifest("W", 0, 0, BLOCK.PROBLEM)
+        for repeat in range(1, BLOCK.REPEATS):
+            other = BLOCK.manifest("W", repeat, 0, BLOCK.PROBLEM)
+            self.assertNotEqual(first["endpoint"]["options"]["seed"], other["endpoint"]["options"]["seed"])
+            stripped_first = json.loads(json.dumps(first))
+            stripped_other = json.loads(json.dumps(other))
+            for blob in (stripped_first, stripped_other):
+                blob["endpoint"]["options"]["seed"] = 0
+                blob["manifest_id"] = ""
+            self.assertEqual(stripped_first, stripped_other)
+
+    def test_the_install_map_is_withheld_from_no_arm_that_is_supposed_to_have_it(self) -> None:
+        self.assertEqual({a for a, s in BLOCK.ARMS.items() if s["install"]}, {"F", "W", "A"})
+        self.assertFalse(BLOCK.ARMS["R"]["install"])
+
+
+class BaselineTests(unittest.TestCase):
+    def test_the_seed_pool_is_larger_than_block_one_s_and_holds_its_fourteen(self) -> None:
+        """ERRATA A3: 458 of 460 collapses were on functions constant over the old pool."""
+
+        from creativity_arms import SEEDS as OLD
+
+        self.assertGreater(len(BLOCK.SEEDS_POOL), len(OLD))
+        self.assertTrue(set(OLD).issubset(set(BLOCK.SEEDS_POOL)))
+
+    def test_no_seed_appears_twice(self) -> None:
+        self.assertEqual(len(set(BLOCK.SEEDS_POOL)), len(BLOCK.SEEDS_POOL))
+
+
+if __name__ == "__main__":
+    unittest.main()

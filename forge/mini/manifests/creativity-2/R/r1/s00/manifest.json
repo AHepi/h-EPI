@@ -1,0 +1,231 @@
+{
+  "schema_version": "creib.mini.manifest.v1",
+  "manifest_id": "mini.creativity2.r.r1.s00",
+  "problem": "The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.\n\nFind a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.\n\nA pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.",
+  "cycles": {
+    "max_cycles": 1
+  },
+  "endpoint": {
+    "kind": "ollama-chat",
+    "base_url": "https://ollama.com",
+    "timeout_seconds": 900,
+    "options": {
+      "temperature": 0,
+      "seed": 8
+    },
+    "think": null
+  },
+  "port_types": [
+    {
+      "port_type": "source",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.kernel-source.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies",
+        "header": "The source of the checks"
+      }
+    },
+    {
+      "port_type": "conj",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.conjecture.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies",
+        "header": "The conjecture, as written"
+      }
+    },
+    {
+      "port_type": "reads",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.pair-proposal.reading.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies_and_commitments",
+        "header": "Readings"
+      }
+    },
+    {
+      "port_type": "execs",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.pair-execution.open.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies_and_commitments",
+        "header": "What the machine returned"
+      }
+    }
+  ],
+  "kinds": [
+    {
+      "kind_id": "mini.kernel-source.v1",
+      "title": "Source",
+      "input_ports": [],
+      "failure_policy": {
+        "retries": 3,
+        "tolerance": null,
+        "action": "stop",
+        "skip_on_empty_port": false
+      },
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.kernel-source.v1"
+      }
+    },
+    {
+      "kind_id": "mini.conjecture.v1",
+      "title": "Conjecture",
+      "instruction": "Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.\n\nA kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.\n\n- creib.forge.conformance.appraisal\n- creib.forge.conformance.claims\n- creib.forge.conformance.compare\n- creib.forge.conformance.controls\n- creib.forge.conformance.corpus\n- creib.forge.conformance.cycles\n- creib.forge.conformance.dependence\n- creib.forge.conformance.families\n- creib.forge.conformance.oracle\n- creib.forge.conformance.prompt\n- creib.forge.conformance.records\n- creib.forge.conformance.report\n- creib.forge.conformance.routing\n- creib.forge.conformance.spec\n- creib.forge.conformance.units\n",
+      "failure_policy": {
+        "retries": 3,
+        "tolerance": null,
+        "action": "stop",
+        "skip_on_empty_port": false
+      },
+      "input_ports": [
+        {
+          "port_id": "problem",
+          "port_type": "problem",
+          "window": "all"
+        },
+        {
+          "port_id": "source",
+          "port_type": "source",
+          "window": "all"
+        }
+      ],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.conjecture.v1"
+      }
+    },
+    {
+      "kind_id": "mini.pair-proposal.reading.v1",
+      "title": "Reading",
+      "commitment_call": "single",
+      "optional_fields": [
+        "input",
+        "rewritten",
+        "rewrite"
+      ],
+      "instruction": "You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.\n\nThe commitments are a STRING holding JSON of the form {\"kernel\": \"<path>\", \"expect\": \"moves\" or \"unchanged\"} and nothing else.\n\n\"kernel\" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.\n\nThis artifact carries \"input\", \"rewritten\" and \"rewrite\" as fields of its own, each a plain string: \"input\" and \"rewritten\" are the two reply texts exactly as the prose gave them, and \"rewrite\" says how they differ. Use \"moves\" when the rule requires the two answers to differ.",
+      "failure_policy": {
+        "retries": 3,
+        "tolerance": null,
+        "action": "stop",
+        "skip_on_empty_port": false
+      },
+      "input_ports": [
+        {
+          "port_id": "conj",
+          "port_type": "conj",
+          "window": "this_cycle"
+        }
+      ],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.pair-proposal.reading.v1"
+      }
+    },
+    {
+      "kind_id": "mini.pair-execution.open.v1",
+      "title": "Execute",
+      "failure_policy": {
+        "retries": 3,
+        "tolerance": null,
+        "action": "stop",
+        "skip_on_empty_port": false
+      },
+      "input_ports": [
+        {
+          "port_id": "reads",
+          "port_type": "reads",
+          "window": "this_cycle"
+        }
+      ],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.pair-execution.open.v1"
+      }
+    },
+    {
+      "kind_id": "mini.verdict.v1",
+      "title": "Verdict",
+      "failure_policy": {
+        "retries": 3,
+        "tolerance": null,
+        "action": "stop",
+        "skip_on_empty_port": false
+      },
+      "input_ports": [
+        {
+          "port_id": "execs",
+          "port_type": "execs",
+          "window": "this_cycle"
+        }
+      ],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.verdict.v1"
+      }
+    }
+  ],
+  "stages": [
+    {
+      "stage_id": "source",
+      "kind_id": "mini.kernel-source.v1",
+      "seat": "machine",
+      "ports": []
+    },
+    {
+      "stage_id": "conjecture",
+      "kind_id": "mini.conjecture.v1",
+      "ports": [
+        "problem",
+        "source"
+      ]
+    },
+    {
+      "stage_id": "reading",
+      "kind_id": "mini.pair-proposal.reading.v1",
+      "ports": [
+        "conj"
+      ]
+    },
+    {
+      "stage_id": "execute",
+      "kind_id": "mini.pair-execution.open.v1",
+      "seat": "machine",
+      "ports": [
+        "reads"
+      ]
+    },
+    {
+      "stage_id": "verdict",
+      "kind_id": "mini.verdict.v1",
+      "seat": "machine",
+      "ports": [
+        "execs"
+      ]
+    },
+    {
+      "stage_id": "end",
+      "end": true
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "contract",
+      "text": "the checks under test are the harness's own\n"
+    }
+  ]
+}

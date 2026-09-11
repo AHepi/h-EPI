@@ -104,15 +104,20 @@ Whether a stage whose port delivered nothing is skipped rather than run.
 ## 3. What decides what a seat can see
 
 ### CFG-INPUT-PORTS — `kinds[].input_ports`
-Which port types a kind reads. **This is the wiring**, and it is the one thing this session
-measured a large effect from: giving the critic a `reads` port more than doubled verified findings
-with every other setting held (CONF-ARMS-W).
+Which port types a kind **may** read. It is half of the wiring; `CFG-STAGES` is the other half and
+the decisive one. A port declared here and not listed on the stage is never rendered.
 - **MIS-PORTS-1** — *"the artifact exists, so the seat can see it."* It cannot. Three of five
   commitment streams in CREATIVITY-ARMS-1 were written by a seat and read by nobody, and the
   criticism's was consumed by **no kind at all** (ERRATA C1).
 - **MIS-PORTS-2** — *"a machine seat reads its declared ports."* Until M22 it did not: the
   pair-execution seat filtered by "this cycle" whatever window its stage declared, which made
   **half the architecture lattice** produce nothing.
+- **MIS-PORTS-3** — *"the kind declares the port, so the seat reads it."* **Only a stage's `ports`
+  are rendered.** `W` and `A` in CREATIVITY-ARMS-1 declared a `reads` port on the criticism kind and
+  never listed it on the criticise stage, so the critic never saw a reading in any segment of either
+  arm — while being told to attack one by name. The effect those arms measured is real and its
+  mechanism is withdrawn (ERRATA C12, CON-PORT-NOT-DECLARED). Read `STAGE_ENTERED`'s `ports` in the
+  record, never the kind's `input_ports` in the manifest.
 
 ### CFG-WINDOW — `input_ports[].window`
 Which cycles an artifact must come from: `all`, `this_cycle`, `previous_cycle`, `last_n`.
@@ -150,6 +155,10 @@ is lagged.
 - **MIS-STAGE-ORDER-1** — *"a terminal verdict stage is required."* Nothing pins it. `n` stages admit
   `n!` orderings, not `(n-1)!`; the earlier count of 36 architectures was a count over one
   manifest's convention (ERRATA C10).
+- **MIS-STAGE-ORDER-2** — *"the stage inherits its kind's ports."* It does not. `stages[].ports` is
+  the operative list and it may be a strict subset of the kind's `input_ports`; the difference is
+  silent, compiles, and runs. This is where a claimed wiring change can fail to exist
+  (MIS-PORTS-3).
 
 ### CFG-SEAT — `stages[].seat`
 `model` (default) or `machine`.

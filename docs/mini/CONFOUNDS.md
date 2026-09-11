@@ -112,6 +112,31 @@ suite grows.
 
 ---
 
+### CON-PORT-NOT-DECLARED — a port on a kind that no stage declares is not a treatment
+**Couples:** CFG-INPUT-PORTS, CFG-STAGES, CFG-RENDER, CFG-INSTRUCTION
+**Status:** **observed** — CREATIVITY-ARMS-1, arms `W` and `A`, all sixteen segments (ERRATA C12).
+
+A kind may declare an input port and a stage may then not list it. Only a stage's ports are
+rendered, so the kind's declaration is inert: the seat is never shown that port's artifacts. Because
+the manifest still *reads* as though the seat has them, an arm can be named for a wiring change that
+never happened, and any real difference is then attributed to it.
+
+In block 1 this coupled with two settings that **did** move: `W` rendered the conjecture's
+commitments where `F` rendered only its body (`CFG-RENDER`), and `W`'s instruction told the critic to
+attack a reading it could not see (`CFG-INSTRUCTION`). `W` doubled `F`'s yield. That number stands;
+its mechanism is unattributed between three candidates, one of which was not operating at all.
+
+**Hold it fixed:** read `STAGE_ENTERED`'s `ports` in the record, not the kind's `input_ports` in the
+manifest, and check that an arm named for a port declares it on the stage that is supposed to read
+it. Vary the port and the instruction that uses it together — a port a seat is not told to read is
+not a treatment either — and vary nothing else.
+**Record:** the criticise stage's `ports` per arm, from the record, beside any result the arm's
+wiring is supposed to explain.
+**Alarm:** none yet. A preflight that compares an arm's declared treatment against the stage ports
+its manifest builds would have caught this before the first call; nothing does that today.
+
+---
+
 ### CON-DRAW-VARIANCE — one repeat is not a measurement
 **Couples:** the number of repeats, the endpoint's determinism
 **Status:** **observed.** The endpoint returned **six different answers to a byte-identical prompt**.

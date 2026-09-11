@@ -17,10 +17,19 @@ This is the smallest thing that changes that, and it is deliberately much less t
   unattacked attacker is refuted, and an attacker that is itself attacked stops refuting, so
   reinstatement falls out rather than being a rule.
 
-What it is not: artifacts here are still typed and dispatch is still by port, where the spec is
-untyped and dispatches on interface. There is no validity node, so a test cannot yet be attacked for
-being unsound -- only an artifact can. Both are named in ``docs/mini/PIPELINE_MATH.md`` rather than
-quietly omitted.
+A criticism is not the only thing that can attack. The machine mints an edge of its own from an
+execution to the reading it ran, whenever the run shows the reading's claim did not hold -- the
+check behaved as the rule requires, or the claim could not be run at all. That edge is what makes
+the next ground worth having: ``test-is-unsound`` attacks the EXECUTION, and an execution that is
+itself refuted stops refuting the reading, so a reading the executor wrongly refused comes back.
+That is the validity node in its smallest form, and it is the criticism this session most deserved
+to hear and had nowhere to put: the executor refused a true conjecture on an arity bound and the
+record said only that the conjecture was unrunnable.
+
+What it is still not: artifacts here are typed and dispatch is by port, where the spec is untyped
+and dispatches on interface; and a commitment carries no eval and no budget, so "attack surface"
+stays a metaphor rather than a count. Both are named in ``docs/mini/PIPELINE_MATH.md`` and
+``docs/mini/ERRATA.md`` rather than quietly omitted.
 """
 
 from __future__ import annotations
@@ -28,7 +37,7 @@ from __future__ import annotations
 import json
 from typing import Any, Mapping
 
-from .blindspot import CRITICISM_KIND_PREFIX
+from .blindspot import CRITICISM_KIND_PREFIX, PAIR_EXECUTION_PREFIX
 from .common import MiniError
 from .machines import MachineContext, MachineSeat, register_machine_seat
 
@@ -41,8 +50,27 @@ GROUNDS: tuple[str, ...] = (
     "reading-misrenders-conjecture",
     "conjecture-misreads-rule",
     "rule-and-code-diverge",
+    "test-is-unsound",
     "cannot-tell",
 )
+
+#: The ground whose target is an EXECUTION rather than a conjecture or a reading: the run itself is
+#: being called unsound. It is admitted like any other ground and needs no rule of its own, because
+#: the execution is already an attacker in the relation and refuting an attacker already reinstates
+#: what it attacked.
+TEST_UNSOUND = "test-is-unsound"
+
+#: Grounds the MACHINE mints, from what an execution returned. They are not available to a critic:
+#: a criticism carrying one of these names a ground it did not establish, and it does not land.
+MACHINE_GROUNDS: tuple[str, ...] = (
+    "execution-contradicts-claim",
+    "execution-could-not-run-the-claim",
+)
+
+#: An execution outcome that says the claim was never put to the test. It refutes the reading that
+#: made it -- a claim the machine could not run has not survived anything -- and it is exactly the
+#: edge ``test-is-unsound`` exists to attack.
+UNRUN: frozenset[str] = frozenset({"unreadable", "unrunnable"})
 
 #: A ground that asserts nothing about the target mints no attack edge. Saying you cannot tell is
 #: an honest answer, and an honest answer is not a refutation.
@@ -85,7 +113,9 @@ def attacks_of(context: MachineContext) -> list[dict[str, Any]]:
         named = str(claim.get("attacks", ""))
         ground = str(claim.get("ground", ""))
         entry: dict[str, Any] = {"attacker": attacker[:16], "names": named[:16], "ground": ground}
-        if ground not in GROUNDS:
+        if ground in MACHINE_GROUNDS:
+            entry.update({"landed": False, "why": "that ground is the machine's own and a criticism may not claim it"})
+        elif ground not in GROUNDS:
             entry.update({"landed": False, "why": f"ground must be one of {list(GROUNDS)}"})
         elif ground in NO_ATTACK:
             entry.update({"landed": False, "why": "the ground asserts nothing about the target"})
@@ -96,6 +126,51 @@ def attacks_of(context: MachineContext) -> list[dict[str, Any]]:
             else:
                 entry.update({"landed": True, "target": target[:16], "why": claim.get("why", "")})
         edges.append(entry)
+    return _evidence_edges(context) + edges
+
+
+def _evidence_edges(context: MachineContext) -> list[dict[str, Any]]:
+    """What the executions themselves attack: the reading whose claim the run did not bear out.
+
+    A claim the check answered exactly as the rule requires is a claim of a divergence that is not
+    there, and a claim the machine could not run at all was never put to the test. Either way the
+    reading does not stand on that row, and saying so is the machine's business rather than a
+    critic's. The rows that DO stand -- the collapse the rule forbids, and the separation the rule
+    forbids -- mint nothing: an absence of attack is not an endorsement.
+
+    These edges come FIRST in the relation, before any criticism, because the order a reader sees
+    them in should be the order they were established in: what the machine found, then what anyone
+    said about it.
+    """
+
+    edges: list[dict[str, Any]] = []
+    for key in context.state.artifact_order:
+        record = context.state.artifacts[key]
+        if not str(record["kind_id"]).startswith(PAIR_EXECUTION_PREFIX):
+            continue
+        try:
+            rows = json.loads(context.commitments(record)).get("executions", [])
+        except (ValueError, TypeError, AttributeError):
+            continue
+        if not isinstance(rows, list):
+            continue
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            target = _resolve(context, str(row.get("proposal", "")))
+            if target is None:
+                continue
+            executed = str(row.get("executed", ""))
+            if executed in UNRUN:
+                ground, why = MACHINE_GROUNDS[1], str(row.get("detail", ""))[:200]
+            elif row.get("as_expected") is True:
+                ground = MACHINE_GROUNDS[0]
+                why = (f"the check answered {executed} and the reading expected {row.get('expect')}: "
+                       "the rule and the code do not part company on this pair")
+            else:
+                continue
+            edges.append({"attacker": str(record["artifact_id"])[:16], "names": str(row.get("proposal", ""))[:16],
+                          "ground": ground, "landed": True, "target": target[:16], "why": why})
     return edges
 
 
@@ -147,11 +222,19 @@ def _adjudicate(context: MachineContext) -> str:
         f"{'landed' if e.get('landed') else 'did not land, ' + str(e.get('why'))}"
         for e in edges
     ]
+    # Counted apart, because they are different measurements: how much the machine established on
+    # its own, and how much a critic added to it. Adding them would let a block's "attacks landed"
+    # rise because more claims were unrunnable, which is the machinery working less, not more.
+    criticism = [e for e in edges if str(e.get("ground")) not in MACHINE_GROUNDS]
+    evidence = [e for e in edges if str(e.get("ground")) in MACHINE_GROUNDS]
     return json.dumps(
         {
             "body": "Attacks resolved against the record.\n" + ("\n".join(lines) or "(no criticism carried a target)"),
             "commitments": json.dumps(
-                {"edges": edges, "refuted": refuted, "attacks_landed": sum(1 for e in edges if e.get("landed"))},
+                {"edges": edges, "refuted": refuted,
+                 "attacks_landed": sum(1 for e in criticism if e.get("landed")),
+                 "criticisms": len(criticism),
+                 "evidence_edges": sum(1 for e in evidence if e.get("landed"))},
                 sort_keys=True,
             ),
         },
