@@ -214,3 +214,40 @@ map, same contract, same model, same budget.
 again, now that the loop is reading results rather than refusals, **the return path is out** for
 this task, model and budget. If `F` pulls ahead, serialisation is doing the thing mini exists for
 and the earlier null was the starvation.
+
+## The defect the operator found: commitments are written and not read
+
+Every kind in this block takes `commitment_call: two`, so every seat is asked twice and every
+artifact carries a commitment. Where each one goes:
+
+| artifact | commitment | who sees it |
+|---|---|---|
+| conjecture | prose, the claim itself | **nobody** — the `conj` port renders `list_bodies` |
+| reading | `{"kernel", "expect"}` | the executor, and only the executor |
+| execution | `{"executions": […]}` | critic and verdict |
+| criticism | prose, what the next conjecture will do | **nobody** — `crits` is declared and no kind consumes it |
+| verdict | `{"verdicts": […]}` | nobody; terminal |
+
+**Three of five commitment streams are dead ends**, and the critic has no port on `reads`.
+
+This contradicts T-D of `PIPELINE_MATH.md` in the same block that argued it. The point of putting
+the schema on a separate reading, downstream of the prose, was that a wrong reading survives in the
+record as a **target**: the disagreement between what the conjecture said and what the translator
+made of it is itself a finding. The critic was given no way to see the reading, so that
+disagreement could never be raised.
+
+It bites on this block's dominant failure. The readings named the wrong module repeatedly —
+`records.refusal_phrase_in` for a function that lives in `oracle` — and **the critic was
+structurally incapable of noticing**, because the only place that name appears is the reading's
+commitment, which it cannot see.
+
+Mini has a citation mechanism (`check_citations`, and `citations` among the template submission
+fields), but it is wired for evidence blocks rather than artifacts, and this manifest uses none of
+it.
+
+**What follows.** `F` finished at eight segments and `N` was still running when this was found, so
+the pair is left to finish: both arms are blind in the same way, which keeps the comparison
+internally valid and makes it a comparison between two crippled loops. The repair is a **wiring**
+change with the artifact kinds untouched — the critic gains the `reads` port and is asked to attack
+the commitment it finds there — and it is run as a declared third condition rather than folded into
+`F`, so that what the wiring buys is measured rather than assumed.
