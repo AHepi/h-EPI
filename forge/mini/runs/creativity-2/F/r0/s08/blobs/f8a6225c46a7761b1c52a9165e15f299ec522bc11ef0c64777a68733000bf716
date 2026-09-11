@@ -1,0 +1,15 @@
+# Execute
+
+## Readings (reads)
+[308341db29308b0c] (mini.pair-proposal.reading.v1)
+I read the rule as requiring any code fence, not only json-tagged fences. The check's fence pattern is narrower, so Reply A's fenced object is missed and both replies return {"q": 2}; the rule requires {"p": 1} for Reply A and {"q": 2} for Reply B, so the pair should move.
+input: ```ruby
+{"p": 1}
+```
+{"q": 2}
+rewrite: Reply A has a ruby code fence containing {"p": 1} followed by {"q": 2}; Reply B is only {"q": 2}.
+rewritten: {"q": 2}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

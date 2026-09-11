@@ -1,0 +1,20 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Conjecture 3ebc8b24c6be4e7f misreads the rule. The rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". The code's fenced pool is the raw fence content, and it only scores a fenced candidate if that content parses as a JSON object. In Reply A the fence content is "The answer is {\"a\": 1}\n", which is not a JSON object, so the fence does not "hold one" in the rule's sense; the code correctly falls through to the top-level pool and returns the last top-level object, {\"b\": 2}. The conjecture's expectation that {\"a\": 1} should be scored assumes the rule requires extracting an object nested inside prose within a fence, but the rule as written and the code both require the fenced content itself to be the object. So the rule and code do not part company; the conjecture misread the rule.
+
+A next conjecture should try a case where the fence content is a pure JSON object, e.g. "```\n{\"a\": 1}\n```\n{\"b\": 2}", and assert the fenced object wins; or a case with multiple fences where the last fenced object wins. It should avoid repeating the assumption that an object embedded in prose inside a fence counts as a fenced object.
+
+Reading ef706a3eb28f5049 is defective. It claims to render the conjecture's words "The rule requires Reply A to be scored as {\"a\": 1} because the code fence holds that object, and Reply B to be scored as {\"b\": 2} because there is no fence." Its rewrite says only "Reply A includes a fenced object and a trailing top-level object; Reply B is only the trailing top-level object" and sets "rewritten" to {\"b\": 2}, which is the actual output, not the conjecture's expected {\"a\": 1}. The reading therefore does not render the conjecture's expectation; it substitutes the observed result. The reading is wrong, not the conjecture, in this respect: the conjecture did state an expected output, and the reading failed to record it. The conjecture itself is also wrong about the rule, but that is a separate defect.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

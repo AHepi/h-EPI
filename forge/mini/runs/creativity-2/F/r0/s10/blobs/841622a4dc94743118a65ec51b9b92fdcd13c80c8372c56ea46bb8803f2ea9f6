@@ -1,0 +1,33 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+I am testing open:creib.forge.conformance.oracle.recover_json_object. Its documented rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." Reply A is the text: ```python\n{\"a\": 1}\n```\n{\"b\": 2}. Reply B is the text: {\"b\": 2}. Under the rule, Reply A's last object inside a code fence is {\"a\": 1}, so the check must return {\"a\": 1}; Reply B has no code fence, so the check must return {\"b\": 2}. The check's fence regex only matches ```json, ```JSON, or a bare ```, so it does not recognize the ```python fence in Reply A; its fenced pool is empty, and it falls back to the last top-level object, which is {\"b\": 2} in both replies. Thus the check returns the same answer for both, failing to tell them apart. I would be wrong if the check returned {\"a\": 1} for Reply A and {\"b\": 2} for Reply B, or otherwise distinguished the two replies.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

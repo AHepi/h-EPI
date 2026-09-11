@@ -1,0 +1,20 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Pair: conjecture a70d3ca47f67ecf5 vs source 3145b9e536590f37 and exec e9e278f5a4be2202. The conjecture did not misread the rule. The docstring says 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text'. 'Code fence' in that sentence is not restricted to json/JSON labels; a ```javascript fence is a code fence. The code's `_FENCE = re.compile('```(?:json|JSON)?\s*(.*?)```', re.DOTALL)` only matches fences whose label is absent, `json`, or `JSON`, so it ignores ```javascript. The execution confirms this: for both Reply A and Reply B the function returned `({'b': 2}, ())`, the last top-level object, exactly as the conjecture predicted. So the rule as written and the code part company; the conjecture is correct.
+
+Next conjecture should try instead: a pair where one reply has a ```json fence and the other has a ```javascript fence, with the fenced object not the last top-level object, to show that the defect is the label restriction rather than the fence-priority fallback. Avoid repeating the javascript-only pair, because it cannot distinguish 'any code fence' from 'json/JSON fence only' and will always fall through to the last top-level object.
+
+Reading 8f9019b62fac17b3: it claims to render the conjecture's words 'The rule I read is: ... For Reply A the rule requires the answer {"a": 1} ... For Reply B the rule requires the answer {"b": 2} ... The function gives the same answer for both'. The reading states the rule applies to any code fence, not only json-labelled ones; it states the two replies differ in which object is fenced; it states the function should return different answers. It names the same function `open:creib.forge.conformance.oracle.recover_json_object` that the prose named, and its expectation 'moves' is the prose's expectation that the outputs differ. So the reading renders the conjecture faithfully; it is not defective. The defect is in the code, not in the conjecture or the reading.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

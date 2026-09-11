@@ -1,0 +1,33 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+I am testing open:creib.forge.conformance.oracle.recover_json_object. Its documented rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." Reply A is the text '{"top": 1} and then [{"a":1}, {"b":2}]'. Reply B is the text '{"b":2}'. For Reply A, the rule requires the answer {"top": 1}, because the only top-level object in that text is the first object; the objects {"a":1} and {"b":2} sit inside a JSON array and are therefore not top-level objects. For Reply B, the rule requires the answer {"b":2}, because that is the last top-level object. The check, however, returns {"b":2} for both replies: in Reply A its top-level scan finds every balanced object starting with a left brace, including the two objects inside the array, and then takes the last one, which is {"b":2}. Thus the rule requires the check to tell the two replies apart, but the check gives the same answer. I would be wrong if the documented rule's phrase "top-level object" is meant to include objects inside arrays, so that for Reply A the last top-level object is also {"b":2}; in that case the check's answer would match the rule for both replies and there would be no failure to tell them apart.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

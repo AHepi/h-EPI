@@ -1,0 +1,16 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+On the pair: the conjecture does not misread the rule; the rule as written and the code part company. The rule says `The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text` — it does not restrict `code fence` to `json`/`JSON`. A yaml fence containing `{"a": 1}` is a code fence holding an object, so the rule requires `{"a": 1}`. The code's `_FENCE` regex `(?:json|JSON)?\s*(.*?)` captures the info string `yaml` for a yaml fence, producing the fenced candidate `yaml\n{"a": 1}\n`, which fails JSON parsing; the function then falls through to the top-level pool and returns the last top-level object `{"z": 9}`. So the code violates the rule for non-json fences. Next conjecture should try a fence with no info string or with `json` info string, and assert the fenced object is returned; it should avoid repeating the yaml info string without stating that the regex's optional `json`/`JSON` group is the specific cause, because a yaml fence is exactly the case the regex mishandles. On the reading: 8a56cda04d6eb8f7 is defective. It commits to `"expect": "moves"`, but the conjecture's prose says `The check, however, returns {"z": 9} for both.` That is a claim of unchanged output, not a move. The reading therefore names an expectation the prose did not state; the conjecture is right and the reading is wrong. The execution confirms: before and after are both `({'z': 9}, ())`, so `as_expected` is false only because the reading expected a move.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

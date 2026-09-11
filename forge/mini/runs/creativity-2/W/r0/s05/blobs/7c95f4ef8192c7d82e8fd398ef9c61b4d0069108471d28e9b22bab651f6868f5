@@ -1,0 +1,20 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The conjecture does not misread the rule; the rule as written and the code part company. The docstring says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." That is unqualified: any code fence. The implementation's `_FENCE` regex is `re.compile('```(?:json|JSON)?\\s*(.*?)```', re.DOTALL)`, which only matches fences with json, JSON, or no language. So a ```javascript fence is not treated as a fence, and the function falls through to the top-level scan, returning the last top-level object `{"b":2}`. The conjecture correctly identifies this discrepancy and correctly says the regex is an implementation detail, not the documented rule.
+
+The reading ddb1908b7c1e6e9c is defective. It claims to render the conjecture but does not quote its words; it paraphrases. More importantly, it sets `expect` to `moves`, an expectation the prose never states. The conjecture says the rule requires the answer `{"a":1}` for Reply A and that the check returns `{"b":2}` for both; the expected output for the input is `{"a":1}`, not that the output should change. The reading's `rewritten` is the actual output, not the expected one. So the reading is wrong, not the conjecture: the prose names the function and states the exact expected return, while the reading invents a different expectation.
+
+A next conjecture should test a non-json language fence, e.g. ```javascript, and assert that `recover_json_object` returns the object inside that fence (`{"a":1}`) rather than the later top-level object. It should avoid repeating the reading's `moves` expectation and avoid using the actual output as the expected value; state the exact return value.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

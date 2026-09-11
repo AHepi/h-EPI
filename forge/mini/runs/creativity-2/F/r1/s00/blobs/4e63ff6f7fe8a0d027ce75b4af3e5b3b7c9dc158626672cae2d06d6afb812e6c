@@ -1,0 +1,9 @@
+The function under test is open:creib.forge.conformance.oracle.recover_json_object. Its documented rule states: “The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.”
+
+Reply A is the exact string: three backticks, the word json, a newline, the characters {"a":1} {"b":2}, a newline, three backticks, a newline, and the characters {"c":3}. Reply B is the exact string: {"a":1} {"b":2} {"c":3}.
+
+For Reply A, the rule requires the recovered object to be {"b":2}, because it is the last object inside the code fence. For Reply B, the rule requires {"c":3}, because there is no fence and it is the last top-level object.
+
+The check gives the same answer for both replies: recover_json_object returns {"c":3} for each. It treats the entire fenced content of Reply A as a single candidate, fails to parse it as one object, and then falls back to the last top-level object, which is {"c":3}.
+
+This conjecture would be shown false if recover_json_object on Reply A actually returns {"b":2}, or if the rule is authoritatively interpreted to mean that a fence containing multiple objects does not satisfy “any fence holds one” and therefore the fallback to the last top-level object is correct.

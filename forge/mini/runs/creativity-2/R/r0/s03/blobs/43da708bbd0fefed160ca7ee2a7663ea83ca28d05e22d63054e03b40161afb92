@@ -1,0 +1,11 @@
+The function I am testing is open:creib.forge.conformance.oracle.recover_json_object, whose documented rule says: “The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.”
+
+The two reply texts, with newlines written as \n, are:
+
+First reply: "```json\n{\"a\": 1} {\"b\": 2}\n```\n{\"c\": 3}"
+
+Second reply: "{\"a\": 1} {\"b\": 2} {\"c\": 3}"
+
+For the first reply, the rule requires the last object inside the code fence, which is {"b": 2}. For the second reply, there is no fence, so the rule requires the last top-level object, which is {"c": 3}. But recover_json_object returns {"c": 3} for both replies. In the first reply, the fenced candidate is the entire fenced content "{\"a\": 1} {\"b\": 2}", which is not a single JSON object and is passed over, so the function falls through to the top-level pool and returns the last top-level object, {"c": 3}. In the second reply, it returns the last top-level object, {"c": 3}.
+
+What would make me wrong: if recover_json_object on the first reply returns {"b": 2} (or raises) instead of {"c": 3}, or if the two replies produce different answers, then the pair is not a find.

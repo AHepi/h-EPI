@@ -1,0 +1,20 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Verdict: the conjecture did not misread the rule; the rule as written and the code part company. The docstring says 'The object scored is the last one inside a code fence when any fence holds one' with no language restriction. The code's _FENCE regex matches only json, JSON, or bare fences, so a python fence is ignored. For Reply A the fenced pool contains only the json object {'a': 1}, so recover_json_object returns {'a': 1}; Reply B has the same json fence and also returns {'a': 1}. The execution confirms before and after are both ({'a': 1}, ()). The conjecture's expectation of {'b': 2} for A is exactly what the documented rule requires; the failure is in the code, not the reading of the rule.
+
+Next conjecture should isolate the non-JSON fence: use input ```python\n{"b": 2}\n```\n{"c": 3} and assert the function returns {'b': 2} because the python fence holds an object and must take priority over the later top-level object. The code will return {'c': 3}, exposing the regex's language restriction directly. Avoid repeating the current structure where a json fence precedes the python fence, because the code then returns the earlier json object and the violation of 'last fenced object' is less visible; also avoid using a bare fence, which the regex does match.
+
+Reading 2abf8c6a9585a564: it paraphrases 'the rule requires the last object inside any code fence, so Reply A should return {"b": 2} and Reply B should return {"a": 1}; the two required answers differ.' That renders the conjecture's stated expectation faithfully. Its structured commitment, however, records only 'expect': 'moves', which under-specifies the conjecture: the prose demanded specific outputs {'b': 2} for A and {'a': 1} for B, not merely that the outputs differ. The reading is not wrong about the function or module — the prose named open:creib.forge.conformance.oracle.recover_json_object and the function lives there — but the commitment should be tightened to the exact expected values.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

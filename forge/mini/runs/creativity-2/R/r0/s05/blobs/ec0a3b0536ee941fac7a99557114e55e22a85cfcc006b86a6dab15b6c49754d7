@@ -1,0 +1,33 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+I am testing open:creib.forge.conformance.oracle.recover_json_object. The documented rule I am reading is: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction.' The two reply texts are as follows. Reply A: '```json\n{"a": 1}\n{"b": 2}\n```\n{"c": 3}'. Reply B: '{"c": 3}'. For Reply A, the rule requires the answer to be the last object inside the code fence, which is {'b': 2}. For Reply B, the rule requires the answer to be the last top-level object, which is {'c': 3}. The check recover_json_object returns {'c': 3} for both replies, because the fenced candidate in Reply A fails to parse as a single object and the function falls through to the top-level pool, where the outside object is last. The conjecture would be false if recover_json_object(Reply A) returns {'b': 2} instead of {'c': 3}, or if the rule is read to allow the top-level fallback when a fenced candidate does not parse.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

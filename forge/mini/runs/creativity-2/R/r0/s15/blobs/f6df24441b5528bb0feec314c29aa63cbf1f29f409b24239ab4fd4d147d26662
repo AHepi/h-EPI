@@ -1,0 +1,40 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+I am testing open:creib.forge.conformance.oracle.recover_json_object. The documented rule says: "Every top-level balanced object in the text is a candidate, not only the span from the first { to the last }: reasoning prose before or after the answer frequently contains stray braces, and an object nested inside another is not a candidate of its own. The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text."
+
+Reply A: {"b":2} "{"a":1}"
+Reply B: {"a":1}
+
+For Reply A, the only top-level object is {"b":2}; the object inside the string is not a top-level object, so the rule requires recover_json_object to return {"b":2}. For Reply B, the rule requires {"a":1}. The check returns {"a":1} for both, because its top-level scan uses raw_decode at every '{' and does not respect string boundaries, so it treats the object inside the string in Reply A as a top-level candidate and takes the last one.
+
+I would be wrong if recover_json_object on Reply A returns {"b":2} rather than {"a":1}, or if the documented rule is read as counting an object inside a JSON string as a top-level object.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

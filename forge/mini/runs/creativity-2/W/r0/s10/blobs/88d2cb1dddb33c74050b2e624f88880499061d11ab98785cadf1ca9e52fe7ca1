@@ -1,0 +1,35 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+The three texts are fields of the REPLY, beside "body" and "commitments", not inside the commitments string. A reply that omits any of them is refused and you are asked again. In full, a well formed reply looks exactly like this:
+
+{"body": "<what you were unsure of, in prose>",
+ "commitments": "{\"kernel\": \"<the full dotted path>\", \"expect\": \"moves\"}",
+ "input": "<the first reply text, in full>",
+ "rewritten": "<the second reply text, in full>",
+ "rewrite": "<how the two differ>"}
+
+## The conjecture, as written (conj)
+[4dc0efa3b7f2e26b] (mini.conjecture.v1)
+Conjecture: The function open:creib.forge.conformance.oracle.recover_json_object, whose documented rule states "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text," is tested on two replies. Reply A is the text that begins with a line containing three grave accents followed by the word yaml, then a line containing the characters {"a": 1}, then a line containing three grave accents, then a line containing {"z": 9}. Reply B is the text that begins with a line containing three grave accents followed by the word yaml, then a line containing the characters {"b": 2}, then a line containing three grave accents, then a line containing {"z": 9}. The rule requires Reply A to be scored as {"a": 1}, because its yaml code fence holds that object, and Reply B to be scored as {"b": 2}, because its yaml code fence holds that object. The check, however, returns {"z": 9} for both. The reason is that the _FENCE regex `(?:json|JSON)?\s*(.*?)` matches the yaml fence as a bare fence, capturing the info string "yaml" together with the object, so the fenced candidate fails to parse as JSON; the function then falls through to the top-level pool and returns the last top-level object, which is {"z": 9} in both replies. I would be wrong if the check returned {"a": 1} for Reply A and {"b": 2} for Reply B, or if it raised on either reply, or if the documented rule were different.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.
+
+## The shape this answer must take
+`input` must contain something matching this expression:
+  \S
+
+`rewrite` must contain something matching this expression:
+  \S
+
+`rewritten` must contain something matching this expression:
+  \S

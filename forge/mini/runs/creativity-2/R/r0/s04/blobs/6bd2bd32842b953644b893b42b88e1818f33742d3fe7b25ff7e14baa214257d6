@@ -1,0 +1,7 @@
+The function under test is open:creib.forge.conformance.oracle.recover_json_object, whose documented rule states: “Every top-level balanced object in the text is a candidate, not only the span from the first ``{`` to the last ``}``: reasoning prose before or after the answer frequently contains stray braces, and an object nested inside another is not a candidate of its own.” The two reply texts are:
+
+Reply 1: `The answer is "{"a":1}"`
+
+Reply 2: `The answer is {"a":1}`
+
+For Reply 1, the rule requires no object to be recovered, because the braces are inside a quoted string and therefore do not form a top-level balanced object; the function should raise RecordError. For Reply 2, the rule requires the object `{"a":1}` to be recovered. The function, however, scans for any `{` and calls raw_decode without regard to whether the brace is inside a string, so it recovers `{"a":1}` from both replies, giving the same answer where the rule requires different answers. I would be wrong if, on running the function, Reply 1 raises RecordError (or otherwise does not recover the object) while Reply 2 recovers it, or if the documented rule is interpreted to allow objects inside strings as candidates.

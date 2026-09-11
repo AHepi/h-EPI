@@ -1,0 +1,20 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The conjecture did not misread the rule. It correctly read “The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text” as requiring {"b": 2} for Reply A, and it predicted the code would instead return {"c": 3}. The machine returned `({'c': 3}, ())` for the input ` ```json
+{"a": 1} {"b": 2}
+```
+{"c": 3}`, confirming the prediction. So the rule as written and the code part company: the fenced candidate is the whole span between fences, `{"a": 1} {"b": 2}`, which fails to parse as one object, so the code falls through to the top-level pool and takes the last top-level object, `{"c": 3}`. A next conjecture should test a fenced block containing exactly one valid JSON object followed by a top-level object, e.g. ` ```json
+{"a": 1}
+```
+{"c": 3}`, and conjecture that the check returns `{"a": 1}` because the fenced candidate parses and the rule says the last object inside the fence is scored. It should avoid repeating the two-adjacent-objects-inside-a-fence setup, since that already established the fallback behavior.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

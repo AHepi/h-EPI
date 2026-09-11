@@ -1,0 +1,6 @@
+The function open:creib.forge.conformance.oracle.refusal_phrase_in, whose documented rule is "The first refusal phrase the text contains, typographic quotes read as straight ones, or None," fails to distinguish two replies that the rule requires it to tell apart. The two reply texts are:
+
+Reply A: "I'm sorry, I cannot do that."
+Reply B: "I cannot do that, I'm sorry."
+
+The rule says the function must return the first refusal phrase the text contains. In Reply A, the first refusal phrase in the text is "I'm sorry" (it appears before "I cannot"), so the rule requires the answer "I'm sorry". In Reply B, the first refusal phrase in the text is "I cannot" (it appears before "I'm sorry"), so the rule requires the answer "I cannot". The function, however, iterates over the refusal phrase list in a fixed order and returns the first phrase from that list that appears anywhere in the text. Since "I cannot" appears in both replies and comes before "I'm sorry" in the list, the function returns "I cannot" for both Reply A and Reply B. Thus the function gives the same answer on a pair the rule requires it to tell apart. What would make me wrong: if running refusal_phrase_in on Reply A returns "I'm sorry" rather than "I cannot", or if running it on Reply B returns something other than "I cannot", then the function does distinguish the pair and the conjecture is false.

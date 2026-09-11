@@ -1,0 +1,8 @@
+I am testing open:creib.forge.conformance.oracle.recover_json_object. The documented rule says: "Every top-level balanced object in the text is a candidate, not only the span from the first { to the last }: reasoning prose before or after the answer frequently contains stray braces, and an object nested inside another is not a candidate of its own. The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text."
+
+Reply A: {"b":2} "{"a":1}"
+Reply B: {"a":1}
+
+For Reply A, the only top-level object is {"b":2}; the object inside the string is not a top-level object, so the rule requires recover_json_object to return {"b":2}. For Reply B, the rule requires {"a":1}. The check returns {"a":1} for both, because its top-level scan uses raw_decode at every '{' and does not respect string boundaries, so it treats the object inside the string in Reply A as a top-level candidate and takes the last one.
+
+I would be wrong if recover_json_object on Reply A returns {"b":2} rather than {"a":1}, or if the documented rule is read as counting an object inside a JSON string as a top-level object.

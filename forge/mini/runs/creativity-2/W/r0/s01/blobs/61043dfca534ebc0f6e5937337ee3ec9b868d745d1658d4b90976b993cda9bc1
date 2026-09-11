@@ -1,0 +1,24 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Conjecture did not misread the rule. It quotes 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text' and correctly takes 'any fence' to include ```javascript. The rule as written and the code part company: the code's fence regex only matches fences labelled json, JSON, or unlabelled, so for Reply B's ```javascript fence no fenced candidate is found and the code falls back to the last top-level object, returning {'a':1} while the rule requires {'c':3}. The execution confirms both before and after are {'a':1}.
+
+The reading 299f26c43c61beca is defective. It claims to render the conjecture's commitment as 'moves' because 'the quoted rule requires the two answers to differ.' But the conjecture explicitly states 'The function gives the same answer for both' and 'I would be wrong if the function returns different answers for the two replies.' The reading has mistaken the rule's required output for the function's predicted output. The conjecture's commitment about the function is unchanged, not moves. The reading is wrong, not the conjecture; the tell is that the conjecture's own words about the function's output are the commitment, while the rule's requirement is the standard being tested.
+
+A next conjecture should try a pair where the only change is the fence label from a non-json language to json, keeping the fenced object and trailing object identical. For example, input: ```javascript
+{"c":3}
+```
+And here is another object:
+{"a":1}; rewrite changes only ```javascript to ```json. Under the rule, the output should be unchanged (always the fenced object {'c':3}); under the code, the output moves from {'a':1} to {'c':3}. This isolates the fence-language recognition. Avoid repeating: do not change the fenced object and trailing object at the same time as the fence label; do not use only json/JSON/unlabelled fences; do not state the expected function output as what the rule requires without checking what the function actually does.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

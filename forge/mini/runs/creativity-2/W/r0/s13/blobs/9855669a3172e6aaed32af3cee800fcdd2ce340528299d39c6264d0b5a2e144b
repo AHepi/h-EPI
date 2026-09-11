@@ -1,0 +1,20 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Conjecture 70ae40ec3f3b223d does not misread the rule; the rule as written and the code part company. The rule says "Every top-level balanced object in the text is a candidate, not only the span from the first ``{`` to the last ``}``: reasoning prose before or after the answer frequently contains stray braces, and an object nested inside another is not a candidate of its own." A brace inside a quoted string is not a top-level balanced object; it is string content. The code in recover_json_object scans every `{` and calls raw_decode from that index without checking whether the index is inside a string, so for `The answer is "{"a":1}"` it parses the substring `{"a":1}` and returns `({'a': 1}, ())`, exactly as the conjecture predicted. The execution c6f74835f09fffcd confirms this: after and before are both `({'a': 1}, ())`, as_expected false. Thus the code violates the rule's 'top-level' requirement, not the conjecture's reading of it.
+
+The reading 07f149f9c8259ebd is defective. It claims to render the conjecture's words "Reply A is exactly: The answer is "{"a":1}" Reply B is exactly: {"a":1} The rule requires Reply A to raise RecordError because the brace and object are inside a quoted string, so there is no top-level object; the rule requires Reply B to return the object {"a":1}." But the reading records only the input and a rewrite to `{"a":1}`, with expectation `moves`. It omits the conjecture's stated expected outcome for Reply A (RecordError) and the distinction between A and B. The `rewritten` field `{"a":1}` is the object the conjecture says Reply B should return, not a rewrite of Reply A. The expectation `moves` is not stated in the conjecture. The reading is wrong, not the conjecture; the conjecture explicitly names the kernel and the two expected outcomes, while the reading collapses them into one vague expectation.
+
+A next conjecture should try a pair where a real top-level object appears before a quoted object, e.g. `{"b":2} and then "{"a":1}"`, to test whether the code's string-blind scan picks the quoted object as the last top-level object when the rule says the last top-level object is the real one. It should avoid repeating the exact pair `The answer is "{"a":1}"` / `{"a":1}`, because that pair's behavior is already established and does not further separate the rule's 'top-level' from the code's over-permissive scan.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

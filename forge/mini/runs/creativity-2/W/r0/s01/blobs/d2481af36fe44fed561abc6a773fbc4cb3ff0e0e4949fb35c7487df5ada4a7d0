@@ -1,0 +1,33 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+I am testing open:creib.forge.conformance.oracle.recover_json_object. The documented rule I am reading is: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' I give two reply texts. Reply A is: 'Here is the answer:\n```json\n{\"a\": 1}\n```\nAnd here is another object:\n{\"b\": 2}'. Reply B is: 'Here is the answer:\n```javascript\n{\"c\": 3}\n```\nAnd here is another object:\n{\"a\": 1}'. For Reply A, the rule requires the answer {\"a\": 1}, because that object is inside a ```json code fence, and the rule says the last object inside any code fence is scored. For Reply B, the rule requires the answer {\"c\": 3}, because that object is inside a ```javascript code fence, and the rule says any code fence counts. The function gives the same answer for both: it returns {\"a\": 1} for Reply A (recognizing the json fence) and {\"a\": 1} for Reply B (ignoring the javascript fence and falling back to the last top-level object). I would be wrong if the function returns different answers for the two replies, or if the documented rule is not as I quoted, for example if 'code fence' is defined elsewhere to mean only fences labelled json, JSON, or unlabelled.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

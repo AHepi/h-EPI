@@ -1,0 +1,36 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+I am testing open:creib.forge.conformance.oracle.recover_json_object. Its documented rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". The two reply texts are as follows. Text A: ```python
+{"a":1}
+```
+{"b":2}. Text B: {"b":2}. The rule requires Text A to yield {"a":1}, because that object is inside a code fence and is the last (only) object inside any fence; it requires Text B to yield {"b":2}, because there is no fence and that is the last top-level object. But the function gives the same answer for both: {"b":2}. It does this because its fence regex only matches ```json, ```JSON, or a bare ```, not ```python, so the python fence is not collected as a fenced candidate; both texts are then scored on their last top-level object, which is {"b":2} in each. I would be wrong if the function's fence regex actually matched ```python (contrary to the source shown), or if the documented rule were read to mean only json/JSON or bare fences, but the docstring says "code fence" without qualification.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

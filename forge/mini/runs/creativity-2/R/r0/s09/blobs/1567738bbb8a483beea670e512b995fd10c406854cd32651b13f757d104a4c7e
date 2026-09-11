@@ -1,0 +1,13 @@
+I am testing the function open:creib.forge.conformance.oracle.recover_json_object. The documented rule I am reading says: “The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction.”
+
+The two reply texts are, in full:
+
+Reply A: "```json\n{\"a\": 1} {\"b\": 2}\n```\n{\"c\": 3}"
+
+Reply B: "{\"c\": 3}"
+
+For Reply A, the rule requires the answer to be the object {"b": 2}, because that is the last object inside the code fence, and the rule says the object scored is the last one inside a code fence when any fence holds one. For Reply B, the rule requires the answer to be the object {"c": 3}, because there is no code fence, so the rule falls back to the last top-level object in the text, which is {"c": 3}.
+
+The check recover_json_object gives the same answer for both replies: it returns {"c": 3} for Reply A and {"c": 3} for Reply B. For Reply A, the fenced candidate is the entire string "{\"a\": 1} {\"b\": 2}", which does not parse as a single JSON object, so the function passes over it and then scans the whole text for top-level objects, finding {"a": 1}, {"b": 2}, and {"c": 3}; it returns the last one, {"c": 3}. For Reply B, it returns the only top-level object, {"c": 3}.
+
+I would be wrong if recover_json_object, when given Reply A, actually returns {"b": 2} rather than {"c": 3}, or if the documented rule is read to mean that a code fence containing more than one JSON object does not satisfy “any fence holds one,” so that the rule also requires {"c": 3} for Reply A and the function is correct.

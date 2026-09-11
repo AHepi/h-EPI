@@ -1,0 +1,7 @@
+The function under test is open:creib.forge.conformance.oracle.recover_json_object. Its documented rule says: “The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text,” and also that “Every top-level balanced object in the text is a candidate.”
+
+The first reply text is the string: '```json\n{"a": 1} {"b": 2}\n```\n{"c": 3}'. The second reply text is the string: '{"c": 3}'.
+
+For the first reply, the rule requires the last object inside the code fence, which is {"b": 2}, because the fence holds two top-level objects and the last of them is {"b": 2}. For the second reply, there is no fence, so the rule requires the last top-level object in the text, which is {"c": 3}. The check gives the same answer for both replies: it returns {"c": 3}. In the first reply, the fenced candidate is the whole string '{"a": 1} {"b": 2}', which does not parse as a single JSON object, so the implementation passes over the fenced pool and falls through to top-level scanning of the entire text, where the last top-level object is the outside {"c": 3}. Thus the difference the rule requires is lost.
+
+What would make me wrong: if running recover_json_object on the first reply actually returns {"b": 2} rather than {"c": 3}, or if the documented rule is read as not treating a fence that contains multiple objects as “holding one” for the purpose of the fenced-pool priority, then the pair would not be a find.

@@ -1,0 +1,7 @@
+I am testing open:creib.forge.conformance.oracle.recover_json_object. The documented rule I am reading says: “The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.”
+
+Reply A is the text consisting of a line with three backticks followed by the word json, then a newline, then the characters {"a": 1}, then a newline, then three backticks, then a newline, then a line with three backticks followed by the word json, then a newline, then the characters {"b": 2} {"c": 3}, then a newline, then three backticks. Reply B is the same except that the second fenced block contains {"d": 4} {"e": 5} instead of {"b": 2} {"c": 3}.
+
+For Reply A, the rule requires the answer {"c": 3}, because the last object inside any code fence is {"c": 3} in the second fence. For Reply B, the rule requires the answer {"e": 5}, because the last object inside any code fence is {"e": 5} in the second fence. My conjecture is that the check returns {"a": 1} for both replies, because the second fenced candidate is the whole span between the second pair of fences, which contains two adjacent JSON objects and therefore fails to parse as a single object; the code then falls through to the first fenced candidate, which parses and is returned.
+
+What would make me wrong is an observation in which the check returns {"c": 3} for Reply A or {"e": 5} for Reply B, or returns any two different answers for the pair.

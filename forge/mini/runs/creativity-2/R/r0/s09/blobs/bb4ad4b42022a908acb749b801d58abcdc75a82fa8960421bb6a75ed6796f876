@@ -1,0 +1,35 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+The three texts are fields of the REPLY, beside "body" and "commitments", not inside the commitments string. A reply that omits any of them is refused and you are asked again. In full, a well formed reply looks exactly like this:
+
+{"body": "<what you were unsure of, in prose>",
+ "commitments": "{\"kernel\": \"<the full dotted path>\", \"expect\": \"moves\"}",
+ "input": "<the first reply text, in full>",
+ "rewritten": "<the second reply text, in full>",
+ "rewrite": "<how the two differ>"}
+
+## The conjecture, as written (conj)
+[e8d3beb5c6ba4fe4] (mini.conjecture.v1)
+Conjecture: The function open:creib.forge.conformance.oracle.recover_json_object, whose documented rule says "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text", gives the same answer for two replies that the rule requires it to tell apart. The first reply is the string consisting of three backticks, the word json, a newline, the text {"a":1} {"x":1}, a newline, three backticks, a newline, and the text {"y":1}. The second reply is the string consisting of three backticks, the word json, a newline, the text {"a":1} {"z":1}, a newline, three backticks, a newline, and the text {"y":1}. For the first reply, the rule requires the answer to be the object {"x":1}, because that is the last object inside the code fence. For the second reply, the rule requires the answer to be the object {"z":1}, because that is the last object inside the code fence. But the function returns the same answer for both: it returns the object {"y":1}, because its fenced pool treats the entire fenced content as one candidate, which fails to parse, and then it falls back to the last top-level object in the whole text, which is {"y":1} in both replies. I would be wrong if the function actually returned {"x":1} for the first reply and {"z":1} for the second, or if the documented rule were read as requiring the last fenced candidate that parses as a whole rather than the last object inside a fence.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.
+
+## The shape this answer must take
+`input` must contain something matching this expression:
+  \S
+
+`rewrite` must contain something matching this expression:
+  \S
+
+`rewritten` must contain something matching this expression:
+  \S

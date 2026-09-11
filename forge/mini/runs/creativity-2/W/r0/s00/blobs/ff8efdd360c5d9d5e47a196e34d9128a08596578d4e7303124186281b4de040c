@@ -1,0 +1,17 @@
+The function I am testing is open:creib.forge.conformance.oracle.recover_json_object. Its documented rule says: “Every top-level balanced object in the text is a candidate, not only the span from the first `{` to the last `}` … The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.”
+
+The two reply texts are as follows. Reply 1 is:
+
+```json
+{"a":1} {"b":2}
+```
+{"c":3}
+
+Reply 2 is:
+
+```json
+{"a":1} {"d":4}
+```
+{"c":3}
+
+For reply 1, the rule requires the answer to be the object `{"b":2}`, because the fenced block contains two top-level objects and the last one inside the fence is `{"b":2}`. For reply 2, the rule requires the answer to be the object `{"d":4}`, for the same reason. The check, however, gives the same answer for both replies: it returns the outside object `{"c":3}` with no duplicate keys, that is, the tuple `({'c': 3}, ())`. The observation that would show this conjecture false is the check returning different answers for the two replies, for example returning `{'b': 2}` for reply 1 and `{'d': 4}` for reply 2 as the rule requires.

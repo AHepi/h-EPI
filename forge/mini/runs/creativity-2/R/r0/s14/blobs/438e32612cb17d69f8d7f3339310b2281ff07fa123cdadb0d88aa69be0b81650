@@ -1,0 +1,35 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+The three texts are fields of the REPLY, beside "body" and "commitments", not inside the commitments string. A reply that omits any of them is refused and you are asked again. In full, a well formed reply looks exactly like this:
+
+{"body": "<what you were unsure of, in prose>",
+ "commitments": "{\"kernel\": \"<the full dotted path>\", \"expect\": \"moves\"}",
+ "input": "<the first reply text, in full>",
+ "rewritten": "<the second reply text, in full>",
+ "rewrite": "<how the two differ>"}
+
+## The conjecture, as written (conj)
+[0b967d7b8f485aa6] (mini.conjecture.v1)
+Conjecture: The function open:creib.forge.conformance.oracle.recover_json_object, whose documented rule says "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text", fails to distinguish two replies that the rule requires it to tell apart. Reply A is exactly: '```json\n{"a":1} {"b":2}\n```\n{"c":3}' (where \n denotes a newline). Reply B is exactly: '{"c":3}'. For Reply A, the rule requires the answer to be the object {"b":2}, because it is the last object inside the code fence, and a fence holds one. For Reply B, the rule requires the answer to be {"c":3}, because there is no fence and it is the last top-level object. The function, however, gives the same answer for both: it returns {"c":3} for Reply A because the fenced content '{"a":1} {"b":2}' is not a single JSON value and is passed over, so the function falls back to the top-level pool and picks the last top-level object, which is {"c":3}. This observation would show the conjecture false: if the function returned {"b":2} for Reply A and {"c":3} for Reply B, or if the documented rule were interpreted to mean that a fence containing multiple objects is not 'a fence holds one' and thus the top-level fallback is correct.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.
+
+## The shape this answer must take
+`input` must contain something matching this expression:
+  \S
+
+`rewrite` must contain something matching this expression:
+  \S
+
+`rewritten` must contain something matching this expression:
+  \S

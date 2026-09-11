@@ -1,0 +1,17 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The conjecture misreads the code, not the rule. The rule says "else the last top-level object in the text", and recover_json_object does scan the whole text for top-level objects after the fenced pool. For Reply A, the ```python fence is not matched by _FENCE, so fenced is empty, but the top_level scan still finds {"a": 1} and returns it; the execution shows before = ({'a': 1}, ()). Thus the check does not raise for Reply A, and the pair is not conflated. The rule and code agree here. A next conjecture should test a reply where a python-tagged fence contains one object and a later top-level object appears outside it, e.g. ```python
+{"a": 1}
+```
+{"b": 2}. The rule's "when any fence holds one" would score the fenced object, but the code's _FENCE ignores python fences and the top-level fallback would return the later {"b": 2}. Avoid repeating the claim that a lone object inside an unrecognized fence is lost; the top-level fallback recovers it.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

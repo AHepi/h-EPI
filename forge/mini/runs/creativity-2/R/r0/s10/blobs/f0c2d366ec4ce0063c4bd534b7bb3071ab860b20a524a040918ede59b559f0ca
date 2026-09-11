@@ -1,0 +1,33 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+I conjecture that open:creib.forge.conformance.oracle.recover_json_object gives the same answer for two replies that its documented rule requires it to tell apart. The rule I am reading is: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text'. The two replies are as follows. Reply A is the string: three backticks, the word 'Json', a newline, the characters '{"a": 1}', a newline, three backticks, a newline, the words 'Some text', a newline, and the characters '{"a": 3}'. Reply B is the string: three backticks, the word 'Json', a newline, the characters '{"a": 2}', a newline, three backticks, a newline, the words 'Some text', a newline, and the characters '{"a": 3}'. According to the rule, because each reply contains a code fence holding an object, the function must score the last object inside that fence: for Reply A that is {"a": 1}, and for Reply B that is {"a": 2}. These are different, so the rule requires different answers. However, the function's fence-matching regex only recognises the language tags 'json' and 'JSON' (or no tag), not the mixed-case 'Json'. It therefore captures the word 'Json' together with the object as the fenced candidate, which fails to parse, and the function falls through to the top-level object {"a": 3} in both replies, returning the same answer for both. What would make me wrong: if the function returns {"a": 1} for Reply A and {"a": 2} for Reply B, or if it raises on either reply, then the conjecture is false.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

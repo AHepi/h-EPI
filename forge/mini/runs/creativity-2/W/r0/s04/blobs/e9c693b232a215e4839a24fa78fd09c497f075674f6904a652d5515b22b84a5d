@@ -1,0 +1,23 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The conjecture misreads the rule, not a code/rule divergence. The rule's words are 'top-level object' and 'an object nested inside another is not a candidate of its own.' The code's top-level scan uses raw_decode at every { not inside a previously decoded object; it sets cursor = end only after decoding an object, so it skips objects nested inside objects but does not skip objects inside arrays. The docstring's only stated exclusion is an object nested inside another object; it does not say objects inside arrays are not top-level. Therefore for Reply A the last top-level object under the rule as written is {"b":2}, the same as the check returns, and there is no failure to tell the two replies apart. The conjecture's conditional ('I would be wrong if ... include objects inside arrays') is the correct branch, but the conjecture treats it as merely possible rather than as the rule's actual meaning.
+
+Next conjecture should test the code-fence priority instead: e.g. input ```json
+{"a":1}
+```
+{"b":2} should return {"a":1} because a fenced object beats a later top-level object. Or test a true nested-object case: {"a": {"b":2}} should return only the outer object. Avoid repeating the array-nested-objects example as a supposed divergence; it cannot show one because the rule as implemented includes those objects.
+
+Reading be68b22a265508bc is defective. It claims to render the conjecture's words 'the rule requires the answer {"top": 1}, because the only top-level object in that text is the first object; the objects {"a":1} and {"b":2} sit inside a JSON array and are therefore not top-level objects.' But the reading then says 'if the documented rule meant to include them, the expectation would be unchanged,' which contradicts the conjecture's own conditional: the conjecture says if they are included, the check's answer would match the rule and there would be no failure. The reading also states an expectation 'moves' that the prose never states; the prose expects the check to return {"top":1} for Reply A, not to move to {"b":2}. The reading is wrong, not the conjecture: the conjecture explicitly gives the required answer and the conditional, while the reading omits the required answer and encodes the observed output as the expectation.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

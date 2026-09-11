@@ -1,0 +1,47 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+The three texts are fields of the REPLY, beside "body" and "commitments", not inside the commitments string. A reply that omits any of them is refused and you are asked again. In full, a well formed reply looks exactly like this:
+
+{"body": "<what you were unsure of, in prose>",
+ "commitments": "{\"kernel\": \"<the full dotted path>\", \"expect\": \"moves\"}",
+ "input": "<the first reply text, in full>",
+ "rewritten": "<the second reply text, in full>",
+ "rewrite": "<how the two differ>"}
+
+## The conjecture, as written (conj)
+[18545f9337469fec] (mini.conjecture.v1)
+I am testing open:creib.forge.conformance.oracle.recover_json_object. The documented rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". I give two replies. Reply A is:
+> ```javascript
+> {"c":3}
+> ```
+> And here is another object:
+> {"a":1}
+Reply B is:
+> ```json
+> {"c":3}
+> ```
+> And here is another object:
+> {"a":1}
+The only difference is the fence label: javascript versus json. Under the rule, both replies have a code fence holding an object, and that fenced object is {"c":3}; the trailing object {"a":1} is not inside a fence. Therefore the rule requires the same answer for both: the object scored is {"c":3}. The function, however, as its code shows, only recognises fences labelled json, JSON, or unlabelled; for Reply A's javascript fence it finds no fenced candidate and falls back to the last top-level object, which is {"a":1}, while for Reply B it returns {"c":3}. So the function tells the two replies apart where the rule says it should not. This is the weaker kind of failure, not the original find of a pair the check answers the same on. I would be wrong if the function returns the same answer for both replies, for example if it returns {"c":3} for Reply A as well, because then it would not tell them apart.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.
+
+## The shape this answer must take
+`input` must contain something matching this expression:
+  \S
+
+`rewrite` must contain something matching this expression:
+  \S
+
+`rewritten` must contain something matching this expression:
+  \S
