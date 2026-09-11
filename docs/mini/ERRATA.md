@@ -391,6 +391,33 @@ CON-EXECS-CARRIES-THE-READING so that nothing built on `F` → `W` is read as mo
 against a stored `F` prompt. Three blocks have now been designed around this contrast and none of the
 three noticed that the row the executor writes carries the proposal it ran.
 
+### C19. The grounding filter has never once removed anything (**mine, stated**)
+
+`grounded_T1` is the block's headline measure: a confirmed collapse **plus** the conjecture's prose
+quoting six or more consecutive words that occur verbatim in that function's own docstring or source.
+The pre-registration calls it *"the one the enumerator cannot score on, by construction"* and
+*"where a model can contribute something the host cannot do for free"*.
+
+Across **twelve cells of twelve**, `grounded_T1` equals `collapse_T1` exactly. Every confirmed
+collapse passed the filter. It has never excluded a single row.
+
+Half of what that sentence claims still holds: the mechanical enumerator scores zero on it because it
+writes no prose, so the measure does separate an arm that writes prose from one that does not. What
+does **not** hold is the implication that it separates well-grounded claims from poorly grounded ones
+*within* the model arms. It does not, and it never has. Six consecutive words of a function's own
+source is a threshold any conjecture that quotes the rule at all will clear, and every one of them
+did.
+
+So every "grounded per call" figure in this block is, exactly, a "confirmed collapse per call"
+figure, and the distinction between the two measures carries no information about these records.
+
+**What it costs:** nothing yet, because no conclusion has been drawn from the gap between the two —
+there is no gap. It would cost a great deal the moment anyone read `grounded_T1` as evidence that a
+find was well grounded rather than merely prose-bearing.
+
+**Not repaired.** Tightening the threshold after seeing the records is fitting a measure to data. It
+is named here, and a block that wants a filter that filters must pre-register a different one.
+
 ## The pattern
 
 Of the twenty-odd items above, **three** are about the model. All the rest are about the apparatus:
@@ -402,7 +429,7 @@ The one thing that survived every repair, unchanged, is the conjecture step. It 
 boundaries under every configuration, including the cheapest, and the machinery kept failing to
 execute, see, or count them.
 
-A5 and C12 to C18 were added after the rest, while building and first running the block that was meant
+A5 and C12 to C19 were added after the rest, while building and first running the block that was meant
 to settle the question. C12 was found by reading the run headers, A5 by counting what a segment
 actually sends, and C13 and C14 by alarms firing on live segments — the only items here that a
 machine caught rather than a person, and C14 was additionally diagnosed, correctly and in prose, by
