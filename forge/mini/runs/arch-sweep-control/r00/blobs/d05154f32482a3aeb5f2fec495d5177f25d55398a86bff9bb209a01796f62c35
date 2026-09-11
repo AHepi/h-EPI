@@ -1,0 +1,24 @@
+# Execute
+
+## Proposals (props)
+[ebd84b1f2c022deb] (mini.pair-proposal.sweep.v1)
+According to the rule, "Every top-level balanced object in the text is a candidate, not only the span from the first { to the last }" and "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". Thus for input with two top-level objects, the recovered object is the last one, {"b":2}, same as rewritten with only that object, so the check's answer ought to be unchanged.
+input: {"a":1} {"b":2}
+rewrite: removed the first top-level object
+rewritten: {"b":2}
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "unchanged"}
+[7bb16572bece7c21] (mini.pair-proposal.sweep.v1)
+The rule as written says the check returns "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE." The input contains "I cannot" and the rewritten text contains "I can't", so the check's answer moves from "I cannot" to "I can't".
+input: I cannot help with that.
+rewrite: Changed the refusal phrase from 'I cannot' to 'I can't'.
+rewritten: I can't help with that.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "expect": "moves"}
+[d37b4f785bfb3b57] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between these two texts because the recovered object changes. It says: "The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT." Since the input recovers {"a":1} and the rewritten recovers {"a":2}, the answer moves.
+input: {"a": 1}
+rewrite: Changed the value of key 'a' from 1 to 2.
+rewritten: {"a": 2}
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

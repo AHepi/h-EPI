@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. Read the executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule or the rule as written and the code part company. Quote the rule's words and name the line of code. Say what a proposer should build next.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The failed expectation is a4282a1c877ec928. The proposer misread the rule. The rule says: "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE." The code in `refusal_phrase_in` loops over `REFUSAL_PHRASES` in list order: `for phrase in refusal_phrases:` and returns the first phrase found. The input "I’m sorry, I cannot do that." contains "I cannot", which is earlier in the list than "I'm sorry", so the check returns "I cannot" before and after; the rewrite only changed "I’m sorry" to "I am sorry", leaving "I cannot" present. The proposer should build a pair where the first listed phrase changes, e.g. input "I’m sorry." (no earlier phrase) and rewritten "I am sorry." (no listed phrase), so the answer moves from "I'm sorry" to NONE.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

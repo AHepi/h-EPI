@@ -1,0 +1,29 @@
+# Verdict
+
+## Executions (execs)
+[40455a8a842aab4a] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+ebd84b1f2c022deb: conformance.kernel.recovery -> unchanged, expected unchanged
+commitments: {"executions": [{"after": "{\"b\":2}", "as_expected": true, "before": "{\"b\":2}", "executed": "unchanged", "expect": "unchanged", "input": "{\"a\":1} {\"b\":2}", "kernel": "conformance.kernel.recovery", "proposal": "ebd84b1f2c022deb", "rewrite": "removed the first top-level object", "rewritten": "{\"b\":2}"}]}
+[21df0c4e85d6e6dd] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+ebd84b1f2c022deb: duplicate
+7bb16572bece7c21: conformance.kernel.refusal-phrase -> moved, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "unchanged", "input": "{\"a\":1} {\"b\":2}", "kernel": "conformance.kernel.recovery", "proposal": "ebd84b1f2c022deb", "rewrite": "removed the first top-level object", "rewritten": "{\"b\":2}"}, {"after": "I can't", "as_expected": true, "before": "I cannot", "executed": "moved", "expect": "moves", "input": "I cannot help with that.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "7bb16572bece7c21", "rewrite": "Changed the refusal phrase from 'I cannot' to 'I can't'.", "rewritten": "I can't help with that."}]}
+[12d1a4f0e5122e49] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+ebd84b1f2c022deb: duplicate
+7bb16572bece7c21: duplicate
+d37b4f785bfb3b57: conformance.kernel.recovery -> moved, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "unchanged", "input": "{\"a\":1} {\"b\":2}", "kernel": "conformance.kernel.recovery", "proposal": "ebd84b1f2c022deb", "rewrite": "removed the first top-level object", "rewritten": "{\"b\":2}"}, {"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "I cannot help with that.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "7bb16572bece7c21", "rewrite": "Changed the refusal phrase from 'I cannot' to 'I can't'.", "rewritten": "I can't help with that."}, {"after": "{\"a\":2}", "as_expected": true, "before": "{\"a\":1}", "executed": "moved", "expect": "moves", "input": "{\"a\": 1}", "kernel": "conformance.kernel.recovery", "proposal": "d37b4f785bfb3b57", "rewrite": "Changed the value of key 'a' from 1 to 2.", "rewritten": "{\"a\": 2}"}]}
+
+## Criticisms (crits)
+[d9bf27490dede805] (mini.criticism.v1)
+No expectation failed. The execution for proposal ebd84b1f2c022deb reports "as_expected": true, so there is no misread of the rule and no divergence between the rule as written and the code. The proposer correctly applied the rule that the recovered object is the last top-level object in the text.
+[bf7b97b13fc5f8a0] (mini.criticism.v1)
+No expectations failed. Both proposals passed: ebd84b1f2c022deb's recovery check returned unchanged as expected, and 7bb16572bece7c21's refusal-phrase check moved from 'I cannot' to 'I can't' as expected. The only anomaly is that ebd84b1f2c022deb was executed twice, with the second run marked 'duplicate' because 'this run already executed this kernel on this pair'; that is a bookkeeping note, not a failure. A proposer should next build proposals that test other kernels or edge cases, such as recovery from prose or grounding verdicts.
+[5e9d5b6cb465a38c] (mini.criticism.v1)
+No expectations failed in this cycle. All three proposals executed as expected: ebd84b1f2c022deb (unchanged), 7bb16572bece7c21 (moved), d37b4f785bfb3b57 (moved).
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

@@ -1,0 +1,21 @@
+# Verdict
+
+## Executions (execs)
+[0a4514008ff9d19a] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+14cd4437ce33f835: conformance.kernel.recovery -> moved, expected moves
+commitments: {"executions": [{"after": "{\"a\":2}", "as_expected": true, "before": "{\"a\":1}", "executed": "moved", "expect": "moves", "input": "{\"a\":1}", "kernel": "conformance.kernel.recovery", "proposal": "14cd4437ce33f835", "rewrite": "changed the value of a from 1 to 2", "rewritten": "{\"a\":2}"}]}
+[dea5b46988a7b694] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+14cd4437ce33f835: duplicate
+33cd397e2034a328: conformance.kernel.recovered-from-prose -> moved, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "{\"a\":1}", "kernel": "conformance.kernel.recovery", "proposal": "14cd4437ce33f835", "rewrite": "changed the value of a from 1 to 2", "rewritten": "{\"a\":2}"}, {"after": "yes", "as_expected": true, "before": "no", "executed": "moved", "expect": "moves", "input": "{\"answer\": 42}", "kernel": "conformance.kernel.recovered-from-prose", "proposal": "33cd397e2034a328", "rewrite": "wrapped the strict JSON object in prose", "rewritten": "The answer is {\"answer\": 42}."}]}
+
+## Criticisms (crits)
+[2fddc1c54a5f115c] (mini.criticism.v1)
+No expectations failed in this execution. The single proposal (14cd4437ce33f835) executed as expected: conformance.kernel.recovery moved from {"a":1} to {"a":2}.
+[ab31c5fa779d36b2] (mini.criticism.v1)
+No expectation failed. Both proposals executed as expected: 14cd4437ce33f835 moved conformance.kernel.recovery from {"a":1} to {"a":2}, and 33cd397e2034a328 moved conformance.kernel.recovered-from-prose from no to yes. The duplicate entry for 14cd4437ce33f835 in the second execution is not a failed expectation; it was already executed. A proposer should build next a pair that targets a kernel not yet exercised, such as conformance.kernel.response-verdict or conformance.kernel.refusal-phrase.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

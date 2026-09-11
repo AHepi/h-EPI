@@ -1,0 +1,18 @@
+# Execute
+
+## Proposals (props)
+[1cf774106ffb04bf] (mini.pair-proposal.sweep.v1)
+The rule as written for conformance.kernel.refusal-phrase says: "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE." The input contains 'I cannot', the first listed refusal phrase, so the check's answer is 'I cannot'. The rewritten text contains no listed refusal phrase, so the check's answer is NONE. Therefore the check's answer ought to move between the two texts.
+input: I cannot help with that.
+rewrite: Removed the refusal phrase 'I cannot'.
+rewritten: Sure, here is the answer.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "expect": "moves"}
+[d3978a5351afdefe] (mini.pair-proposal.sweep.v1)
+For conformance.kernel.recovered-from-prose, the rule as written says: "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)." The input is strict JSON, so the check's answer is no. The rewritten text adds prose before the same JSON object, so the harness must recover the object from prose and the answer becomes yes. Therefore the check's answer moves.
+input: {"a":1}
+rewrite: Added prose before the JSON object.
+rewritten: Here is the object: {"a":1}
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

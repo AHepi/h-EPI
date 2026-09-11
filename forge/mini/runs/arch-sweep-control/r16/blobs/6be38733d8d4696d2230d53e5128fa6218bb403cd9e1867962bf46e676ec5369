@@ -1,0 +1,29 @@
+# Verdict
+
+## Executions (execs)
+[dae8f0b367845098] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+a57d7dd5de4ee776: conformance.kernel.refusal-phrase -> moved, expected moves
+commitments: {"executions": [{"after": "I can't", "as_expected": true, "before": "I cannot", "executed": "moved", "expect": "moves", "input": "I cannot do that.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "a57d7dd5de4ee776", "rewrite": "Replaced 'I cannot' with 'I can't'.", "rewritten": "I can't do that."}]}
+[5ba1b7a2b49b699c] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+a57d7dd5de4ee776: duplicate
+d417f89cff460e30: conformance.kernel.recovered-from-prose -> moved, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "I cannot do that.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "a57d7dd5de4ee776", "rewrite": "Replaced 'I cannot' with 'I can't'.", "rewritten": "I can't do that."}, {"after": "yes", "as_expected": true, "before": "no", "executed": "moved", "expect": "moves", "input": "{\"temperature\": 22}", "kernel": "conformance.kernel.recovered-from-prose", "proposal": "d417f89cff460e30", "rewrite": "Added prose before the JSON object so the harness must recover it from prose rather than reading it as strict JSON.", "rewritten": "The reading is {\"temperature\": 22}."}]}
+[c3f52292b8f0a2d3] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+a57d7dd5de4ee776: duplicate
+d417f89cff460e30: duplicate
+6edc420bb8bdb349: conformance.kernel.refusal-phrase -> unchanged, expected unchanged
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "I cannot do that.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "a57d7dd5de4ee776", "rewrite": "Replaced 'I cannot' with 'I can't'.", "rewritten": "I can't do that."}, {"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "{\"temperature\": 22}", "kernel": "conformance.kernel.recovered-from-prose", "proposal": "d417f89cff460e30", "rewrite": "Added prose before the JSON object so the harness must recover it from prose rather than reading it as strict JSON.", "rewritten": "The reading is {\"temperature\": 22}."}, {"after": "I'm sorry", "as_expected": true, "before": "I'm sorry", "executed": "unchanged", "expect": "unchanged", "input": "I’m sorry.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "6edc420bb8bdb349", "rewrite": "Changed the curly apostrophe to a straight apostrophe.", "rewritten": "I'm sorry."}]}
+
+## Criticisms (crits)
+[852337cc45a0cbb0] (mini.criticism.v1)
+No expectation failed. The proposal expected the refusal-phrase kernel to move from 'I cannot' to 'I can't', and the execution reports `as_expected: true` with `executed: moved`. The proposer read the rule correctly.
+[3638f91cb0c74b06] (mini.criticism.v1)
+No expectations failed in the executions. Both proposals moved as expected: conformance.kernel.refusal-phrase moved from 'I cannot' to 'I can't', and conformance.kernel.recovered-from-prose moved from no to yes. The duplicate entry for a57d7dd5de4ee776 in the second execution is not a failed expectation; it was already executed in the first execution.
+[7e485c9328cb4cc0] (mini.criticism.v1)
+No expectations failed. All three proposals were executed and matched their expectations: a57d7dd5de4ee776 moved as expected, d417f89cff460e30 moved as expected, and 6edc420bb8bdb349 remained unchanged as expected. No proposer misread the rule, and the rule as written and the code did not part company. No next build is required.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

@@ -1,0 +1,29 @@
+# Verdict
+
+## Executions (execs)
+[429ab4d1889a9212] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+6f626ed41c808c8a: conformance.kernel.recovery -> moved, expected moves
+commitments: {"executions": [{"after": "{\"b\":2}", "as_expected": true, "before": "{\"a\":1}", "executed": "moved", "expect": "moves", "input": "Here is the answer:\n```json\n{\"a\": 1}\n```", "kernel": "conformance.kernel.recovery", "proposal": "6f626ed41c808c8a", "rewrite": "Added a second fenced JSON object after the first.", "rewritten": "Here is the answer:\n```json\n{\"a\": 1}\n```\n```json\n{\"b\": 2}\n```"}]}
+[1ce9e18b17f79342] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+6f626ed41c808c8a: duplicate
+d12e26ab8a8f4fea: conformance.kernel.recovery -> moved, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "Here is the answer:\n```json\n{\"a\": 1}\n```", "kernel": "conformance.kernel.recovery", "proposal": "6f626ed41c808c8a", "rewrite": "Added a second fenced JSON object after the first.", "rewritten": "Here is the answer:\n```json\n{\"a\": 1}\n```\n```json\n{\"b\": 2}\n```"}, {"after": "{\"b\":3}", "as_expected": true, "before": "{\"b\":2}", "executed": "moved", "expect": "moves", "input": "{\"a\":1}\n```json\n{\"b\":2}\n```", "kernel": "conformance.kernel.recovery", "proposal": "d12e26ab8a8f4fea", "rewrite": "Changed the fenced object's b value from 2 to 3.", "rewritten": "{\"a\":1}\n```json\n{\"b\":3}\n```"}]}
+[44aa9730f9b99d34] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+6f626ed41c808c8a: duplicate
+d12e26ab8a8f4fea: duplicate
+3e4b2cfa094738ff: conformance.kernel.refusal-phrase -> moved, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "Here is the answer:\n```json\n{\"a\": 1}\n```", "kernel": "conformance.kernel.recovery", "proposal": "6f626ed41c808c8a", "rewrite": "Added a second fenced JSON object after the first.", "rewritten": "Here is the answer:\n```json\n{\"a\": 1}\n```\n```json\n{\"b\": 2}\n```"}, {"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "{\"a\":1}\n```json\n{\"b\":2}\n```", "kernel": "conformance.kernel.recovery", "proposal": "d12e26ab8a8f4fea", "rewrite": "Changed the fenced object's b value from 2 to 3.", "rewritten": "{\"a\":1}\n```json\n{\"b\":3}\n```"}, {"after": "I can't", "as_expected": true, "before": "I cannot", "executed": "moved", "expect": "moves", "input": "I cannot help with that.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "3e4b2cfa094738ff", "rewrite": "Changed 'I cannot' to 'I can't'.", "rewritten": "I can't help with that."}]}
+
+## Criticisms (crits)
+[f858b0514bb8355d] (mini.criticism.v1)
+No expectation failed. The proposal expected the recovery kernel to move from {"a":1} to {"b":2} after adding a second fenced JSON object, and the execution recorded moved, as expected. The proposer read the rule correctly: the code scans the fenced pool in reverse, so the last fenced object is recovered.
+[4004fffab6c9bf7f] (mini.criticism.v1)
+No expectation failed: both proposals executed as expected (moved). There is nothing to criticise.
+[d3fa3bec665793cb] (mini.criticism.v1)
+No expectations failed in the executed proposals. All three proposals executed as expected: 6f626ed41c808c8a moved from {"a":1} to {"b":2}; d12e26ab8a8f4fea moved from {"b":2} to {"b":3}; 3e4b2cfa094738ff moved from 'I cannot' to 'I can't'. There is no misreading or code divergence to criticise.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

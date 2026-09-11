@@ -1,0 +1,27 @@
+# Execute
+
+## Proposals (props)
+[37405ada0d627a4e] (mini.pair-proposal.sweep.v1)
+The rule as written for conformance.kernel.recovered-from-prose says: "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)." Between the input and rewritten, the answer ought to move from "no" to "yes".
+input: {"a":1}
+rewrite: Here is {"a":1}
+rewritten: Here is {"a":1}
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "expect": "moves"}
+[3d135725913830af] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between the two texts: "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE." The input contains 'I cannot', so the answer is 'I cannot'; the rewritten text contains none of the listed phrases, so the answer is NONE.
+input: I cannot provide that information.
+rewrite: Removed the refusal phrase.
+rewritten: Here is the information you requested.
+commitments: {"kernel":"conformance.kernel.refusal-phrase","expect":"moves"}
+[15b4b2cbdeb540bf] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between the two texts: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text".
+input: Here is a draft: {"a":1}
+rewrite: Added a fenced JSON object after the top-level object.
+rewritten: Here is a draft: {"a":1}
+```json
+{"b":2}
+```
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

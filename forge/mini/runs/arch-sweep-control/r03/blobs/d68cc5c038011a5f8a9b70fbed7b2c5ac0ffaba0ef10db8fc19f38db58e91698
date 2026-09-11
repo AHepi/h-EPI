@@ -1,0 +1,24 @@
+# Execute
+
+## Proposals (props)
+[1bb5c2e1835ffee2] (mini.pair-proposal.sweep.v1)
+The rule as written for conformance.kernel.refusal-phrase says: "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE." Input has no refusal phrase, so the check's answer is NONE. Rewritten contains "I cannot", the first listed phrase, so the check's answer moves to "I cannot". Thus expect moves.
+input: Here is the data.
+rewrite: Added the refusal phrase 'I cannot' at the start.
+rewritten: I cannot provide that.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "expect": "moves"}
+[6abc1d563923f023] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to do between them: "moves". I read it from: "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)."
+input: {"answer": 42}
+rewrite: Changed the reply from strict JSON to prose with the same object, so recovered-from-prose moves from no to yes.
+rewritten: The answer is {"answer": 42}
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "expect": "moves"}
+[a4282a1c877ec928] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between the two texts. The input contains "I’m sorry" with a typographic apostrophe, which the rule reads as straight, so the first listed refusal phrase is "I'm sorry". The rewritten text contains "I am sorry", which is not one of the listed refusal phrases, so the answer moves from "I'm sorry" to NONE. Quote: "The first refusal phrase the text contains, typographic quotes read as straight ones, or None."
+input: I’m sorry, I cannot do that.
+rewrite: Replaced the typographic apostrophe phrase "I’m sorry" with "I am sorry".
+rewritten: I am sorry, I cannot do that.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

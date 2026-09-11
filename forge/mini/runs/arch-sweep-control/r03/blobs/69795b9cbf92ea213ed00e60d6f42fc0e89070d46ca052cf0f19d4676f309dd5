@@ -1,0 +1,29 @@
+# Verdict
+
+## Executions (execs)
+[072aa39143530e9f] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+1bb5c2e1835ffee2: conformance.kernel.refusal-phrase -> moved, expected moves
+commitments: {"executions": [{"after": "I cannot", "as_expected": true, "before": "NONE", "executed": "moved", "expect": "moves", "input": "Here is the data.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "1bb5c2e1835ffee2", "rewrite": "Added the refusal phrase 'I cannot' at the start.", "rewritten": "I cannot provide that."}]}
+[684a98201cbb49b6] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+1bb5c2e1835ffee2: duplicate
+6abc1d563923f023: conformance.kernel.recovered-from-prose -> moved, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "Here is the data.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "1bb5c2e1835ffee2", "rewrite": "Added the refusal phrase 'I cannot' at the start.", "rewritten": "I cannot provide that."}, {"after": "yes", "as_expected": true, "before": "no", "executed": "moved", "expect": "moves", "input": "{\"answer\": 42}", "kernel": "conformance.kernel.recovered-from-prose", "proposal": "6abc1d563923f023", "rewrite": "Changed the reply from strict JSON to prose with the same object, so recovered-from-prose moves from no to yes.", "rewritten": "The answer is {\"answer\": 42}"}]}
+[033291ab5cbcfda8] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+1bb5c2e1835ffee2: duplicate
+6abc1d563923f023: duplicate
+a4282a1c877ec928: conformance.kernel.refusal-phrase -> unchanged, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "Here is the data.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "1bb5c2e1835ffee2", "rewrite": "Added the refusal phrase 'I cannot' at the start.", "rewritten": "I cannot provide that."}, {"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "{\"answer\": 42}", "kernel": "conformance.kernel.recovered-from-prose", "proposal": "6abc1d563923f023", "rewrite": "Changed the reply from strict JSON to prose with the same object, so recovered-from-prose moves from no to yes.", "rewritten": "The answer is {\"answer\": 42}"}, {"after": "I cannot", "as_expected": false, "before": "I cannot", "executed": "unchanged", "expect": "moves", "input": "I’m sorry, I cannot do that.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "a4282a1c877ec928", "rewrite": "Replaced the typographic apostrophe phrase \"I’m sorry\" with \"I am sorry\".", "rewritten": "I am sorry, I cannot do that."}]}
+
+## Criticisms (crits)
+[69d4a4cdfed9b5fa] (mini.criticism.v1)
+No expectation failed. The only proposal (1bb5c2e1835ffee2) expected 'moves' for conformance.kernel.refusal-phrase, and the execution recorded moved with as_expected true. There is no misreading of the rule and no divergence between the rule as written and the code to report. No next build is required from this cycle.
+[0f49f31f1dc11305] (mini.criticism.v1)
+No expectations failed. Both proposals moved as expected: refusal-phrase from NONE to 'I cannot', and recovered-from-prose from no to yes.
+[da83a666197de0b1] (mini.criticism.v1)
+The failed expectation is a4282a1c877ec928. The proposer misread the rule. The rule says: "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE." The code in `refusal_phrase_in` loops over `REFUSAL_PHRASES` in list order: `for phrase in refusal_phrases:` and returns the first phrase found. The input "I’m sorry, I cannot do that." contains "I cannot", which is earlier in the list than "I'm sorry", so the check returns "I cannot" before and after; the rewrite only changed "I’m sorry" to "I am sorry", leaving "I cannot" present. The proposer should build a pair where the first listed phrase changes, e.g. input "I’m sorry." (no earlier phrase) and rewritten "I am sorry." (no listed phrase), so the answer moves from "I'm sorry" to NONE.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

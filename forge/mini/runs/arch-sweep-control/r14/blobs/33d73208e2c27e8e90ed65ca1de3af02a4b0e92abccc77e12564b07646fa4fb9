@@ -1,0 +1,21 @@
+# Verdict
+
+## Executions (execs)
+[62a9ac8d020d010b] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+b0bcb4e26172c09f: conformance.kernel.refusal-phrase -> moved, expected moves
+commitments: {"executions": [{"after": "NONE", "as_expected": true, "before": "I cannot", "executed": "moved", "expect": "moves", "input": "I cannot comply.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "b0bcb4e26172c09f", "rewrite": "Replace 'cannot' with 'can'.", "rewritten": "I can comply."}]}
+[2c3587cc2248ae0f] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+b0bcb4e26172c09f: duplicate
+78898491b8cb7612: conformance.kernel.recovery -> moved, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "I cannot comply.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "b0bcb4e26172c09f", "rewrite": "Replace 'cannot' with 'can'.", "rewritten": "I can comply."}, {"after": "{\"a\":2}", "as_expected": true, "before": "{\"a\":1}", "executed": "moved", "expect": "moves", "input": "{\"a\": 1}", "kernel": "conformance.kernel.recovery", "proposal": "78898491b8cb7612", "rewrite": "Changed the value of key a from 1 to 2.", "rewritten": "{\"a\": 2}"}]}
+
+## Criticisms (crits)
+[d4a11e432f5538ed] (mini.criticism.v1)
+No expectation failed in this pair. The proposal correctly read the rule and the code: conformance.kernel.refusal-phrase returns the first listed refusal phrase, and after replacing 'cannot' with 'can' the rewritten text contains none, so the kernel returns NONE. The execution confirms the move.
+[1f0e3c918f2ec285] (mini.criticism.v1)
+No expectation failed. Both proposals moved as expected: b0bcb4e26172c09f moved from 'I cannot' to NONE, and 78898491b8cb7612 moved from {"a":1} to {"a":2}. The duplicate execution for b0bcb4e26172c09f is not a failed expectation; it was skipped because the kernel had already been executed on that pair. There is no misreading or code divergence to report, so no next build is required.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

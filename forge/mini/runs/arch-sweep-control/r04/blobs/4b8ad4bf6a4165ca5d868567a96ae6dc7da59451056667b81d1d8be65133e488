@@ -1,0 +1,24 @@
+# Execute
+
+## Proposals (props)
+[14cd4437ce33f835] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer is "The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT." Between the two texts the recovered object changes from {"a":1} to {"a":2}, so the answer moves.
+input: {"a":1}
+rewrite: changed the value of a from 1 to 2
+rewritten: {"a":2}
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+[33cd397e2034a328] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move from no to yes: "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)." The input is strict JSON, so the harness reads it as strict JSON (no); the rewritten text wraps the same object in prose, so the harness has to recover it from prose (yes).
+input: {"answer": 42}
+rewrite: wrapped the strict JSON object in prose
+rewritten: The answer is {"answer": 42}.
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "expect": "moves"}
+[60e983f12cec5f2d] (mini.pair-proposal.sweep.v1)
+The rule for conformance.kernel.recovered-from-prose says: "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)." The input is strict JSON, so the check should answer no. The rewritten text adds a prose prefix, so the harness must recover the object from prose, and the check should answer yes. Therefore the answer moves.
+input: {"a":1}
+rewrite: Added a prose prefix before the JSON object.
+rewritten: Here is the object: {"a":1}
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

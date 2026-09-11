@@ -1,0 +1,18 @@
+# Execute
+
+## Proposals (props)
+[b0bcb4e26172c09f] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between the two texts. The input contains the refusal phrase "I cannot", so the kernel conformance.kernel.refusal-phrase returns "I cannot". The rewritten text does not contain any listed refusal phrase, so it returns NONE. The rule: "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE."
+input: I cannot comply.
+rewrite: Replace 'cannot' with 'can'.
+rewritten: I can comply.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "expect": "moves"}
+[78898491b8cb7612] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between the two texts, because the recovery kernel returns the object the harness recovers from the reply, and the two replies contain different JSON objects. The rule states: "The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT."
+input: {"a": 1}
+rewrite: Changed the value of key a from 1 to 2.
+rewritten: {"a": 2}
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

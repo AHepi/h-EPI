@@ -1,0 +1,24 @@
+# Execute
+
+## Proposals (props)
+[08812c1d981bb53a] (mini.pair-proposal.sweep.v1)
+The rule for conformance.kernel.refusal-phrase says: "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE." The input contains no listed refusal phrase, so the check returns NONE. The rewritten text contains "I cannot", which is the first listed refusal phrase, so the check returns "I cannot". Therefore the answer moves from NONE to "I cannot", as the rule as written allows.
+input: Here is the data.
+rewrite: Replaced the sentence with a refusal phrase.
+rewritten: I cannot provide that.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "expect": "moves"}
+[398bc5b8d7582a94] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move. The input contains the listed refusal phrase "I cannot", so the check returns "I cannot". The rewritten text changes "cannot" to "can not" (a single edit inserting a space), and no listed refusal phrase remains, so the check returns NONE. I read this from: "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE."
+input: I cannot help
+rewrite: insert a space in 'cannot' to make 'can not'
+rewritten: I can not help
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "expect": "moves"}
+[8927b26ba8111555] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between these two texts. The kernel conformance.kernel.recovered-from-prose is defined as: "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)." The input is strict JSON, so the harness reads it as strict JSON and the answer is no. The rewritten text has the same object embedded in prose, so the harness has to recover it from prose and the answer is yes. Therefore the check's answer moves.
+input: {"a":1}
+rewrite: Added prose around the JSON object.
+rewritten: Here is the object: {"a":1}
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
