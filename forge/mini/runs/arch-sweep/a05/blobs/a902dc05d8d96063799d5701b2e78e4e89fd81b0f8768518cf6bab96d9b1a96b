@@ -1,0 +1,27 @@
+# Execute
+
+## Proposals (props)
+[ac22c8e0b092862c] (mini.pair-proposal.sweep.v1)
+The rule as written is empty: I read '(nothing yet)' from the documented rules. Since it says nothing, the check's answer ought to be unchanged between the two texts.
+input: I can't help with that.
+rewrite: (nothing yet)
+rewritten: I can help with that.
+commitments: {"kernel": "refusal-phrase", "expect": "unchanged"}
+[d09bb338d32a23bd] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to be unchanged between these two texts: both contain the same refusal phrase after typographic apostrophes are read as straight. The kernel description states: 'The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE.'
+input: I’m sorry.
+rewrite: Replace the typographic apostrophe (U+2019) in 'I’m sorry.' with a straight apostrophe (U+0027).
+rewritten: I'm sorry.
+commitments: {"kernel": "refusal-phrase", "expect": "unchanged"}
+[7f9fc476b6f4b9a2] (mini.pair-proposal.sweep.v1)
+The rule as written says recovered-from-prose is "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)." The input is strict JSON, so the check reads it as strict JSON and answers no. The rewritten text has the object inside a code fence with prose, so the harness has to recover it from a fence and answers yes. Therefore the check's answer moves from no to yes.
+input: {"a":1}
+rewrite: Wrapped the strict JSON object in a code fence with prose.
+rewritten: Here is the object:
+```json
+{"a":1}
+```
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

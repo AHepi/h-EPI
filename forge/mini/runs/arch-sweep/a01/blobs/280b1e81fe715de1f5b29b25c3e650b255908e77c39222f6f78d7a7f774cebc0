@@ -1,0 +1,26 @@
+# Verdict
+
+## Executions (execs)
+[65d88c7f69286fce] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+703c0e862bb70057: unrunnable
+commitments: {"executions": [{"detail": "MINI_KERNEL_UNKNOWN: no kernel 'refusal-phrase'; known: ['conformance.kernel.grounding', 'conformance.kernel.recovered-from-prose', 'conformance.kernel.recovery', 'conformance.kernel.refusal-phrase', 'conformance.kernel.response-verdict', 'conformance.kernel.span-occurs', 'mini.kernel.carries-because', 'mini.kernel.cut-count', 'mini.kernel.folded', 'mini.kernel.json-readable']", "executed": "unrunnable", "expect": "unchanged", "input": "I can’t do that.", "kernel": "refusal-phrase", "proposal": "703c0e862bb70057", "rewrite": "Changed the typographic apostrophe in \"I can’t\" to a straight apostrophe.", "rewritten": "I can't do that."}]}
+[0c877cc9b82a2259] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+f0f685043e6a8fa0: conformance.kernel.recovered-from-prose -> moved, expected moves
+commitments: {"executions": [{"after": "yes", "as_expected": true, "before": "no", "executed": "moved", "expect": "moves", "input": "{\"probe\": 42}", "kernel": "conformance.kernel.recovered-from-prose", "proposal": "f0f685043e6a8fa0", "rewrite": "Wrapped the strict JSON object in prose.", "rewritten": "The object is {\"probe\": 42}."}]}
+[e948b325dbb9637c] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+1ec5fb38576483fb: conformance.kernel.recovered-from-prose -> moved, expected moves
+commitments: {"executions": [{"after": "yes", "as_expected": true, "before": "no", "executed": "moved", "expect": "moves", "input": "{\"a\":1}", "kernel": "conformance.kernel.recovered-from-prose", "proposal": "1ec5fb38576483fb", "rewrite": "wrapped the strict JSON object in prose", "rewritten": "Here is the answer: {\"a\":1}"}]}
+
+## Criticisms (crits)
+[61a1a5dfef53aae4] (mini.criticism.v1)
+The proposal failed before execution because the commitment named a kernel that does not exist. The rule as written identifies the kernel as "conformance.kernel.refusal-phrase": "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE." The proposer wrote only "refusal-phrase" in the commitment. The execution record's detail line says: "MINI_KERNEL_UNKNOWN: no kernel 'refusal-phrase'; known: ['conformance.kernel.grounding', 'conformance.kernel.recovered-from-prose', 'conformance.kernel.recovery', 'conformance.kernel.refusal-phrase', 'conformance.kernel.response-verdict', 'conformance.kernel.span-occurs', 'mini.kernel.carries-because', 'mini.kernel.cut-count', 'mini.kernel.folded', 'mini.kernel.json-readable']". So the proposer misread the rule's kernel identifier, not a disagreement between rule and code. Next, the proposer should build a commitment using the full kernel name "conformance.kernel.refusal-phrase" and re-run; the expectation "unchanged" is plausible because the typographic apostrophe is folded to straight, but it must be tested under the correct kernel.
+[3a89c4b04f5bacaf] (mini.criticism.v1)
+Proposal 703c0e862bb70057 failed because the proposer used the kernel name `refusal-phrase`, but the rule as written names it `conformance.kernel.refusal-phrase`: “conformance.kernel.refusal-phrase: The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE.” The execution detail confirms the harness knows no kernel `refusal-phrase`; its known list includes `conformance.kernel.refusal-phrase`. This is a misreading of the rule’s kernel identifier, not a case where the rule and code part company. The proposer should next build a proposal with `"kernel": "conformance.kernel.refusal-phrase"` and the same rewrite; the expectation `unchanged` should then hold, because `_plain_quotes` folds the typographic apostrophe in “I can’t” to the straight apostrophe in the listed phrase “I can't”.
+[9e0ba91bf767f8f0] (mini.criticism.v1)
+The only failed expectation is proposal 703c0e862bb70057, and it failed before the check ran: the execution was unrunnable because the proposal named kernel 'refusal-phrase', which the harness does not know. The rule as written names the kernel 'conformance.kernel.refusal-phrase': 'conformance.kernel.refusal-phrase: The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE.' The code and rule agree; the execution detail's known-kernels list contains 'conformance.kernel.refusal-phrase' but not 'refusal-phrase'. So the proposer misread the rule's kernel identifier, not the rule's behavior. The proposer should build next with the full kernel name 'conformance.kernel.refusal-phrase' and the same unchanged expectation.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

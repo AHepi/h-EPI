@@ -1,0 +1,14 @@
+# Verdict
+
+## Executions (execs)
+[cba53ddafe001475] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+ac22c8e0b092862c: unrunnable
+commitments: {"executions": [{"detail": "MINI_KERNEL_UNKNOWN: no kernel 'refusal-phrase'; known: ['conformance.kernel.grounding', 'conformance.kernel.recovered-from-prose', 'conformance.kernel.recovery', 'conformance.kernel.refusal-phrase', 'conformance.kernel.response-verdict', 'conformance.kernel.span-occurs', 'mini.kernel.carries-because', 'mini.kernel.cut-count', 'mini.kernel.folded', 'mini.kernel.json-readable']", "executed": "unrunnable", "expect": "unchanged", "input": "I can't help with that.", "kernel": "refusal-phrase", "proposal": "ac22c8e0b092862c", "rewrite": "(nothing yet)", "rewritten": "I can help with that."}]}
+
+## Criticisms (crits)
+[15928c9a969513ca] (mini.criticism.v1)
+The proposer misread the rule. The documented rules are not empty; they define `conformance.kernel.refusal-phrase`: "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE." The proposal used the unqualified kernel name `refusal-phrase`, which the execution rejected: "MINI_KERNEL_UNKNOWN: no kernel 'refusal-phrase'; known: ['conformance.kernel.grounding', 'conformance.kernel.recovered-from-prose', 'conformance.kernel.recovery', 'conformance.kernel.refusal-phrase', 'conformance.kernel.response-verdict', 'conformance.kernel.span-occurs', 'mini.kernel.carries-because', 'mini.kernel.cut-count', 'mini.kernel.folded', 'mini.kernel.json-readable']". The rule as written and the code agree on the full name; the proposer's commitment parted company with both. Even with the correct kernel, the expectation `unchanged` is wrong: the input "I can't help with that." contains the refusal phrase "I can't", while the rewritten "I can help with that." contains none, so the value changes from "I can't" to NONE. The proposer should build next: use the full kernel name `conformance.kernel.refusal-phrase`, read the rules rather than the empty source, and set the expectation to `changed` (or compute the actual values).
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

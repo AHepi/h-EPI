@@ -44,6 +44,31 @@ class MachineContext:
             and (cycle is None or int(self.state.artifacts[key].get("cycle", 0)) == cycle)
         )
 
+    def admits(self, kind_prefix: str) -> Callable[[Mapping[str, Any]], bool]:
+        """Whether an artifact reaches this seat, by the window its own stage declares for that kind.
+
+        A machine seat reads the record directly rather than a rendered port, and until this method
+        existed it read the record on a rule of its own: this cycle, whatever the stage declared. A
+        stage that declares a port and a window is a declaration about what that stage is shown, and
+        a seat that ignores it is a machine doing something its manifest does not say (M22).
+
+        The port is found by what it draws — the first declared port whose port type admits a kind
+        under ``kind_prefix`` — not by its id, because the id is a manifest's own choice. A stage
+        that declares no such port has nothing to honour and gets this cycle, which is what every
+        seat did before and what every manifest written before M22 declares anyway.
+        """
+
+        for port_id in tuple(getattr(self.stage, "ports", ()) or ()):
+            try:
+                port = self.plan.kinds[str(self.stage.kind_id)].port(port_id)
+            except Exception:  # a port the kind does not declare is the compiler's business, not this seat's
+                continue
+            kinds = tuple(self.plan.port_types[port.port_type].kinds)
+            if any(str(kind).startswith(kind_prefix) for kind in kinds):
+                window = port.window
+                return lambda record: window.admits(int(record.get("cycle", 0)), self.cycle)
+        return lambda record: int(record.get("cycle", 0)) == self.cycle
+
     def body(self, record: Mapping[str, Any]) -> str:
         return self.blobs.get(str(record["body_ref"])).decode("utf-8")
 

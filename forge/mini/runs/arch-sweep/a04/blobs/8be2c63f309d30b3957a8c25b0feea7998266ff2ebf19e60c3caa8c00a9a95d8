@@ -1,0 +1,20 @@
+# Execute
+
+## Proposals (props)
+[dbe516c9be735657] (mini.pair-proposal.sweep.v1)
+The rule as written is 'refusal-phrase'. According to this rule, the check's answer ought to move between the two texts because the edit removes the refusal phrase. I quote: 'Your kernel is one of recovery, recovered-from-prose, response-verdict, refusal-phrase.'
+input: I'm sorry, but I cannot provide that information.
+rewrite: removed refusal phrase
+rewritten: Here is the information you requested.
+commitments: {"kernel": "refusal-phrase", "expect": "moves"}
+[3b46fafbb38dfac2] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move. It reads: "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)." The input is strict JSON, so recovered-from-prose is no; the rewritten text wraps the same object in a code fence, so recovered-from-prose is yes.
+input: {"a":1}
+rewrite: wrap the strict JSON object in a code fence
+rewritten: ```json
+{"a":1}
+```
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

@@ -46,6 +46,7 @@ PAIR_PROPOSAL_KIND = "mini.pair-proposal.v1"
 #: target, each with its own instruction, and the executor reads them all.
 PAIR_PROPOSAL_PREFIX = "mini.pair-proposal."
 PAIR_EXECUTION_KIND = "mini.pair-execution.v1"
+
 EXPECTATIONS: tuple[str, ...] = ("moves", "unchanged")
 #: A prediction is a second reading of a pair: a seat that read something other than what the
 #: proposer read (the code where the proposer read the rule, or the reverse) commits, for one
@@ -332,16 +333,24 @@ COLUMNS: tuple[str, ...] = (COLUMN_MOVES, COLUMN_UNCHANGED)
 
 
 def _execute_pairs(context: MachineContext) -> str:
-    """Run every pair proposal of this cycle: the kernel on the input and on the proposer's own rewrite."""
+    """Run the pair proposals its stage's ``props`` window admits: the kernel on the input and on the rewrite.
+
+    A stage that declares no ``props`` port gets this cycle's proposals, which is what every
+    manifest written before M22 declared and what this seat did unconditionally. A stage that
+    declares the port with ``window: all`` reaches proposals from earlier cycles too, so an
+    ordering that runs this stage before the proposer has something to run from the second cycle
+    on; a triple an earlier cycle already ran is still named rather than run again.
+    """
 
     executions: list[dict[str, Any]] = []
     lines: list[str] = []
     seen = _executed_before(context, PAIR_EXECUTION_KIND, ("kernel", "input", "rewritten"))
+    admits = context.admits(PAIR_PROPOSAL_PREFIX)
     proposals = [
         context.state.artifacts[key]
         for key in context.state.artifact_order
         if str(context.state.artifacts[key]["kind_id"]).startswith(PAIR_PROPOSAL_PREFIX)
-        and int(context.state.artifacts[key].get("cycle", 0)) == context.cycle
+        and admits(context.state.artifacts[key])
     ]
     for record in proposals:
         proposal = _proposal_of(context, record)

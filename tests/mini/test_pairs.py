@@ -39,7 +39,8 @@ OBJECT = '{"claimant_name": "amara okoro", "total_days": "five"}'
 PREDICTION_KIND = "mini.pair-prediction.v1"
 
 
-def _pair_manifest(cycles: int = 1, predict: bool = False, rules: bool = False) -> dict:
+def _pair_manifest(cycles: int = 1, predict: bool = False, rules: bool = False,
+                   window: str = "this_cycle", execute_first: bool = False) -> dict:
     shown = kernels.KERNEL_RULES_KIND if rules else kernels.KERNEL_SOURCE_KIND
     proposal = {
         "kind_id": "mini.pair-proposal.recovery.v1",
@@ -71,7 +72,7 @@ def _pair_manifest(cycles: int = 1, predict: bool = False, rules: bool = False) 
         "kinds": [
             {"kind_id": shown, "title": "Source", "input_ports": [], "output_port": {"port_id": "out", "produces_kind": shown}},
             proposal,
-            {"kind_id": PAIR_EXECUTION_KIND, "title": "Execution", "input_ports": [{"port_id": "proposals", "port_type": "pair_proposals", "window": "this_cycle"}], "output_port": {"port_id": "out", "produces_kind": PAIR_EXECUTION_KIND}},
+            {"kind_id": PAIR_EXECUTION_KIND, "title": "Execution", "input_ports": [{"port_id": "proposals", "port_type": "pair_proposals", "window": window}], "output_port": {"port_id": "out", "produces_kind": PAIR_EXECUTION_KIND}},
             {"kind_id": VERDICT_KIND, "title": "Verdict", "input_ports": [{"port_id": "executions", "port_type": "pair_executions", "window": "this_cycle"}], "output_port": {"port_id": "out", "produces_kind": VERDICT_KIND}},
         ],
         "stages": [
@@ -85,6 +86,10 @@ def _pair_manifest(cycles: int = 1, predict: bool = False, rules: bool = False) 
     if predict:
         manifest["kinds"].insert(2, prediction)
         manifest["stages"].insert(2, {"stage_id": "predict", "kind_id": PREDICTION_KIND, "ports": ["proposals"]})
+    if execute_first:
+        stages = manifest["stages"]
+        stages.insert(stages.index(next(s for s in stages if s["stage_id"] == "propose")), stages.pop(
+            stages.index(next(s for s in stages if s["stage_id"] == "execute"))))
     return manifest
 
 
@@ -123,6 +128,34 @@ class PairExecutionTests(MiniTestCase):
         state, executions, verdicts = self._run({"propose": [reply, reply]}, cycles=2)
         self.assertEqual([e["executed"] for e in executions], ["moved", "duplicate"])
         self.assertEqual([v["standing"] for v in verdicts], [STANDING_REJECTED, STANDING_REJECTED])
+
+    def test_an_execute_stage_before_the_proposer_runs_an_earlier_cycles_proposal_if_its_window_admits_it(self) -> None:
+        """M22. The seat read this cycle whatever the stage declared, so half the sweep's lattice was dead.
+
+        With ``execute`` ordered before ``propose`` the edge is lagged: nothing is there to run in
+        the first cycle, and the second cycle's execute must reach the first cycle's proposal. It
+        does so only because the port says ``all``; the companion test below is the same ordering
+        with ``this_cycle`` declared, where nothing runs, ever.
+        """
+
+        reply = _proposal(kernels.KERNEL_RECOVERY, OBJECT, OBJECT.upper(), "moves")
+        plan, outcome = self.run_manifest(
+            _pair_manifest(cycles=2, window="all", execute_first=True), {"propose": [reply, reply]}, name="lagged-all")
+        state = replay(outcome.root / "log.jsonl", plan.genesis)
+        blobs = BlobStore(outcome.root / "blobs")
+        rows = [e for r in state.artifacts.values() if r["kind_id"] == PAIR_EXECUTION_KIND
+                for e in json.loads(blobs.get(r["commitments_ref"]).decode("utf-8"))["executions"]]
+        self.assertEqual([e["executed"] for e in rows], ["moved"])
+
+    def test_the_same_ordering_with_this_cycle_declared_runs_nothing_at_all(self) -> None:
+        reply = _proposal(kernels.KERNEL_RECOVERY, OBJECT, OBJECT.upper(), "moves")
+        plan, outcome = self.run_manifest(
+            _pair_manifest(cycles=2, window="this_cycle", execute_first=True), {"propose": [reply, reply]}, name="lagged-this")
+        state = replay(outcome.root / "log.jsonl", plan.genesis)
+        blobs = BlobStore(outcome.root / "blobs")
+        rows = [e for r in state.artifacts.values() if r["kind_id"] == PAIR_EXECUTION_KIND
+                for e in json.loads(blobs.get(r["commitments_ref"]).decode("utf-8"))["executions"]]
+        self.assertEqual(rows, [])
 
     def test_an_unchanged_rewrite_an_unknown_kernel_and_a_bad_expectation_are_unrunnable(self) -> None:
         state, executions, verdicts = self._run({"propose": [_proposal(kernels.KERNEL_RECOVERY, OBJECT, OBJECT, "moves")]})

@@ -691,3 +691,74 @@ shown to overclaim their class (`round-1/s3-refute-invariances/`). None of this
 is a survey of what the harness's checks are blind to, and the loop mints
 nothing: every standing above was read by a person before it became a row or
 a register entry, as the template says it must be.
+
+## M21 — The seat is told a short name for something the machine knows by a long one
+
+ARCH-SWEEP-1's proposer instruction said "Your kernel is one of recovery, recovered-from-prose,
+response-verdict, refusal-phrase". The registry knows those checks as `conformance.kernel.recovery`
+and its three siblings. A proposal naming the short form parses, reaches the executor, and dies
+there with `MINI_KERNEL_UNKNOWN`; the pair is recorded `unrunnable` and produces no behaviour.
+
+**Measured.** Nine architectures landed before the sweep was stopped: 18 proposals, **7 unrunnable
+on this cause alone** (39%). Two architectures, `a02` and `a06`, contributed nothing at all; `a05`
+lost two of three and `a08` its only one. The loss is not uniform, because whether a seat guesses
+the prefix varies by what it was shown — which is exactly the variable the sweep exists to measure.
+A machinery break correlated with the treatment is worse than one that is not.
+
+**Why it survived the offline checks.** Nothing offline calls the proposer. `check.py pilots`
+validates conformance pilots, not mini manifests; `compile` checks that the manifest is
+well-formed, and the instruction is a free string inside a well-formed manifest. The break is only
+visible once a model has read the instruction and a machine seat has tried to act on it.
+
+**The repair.** The instruction now writes each id out in full and says that a kernel named without
+the prefix does not exist. `forge/mini/runs/arch-sweep/` keeps the nine aborted runs as the record
+of the break; the corrected sweep runs into `forge/mini/runs/arch-sweep-2/`.
+
+**What it costs to state generally.** A seat is shown rendered text and answers in free text; the
+machine that consumes the answer holds a vocabulary the rendering need not mention. Mini's
+`format.commitments` can hold a `json_schema` with a `pattern`, and
+`mini.conformance-blind-spot.v1` uses exactly that to require the prefix — so the guard existed and
+this manifest did not use it. Adding it here would have turned a lost pair into a retried call,
+which is a different number of model calls per architecture, so the repair for this sweep is the
+instruction and not the pattern.
+
+## M22 — The machine seat reads the record on a rule of its own, and the declared window is decoration
+
+`_execute_pairs` selected the proposals to run with
+
+```python
+and int(context.state.artifacts[key].get("cycle", 0)) == context.cycle
+```
+
+Its stage declares a port, that port declares a window, and the seat consulted neither. Every
+manifest written before ARCH-SWEEP-1 declared `this_cycle` on that port, so the seat and the
+declaration agreed by coincidence and nothing showed.
+
+**What it cost.** ARCH-SWEEP-1 varies the stage order over the 36 architectures of one wiring.
+**Eighteen of them — exactly half — place `execute` before `propose`**, which lags that edge; they
+declare `window: all` so the second cycle reaches the first cycle's proposals. Under the seat's own
+rule they reach nothing, in any cycle, forever. In the aborted attempt `a02`, `a09` and `a10` each
+ran all three cycles to `RUN_ENDED` and submitted three execution artifacts holding
+`{"executions": []}` apiece, beside proposals the record shows were there.
+
+**Why it is worse than a lost run.** The dead half is not a random half. It is the lagged half —
+every architecture at five and six lagged edges is in it. ARCH-SWEEP-1's K3 predicts that distinct
+behaviours do *not* fall monotonically as lagged edges increase, because monotone decline would
+support the one available argument that the configuration space is useless. A defect that silently
+zeroes the most-lagged architectures manufactures exactly that decline. Had the sweep been read as
+it stood, the machinery would have produced the evidence for the conclusion, and the conclusion
+would have looked measured.
+
+**The repair.** `MachineContext.admits(kind_prefix)` finds the stage's declared port by what its
+port type draws — not by port id, which is a manifest's own choice — and returns that port's
+window. A stage declaring no such port keeps this cycle, so every earlier manifest is byte-for-byte
+unaffected. The boundary is two tests in `tests/mini/test_pairs.py`: the same ordering with
+`execute` before `propose`, running the earlier cycle's proposal under `window: all` and nothing at
+all under `this_cycle`.
+
+**The general form.** This is H5's shape in a second place. H5 was a permission layer declaring a
+restriction the machinery did not enforce; this is a wiring declaring a window the machinery did
+not read. Mini's whole claim is that the wiring is declared. Anywhere a seat reaches into
+`context.state` and filters it by hand, the declaration is decoration, and only a reader comparing
+the manifest against the seat will find it. Found that way here: by a person reading records,
+not by the loop.

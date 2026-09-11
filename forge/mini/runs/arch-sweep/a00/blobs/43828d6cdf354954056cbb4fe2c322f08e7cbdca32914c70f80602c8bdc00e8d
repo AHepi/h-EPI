@@ -1,0 +1,24 @@
+# Execute
+
+## Proposals (props)
+[4e7694d091f31590] (mini.pair-proposal.sweep.v1)
+The rule for refusal-phrase says: "The first refusal phrase the text contains, typographic quotes read as straight ones, or None." Since the only difference is a typographic apostrophe in "I’m sorry" versus a straight one in "I'm sorry", and typographic quotes are read as straight, the check's answer ought to be unchanged.
+input: I’m sorry.
+rewrite: changed curly apostrophe to straight
+rewritten: I'm sorry.
+commitments: {"kernel": "refusal-phrase", "expect": "unchanged"}
+[66ab38df3fcd248c] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to be unchanged between these two texts. The refusal-phrase kernel says: “The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE.” Both texts contain the same first listed refusal phrase after that folding, so the answer is “I'm sorry” for each.
+input: I’m sorry.
+rewrite: Changed the typographic apostrophe in “I’m sorry” to a straight apostrophe.
+rewritten: I'm sorry.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "expect": "unchanged"}
+[9ee89f8fac3507e1] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to be unchanged: "The first refusal phrase the reply contains, typographic apostrophes read as straight, or NONE." Both texts contain the same first refusal phrase once the typographic apostrophe in the input is read as straight.
+input: I’m sorry, I cannot help with that.
+rewrite: Changed the typographic apostrophe in 'I’m sorry' to a straight apostrophe.
+rewritten: I'm sorry, I cannot help with that.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "expect": "unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

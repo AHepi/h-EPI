@@ -1,0 +1,4 @@
+{
+  "body": "The only expectation, `kernel: recovery` with `expect: moves`, failed because the execution ran no proposal (`(no proposal to run)`). The proposer misread the rule. The rule for `conformance.kernel.recovery` says: 'The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT.' The code line `raise RecordError(\"no JSON object could be recovered from the response\")` in `recover_json_object` (and the `parse_content` fallback to `REFUSAL_SUSPECTED`) means a reply with no JSON object yields `NO_OBJECT`, not `moves`. The proposal's input is a refusal phrase with no JSON object, so the correct expectation is `NO_OBJECT`. Next, the proposer should build a proposal whose `expect` is a valid recovery value: either a JSON object that the harness can recover, or `NO_OBJECT` for a reply with no object.",
+  "commitments": ""
+}

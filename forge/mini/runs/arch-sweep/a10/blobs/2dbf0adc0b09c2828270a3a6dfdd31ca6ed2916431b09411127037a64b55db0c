@@ -1,0 +1,26 @@
+# Verdict
+
+## Executions (execs)
+[9f0d0b11f0695de0] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+(no proposal to run)
+commitments: {"executions": []}
+[670e126b1e5fe86d] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+(no proposal to run)
+commitments: {"executions": []}
+[ea8a681f432cddd3] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+(no proposal to run)
+commitments: {"executions": []}
+
+## Criticisms (crits)
+[21989212856e2841] (mini.criticism.v1)
+The only expectation, `kernel: recovery` with `expect: moves`, failed because the execution ran no proposal (`(no proposal to run)`). The proposer misread the rule. The rule for `conformance.kernel.recovery` says: 'The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT.' The code line `raise RecordError("no JSON object could be recovered from the response")` in `recover_json_object` (and the `parse_content` fallback to `REFUSAL_SUSPECTED`) means a reply with no JSON object yields `NO_OBJECT`, not `moves`. The proposal's input is a refusal phrase with no JSON object, so the correct expectation is `NO_OBJECT`. Next, the proposer should build a proposal whose `expect` is a valid recovery value: either a JSON object that the harness can recover, or `NO_OBJECT` for a reply with no object.
+[0003a44a4e9ab32a] (mini.criticism.v1)
+No expectation failed: both executions report "(no proposal to run)" and list no executions, so there is no failed expectation to assess against the rules or code. The first proposal's claim that the documented rules are "(nothing yet)" is itself a misread, since the rules are supplied above, but that is not an execution failure. A proposer should next ensure proposals are actually executed before expecting a verdict.
+[80babc7a3833a5fd] (mini.criticism.v1)
+No expectation failed: all three executions report '(no proposal to run)', so there is no execution beside any proposal to compare. Without an execution result, there is no failed expectation to attribute to a misread rule or a rule/code divergence. A proposer should next build a proposal that the harness actually runs, with a concrete input, rewrite, rewritten text, and a commitment naming a kernel and expected movement, so the next execution can record a pass or fail.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

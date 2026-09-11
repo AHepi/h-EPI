@@ -61,7 +61,11 @@ PROPOSER = (
     "different from the first, changed however you judge most informative. Say what the RULE AS "
     "WRITTEN says the check's answer ought to do between them: \"moves\" or \"unchanged\". Quote "
     "the words you read it from in the body. Your kernel is one of recovery, recovered-from-prose, "
-    "response-verdict, refusal-phrase. The commitments are a STRING holding JSON of the form "
+    "response-verdict, refusal-phrase, each written in full with its \"conformance.kernel.\" "
+    "prefix: conformance.kernel.recovery, conformance.kernel.recovered-from-prose, "
+    "conformance.kernel.response-verdict, conformance.kernel.refusal-phrase. A kernel named "
+    "without that prefix does not exist and the run is lost. The commitments are a STRING "
+    "holding JSON of the form "
     '{"kernel": "<id>", "expect": "moves" or "unchanged"} and nothing else; this artifact carries '
     '"input", "rewritten" and "rewrite" as fields of its own, each a plain string. Do not repeat a '
     "pair already proposed."
@@ -121,6 +125,110 @@ def _plan(args: argparse.Namespace) -> int:
     return 0
 
 
+def _executions(root: Path) -> list[dict[str, Any]]:
+    """Every pair this run executed, read from the record rather than from a log line."""
+
+    from creib.forge.mini.common import RUN_HEADER_DOMAIN, content_id
+    from creib.forge.mini.log import BlobStore, replay
+    from creib.strict_json import load_strict
+
+    state = replay(root / "log.jsonl", content_id(RUN_HEADER_DOMAIN, load_strict(root / "run-header.json")))
+    blobs = BlobStore(root / "blobs")
+    out: list[dict[str, Any]] = []
+    for key in state.artifact_order:
+        record = state.artifacts[key]
+        if str(record["kind_id"]) != EXEC:
+            continue
+        payload = json.loads(blobs.get(str(record["commitments_ref"])).decode("utf-8"))
+        out.extend(payload.get("executions", []))
+    return out
+
+
+def _quotes(text: str, rules: str) -> int:
+    """How many quoted runs of the stated reading occur verbatim in the documented rules."""
+
+    import re
+
+    from creib.forge.conformance.oracle import _normalise_whitespace as norm
+
+    found = 0
+    for match in re.finditer(r'["\u201c\'\u201d]([^"\u201c\u201d\']{25,400})["\u201c\u201d\']', text):
+        span = match.group(1).strip()
+        if len(span.split()) >= 4 and norm(span.lower()) in rules:
+            found += 1
+    return found
+
+
+def _read(args: argparse.Namespace) -> int:
+    from creib.forge.conformance.oracle import _normalise_whitespace as norm
+    from creib.forge.mini.conformance_kernels import kernel_rules_text
+
+    root = Path(args.root)
+    index = json.loads((Path(args.manifests) / "architectures.json").read_text()) if args.manifests else {}
+    rules = norm(kernel_rules_text().lower())
+    per: dict[str, dict[str, Any]] = {}
+    for directory in sorted(root.glob("a*")):
+        if not (directory / "log.jsonl").is_file():
+            continue
+        runs = _executions(directory)
+        ran = [e for e in runs if e.get("executed") in ("moved", "unchanged")]
+        contra = [e for e in ran if e.get("as_expected") is False]
+        per[directory.name] = {
+            "proposals": len(runs),
+            "executed": len(ran),
+            "unrunnable": len(runs) - len(ran),
+            "contradicted": len(contra),
+            "quoted": sum(1 for e in contra if _quotes(str(e.get("reading", "")) + str(e.get("rewrite", "")), rules)),
+            "behaviours": {(str(e.get("kernel")), str(e.get("before")), str(e.get("after"))) for e in ran},
+            # Amendment 2. The pre-registered behaviour is (kernel, answer-before, answer-after), and
+            # the answers are functions of texts the proposer chose freely, so two architectures share
+            # one only by choosing the same text. The probe is the same row coarsened to the finite
+            # grid (kernel, what was expected, what happened): 6 x 2 x 3 cells, shareable by accident
+            # far more easily than a text is. Both are reported; neither replaces the other.
+            "probes": {(str(e.get("kernel")), str(e.get("expect")), str(e.get("executed"))) for e in ran},
+        }
+    everything: dict[tuple[str, str, str], set[str]] = {}
+    probes_seen: dict[tuple[str, str, str], set[str]] = {}
+    for name, row in per.items():
+        for behaviour in row["behaviours"]:
+            everything.setdefault(behaviour, set()).add(name)
+        for probe in row["probes"]:
+            probes_seen.setdefault(probe, set()).add(name)
+    rows = []
+    for name, row in sorted(per.items()):
+        unique = [b for b in row["behaviours"] if everything[b] == {name}]
+        unique_probes = [b for b in row["probes"] if probes_seen[b] == {name}]
+        meta = index.get(name, {})
+        rows.append({"architecture": name, "lagged_edges": meta.get("lagged_edges"),
+                     "ordering": " ".join(x[0] for x in meta.get("ordering", [])),
+                     **{k: row[k] for k in ("proposals", "executed", "unrunnable", "contradicted", "quoted")},
+                     "distinct_behaviours": len(row["behaviours"]), "unique_to_it": len(unique),
+                     "distinct_probes": len(row["probes"]), "unique_probes": len(unique_probes),
+                     "unique_behaviours": sorted(unique), "unique_probe_cells": sorted(unique_probes)})
+    union = len(everything)
+    a00 = len(per.get("a00", {}).get("behaviours", ()))
+    p_union = len(probes_seen)
+    p_a00 = len(per.get("a00", {}).get("probes", ()))
+    summary = {"architectures_read": len(per), "union_of_behaviours": union,
+               "synchronous_alone": a00, "gained_over_synchronous": union - a00,
+               "union_of_probes": p_union, "synchronous_probes_alone": p_a00,
+               "probes_gained_over_synchronous": p_union - p_a00,
+               "proposals": sum(r["proposals"] for r in per.values()),
+               "unrunnable": sum(r["unrunnable"] for r in per.values())}
+    (root / "reading.json").write_text(json.dumps({"summary": summary, "rows": rows}, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    head = (f"{'arch':<5} {'lag':>3} {'prop':>4} {'exec':>4} {'lost':>4} {'contra':>6} {'quoted':>6} "
+            f"{'behav':>5} {'uniq':>4} {'probe':>5} {'uniq':>4}  ordering")
+    print(head, flush=True)
+    for row in rows:
+        print(f"{row['architecture']:<5} {str(row['lagged_edges']):>3} {row['proposals']:>4} {row['executed']:>4} "
+              f"{row['unrunnable']:>4} {row['contradicted']:>6} {row['quoted']:>6} {row['distinct_behaviours']:>5} "
+              f"{row['unique_to_it']:>4} {row['distinct_probes']:>5} {row['unique_probes']:>4}  {row['ordering']}", flush=True)
+    print(f"\nproposals {summary['proposals']}, of which {summary['unrunnable']} did not run", flush=True)
+    print(f"behaviours (pre-registered): union {union}, synchronous alone {a00}, gained {union - a00}", flush=True)
+    print(f"probes (amendment 2):        union {p_union}, synchronous alone {p_a00}, gained {p_union - p_a00}", flush=True)
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -128,6 +236,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     planner.add_argument("--out", required=True)
     planner.add_argument("--cycles", type=int, default=3)
     planner.set_defaults(handler=_plan)
+    reader = sub.add_parser("read", help="read every architecture and find what only one of them produced")
+    reader.add_argument("--root", required=True)
+    reader.add_argument("--manifests", default="forge/mini/manifests/arch-sweep")
+    reader.set_defaults(handler=_read)
     args = parser.parse_args(argv)
     try:
         return int(args.handler(args))

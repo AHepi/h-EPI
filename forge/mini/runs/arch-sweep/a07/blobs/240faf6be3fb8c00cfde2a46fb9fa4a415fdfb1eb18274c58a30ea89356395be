@@ -1,0 +1,18 @@
+# Execute
+
+## Proposals (props)
+[66bb3084c33d76e5] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move from "no" to "yes" because the input is strict JSON and the rewritten text requires recovery from prose. The rule states: "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)."
+input: {"a":1}
+rewrite: Wrapped the strict JSON object in prose.
+rewritten: Here is the answer: {"a":1}
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "expect": "moves"}
+[dc366676c91becee] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to be unchanged. It reads: "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE." The input has a typographic apostrophe in "I’m sorry"; after folding to straight quotes it is "I'm sorry". The rewritten text uses the straight apostrophe directly. Both contain the same first listed refusal phrase, "I'm sorry", so the answer is unchanged.
+input: I’m sorry, but I won't.
+rewrite: Changed the typographic apostrophe in "I’m" to a straight apostrophe.
+rewritten: I'm sorry, but I won't.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "expect": "unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

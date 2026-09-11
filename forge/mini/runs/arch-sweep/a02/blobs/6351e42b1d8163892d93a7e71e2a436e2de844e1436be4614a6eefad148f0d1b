@@ -1,0 +1,16 @@
+# Execute
+
+## Proposals (props)
+[35e03007861f079b] (mini.pair-proposal.sweep.v1)
+The rule says "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." Input has a fenced object and a later top-level object, so recovery returns the fenced object. Rewritten removes the fence, so recovery returns the later top-level object. Therefore the check's answer moves.
+input: ```json
+{"a":1}
+```
+{"b":2}
+rewrite: removed the code fence markers
+rewritten: {"a":1}
+{"b":2}
+commitments: {"kernel":"recovery","expect":"moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

@@ -1,0 +1,26 @@
+# Verdict
+
+## Executions (execs)
+[41bc37bfe47d4bdb] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+dbe516c9be735657: unrunnable
+commitments: {"executions": [{"detail": "MINI_KERNEL_UNKNOWN: no kernel 'refusal-phrase'; known: ['conformance.kernel.grounding', 'conformance.kernel.recovered-from-prose', 'conformance.kernel.recovery', 'conformance.kernel.refusal-phrase', 'conformance.kernel.response-verdict', 'conformance.kernel.span-occurs', 'mini.kernel.carries-because', 'mini.kernel.cut-count', 'mini.kernel.folded', 'mini.kernel.json-readable']", "executed": "unrunnable", "expect": "moves", "input": "I'm sorry, but I cannot provide that information.", "kernel": "refusal-phrase", "proposal": "dbe516c9be735657", "rewrite": "removed refusal phrase", "rewritten": "Here is the information you requested."}]}
+[1fc667640965f655] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+3b46fafbb38dfac2: conformance.kernel.recovered-from-prose -> moved, expected moves
+commitments: {"executions": [{"after": "yes", "as_expected": true, "before": "no", "executed": "moved", "expect": "moves", "input": "{\"a\":1}", "kernel": "conformance.kernel.recovered-from-prose", "proposal": "3b46fafbb38dfac2", "rewrite": "wrap the strict JSON object in a code fence", "rewritten": "```json\n{\"a\":1}\n```"}]}
+[0fee9cefc71c9355] (mini.pair-execution.v1)
+Executed this cycle's pair proposals.
+33f2ab868ce1ff7f: conformance.kernel.refusal-phrase -> moved, expected moves
+commitments: {"executions": [{"after": "I can't", "as_expected": true, "before": "I cannot", "executed": "moved", "expect": "moves", "input": "I cannot provide that information.", "kernel": "conformance.kernel.refusal-phrase", "proposal": "33f2ab868ce1ff7f", "rewrite": "Changed 'I cannot' to 'I can't'.", "rewritten": "I can't provide that information."}]}
+
+## Criticisms (crits)
+[77032dbc6f637e8f] (mini.criticism.v1)
+The proposer misread the rule. The rule as written lists the kernel as "conformance.kernel.refusal-phrase", not "refusal-phrase": "- conformance.kernel.refusal-phrase: The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE." The proposal's commitment says `"kernel": "refusal-phrase"`, but the execution detail reports `MINI_KERNEL_UNKNOWN: no kernel 'refusal-phrase'; known: ['conformance.kernel.grounding', 'conformance.kernel.recovered-from-prose', 'conformance.kernel.recovery', 'conformance.kernel.refusal-phrase', 'conformance.kernel.response-verdict', 'conformance.kernel.span-occurs', 'mini.kernel.carries-because', 'mini.kernel.cut-count', 'mini.kernel.folded', 'mini.kernel.json-readable']`. The code part company at the line in the execution detail that rejects the unknown kernel name. A proposer should build next a proposal that uses the full kernel name `conformance.kernel.refusal-phrase`.
+[dce15c43f8a69bfd] (mini.criticism.v1)
+The proposal dbe516c9be735657 failed because the proposer misread the rule: the kernel name is `conformance.kernel.refusal-phrase`, not `refusal-phrase`. The rules list the kernel as `- conformance.kernel.refusal-phrase: The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE.` The execution line `MINI_KERNEL_UNKNOWN: no kernel 'refusal-phrase'; known: ['conformance.kernel.grounding', 'conformance.kernel.recovered-from-prose', 'conformance.kernel.recovery', 'conformance.kernel.refusal-phrase', ...]` shows the code rejects the unprefixed name. The proposer should resubmit with kernel `conformance.kernel.refusal-phrase`; the rewrite itself would then move as expected.
+[6e8045b5422c33d3] (mini.criticism.v1)
+The only failed expectation is dbe516c9be735657, which expected the check to move but was unrunnable. The proposer misread the rule: the rule as written names the kernel 'conformance.kernel.refusal-phrase', not 'refusal-phrase'. The rule's line is: '- conformance.kernel.refusal-phrase: The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE.' The harness's line that parts company is the execution detail: 'MINI_KERNEL_UNKNOWN: no kernel 'refusal-phrase'; known: ['conformance.kernel.grounding', 'conformance.kernel.recovered-from-prose', 'conformance.kernel.recovery', 'conformance.kernel.refusal-phrase', 'conformance.kernel.response-verdict', 'conformance.kernel.span-occurs', 'mini.kernel.carries-because', 'mini.kernel.cut-count', 'mini.kernel.folded', 'mini.kernel.json-readable']'. The code and rule agree; the proposal used a kernel name that does not exist. The proposer should build next a proposal that uses the full kernel name 'conformance.kernel.refusal-phrase'. The rewrite itself is sound: the input's first listed phrase is 'I cannot', and the rewritten text contains no refusal phrase, so the check would move from 'I cannot' to NONE.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
