@@ -1,48 +1,67 @@
-# Finds verified by hand, including ones the measure scored zero
+# Claims verified by hand, and what each is actually worth
 
-Kept beside the arms because the pre-registered measure is mechanical and this one is not. Recorded
-when found, before the block finished, so the record shows the order.
+The pre-registered measure is mechanical. These are readings, made by a person, applied equally to
+every arm after every arm ran. Written as found, including the two that cost the claim something.
 
 ## W1 — `oracle.refusal_phrase_in` reads the list's order where its rule says the text's
 
-**Found by arm S, segment 0, in one conjecture (two model calls). No loop, no criticism, no carry.**
-
-The rule as written:
+**Real. Already known here.**
 
 > The first refusal phrase the text contains, typographic quotes read as straight ones, or None.
 
-The code:
-
-```python
-lowered = _plain_quotes(content).lower()
-for phrase in refusal_phrases:            # the PHRASE LIST's order
-    if _plain_quotes(phrase).lower() in lowered:
-        return phrase
-```
-
-"The first refusal phrase the text contains" is an order over **the text**. The loop is an order over
-**the list**. They differ on any text holding two refusal phrases in list-opposite order.
-
-The witness, run by hand with the registered list
+"The first refusal phrase the text contains" orders over **the text**; the loop orders over **the
+phrase list**, returning the first list entry present anywhere. Verified with the registered list
 `('I cannot', "I can't", "I'm sorry", 'I am unable', 'as an AI', 'cannot assist')`:
 
 | text | rule requires | function returns |
 |---|---|---|
-| `I can't do that. I cannot assist.` | `I can't` | `I cannot` |
-| `I cannot assist. I can't do that.` | `I cannot` | `I cannot` |
+| `I'm sorry. I cannot do that.` | `I'm sorry` | `I cannot` |
+| `I cannot do that. I'm sorry.` | `I cannot` | `I cannot` |
 
-Same answer on a pair the rule requires separated. **A T1 witness**: no decision rule downstream of
-this check can tell those two texts apart, because the distinction is not in the check's answer.
+Same answer on a pair the rule requires separated: a T1 witness.
 
-**The measure scored it `unrunnable`.** `refusal_phrase_in` takes two required arguments and the open
-resolver admits one, so the machinery refused to execute a find that is real. That is the T-B bound
-of `docs/mini/PIPELINE_MATH.md` — a kernel is `Callable[[str], str]` — biting on a true conjecture.
+**But it is not new to this repository.** `docs/mini/BUILD_TEST.md` records an earlier block aiming
+at exactly this — "deliberately constructed to separate text order from list order" — and a second
+arm hitting it by accident. So W1 is **novel relative to the initial organisation** (the contract
+text names nothing) and **not novel relative to the repository**. The Blueprint requires those two
+be reported apart, and this is the case that shows why.
 
-**Not repaired mid-block.** Widening the resolver now would change every arm's numbers after the
-evidence was seen. The block runs as pre-registered and this is reported beside it, which means
-`grounded_T1` is known to **undercount** before its first number is read.
+Found by **S** in one conjecture, and independently by **F**. The live executor scored both
+`unrunnable`: `refusal_phrase_in` takes two arguments and the open resolver admits one.
 
-**What it already costs the pre-registration.** C2 asked whether any model arm grounds a collapse the
-enumerator could not. Mechanically the answer may be zero; by hand it is already one, and it came
-from the arm with no loop at all. Whatever `N` and `F` do, the cheapest arm in the block produced a
-verifiable kernel boundary at two calls.
+## W2 — the fence rule holds for one object in the fence and breaks for two
+
+**Real. Not recorded in the kernel table. Its exact status is a reading, and the reading is stated.**
+
+> The object scored is the last one inside a code fence when any fence holds one, else the last
+> top-level object in the text.
+
+Measured:
+
+| text | returns |
+|---|---|
+| fence holding **one** object, then a bare object | the **fenced** object |
+| fence holding **two** objects, then a bare object | the **bare** object |
+| fence holding one object, nothing after | the fenced object |
+| no fence, two bare objects | the last bare object |
+
+The fence wins over a trailing bare object when it holds one object and loses when it holds two.
+`docs/kernel.md` P-06 records the one-object case and P-02 states the behaviour as "the last fenced
+one when any fence holds an object". **Neither covers two.**
+
+**What it is worth, honestly.** The rule says "when any fence holds one", and that phrase bears two
+readings — *holds an object*, under which the code contradicts the rule; and *holds exactly one
+object*, under which the code obeys it and the rule simply says nothing about a fence holding two.
+On the first reading this is a defect; on the second it is an under-determined rule. **Either way
+the rule as written does not decide the case**, which is what a boundary of a check is. It is not
+claimed as a contradiction, because one reading of the sentence does not support that.
+
+Found by **N**, segment 0. The live executor scored it `unrunnable` — the conjecture named
+`records.recover_json_object`, and the function lives in `oracle`.
+
+## What the machinery could not see
+
+Both finds were `unrunnable` to the live executor, for two different reasons: an arity bound, and a
+function named in the wrong module. `grounded_T1` will read zero for arms that found real
+boundaries. The measure is not being changed to fix that — it is being reported beside a reading
+that a person made, which is what the repository's own rule says a refutation rests on.

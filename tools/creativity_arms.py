@@ -433,6 +433,106 @@ def _read(args: argparse.Namespace) -> int:
     return 0
 
 
+#: Configuration a two-argument check takes in this codebase, supplied by a person reading the
+#: conjecture. The open resolver admits one string and refuses these, so every conjecture about one
+#: is `unrunnable` no matter how true it is. This table is a READING applied after the fact, equally
+#: to every arm; it changes no arm's behaviour and nothing was rerun because of it. Naming it here
+#: rather than widening the resolver keeps the running machinery fixed, which is the point.
+SECOND_ARGUMENT: dict[str, str] = {
+    "refusal_phrase_in": "creib.forge.mini.conformance_kernels.REFUSAL_PHRASES",
+}
+
+
+def _bound(kernel_id: str):
+    """Resolve a claimed target to a one-string callable, binding a known configuration if needed."""
+
+    import importlib
+
+    from creib.forge.mini.openkernels import OPEN_PREFIX
+
+    path = kernel_id[len(OPEN_PREFIX):] if kernel_id.startswith(OPEN_PREFIX) else kernel_id
+    module_name, _, function_name = path.rpartition(".")
+    try:
+        function = getattr(importlib.import_module(module_name), function_name)
+    except Exception:  # noqa: BLE001
+        return None, f"no such function: {path}"
+    import inspect
+
+    try:
+        required = [p for p in inspect.signature(function).parameters.values()
+                    if p.default is inspect.Parameter.empty
+                    and p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD)]
+    except (TypeError, ValueError):
+        return None, f"no readable signature: {path}"
+    if len(required) == 1:
+        return (lambda text: function(text)), None
+    if len(required) == 2 and function_name in SECOND_ARGUMENT:
+        target = SECOND_ARGUMENT[function_name]
+        holder, _, name = target.rpartition(".")
+        value = getattr(importlib.import_module(holder), name)
+        return (lambda text: function(text, value)), None
+    return None, f"takes {len(required)} required arguments and no binding is declared"
+
+
+def _verify(args: argparse.Namespace) -> int:
+    """Re-execute every claimed pair, resolving the target by name across modules where needed.
+
+    Applied identically to every arm, after every arm has run. Two things it does that the live
+    executor does not: it binds a declared second argument, and when the named module does not hold
+    the function it looks for that name in the other open modules -- a conjecture that names the
+    right function in the wrong file is a misfiled claim, not a false one.
+    """
+
+    from creib.forge.mini.openkernels import OPEN_MODULES, OPEN_PACKAGE, OPEN_PREFIX
+
+    root = Path(args.root)
+    out: dict[str, list[dict[str, Any]]] = {}
+    for arm in sorted(ARMS):
+        rows: list[dict[str, Any]] = []
+        for segment in sorted((root / arm).glob("s*")) if (root / arm).is_dir() else []:
+            if not (segment / "log.jsonl").is_file():
+                continue
+            executions, _, _ = _record(segment)
+            for entry in executions:
+                kernel = str(entry.get("kernel", ""))
+                source, rewritten = str(entry.get("input", "")), str(entry.get("rewritten", ""))
+                expect = str(entry.get("expect", ""))
+                call, why = _bound(kernel)
+                relocated = None
+                if call is None and "no such function" in (why or ""):
+                    name = kernel.rpartition(".")[2]
+                    for candidate in OPEN_MODULES:
+                        trial = f"{OPEN_PREFIX}{OPEN_PACKAGE}{candidate}.{name}"
+                        call, _ = _bound(trial)
+                        if call is not None:
+                            relocated = trial
+                            break
+                row = {"arm": arm, "segment": segment.name, "kernel": kernel, "expect": expect,
+                       "relocated_to": relocated, "input": source, "rewritten": rewritten}
+                if call is None or not source or source == rewritten:
+                    row["verdict"] = "not executable"
+                    row["why"] = why or ("no texts given" if not source else "the two texts are the same")
+                else:
+                    try:
+                        before, after = repr(call(source)), repr(call(rewritten))
+                        row.update({"before": before, "after": after,
+                                    "verdict": "collapse" if before == after else "separates"})
+                    except Exception as error:  # noqa: BLE001
+                        row["verdict"] = "raised"
+                        row["why"] = f"{type(error).__name__}"
+                rows.append(row)
+        out[arm] = rows
+    (root / "verified.json").write_text(json.dumps(out, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(f"{'arm':<5} {'claims':>7} {'executable':>11} {'T1 collapse':>12} {'separates':>10} {'relocated':>10}", flush=True)
+    for arm, rows in out.items():
+        runnable = [r for r in rows if r["verdict"] in ("collapse", "separates")]
+        t1 = [r for r in runnable if r["verdict"] == "collapse" and r["expect"] == "moves"]
+        print(f"{arm:<5} {len(rows):>7} {len(runnable):>11} {len(t1):>12} "
+              f"{len([r for r in runnable if r['verdict'] == 'separates']):>10} "
+              f"{len([r for r in rows if r['relocated_to']]):>10}", flush=True)
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -451,6 +551,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     reader = sub.add_parser("read", help="read every arm on the pre-registered measure")
     reader.add_argument("--root", required=True)
     reader.set_defaults(handler=_read)
+    verifier = sub.add_parser("verify", help="re-execute every claim after the fact, equally for every arm")
+    verifier.add_argument("--root", required=True)
+    verifier.set_defaults(handler=_verify)
     args = parser.parse_args(argv)
     try:
         return int(args.handler(args))

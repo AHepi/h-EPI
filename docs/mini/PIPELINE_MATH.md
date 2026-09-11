@@ -193,3 +193,43 @@ caveat to recite:
    hold after the organisation changes.
 
 A timeout is not scored as a refutation.
+
+## What DeepReason's compiled notes add, and where they bite here
+
+Read from `AHepi/DeepReason` (read-only; that repository's rule forbids running its instruments in
+a review window). Its notes are marked external and unverified by its own instruments; they are
+design intelligence, not evidence, and are used that way.
+
+**A required field with no escape road manufactures an answer.**
+`docs/RESEARCH_STRUCTURED_OUTPUT_COERCION_2026-08-22.md` reports the same model fabricating at
+**0–2% in prose and 100% under a required-field schema**, "because the format removed honesty's
+slot", and states that prompt-level instructions not to fabricate are **voided** by a required
+schema: "enforcement lives in the schema's escape road, not the prompt".
+
+This names the mechanism behind Break 1 of CREATIVITY-ARMS-1 exactly. The reading stage had a
+required `kernel` field, no way to say *the prose names none*, and an artifact identifier sitting in
+its context — so it emitted that. Clarifying the prompt fixed the symptom here (five of five
+path-shaped, against two of eleven), and the note says why that fix is the weaker one: **the field
+still has no escape value**. T-D said put the schema downstream of the prose; this adds that the
+schema itself must admit "I cannot tell".
+
+It also independently supports the prose-first shape: "separate deliberation from emission… reason
+free, serialize/extract in a second call", with "keep emission schemas light".
+
+**Presence is not use.** The same note: "written state is not used state (presence decodes at 1.000
+even when causally inert)." This is the precise hazard of arm `F`. Carrying the previous segment's
+criticism in the brief does not mean the segment used it, and a difference between `N` and `F`
+could be either. It is the reason T-A's control is necessary and the reason a null result there is
+readable.
+
+**A settled endpoint is not evidence criticism worked.**
+`docs/RESEARCH_CONVERGENCE_VS_ATTRACTOR_2026-08-28.md` is binding on any reading of narrowing:
+"presume observed narrowing generator-intrinsic until control arms say otherwise", "nothing is
+interpretable without the no-criticism control arm and the stochastic floor", and "undetermined is a
+legitimate and frequent verdict".
+
+The design meets the first two by accident rather than design, and it is worth saying which:
+`R` is the no-criticism arm, and **`N` is the stochastic floor** — not installing means its four
+segments run a byte-identical brief, so they are four independent draws of one organisation. `F`'s
+four segments are four draws of a changing one. The floor is therefore inside the contrast rather
+than beside it, which is what makes the contrast readable at this size at all.
