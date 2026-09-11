@@ -1,0 +1,29 @@
+# Verdict
+
+## Executions (execs)
+[33d2389f89f6ee44] (mini.pair-execution.open.v1)
+Executed this cycle's pair proposals.
+766e7df13df7a7ee: conformance.kernel.recovery -> unchanged, expected unchanged
+commitments: {"executions": [{"after": "{\"c\":3}", "as_expected": true, "before": "{\"c\":3}", "executed": "unchanged", "expect": "unchanged", "input": "{\"a\":1,\"b\":2} {\"c\":3}", "kernel": "conformance.kernel.recovery", "proposal": "766e7df13df7a7ee", "rewrite": "Added a key to the earlier object only.", "rewritten": "{\"a\":1,\"b\":2,\"d\":4} {\"c\":3}"}]}
+[f8ff46e07586765c] (mini.pair-execution.open.v1)
+Executed this cycle's pair proposals.
+766e7df13df7a7ee: duplicate
+38c528fe5bdfce81: open:creib.forge.conformance.oracle.recover_json_object -> moved, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "unchanged", "input": "{\"a\":1,\"b\":2} {\"c\":3}", "kernel": "conformance.kernel.recovery", "proposal": "766e7df13df7a7ee", "rewrite": "Added a key to the earlier object only.", "rewritten": "{\"a\":1,\"b\":2,\"d\":4} {\"c\":3}"}, {"after": "({'a': 1}, ())", "as_expected": true, "before": "({'b': 2}, ())", "executed": "moved", "expect": "moves", "input": "{\"a\":1} {\"b\":2}", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "38c528fe5bdfce81", "rewrite": "swapped the order of the two top-level JSON objects", "rewritten": "{\"b\":2} {\"a\":1}"}]}
+[78bbd51adff786d6] (mini.pair-execution.open.v1)
+Executed this cycle's pair proposals.
+766e7df13df7a7ee: duplicate
+38c528fe5bdfce81: duplicate
+8b4525d272fff22a: open:creib.forge.conformance.oracle.recover_json_object -> unchanged, expected unchanged
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "unchanged", "input": "{\"a\":1,\"b\":2} {\"c\":3}", "kernel": "conformance.kernel.recovery", "proposal": "766e7df13df7a7ee", "rewrite": "Added a key to the earlier object only.", "rewritten": "{\"a\":1,\"b\":2,\"d\":4} {\"c\":3}"}, {"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "{\"a\":1} {\"b\":2}", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "38c528fe5bdfce81", "rewrite": "swapped the order of the two top-level JSON objects", "rewritten": "{\"b\":2} {\"a\":1}"}, {"after": "({'a': 1}, ())", "as_expected": true, "before": "({'a': 1}, ())", "executed": "unchanged", "expect": "unchanged", "input": "Here is data: ```json\n{\"a\":1}\n``` and more text with {\"b\":2}", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "8b4525d272fff22a", "rewrite": "Here is data: ```json\n{\"a\":1}\n``` and more text with {\"b\":3}", "rewritten": "Here is data: ```json\n{\"a\":1}\n``` and more text with {\"b\":3}"}]}
+
+## Criticisms (crits)
+[a7d8a257b352344b] (mini.criticism.v1)
+No expectation failed in this pair. The execution for proposal 766e7df13df7a7ee reports as_expected true (before and after both recovered {"c":3}), so there is no mismatch between the rule as written and the code to attribute to a misreading or a code divergence.
+[a834ce00449f8d71] (mini.criticism.v1)
+No expectation failed. Proposal 766e7df13df7a7ee expected unchanged and executed unchanged (as_expected true); proposal 38c528fe5bdfce81 expected moves and executed moved (as_expected true). The duplicate execution of 766e7df13df7a7ee in f8ff46e07586765c is not a failed expectation, just a repeated run. There is no misreading of the rule or divergence between rule and code to report.
+[687186904cde12e6] (mini.criticism.v1)
+No failed expectations to criticise. All three proposals executed as expected: 766e7df13df7a7ee unchanged, 38c528fe5bdfce81 moved, 8b4525d272fff22a unchanged.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

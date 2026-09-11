@@ -1,0 +1,24 @@
+# Execute
+
+## Proposals (props)
+[1e6895392bcfee8c] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between these texts: recover_json_object scores the last top-level object in the text, so the input yields {"b":2} and the rewritten yields {"a":1}. I read this from: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text".
+input: {"a":1} {"b":2}
+rewrite: swap the order of the two top-level JSON objects
+rewritten: {"b":2} {"a":1}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+[0b3d8c9fc1fe4a82] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to be unchanged between these two texts. The recovery kernel is described as: "The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT." Since both texts contain the same JSON object {"a": 1}, the recovered object is identical, so the answer should not move.
+input: {"a": 1}
+rewrite: Added prose before the JSON object
+rewritten: Here is the answer: {"a": 1}
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "unchanged"}
+[15fe9a17d2dd86ba] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between these two texts. The grounding kernel is specified to return one of 'GROUNDED, SPAN_MISSING, SPAN_NOT_IN_DOCUMENT or VALUE_NOT_IN_SPAN' with 'value-in-span checked'. In the input, the value 'cat' is inside the span 'cat', so the verdict is GROUNDED. In the rewritten text, the value is 'dog' while the span remains 'cat', so the value is not in the span and the verdict becomes VALUE_NOT_IN_SPAN. That is a move.
+input: {"value": "cat", "span": "cat", "document": "the cat sat"}
+rewrite: Changed the value from 'cat' to 'dog' while keeping the span and document the same.
+rewritten: {"value": "dog", "span": "cat", "document": "the cat sat"}
+commitments: {"kernel": "open:creib.forge.conformance.oracle._grounding_kernel", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

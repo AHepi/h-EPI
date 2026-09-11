@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. Read the executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule or the rule as written and the code part company. Quote the rule's words and name the line of code. Say what a proposer should build next.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The only failed expectation is proposal 678f984d3f62ecc1, which expected a move but was executed as unrunnable. The proposer did not misread the rule. The rule as written states: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text' and 'A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over'. The code in recover_json_object implements exactly this: it builds fenced and top_level pools, iterates them in reverse, and skips candidates that fail parsing (the float 1.0 is passed over, so the earlier object {\"a\":1} is recovered for the input, and {\"b\":2} for the rewritten). Thus the rule as written and the code do not part company; the move should have occurred. The failure is that the execution harness could not read the input and rewritten text, as shown by the execution detail: 'open:creib.forge.conformance.oracle.recover_json_object could not read the input and the rewritten text ( raised); a move to or from that verdict is not a move'. The proposer should build next a pair whose input and rewritten are valid JSON objects (or at least parseable by the harness's reader), because the harness appears to require that; for example, use {\"a\":1} and {\"a\":2} as in the successful proposal f66af3d1e2e6b871, or avoid floats in fences if the harness cannot handle such strings.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

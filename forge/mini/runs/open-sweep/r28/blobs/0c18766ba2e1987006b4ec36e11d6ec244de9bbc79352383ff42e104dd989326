@@ -1,0 +1,34 @@
+# Execute
+
+## Proposals (props)
+[13ec021207ecbc82] (mini.pair-proposal.sweep.v1)
+The rule as written says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". With no code fence, the last top-level object is selected. Changing the first object from 1 to 3 does not affect the last object, so the recovered object is unchanged.
+input: {"a": 1}
+{"b": 2}
+rewrite: Change the value of key "a" in the first object from 1 to 3.
+rewritten: {"a": 3}
+{"b": 2}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "unchanged"}
+[69eadafb85416bc9] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to be unchanged between the two texts. I read this from the recover_json_object docstring: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". In both texts, the only object inside a code fence is {"a": 1}, and the later outside object is ignored because a fence holds one. Changing the outside object's value from 2 to 3 does not affect the scored object.
+input: Here is the answer:
+```json
+{"a": 1}
+```
+And another object: {"b": 2}
+rewrite: changed the value of the outside object from 2 to 3
+rewritten: Here is the answer:
+```json
+{"a": 1}
+```
+And another object: {"b": 3}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "unchanged"}
+[7f2e167cd49593de] (mini.pair-proposal.sweep.v1)
+The rule for `_grounding_kernel` says the verdict is one of "GROUNDED, SPAN_MISSING, SPAN_NOT_IN_DOCUMENT or VALUE_NOT_IN_SPAN" and that the value-in-span check is on. Changing the value from "cat" to "dog" while keeping the same span and document should move the verdict from GROUNDED to VALUE_NOT_IN_SPAN, so the rule as written says the check's answer ought to move.
+input: {"value": "cat", "span": "The cat sat", "document": "The cat sat on the mat."}
+rewrite: GROUNDED, SPAN_MISSING, SPAN_NOT_IN_DOCUMENT or VALUE_NOT_IN_SPAN; value-in-span checked
+rewritten: {"value": "dog", "span": "The cat sat", "document": "The cat sat on the mat."}
+commitments: {"kernel": "open:creib.forge.conformance.oracle._grounding_kernel", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

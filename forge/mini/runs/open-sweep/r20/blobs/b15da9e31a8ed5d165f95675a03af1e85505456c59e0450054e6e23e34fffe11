@@ -1,0 +1,18 @@
+# Execute
+
+## Proposals (props)
+[f26d388f7af84cf3] (mini.pair-proposal.sweep.v1)
+The rule for _grounding_kernel says 'with no relaxation and the value-in-span check on' and returns 'VALUE_NOT_IN_SPAN' when the value is not in the cited span. Changing the span from 'foo' to 'bar' while keeping value 'foo' means the value is not in the span, so the verdict moves from GROUNDED to VALUE_NOT_IN_SPAN.
+input: {"value": "foo", "span": "foo", "document": "foo bar"}
+rewrite: changed span from 'foo' to 'bar'
+rewritten: {"value": "foo", "span": "bar", "document": "foo bar"}
+commitments: {"kernel": "open:creib.forge.conformance.oracle._grounding_kernel", "expect": "moves"}
+[e2ab56eb3995892f] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to be unchanged between these two texts, because "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text" and both texts have the same last top-level object.
+input: {"x":1} {"a":1}
+rewrite: Changed the first JSON object while keeping the last one identical.
+rewritten: {"y":2} {"a":1}
+commitments: {"kernel": "conformance.kernel.recovery", "expect": "unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

@@ -1,0 +1,36 @@
+# Execute
+
+## Proposals (props)
+[28d04e2675568aed] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to be unchanged: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." Since the fenced object is unchanged and the outside object is ignored, recover_json_object returns the same object for both texts.
+input: Outside {"x": 1}
+```json
+{"y": 2}
+```
+rewrite: changed the outside object's value from 1 to 3
+rewritten: Outside {"x": 3}
+```json
+{"y": 2}
+```
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "unchanged"}
+[6fff5c8ac6e35c79] (mini.pair-proposal.sweep.v1)
+The rule says the grounding kernel reads one JSON object and returns GROUNDED, SPAN_MISSING, SPAN_NOT_IN_DOCUMENT or VALUE_NOT_IN_SPAN, "with no relaxation and the value-in-span check on". Changing the document so the span no longer occurs should move the verdict from GROUNDED to SPAN_NOT_IN_DOCUMENT.
+input: {"value": "x", "span": "x", "document": "x"}
+rewrite: {"value": "x", "span": "x", "document": "y"}
+rewritten: {"value": "x", "span": "x", "document": "y"}
+commitments: {"kernel": "open:creib.forge.conformance.oracle._grounding_kernel", "expect": "moves"}
+[515c92d11e6cb920] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between these two texts. recover_json_object scores 'the last one inside a code fence when any fence holds one', and the fenced object changes from {"a":1} to {"a":2}, so the recovered object is different.
+input: Here is the answer:
+```json
+{"a": 1}
+```
+rewrite: Changed the value of key 'a' from 1 to 2 inside the fenced JSON object.
+rewritten: Here is the answer:
+```json
+{"a": 2}
+```
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

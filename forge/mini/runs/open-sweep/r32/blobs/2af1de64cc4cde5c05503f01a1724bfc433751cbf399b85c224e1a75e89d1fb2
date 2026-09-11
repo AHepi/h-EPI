@@ -1,0 +1,21 @@
+# Verdict
+
+## Executions (execs)
+[474994613be8415e] (mini.pair-execution.open.v1)
+Executed this cycle's pair proposals.
+c0a4442164aa9ec3: open:creib.forge.conformance.oracle.recover_json_object -> moved, expected moves
+commitments: {"executions": [{"after": "({'b': 3}, ())", "as_expected": true, "before": "({'b': 2}, ())", "executed": "moved", "expect": "moves", "input": "{\"a\":1} {\"b\":2}", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "c0a4442164aa9ec3", "rewrite": "changed the value of the second JSON object from 2 to 3", "rewritten": "{\"a\":1} {\"b\":3}"}]}
+[33713a86fcd5411a] (mini.pair-execution.open.v1)
+Executed this cycle's pair proposals.
+c0a4442164aa9ec3: duplicate
+ed13bc4fc4b61cfd: open:creib.forge.conformance.oracle.recover_json_object -> moved, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "{\"a\":1} {\"b\":2}", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "c0a4442164aa9ec3", "rewrite": "changed the value of the second JSON object from 2 to 3", "rewritten": "{\"a\":1} {\"b\":3}"}, {"after": "({'a': 2}, ())", "as_expected": true, "before": "({'a': 1}, ())", "executed": "moved", "expect": "moves", "input": "```json\n{\"a\": 1}\n```", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "ed13bc4fc4b61cfd", "rewrite": "changed the value of a from 1 to 2 inside the fenced JSON object", "rewritten": "```json\n{\"a\": 2}\n```"}]}
+
+## Criticisms (crits)
+[e353752416212d78] (mini.criticism.v1)
+No expectation failed in this execution. The proposal expected the recovered object to move from {'b':2} to {'b':3}, and the execution reports moved, as_expected true. Therefore there is no misreading of the rule or divergence between rule and code to report.
+[2cd8c8aceccdca1c] (mini.criticism.v1)
+No expectation failed. Both proposals predicted movement, and both executions confirm it: c0a4442164aa9ec3 moved from {'b': 2} to {'b': 3}; ed13bc4fc4b61cfd moved from {'a': 1} to {'a': 2}. The duplicate execution of c0a4442164aa9ec3 in the second record is not a failed expectation; it was already executed and passed in the first record. The proposers read the rule correctly: the docstring says 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text,' and the code implements this in recover_json_object by iterating reversed(pool) for fenced then top_level. No next build is required for these proposals.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

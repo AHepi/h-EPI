@@ -1,0 +1,21 @@
+# Verdict
+
+## Executions (execs)
+[f44ce83f848f6c04] (mini.pair-execution.open.v1)
+Executed this cycle's pair proposals.
+f26d388f7af84cf3: unrunnable
+commitments: {"executions": [{"detail": "MINI_OPEN_KERNEL_NOT_FOUND: 'oracle' has no '_grounding_kernel'", "executed": "unrunnable", "expect": "moves", "input": "{\"value\": \"foo\", \"span\": \"foo\", \"document\": \"foo bar\"}", "kernel": "open:creib.forge.conformance.oracle._grounding_kernel", "proposal": "f26d388f7af84cf3", "rewrite": "changed span from 'foo' to 'bar'", "rewritten": "{\"value\": \"foo\", \"span\": \"bar\", \"document\": \"foo bar\"}"}]}
+[d125ae7a97b99a1d] (mini.pair-execution.open.v1)
+Executed this cycle's pair proposals.
+f26d388f7af84cf3: unrunnable
+e2ab56eb3995892f: conformance.kernel.recovery -> unchanged, expected unchanged
+commitments: {"executions": [{"detail": "MINI_OPEN_KERNEL_NOT_FOUND: 'oracle' has no '_grounding_kernel'", "executed": "unrunnable", "expect": "moves", "input": "{\"value\": \"foo\", \"span\": \"foo\", \"document\": \"foo bar\"}", "kernel": "open:creib.forge.conformance.oracle._grounding_kernel", "proposal": "f26d388f7af84cf3", "rewrite": "changed span from 'foo' to 'bar'", "rewritten": "{\"value\": \"foo\", \"span\": \"bar\", \"document\": \"foo bar\"}"}, {"after": "{\"a\":1}", "as_expected": true, "before": "{\"a\":1}", "executed": "unchanged", "expect": "unchanged", "input": "{\"x\":1} {\"a\":1}", "kernel": "conformance.kernel.recovery", "proposal": "e2ab56eb3995892f", "rewrite": "Changed the first JSON object while keeping the last one identical.", "rewritten": "{\"y\":2} {\"a\":1}"}]}
+
+## Criticisms (crits)
+[07859abe4b44bcb0] (mini.criticism.v1)
+The proposal's expectation failed because the kernel path is wrong, not because the rule and code disagree. The proposer misread the rule: the docstring says 'The three lines are the harness's own (``_grounding_verdict`` in ``oracle.py``), read here over one JSON object rather than over a variant and its output.' That refers to the three lines inside `_grounding_kernel`, not to the kernel itself. The source defines `_grounding_kernel` at top level (`def _grounding_kernel(text: str) -> str:`), so the kernel is not an attribute of `oracle`. The execution confirms this: `MINI_OPEN_KERNEL_NOT_FOUND: 'oracle' has no '_grounding_kernel'`. The proposer should build next a proposal whose kernel path points to the source's `_grounding_kernel` (e.g. `open:creib.forge.conformance._grounding_kernel`), keeping the same rewrite.
+[7cbcb3318082b223] (mini.criticism.v1)
+Only f26d388f7af84cf3 failed: it was unrunnable. The proposer misread the rule. The rule as written names the kernel 'conformance.kernel.grounding' and says its input is one JSON object {"value", "span", "document"}; the proposal instead cited 'open:creib.forge.conformance.oracle._grounding_kernel' in the line "kernel": "open:creib.forge.conformance.oracle._grounding_kernel". The execution detail reports 'MINI_OPEN_KERNEL_NOT_FOUND: 'oracle' has no '_grounding_kernel'', so the code and the rule part company at the kernel identifier: the oracle module does not expose that internal function under that path. The proposer should build next a proposal against the documented kernel conformance.kernel.grounding, with the same rewritten input, and expect VALUE_NOT_IN_SPAN because the value 'foo' is not in the span 'bar'. e2ab56eb3995892f passed as expected and needs no criticism.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

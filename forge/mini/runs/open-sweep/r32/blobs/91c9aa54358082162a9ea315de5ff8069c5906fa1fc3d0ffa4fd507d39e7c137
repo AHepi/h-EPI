@@ -1,0 +1,22 @@
+# Execute
+
+## Proposals (props)
+[c0a4442164aa9ec3] (mini.pair-proposal.sweep.v1)
+The rule as written for recover_json_object says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." Between the input and rewritten texts, the last top-level object changes from {"b":2} to {"b":3}, so the check's answer ought to move.
+input: {"a":1} {"b":2}
+rewrite: changed the value of the second JSON object from 2 to 3
+rewritten: {"a":1} {"b":3}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+[ed13bc4fc4b61cfd] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between these two texts. The docstring for recover_json_object states: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." The input has a fenced JSON object {"a": 1}; the rewritten text has a fenced JSON object {"a": 2}. Since the last fenced object changes, the recovered object changes, so the answer moves.
+input: ```json
+{"a": 1}
+```
+rewrite: changed the value of a from 1 to 2 inside the fenced JSON object
+rewritten: ```json
+{"a": 2}
+```
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

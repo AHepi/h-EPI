@@ -1,0 +1,38 @@
+# Execute
+
+## Proposals (props)
+[798f9c99dc99cb9a] (mini.pair-proposal.sweep.v1)
+The rule as written for open:creib.forge.conformance.oracle._grounding_kernel says the verdict is given "with no relaxation and the value-in-span check on" over one JSON object. The two texts parse to the same JSON object, so the check's answer ought to be unchanged.
+input: {"value":"foo","span":"foo","document":"foo bar"}
+rewrite: whitespace-only reformatting of the same JSON object
+rewritten: { "value" : "foo", "span" : "foo", "document" : "foo bar" }
+commitments: {"kernel": "open:creib.forge.conformance.oracle._grounding_kernel", "expect": "unchanged"}
+[66976dc40d75ea26] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between these texts: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". Changing the object inside the fence changes the recovered object.
+input: {"a":1}
+```json
+{"a":2}
+```
+rewrite: changed the value of key 'a' from 2 to 3 inside the fenced JSON object
+rewritten: {"a":1}
+```json
+{"a":3}
+```
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+[9903d797aad817bc] (mini.pair-proposal.sweep.v1)
+For recover_json_object, the rule as written says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". In the input, the last object inside a code fence is {"a":1}; in the rewritten, the same fenced object remains, while only the later top-level object outside the fence changes. Therefore the rule says the check's answer ought to be unchanged.
+input: Here is a fenced object:
+```json
+{"a":1}
+```
+And another object outside: {"b":2}
+rewrite: The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text
+rewritten: Here is a fenced object:
+```json
+{"a":1}
+```
+And another object outside: {"b":3}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

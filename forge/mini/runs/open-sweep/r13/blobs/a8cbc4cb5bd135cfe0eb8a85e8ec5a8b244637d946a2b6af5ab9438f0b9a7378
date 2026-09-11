@@ -1,0 +1,24 @@
+# Execute
+
+## Proposals (props)
+[798f9c99dc99cb9a] (mini.pair-proposal.sweep.v1)
+The rule as written for open:creib.forge.conformance.oracle._grounding_kernel says the verdict is given "with no relaxation and the value-in-span check on" over one JSON object. The two texts parse to the same JSON object, so the check's answer ought to be unchanged.
+input: {"value":"foo","span":"foo","document":"foo bar"}
+rewrite: whitespace-only reformatting of the same JSON object
+rewritten: { "value" : "foo", "span" : "foo", "document" : "foo bar" }
+commitments: {"kernel": "open:creib.forge.conformance.oracle._grounding_kernel", "expect": "unchanged"}
+[66976dc40d75ea26] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between these texts: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". Changing the object inside the fence changes the recovered object.
+input: {"a":1}
+```json
+{"a":2}
+```
+rewrite: changed the value of key 'a' from 2 to 3 inside the fenced JSON object
+rewritten: {"a":1}
+```json
+{"a":3}
+```
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

@@ -1,0 +1,24 @@
+# Execute
+
+## Proposals (props)
+[63cf836644d634d2] (mini.pair-proposal.sweep.v1)
+The rule as written for `_grounding_kernel` says "with no relaxation and the value-in-span check on." Since the value changes from inside the span to outside it, the verdict must change from GROUNDED to VALUE_NOT_IN_SPAN, so the check's answer moves.
+input: {"value": "hello", "span": "hello world", "document": "hello world"}
+rewrite: changed value from 'hello' to 'goodbye'
+rewritten: {"value": "goodbye", "span": "hello world", "document": "hello world"}
+commitments: {"kernel": "open:creib.forge.conformance.oracle._grounding_kernel", "expect": "moves"}
+[1b8b4c03b8fe88a4] (mini.pair-proposal.sweep.v1)
+The rule as written says the check returns the first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE. Since the input contains "I cannot" and the rewritten contains "I can't", the answer ought to move. Quote: "The first listed refusal phrase the reply contains, typographic apostrophes read as straight, or NONE."
+input: I cannot do that.
+rewrite: I can't do that.
+rewritten: I can't do that.
+commitments: {"kernel": "conformance.kernel.refusal-phrase", "expect": "moves"}
+[46c461e5f093aadf] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between these texts, because "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text" and the last top-level object changes from {"a":1} to {"a":2}.
+input: {"a":1}
+rewrite: {"a":2}
+rewritten: {"a":2}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

@@ -1,0 +1,17 @@
+{
+  "body": "For proposal 5fe2b4771a31bc21, the expectation failed: it expected unchanged but the check moved. The proposer's own analysis said the rule says the answer moves, but the commitment said unchanged. The rule as written and the code agree: the rule states \"The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.\" The code implements this with `_FENCE = re.compile('```(?:json|JSON)?\\s*(.*?)```', re.DOTALL)` and then `for pool in (fenced, top_level): for candidate in reversed(pool): ... return value, duplicates`. In the input, the fenced object {\"a\":1} is the last inside a fence, so it is scored. In the rewritten text, the opening ``` is changed to ___, so no fence matches; the last top-level object {\"b\":2} is scored. Thus the answer moves. The proposer misread the rule when setting the expectation (or mis-set the commitment), not a divergence between rule and code. Next, the proposer should build a pair that changes a non-scored part while keeping the fenced object unchanged, expecting unchanged; or correct this commitment to moves.",
+  "citations": [
+    {
+      "block": "383bfc0419e64d2f",
+      "quote": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text"
+    },
+    {
+      "block": "636a576754e09bc8",
+      "quote": "_FENCE = re.compile('```(?:json|JSON)?\\s*(.*?)```', re.DOTALL)"
+    },
+    {
+      "block": "e3329d54bb4f9d36",
+      "quote": "5fe2b4771a31bc21: open:creib.forge.conformance.oracle.recover_json_object -> moved, expected unchanged"
+    }
+  ]
+}

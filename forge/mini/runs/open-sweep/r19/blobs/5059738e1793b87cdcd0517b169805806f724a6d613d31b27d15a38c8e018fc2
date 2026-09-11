@@ -1,0 +1,35 @@
+# Execute
+
+## Proposals (props)
+[7b48af7c7ba47401] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to be unchanged between these two texts. I read this from the recover_json_object docstring: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". Since both texts contain a fenced object and the rewritten text adds only a top-level object after the fence, the fenced object remains the last one inside a code fence, so the recovered object should be the same.
+input: Here is the answer:
+```json
+{"a": 1}
+```
+rewrite: Added a top-level JSON object after the fenced object.
+rewritten: Here is the answer:
+```json
+{"a": 1}
+```
+{"b": 2}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "unchanged"}
+[db3379e13151025b] (mini.pair-proposal.sweep.v1)
+The rule as written says _plain_quotes folds typographic apostrophes and quotation marks to their ASCII forms, so between an input containing a typographic apostrophe and a rewritten text without one, the check's answer moves from the folded ASCII form to the unchanged rewritten text. Quote: 'Fold typographic apostrophes and quotation marks to their ASCII forms.'
+input: I’m sorry
+rewrite: removed typographic apostrophe and changed text
+rewritten: Hello
+commitments: {"kernel": "open:creib.forge.conformance.oracle._plain_quotes", "expect": "moves"}
+[2032f0db9d122c8f] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between these two texts. It states: "The object scored is the last one inside a code fence when any fence holds one". In the input the last fenced object is {"a":1}; in the rewritten text the last fenced object is {"a":2}, so the recovered object should change from {"a":1} to {"a":2}.
+input: ```json
+{"a":1}
+```
+rewrite: Change the fenced JSON object from {"a":1} to {"a":2}.
+rewritten: ```json
+{"a":2}
+```
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

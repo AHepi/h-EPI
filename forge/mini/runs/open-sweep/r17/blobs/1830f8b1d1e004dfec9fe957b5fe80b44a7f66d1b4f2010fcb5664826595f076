@@ -1,0 +1,29 @@
+{
+  "body": "Two failed expectations:\n\n1. Proposal 27d0e77bd7f912c9 (kernel open:creib.forge.conformance.records.recover_json_object, expect unchanged) failed as unrunnable. The proposer misread the rule: the rule names the kernel \"conformance.kernel.recovery\", not \"records.recover_json_object\". The code defines `recover_json_object` at top level (`def recover_json_object(content: str) -> Any:`), not under a `records` namespace. Next: use the documented kernel path, e.g. `open:creib.forge.conformance.oracle.recover_json_object`.\n\n2. Proposal 6dd7b47f29e37388 (kernel open:creib.forge.conformance.oracle._grounding_kernel, expect moves) failed as unrunnable. The proposer misread the rule: the rule names the kernel \"conformance.kernel.grounding\", not the private helper `_grounding_kernel`. The code defines `_grounding_kernel` as a private function (`def _grounding_kernel(text: str) -> str:`), but the kernel is exposed as `conformance.kernel.grounding`. Next: use the documented kernel path, e.g. `open:creib.forge.conformance.oracle.grounding`.\n\nProposal 64b8ffdc6ab82a05 passed (unchanged as expected), so no critique.",
+  "citations": [
+    {
+      "id": "383bfc0419e64d2f",
+      "quote": "conformance.kernel.recovery: The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT."
+    },
+    {
+      "id": "383bfc0419e64d2f",
+      "quote": "conformance.kernel.grounding: The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked: the input is one JSON object {\"value\", \"span\", \"document\"}; GROUNDED, SPAN_MISSING, SPAN_NOT_IN_DOCUMENT or VALUE_NOT_IN_SPAN."
+    },
+    {
+      "id": "636a576754e09bc8",
+      "quote": "def recover_json_object(content: str) -> Any:"
+    },
+    {
+      "id": "636a576754e09bc8",
+      "quote": "def _grounding_kernel(text: str) -> str:"
+    },
+    {
+      "id": "b488616c968fdc73",
+      "quote": "MINI_OPEN_KERNEL_NOT_FOUND: 'records' has no 'recover_json_object'"
+    },
+    {
+      "id": "b488616c968fdc73",
+      "quote": "MINI_OPEN_KERNEL_NOT_FOUND: 'oracle' has no '_grounding_kernel'"
+    }
+  ]
+}

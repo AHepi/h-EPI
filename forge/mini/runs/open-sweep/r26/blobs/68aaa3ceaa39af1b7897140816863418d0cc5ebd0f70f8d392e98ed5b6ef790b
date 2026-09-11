@@ -1,0 +1,17 @@
+{
+  "body": "For the failed expectation in proposal 63cf836644d634d2, the proposer misread the rule. The rule as written names the kernel `conformance.kernel.grounding`, not `open:creib.forge.conformance.oracle._grounding_kernel`. The source defines `_grounding_kernel` but the execution reports `MINI_OPEN_KERNEL_NOT_FOUND: 'oracle' has no '_grounding_kernel'`, so the rule as written and the code do not part company; the proposer used the internal function name from the source instead of the documented kernel name. The line of code `def _grounding_kernel(text: str) -> str:` is not the kernel identifier. A proposer should build next a proposal against `conformance.kernel.grounding` with input `{\"value\": \"hello\", \"span\": \"hello world\", \"document\": \"hello world\"}` and rewrite changing value to `goodbye`, expecting moves to `VALUE_NOT_IN_SPAN`.",
+  "citations": [
+    {
+      "id": "383bfc0419e64d2f",
+      "quote": "conformance.kernel.grounding: The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked: the input is one JSON object {\"value\", \"span\", \"document\"}; GROUNDED, SPAN_MISSING, SPAN_NOT_IN_DOCUMENT or VALUE_NOT_IN_SPAN."
+    },
+    {
+      "id": "636a576754e09bc8",
+      "quote": "def _grounding_kernel(text: str) -> str:"
+    },
+    {
+      "id": "57fdc1391ee2259a",
+      "quote": "MINI_OPEN_KERNEL_NOT_FOUND: 'oracle' has no '_grounding_kernel'"
+    }
+  ]
+}

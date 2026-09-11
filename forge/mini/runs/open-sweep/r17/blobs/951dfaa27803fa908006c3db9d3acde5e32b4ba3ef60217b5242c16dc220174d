@@ -1,0 +1,30 @@
+# Execute
+
+## Proposals (props)
+[27d0e77bd7f912c9] (mini.pair-proposal.sweep.v1)
+The rule as written says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". In the input, the fenced object {"a":1} is the last inside a fence, so it is scored; the later top-level {"b":2} is ignored. Changing 2 to 3 does not affect the fenced object, so the check's answer ought to be unchanged.
+input: ```json
+{"a":1}
+```
+{"b":2}
+rewrite: change the final 2 to 3
+rewritten: ```json
+{"a":1}
+```
+{"b":3}
+commitments: {"kernel": "open:creib.forge.conformance.records.recover_json_object", "expect": "unchanged"}
+[64b8ffdc6ab82a05] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to be unchanged between these two texts, because "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text" and both texts have the same last top-level object {"b": 2}.
+input: {"a": 1} {"b": 2}
+rewrite: Changed the first object while keeping the last object the same.
+rewritten: {"c": 3} {"b": 2}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "unchanged"}
+[6dd7b47f29e37388] (mini.pair-proposal.sweep.v1)
+The rule as written for open:creib.forge.conformance.oracle._grounding_kernel says it returns one of "GROUNDED, SPAN_MISSING, SPAN_NOT_IN_DOCUMENT or VALUE_NOT_IN_SPAN" and runs "with no relaxation and the value-in-span check on." Changing the value from "foo" to "bar" while span and document stay "foo" should move the verdict from GROUNDED to VALUE_NOT_IN_SPAN.
+input: {"value": "foo", "span": "foo", "document": "foo"}
+rewrite: value changed from foo to bar
+rewritten: {"value": "bar", "span": "foo", "document": "foo"}
+commitments: {"kernel": "open:creib.forge.conformance.oracle._grounding_kernel", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

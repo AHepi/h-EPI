@@ -1,0 +1,21 @@
+# Verdict
+
+## Executions (execs)
+[41c479cf91615a0c] (mini.pair-execution.open.v1)
+Executed this cycle's pair proposals.
+28d04e2675568aed: open:creib.forge.conformance.oracle.recover_json_object -> unchanged, expected unchanged
+commitments: {"executions": [{"after": "({'y': 2}, ())", "as_expected": true, "before": "({'y': 2}, ())", "executed": "unchanged", "expect": "unchanged", "input": "Outside {\"x\": 1}\n```json\n{\"y\": 2}\n```", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "28d04e2675568aed", "rewrite": "changed the outside object's value from 1 to 3", "rewritten": "Outside {\"x\": 3}\n```json\n{\"y\": 2}\n```"}]}
+[8435556b1e52b87b] (mini.pair-execution.open.v1)
+Executed this cycle's pair proposals.
+28d04e2675568aed: duplicate
+6fff5c8ac6e35c79: unrunnable
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "unchanged", "input": "Outside {\"x\": 1}\n```json\n{\"y\": 2}\n```", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "28d04e2675568aed", "rewrite": "changed the outside object's value from 1 to 3", "rewritten": "Outside {\"x\": 3}\n```json\n{\"y\": 2}\n```"}, {"detail": "MINI_OPEN_KERNEL_NOT_FOUND: 'oracle' has no '_grounding_kernel'", "executed": "unrunnable", "expect": "moves", "input": "{\"value\": \"x\", \"span\": \"x\", \"document\": \"x\"}", "kernel": "open:creib.forge.conformance.oracle._grounding_kernel", "proposal": "6fff5c8ac6e35c79", "rewrite": "{\"value\": \"x\", \"span\": \"x\", \"document\": \"y\"}", "rewritten": "{\"value\": \"x\", \"span\": \"x\", \"document\": \"y\"}"}]}
+
+## Criticisms (crits)
+[83e9cfe5d3f1752f] (mini.criticism.v1)
+No expectation failed. The execution reports `as_expected: true`, with `before` and `after` both `({'y': 2}, ())`. The proposer read the rule correctly: the fenced object is scored and the outside object is ignored, so changing the outside value leaves the result unchanged. There is nothing to criticise; a proposer should build next on this confirmed behaviour.
+[536362a829ddb31b] (mini.criticism.v1)
+Only one expectation failed: 6fff5c8ac6e35c79. The proposer misread the rule. The rule names the kernel `conformance.kernel.grounding`, not the internal function `_grounding_kernel`. The rule says: 'conformance.kernel.grounding: The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked: the input is one JSON object {"value", "span", "document"}; GROUNDED, SPAN_MISSING, SPAN_NOT_IN_DOCUMENT or VALUE_NOT_IN_SPAN.' The execution detail shows the code part company: `MINI_OPEN_KERNEL_NOT_FOUND: 'oracle' has no '_grounding_kernel'`. The source defines `_grounding_kernel` as a helper, but the registered kernel is `conformance.kernel.grounding`. The proposer should build next using the kernel identifier from the rules, `conformance.kernel.grounding`, not the Python function name. The other proposal (28d04e2675568aed) executed as expected and needs no critique.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

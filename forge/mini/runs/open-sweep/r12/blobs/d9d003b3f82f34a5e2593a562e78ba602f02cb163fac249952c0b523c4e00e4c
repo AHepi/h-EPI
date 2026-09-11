@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. Read the executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule or the rule as written and the code part company. Quote the rule's words and name the line of code. Say what a proposer should build next.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The failed expectation is 9dd0629810d946d9, which was unrunnable because the kernel path `open:creib.forge.conformance.oracle._grounding_kernel` does not exist in the oracle module. The proposer did not misread the rule: the rule as written says `conformance.kernel.grounding: The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked: the input is one JSON object {"value", "span", "document"}; GROUNDED, SPAN_MISSING, SPAN_NOT_IN_DOCUMENT or VALUE_NOT_IN_SPAN.` The source code defines `def _grounding_kernel(text: str) -> str:` but the execution reports `'oracle' has no '_grounding_kernel'`, so the rule as written and the code part company: the rule describes a grounding kernel, but the oracle module does not expose a function with that name. A proposer should build next a proposal against the actual kernel path that exists in oracle.py, perhaps `open:creib.forge.conformance.oracle.grounding` or the documented `conformance.kernel.grounding`, after checking the module's exported names.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

@@ -1,0 +1,14 @@
+# Verdict
+
+## Executions (execs)
+[5543bbaa944dec04] (mini.pair-execution.open.v1)
+Executed this cycle's pair proposals.
+678f984d3f62ecc1: unrunnable
+commitments: {"executions": [{"after": " raised", "before": " raised", "detail": "open:creib.forge.conformance.oracle.recover_json_object could not read the input and the rewritten text ( raised); a move to or from that verdict is not a move", "executed": "unrunnable", "expect": "moves", "input": "```json\\n{\\\"a\\\": 1}\\n```\\n```json\\n1.0\\n```", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "678f984d3f62ecc1", "rewrite": "changed the second code fence's content from the float 1.0 to the object {\\\"b\\\": 2}", "rewritten": "```json\\n{\\\"a\\\": 1}\\n```\\n```json\\n{\\\"b\\\": 2}\\n```"}]}
+
+## Criticisms (crits)
+[fa94c8f89b662939] (mini.criticism.v1)
+The proposer misread the rule, not a rule/code divergence. The proposal names the kernel `open:creib.forge.conformance.oracle.recover_json_object`, but the documented kernel is `conformance.kernel.recovery`; the execution says that kernel could not read the input and rewritten text, so the expectation `moves` was never tested. The rule as written says 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text' and 'A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over'. The code implements this at `for pool in (fenced, top_level): for candidate in reversed(pool):` and `if type(value) is dict: return value, duplicates`. A proposer should build next a pair using the documented kernel `conformance.kernel.recovery` with a reply string as input, not the source function name.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

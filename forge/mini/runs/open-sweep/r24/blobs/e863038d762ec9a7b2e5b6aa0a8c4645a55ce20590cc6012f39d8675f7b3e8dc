@@ -1,0 +1,29 @@
+# Verdict
+
+## Executions (execs)
+[b2c18cb9859118f0] (mini.pair-execution.open.v1)
+Executed this cycle's pair proposals.
+2b9634b69d08ff09: open:creib.forge.conformance.oracle.recover_json_object -> moved, expected moves
+commitments: {"executions": [{"after": "({'b': 2}, ())", "as_expected": true, "before": "({'a': 1}, ())", "executed": "moved", "expect": "moves", "input": "```json\n{\"a\":1}\n```\n{\"b\":2}", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "2b9634b69d08ff09", "rewrite": "removed the code fence around the first object", "rewritten": "{\"a\":1}\n{\"b\":2}"}]}
+[baf3d10ae16953fe] (mini.pair-execution.open.v1)
+Executed this cycle's pair proposals.
+2b9634b69d08ff09: duplicate
+08bb0fc82980a563: open:creib.forge.conformance.oracle.recover_json_object -> moved, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "```json\n{\"a\":1}\n```\n{\"b\":2}", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "2b9634b69d08ff09", "rewrite": "removed the code fence around the first object", "rewritten": "{\"a\":1}\n{\"b\":2}"}, {"after": "({'c': 3}, ())", "as_expected": true, "before": "({'b': 2}, ())", "executed": "moved", "expect": "moves", "input": "```json\n{\"a\": 1}\n```\n```json\n{\"b\": 2}\n```", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "08bb0fc82980a563", "rewrite": "changed the second fenced JSON object from {\"b\": 2} to {\"c\": 3}", "rewritten": "```json\n{\"a\": 1}\n```\n```json\n{\"c\": 3}\n```"}]}
+[72e9dc0557a20412] (mini.pair-execution.open.v1)
+Executed this cycle's pair proposals.
+2b9634b69d08ff09: duplicate
+08bb0fc82980a563: duplicate
+1f60a102e0c02c11: open:creib.forge.conformance.oracle._plain_quotes -> unchanged, expected unchanged
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "```json\n{\"a\":1}\n```\n{\"b\":2}", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "2b9634b69d08ff09", "rewrite": "removed the code fence around the first object", "rewritten": "{\"a\":1}\n{\"b\":2}"}, {"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "```json\n{\"a\": 1}\n```\n```json\n{\"b\": 2}\n```", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "08bb0fc82980a563", "rewrite": "changed the second fenced JSON object from {\"b\": 2} to {\"c\": 3}", "rewritten": "```json\n{\"a\": 1}\n```\n```json\n{\"c\": 3}\n```"}, {"after": "\"I'm sorry\"", "as_expected": true, "before": "\"I'm sorry\"", "executed": "unchanged", "expect": "unchanged", "input": "I’m sorry", "kernel": "open:creib.forge.conformance.oracle._plain_quotes", "proposal": "1f60a102e0c02c11", "rewrite": "changed typographic apostrophe to straight apostrophe", "rewritten": "I'm sorry"}]}
+
+## Criticisms (crits)
+[c714e1a4c2d61249] (mini.criticism.v1)
+No expectation failed. The proposal correctly read the rule: the last fenced object is scored when a fence holds one, and after removing the fence the last top-level object is scored. The execution confirms the recovered object moved from {'a':1} to {'b':2} as expected.
+[88c5cb7ba6eb5926] (mini.criticism.v1)
+No expectation failed: both proposals executed as moved, matching their expected moves. The duplicate execution of 2b9634b69d08ff09 in baf3d10ae16953fe is not a failure; it was already executed in b2c18cb9859118f0.
+[35c3abbd71ef6fc2] (mini.criticism.v1)
+No expectation failed. All three proposals executed as expected: recover_json_object moved for both the fence-removal case and the second-fence-change case, and _plain_quotes remained unchanged for the typographic-to-straight apostrophe case. There is no misread of the rule and no divergence between the rule as written and the code to report.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

@@ -1,0 +1,18 @@
+# Execute
+
+## Proposals (props)
+[28d04e2675568aed] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to be unchanged: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." Since the fenced object is unchanged and the outside object is ignored, recover_json_object returns the same object for both texts.
+input: Outside {"x": 1}
+```json
+{"y": 2}
+```
+rewrite: changed the outside object's value from 1 to 3
+rewritten: Outside {"x": 3}
+```json
+{"y": 2}
+```
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

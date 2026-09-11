@@ -1,0 +1,29 @@
+# Verdict
+
+## Executions (execs)
+[d2c87c625d70b8b0] (mini.pair-execution.open.v1)
+Executed this cycle's pair proposals.
+f4bd41491152c638: open:creib.forge.conformance.oracle.recover_json_object -> unchanged, expected unchanged
+commitments: {"executions": [{"after": "({'b': 2}, ())", "as_expected": true, "before": "({'b': 2}, ())", "executed": "unchanged", "expect": "unchanged", "input": "{\"a\": 1} {\"b\": 2}", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "f4bd41491152c638", "rewrite": "Changed the value of key 'a' in the first top-level JSON object from 1 to 999; the second object remains {\"b\": 2}.", "rewritten": "{\"a\": 999} {\"b\": 2}"}]}
+[34ff6f91f20c0057] (mini.pair-execution.open.v1)
+Executed this cycle's pair proposals.
+f4bd41491152c638: duplicate
+60d9d368ecbbadcf: open:creib.forge.conformance.oracle.recover_json_object -> moved, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "unchanged", "input": "{\"a\": 1} {\"b\": 2}", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "f4bd41491152c638", "rewrite": "Changed the value of key 'a' in the first top-level JSON object from 1 to 999; the second object remains {\"b\": 2}.", "rewritten": "{\"a\": 999} {\"b\": 2}"}, {"after": "({'b': 2}, ())", "as_expected": true, "before": "({'a': 1}, ())", "executed": "moved", "expect": "moves", "input": "Here is the answer:\n```json\n{\"a\": 1}\n```\nAnd another object outside: {\"b\": 2}", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "60d9d368ecbbadcf", "rewrite": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text", "rewritten": "Here is the answer:\n{\"a\": 1}\nAnd another object outside: {\"b\": 2}"}]}
+[84c2c5dc04f4b043] (mini.pair-execution.open.v1)
+Executed this cycle's pair proposals.
+f4bd41491152c638: duplicate
+60d9d368ecbbadcf: duplicate
+dcc7bf703b46158a: open:creib.forge.conformance.oracle.recover_json_object -> moved, expected moves
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "unchanged", "input": "{\"a\": 1} {\"b\": 2}", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "f4bd41491152c638", "rewrite": "Changed the value of key 'a' in the first top-level JSON object from 1 to 999; the second object remains {\"b\": 2}.", "rewritten": "{\"a\": 999} {\"b\": 2}"}, {"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "Here is the answer:\n```json\n{\"a\": 1}\n```\nAnd another object outside: {\"b\": 2}", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "60d9d368ecbbadcf", "rewrite": "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text", "rewritten": "Here is the answer:\n{\"a\": 1}\nAnd another object outside: {\"b\": 2}"}, {"after": "({'b': 3}, ())", "as_expected": true, "before": "({'b': 2}, ())", "executed": "moved", "expect": "moves", "input": "{\"a\":1} {\"b\":2}", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "dcc7bf703b46158a", "rewrite": "changed the value of the second top-level object from 2 to 3", "rewritten": "{\"a\":1} {\"b\":3}"}]}
+
+## Criticisms (crits)
+[a7092a99cbd63124] (mini.criticism.v1)
+No expectations failed in this execution. The proposal expected unchanged, and the execution returned unchanged, with before and after both ({'b': 2}, ()).
+[5a7b0ef31e76fecd] (mini.criticism.v1)
+No expectations failed. Both proposals' expectations were met: f4bd41491152c638 expected unchanged and executed unchanged; 60d9d368ecbbadcf expected moves and executed moved. The proposers read the rule as written correctly, and the code matched. A proposer should next build a pair that tests a case where the rule and code might part company, such as a reply with multiple fenced objects or a fenced object after a top-level object.
+[4262ebd72c5d9d62] (mini.criticism.v1)
+All three proposals' expectations were met by the executions; there are no failed expectations to criticise. f4bd41491152c638 correctly read the rule: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text', and the code's `for pool in (fenced, top_level): for candidate in reversed(pool):` returns the last top-level object when no fence exists, so changing the first object leaves the scored object unchanged. 60d9d368ecbbadcf correctly read the same rule: removing the fence changes the pool from fenced to top_level, and the code's pool selection matches. dcc7bf703b46158a correctly read the rule: changing the last top-level object's value changes the recovered object, and the code returns that last object. No proposer misread the rule, and the code does not part company with the rule as written. A proposer should next build probes for the remaining branches: multiple fences, nested objects, duplicate keys, floats, and refusal phrases.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

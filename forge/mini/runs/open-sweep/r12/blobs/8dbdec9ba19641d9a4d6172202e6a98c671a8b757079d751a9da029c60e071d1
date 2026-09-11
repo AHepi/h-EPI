@@ -1,0 +1,24 @@
+# Execute
+
+## Proposals (props)
+[9dd0629810d946d9] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between these two texts, because the value changes from "a" to "b" while the span remains "a"; with value-in-span checked, the first is GROUNDED and the second is VALUE_NOT_IN_SPAN. Quote: "value-in-span checked" and "VALUE_NOT_IN_SPAN".
+input: {"value": "a", "span": "a", "document": "a"}
+rewrite: {"value": "b", "span": "a", "document": "a"}
+rewritten: {"value": "b", "span": "a", "document": "a"}
+commitments: {"kernel": "open:creib.forge.conformance.oracle._grounding_kernel", "expect": "moves"}
+[ab2f604f7fd8382f] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between these texts: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." Changing the fenced object's value changes the recovered object, so the answer moves.
+input: ```json
+{"a": 1}
+```
+{"b": 2}
+rewrite: changed the value of key a from 1 to 2 inside the fenced JSON object
+rewritten: ```json
+{"a": 2}
+```
+{"b": 2}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

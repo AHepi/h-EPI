@@ -1,0 +1,39 @@
+# Execute
+
+## Proposals (props)
+[a5467967c3bf1da0] (mini.pair-proposal.sweep.v1)
+The rule as written says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". Since the input has a code fence containing an object, and the rewritten text adds another object outside any fence, the rule says the check's answer ought to be unchanged.
+input: Here is the answer:
+```json
+{"a": 1}
+```
+Thank you.
+rewrite: Added a second JSON object after the code fence.
+rewritten: Here is the answer:
+```json
+{"a": 1}
+```
+Thank you.
+{"b": 2}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "unchanged"}
+[95443d2e56e249ea] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between these texts. It reads: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". The input's last top-level object is {"b":2}; the rewritten text's only object is {"a":1}, so the recovered objects differ.
+input: {"a":1} {"b":2}
+rewrite: Removed the second JSON object, leaving only the first.
+rewritten: {"a":1}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+[3d29197873671653] (mini.pair-proposal.sweep.v1)
+The rule says "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". Between these two texts the check's answer ought to move: the first has a fenced object, so the scored object is the fenced one; the second has no fence, so the scored object is the last top-level object.
+input: Here is the first object:
+```json
+{"a": 1}
+```
+And here is another: {"b": 2}
+rewrite: removed the code fence so the last top-level object is scored instead of the fenced one
+rewritten: Here is the first object:
+{"a": 1}
+And here is another: {"b": 2}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

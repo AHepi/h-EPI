@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. Read the executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule or the rule as written and the code part company. Quote the rule's words and name the line of code. Say what a proposer should build next.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+For proposal 5fe2b4771a31bc21, the expectation failed: it expected unchanged but the check moved. The proposer's own analysis said the rule says the answer moves, but the commitment said unchanged. The rule as written and the code agree: the rule states "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." The code implements this with `_FENCE = re.compile('```(?:json|JSON)?\s*(.*?)```', re.DOTALL)` and then `for pool in (fenced, top_level): for candidate in reversed(pool): ... return value, duplicates`. In the input, the fenced object {"a":1} is the last inside a fence, so it is scored. In the rewritten text, the opening ``` is changed to ___, so no fence matches; the last top-level object {"b":2} is scored. Thus the answer moves. The proposer misread the rule when setting the expectation (or mis-set the commitment), not a divergence between rule and code. Next, the proposer should build a pair that changes a non-scored part while keeping the fenced object unchanged, expecting unchanged; or correct this commitment to moves.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

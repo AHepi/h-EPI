@@ -60,3 +60,78 @@ unestablishable.
 And the honest risk: 66 functions is a much harder brief than 4. The open arm may do **worse**
 because the proposer spends its calls resolving paths instead of reading rules. That is a real
 outcome and O3 is where it would show.
+
+## What the 36 runs show
+
+All 36 reached `RUN_ENDED`. Both arms: 216 executor rows, 36 runs, three cycles, same everything
+but the answer space.
+
+| measure | closed (4 kernels named) | open (66 reachable, none named) |
+|---|---|---|
+| rows | 216 | 216 |
+| ran | 106 | 85 |
+| duplicate | 110 | 85 |
+| **unrunnable** | **0** | **46** |
+| contradicted | 1 | 1 |
+| **quoted** | **0** | **0** |
+| contradictions per 100 ran | 0.9 | 1.2 |
+| distinct behaviours | 15 | **19** |
+| distinct probes | 9 | 9 |
+| distinct kernels named | 5 | 8 |
+
+**O1 holds.** Four kernels outside the registry were named and **two ran**:
+`oracle.recover_json_object` (152 rows) and `oracle._plain_quotes` (6). The widening was used, so
+the block is about it.
+
+**O2 fails, and O2 was the experiment.** The open arm produced **one** contradiction and **zero**
+quoting the rule — the closed arm's numbers exactly. The pre-registration says what follows: *"If
+the open arm also produces zero, that attribution is refuted... M24's reading of K1 must be
+withdrawn."* **It is withdrawn.** The enumeration is not what suppressed rule-quoting
+contradictions. Zero in 72 closed runs, zero in 36 open runs, and opening the answer space
+sixteenfold changed nothing about it.
+
+**How strongly it fails, stated honestly.** One contradiction per arm. A *rate* of rule-quoting over
+a single contradiction is not a measurement, so this block cannot separate "the enumeration did not
+matter" from "contradictions are too rare in either arm for anything to be measurable". What it can
+say, and does, is that the prediction M24's attribution implied did not occur. That is enough to
+withdraw the attribution and not enough to put another in its place.
+
+**O3 holds, and the cost is not the one expected.** 46 of 216 rows did not run, against zero in the
+closed arm. The breakdown matters more than the total:
+
+- **32 — `oracle` has no `_grounding_kernel`.** The model invented a function.
+- **3 — `records` has no `recover_json_object`.** A real function name, the wrong module.
+- **8 — the `open:` prefix dropped**, so the registry refused a path it had no entry for.
+- **3 — the function raised**, on either side of the pair, so the row is `unrunnable` and not a
+  move. This is the M11 rule doing exactly the job it was added for.
+
+**Thirty-five of the 46 are invented or misplaced names.** The notation tax that looked like the
+risk during the smoke test is the smaller half, and the decision not to loosen the resolver after
+seeing it would have bought back 8 rows out of 46.
+
+**O4 holds, and repeats a pattern.** 19 distinct behaviours against 15, on **fewer** executed rows
+(85 against 106). But distinct probes are **9 and 9**. This is the split ARCH-SWEEP-1's control
+found: the wider space moves what gets written and not what gets tested. Two different widenings —
+the architecture lattice and the answer space — have now produced more behaviour triples and the
+same number of probe cells.
+
+**The one contradiction, in full.** `open:creib.forge.conformance.oracle.recover_json_object` on
+
+```
+```json
+{"a": 1}
+```
+{"b": 2}
+```
+
+with the opening fence changed from ` ``` ` to `___`: expected `unchanged`, the answer moved from
+`({'a': 1}, ())` to `({'b': 2}, ())`. It is the fence-and-bare-object class the round-3 control
+already found, reached this time through a function named by import path rather than a registered
+kernel — and it quotes no rule, so it does not satisfy O2.
+
+## What this block does not license
+
+It does not say the answer space should be closed again. O1 and O4 both hold, and the machinery
+that resolves a function by path is the only reason the boundary point above could be stated at all
+in a run whose instruction named no kernels. It says the enumeration was not the reason K1 failed,
+and that I attributed K1's failure to the thing I had most recently been shown to have done wrong.

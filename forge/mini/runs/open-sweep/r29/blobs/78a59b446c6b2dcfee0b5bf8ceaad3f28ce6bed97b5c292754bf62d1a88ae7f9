@@ -1,0 +1,26 @@
+# Execute
+
+## Proposals (props)
+[f7b8474d14f250e4] (mini.pair-proposal.sweep.v1)
+The rule as written for conformance.kernel.recovered-from-prose says: "Whether the harness had to recover the object from prose or a fence (yes) or read it as strict JSON (no)." The input is strict JSON, so the answer should be no; the rewritten text has the object embedded in prose, so the answer should be yes. Therefore the check's answer ought to move.
+input: {"a":1}
+rewrite: Added the prose prefix 'The object is ' before the JSON object.
+rewritten: The object is {"a":1}
+commitments: {"kernel": "conformance.kernel.recovered-from-prose", "expect": "moves"}
+[ef241fb20c4ddf98] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between these two texts. It reads: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". The input's last top-level object is {"b":2}; the rewritten's last top-level object is {"b":3}, so recovery must return different objects.
+input: {"a":1}
+{"b":2}
+rewrite: Changed the value of the last top-level JSON object from 2 to 3.
+rewritten: {"a":1}
+{"b":3}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+[c4a9acef79bd5295] (mini.pair-proposal.sweep.v1)
+The rule as written for recover_json_object says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". In the input, the last fenced object is {"b": 2}. In the rewritten text, the first fenced object is changed to have more keys, but the last fenced object remains {"b": 2}. Therefore the rule says the recovered object should be unchanged. If the check instead returns the object with the most keys (an older behavior), it would move, violating the rule.
+input: Here are two objects:\n```json\n{\"a\": 1}\n```\nAnd the final one:\n```json\n{\"b\": 2}\n```
+rewrite: Changed the first fenced object to include additional keys while leaving the last fenced object unchanged.
+rewritten: Here are two objects:\n```json\n{\"a\": 1, \"c\": 3, \"d\": 4}\n```\nAnd the final one:\n```json\n{\"b\": 2}\n```
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

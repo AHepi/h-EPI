@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. Read the executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule or the rule as written and the code part company. Quote the rule's words and name the line of code. Say what a proposer should build next.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The proposal bba18d4d308f8551 failed because it targeted a kernel that does not exist in the oracle module. The rule as written says the grounding verdict is "the harness's own (``_grounding_verdict`` in ``oracle.py``), read here over one JSON object rather than over a variant and its output." The proposer instead named `open:creib.forge.conformance.oracle._grounding_kernel`, and the execution reports `MINI_OPEN_KERNEL_NOT_FOUND: 'oracle' has no '_grounding_kernel'`. The source defines `_grounding_kernel` in the kernel source file, not in `oracle.py`; the line `def _grounding_kernel(text: str) -> str:` is not the oracle function the rule points to. This is a misread of the rule: the proposer took the source helper's name as the oracle kernel, but the rule explicitly names `_grounding_verdict`. Next, the proposer should build a proposal against `open:creib.forge.conformance.oracle._grounding_verdict` (or the listed kernel `conformance.kernel.grounding` if that is the open path) with the same input and rewrite.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

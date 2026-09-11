@@ -1,0 +1,29 @@
+# Verdict
+
+## Executions (execs)
+[1fd0a758459e1dbd] (mini.pair-execution.open.v1)
+Executed this cycle's pair proposals.
+1e6895392bcfee8c: open:creib.forge.conformance.oracle.recover_json_object -> moved, expected moves
+commitments: {"executions": [{"after": "({'a': 1}, ())", "as_expected": true, "before": "({'b': 2}, ())", "executed": "moved", "expect": "moves", "input": "{\"a\":1} {\"b\":2}", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "1e6895392bcfee8c", "rewrite": "swap the order of the two top-level JSON objects", "rewritten": "{\"b\":2} {\"a\":1}"}]}
+[2b3fd88f458b1e92] (mini.pair-execution.open.v1)
+Executed this cycle's pair proposals.
+1e6895392bcfee8c: duplicate
+0b3d8c9fc1fe4a82: conformance.kernel.recovery -> unchanged, expected unchanged
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "{\"a\":1} {\"b\":2}", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "1e6895392bcfee8c", "rewrite": "swap the order of the two top-level JSON objects", "rewritten": "{\"b\":2} {\"a\":1}"}, {"after": "{\"a\":1}", "as_expected": true, "before": "{\"a\":1}", "executed": "unchanged", "expect": "unchanged", "input": "{\"a\": 1}", "kernel": "conformance.kernel.recovery", "proposal": "0b3d8c9fc1fe4a82", "rewrite": "Added prose before the JSON object", "rewritten": "Here is the answer: {\"a\": 1}"}]}
+[99ad34473514a5a3] (mini.pair-execution.open.v1)
+Executed this cycle's pair proposals.
+1e6895392bcfee8c: duplicate
+0b3d8c9fc1fe4a82: duplicate
+15fe9a17d2dd86ba: unrunnable
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "{\"a\":1} {\"b\":2}", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "1e6895392bcfee8c", "rewrite": "swap the order of the two top-level JSON objects", "rewritten": "{\"b\":2} {\"a\":1}"}, {"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "unchanged", "input": "{\"a\": 1}", "kernel": "conformance.kernel.recovery", "proposal": "0b3d8c9fc1fe4a82", "rewrite": "Added prose before the JSON object", "rewritten": "Here is the answer: {\"a\": 1}"}, {"detail": "MINI_OPEN_KERNEL_NOT_FOUND: 'oracle' has no '_grounding_kernel'", "executed": "unrunnable", "expect": "moves", "input": "{\"value\": \"cat\", \"span\": \"cat\", \"document\": \"the cat sat\"}", "kernel": "open:creib.forge.conformance.oracle._grounding_kernel", "proposal": "15fe9a17d2dd86ba", "rewrite": "Changed the value from 'cat' to 'dog' while keeping the span and document the same.", "rewritten": "{\"value\": \"dog\", \"span\": \"cat\", \"document\": \"the cat sat\"}"}]}
+
+## Criticisms (crits)
+[4e3ed5672acaf4ab] (mini.criticism.v1)
+No expectation failed. The execution for proposal 1e6895392bcfee8c reports `moved`, expected `moves`, and `as_expected: true`, so the proposer read the rule correctly and the code matches the rule as written. There is no misread or code divergence to report, and no next build is required for this pair.
+[7a7c97b2fc14ec7d] (mini.criticism.v1)
+No expectations failed. Proposal 1e6895392bcfee8c expected the recovery to move when the order of two top-level JSON objects is swapped, and the execution shows it moved as expected. Proposal 0b3d8c9fc1fe4a82 expected the recovery to remain unchanged when prose is added before the JSON object, and the execution shows it remained unchanged as expected. The duplicate execution for 1e6895392bcfee8c is a harness note, not a failed expectation. There is nothing to build next.
+[bac10e587541ece1] (mini.criticism.v1)
+Only proposal 15fe9a17d2dd86ba failed: it was unrunnable. The proposer misread the rule. The rule as written names the kernel 'conformance.kernel.grounding': 'conformance.kernel.grounding: The harness's grounding verdict for a value, its cited span and the document, no relaxation, value-in-span checked: the input is one JSON object {"value", "span", "document"}; GROUNDED, SPAN_MISSING, SPAN_NOT_IN_DOCUMENT or VALUE_NOT_IN_SPAN.' The proposal instead used 'open:creib.forge.conformance.oracle._grounding_kernel', which is not a listed kernel. The execution detail says 'MINI_OPEN_KERNEL_NOT_FOUND: 'oracle' has no '_grounding_kernel''. The source defines `_grounding_kernel` as an internal function, but the public kernel is `conformance.kernel.grounding`. The proposer should build a pair proposal with kernel 'conformance.kernel.grounding' and the same input, rewrite, and rewritten text, expecting moves.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

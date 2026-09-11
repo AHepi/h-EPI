@@ -1,0 +1,7 @@
+{
+  "body": "The rule as written for recover_json_object says: \"The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text\". In the input, the last fenced object is {\"b\": 2}. In the rewritten text, the first fenced object is changed to have more keys, but the last fenced object remains {\"b\": 2}. Therefore the rule says the recovered object should be unchanged. If the check instead returns the object with the most keys (an older behavior), it would move, violating the rule.",
+  "commitments": "{\"kernel\": \"open:creib.forge.conformance.oracle.recover_json_object\", \"expect\": \"unchanged\"}",
+  "input": "Here are two objects:\\n```json\\n{\\\"a\\\": 1}\\n```\\nAnd the final one:\\n```json\\n{\\\"b\\\": 2}\\n```",
+  "rewritten": "Here are two objects:\\n```json\\n{\\\"a\\\": 1, \\\"c\\\": 3, \\\"d\\\": 4}\\n```\\nAnd the final one:\\n```json\\n{\\\"b\\\": 2}\\n```",
+  "rewrite": "Changed the first fenced object to include additional keys while leaving the last fenced object unchanged."
+}

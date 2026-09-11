@@ -1,0 +1,38 @@
+# Execute
+
+## Proposals (props)
+[5fe2b4771a31bc21] (mini.pair-proposal.sweep.v1)
+Rule as written says the check's answer ought to move between these texts. The rule for recover_json_object states: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." In the input, a code fence contains {"a": 1}, so the recovered object should be {"a": 1}. In the rewritten text, the opening fence is changed to ___ so no code fence holds an object; the last top-level object is {"b": 2}, so the recovered object should be {"b": 2}. Thus the rule says the answer moves from {"a": 1} to {"b": 2}.
+input: ```json
+{"a": 1}
+```
+{"b": 2}
+rewrite: changed opening fence from ``` to ___
+rewritten: ___json
+{"a": 1}
+```
+{"b": 2}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "unchanged"}
+[99d4eaa79f0d504a] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between these texts: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". With no fence, the last top-level object changes from {"b":2} to {"b":3}.
+input: {"a":1} {"b":2}
+rewrite: Changed the value of the last top-level object from 2 to 3.
+rewritten: {"a":1} {"b":3}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+[ea279164a370d1df] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between these two texts. It reads: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". In the input, a fenced object appears before a later top-level object, so the fenced object is scored. In the rewritten text, the fence is removed, so the last top-level object is scored.
+input: Here is a draft:
+```json
+{"a": 1}
+```
+And final answer:
+{"b": 2}
+rewrite: removed the code fence around the first object
+rewritten: Here is a draft:
+{"a": 1}
+And final answer:
+{"b": 2}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

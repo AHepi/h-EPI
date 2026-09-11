@@ -1,0 +1,14 @@
+# Verdict
+
+## Executions (execs)
+[cf742f29dbd6b110] (mini.pair-execution.open.v1)
+Executed this cycle's pair proposals.
+bba18d4d308f8551: unrunnable
+commitments: {"executions": [{"detail": "MINI_OPEN_KERNEL_NOT_FOUND: 'oracle' has no '_grounding_kernel'", "executed": "unrunnable", "expect": "moves", "input": "{\"value\": \"foo\", \"span\": \"foo\", \"document\": \"foo bar\"}", "kernel": "open:creib.forge.conformance.oracle._grounding_kernel", "proposal": "bba18d4d308f8551", "rewrite": "change span from \"foo\" to \"bar\"", "rewritten": "{\"value\": \"foo\", \"span\": \"bar\", \"document\": \"foo bar\"}"}]}
+
+## Criticisms (crits)
+[7bb83035eae8e586] (mini.criticism.v1)
+The proposer misread the rule. The rule names the kernel as `conformance.kernel.grounding`, but the proposal committed to `open:creib.forge.conformance.oracle._grounding_kernel`. The execution reports `MINI_OPEN_KERNEL_NOT_FOUND: 'oracle' has no '_grounding_kernel'`, so the code and the rule part company at the kernel identifier: the source defines `_grounding_kernel` but the harness does not expose it under that path. Next, the proposer should build a proposal whose commitment uses the documented kernel name `conformance.kernel.grounding`.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

@@ -1,0 +1,24 @@
+# Execute
+
+## Proposals (props)
+[4840300b67da9e66] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to be unchanged between these two texts. The docstring for recover_json_object states: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". In both texts the last top-level object is {"c":3}, so the recovered object is the same.
+input: {"a":1,"b":2} {"c":3}
+rewrite: Changed the value of key 'a' in the first top-level object from 1 to 9; the last top-level object remains {"c":3}.
+rewritten: {"a":9,"b":2} {"c":3}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "unchanged"}
+[cd565782ff344c68] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between these two texts: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". Changing the value in the final top-level object from 2 to 3 changes the recovered object, so the answer moves.
+input: Some prose {"a": 1} and then {"b": 2}
+rewrite: Changed the value of key b in the final top-level object from 2 to 3.
+rewritten: Some prose {"a": 1} and then {"b": 3}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+[b0688a0b1bb94111] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between these texts: "The grounding verdict as the harness gives it, with no relaxation and the value-in-span check on." Changing the value from "a" to "b" while keeping the span and document the same makes the value-in-span check fail, so the verdict changes from GROUNDED to VALUE_NOT_IN_SPAN.
+input: {"value": "a", "span": "a", "document": "a"}
+rewrite: Changed value from "a" to "b" while keeping span and document identical.
+rewritten: {"value": "b", "span": "a", "document": "a"}
+commitments: {"kernel": "open:creib.forge.conformance.oracle._grounding_kernel", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

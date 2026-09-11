@@ -1,0 +1,36 @@
+# Execute
+
+## Proposals (props)
+[bba18d4d308f8551] (mini.pair-proposal.sweep.v1)
+The rule as written says the grounding verdict is given "with no relaxation and the value-in-span check on". With value "foo", document "foo bar", and span "foo", the verdict is GROUNDED; changing only the span to "bar" makes the value not in the span, so the verdict should move to VALUE_NOT_IN_SPAN. That is a move.
+input: {"value": "foo", "span": "foo", "document": "foo bar"}
+rewrite: change span from "foo" to "bar"
+rewritten: {"value": "foo", "span": "bar", "document": "foo bar"}
+commitments: {"kernel": "open:creib.forge.conformance.oracle._grounding_kernel", "expect": "moves"}
+[03ae3778fb1b2f42] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between these texts: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". The last top-level object changes from {"b":2} to {"b":3}, so recovery moves.
+input: {"a":1}
+{"b":2}
+rewrite: changed the value of the last top-level object
+rewritten: {"a":1}
+{"b":3}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+[adb2f3c8f4feffb0] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between these two texts. I read from the docstring: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." In the input, the only code fence contains {"a":1}, so recovery returns that object. In the rewritten text, the code fence contains {"c":3}, so recovery returns that object instead. The recovered object changes, so the expected behavior is moves.
+input: Here is the first object:
+```json
+{"a": 1}
+```
+And here is another:
+{"b": 2}
+rewrite: Changed the JSON object inside the code fence from {"a":1} to {"c":3}.
+rewritten: Here is the first object:
+```json
+{"c": 3}
+```
+And here is another:
+{"b": 2}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

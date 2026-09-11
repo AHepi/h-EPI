@@ -1,0 +1,7 @@
+{
+  "body": "Rule as written says the check's answer ought to move between these two texts. The docstring for recover_json_object states: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text' and 'A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over, so a final answer refused for a float loses to an earlier draft that parsed.' In the input, the last fence contains a float, which is passed over, so the earlier fence's object {\\\"a\\\":1} is recovered. In the rewritten text, the last fence contains an object {\\\"b\\\":2}, so that object is recovered. Therefore the answer moves.",
+  "commitments": "{\"kernel\": \"open:creib.forge.conformance.oracle.recover_json_object\", \"expect\": \"moves\"}",
+  "input": "```json\\n{\\\"a\\\": 1}\\n```\\n```json\\n1.0\\n```",
+  "rewritten": "```json\\n{\\\"a\\\": 1}\\n```\\n```json\\n{\\\"b\\\": 2}\\n```",
+  "rewrite": "changed the second code fence's content from the float 1.0 to the object {\\\"b\\\": 2}"
+}

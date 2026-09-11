@@ -1,0 +1,18 @@
+# Execute
+
+## Proposals (props)
+[678f984d3f62ecc1] (mini.pair-proposal.sweep.v1)
+Rule as written says the check's answer ought to move between these two texts. The docstring for recover_json_object states: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text' and 'A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over, so a final answer refused for a float loses to an earlier draft that parsed.' In the input, the last fence contains a float, which is passed over, so the earlier fence's object {\"a\":1} is recovered. In the rewritten text, the last fence contains an object {\"b\":2}, so that object is recovered. Therefore the answer moves.
+input: ```json\n{\"a\": 1}\n```\n```json\n1.0\n```
+rewrite: changed the second code fence's content from the float 1.0 to the object {\"b\": 2}
+rewritten: ```json\n{\"a\": 1}\n```\n```json\n{\"b\": 2}\n```
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+[f66af3d1e2e6b871] (mini.pair-proposal.sweep.v1)
+Rule as written says the check's answer ought to move between these texts. The rule states: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text" and "A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable". The input's last top-level object is {"a":1}; the rewritten's last top-level object is {"a":2}, so recovery changes.
+input: {"a":1}
+rewrite: changed value of a from 1 to 2
+rewritten: {"a":2}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

@@ -1,0 +1,30 @@
+# Execute
+
+## Proposals (props)
+[0bb59dc4d085aa01] (mini.pair-proposal.sweep.v1)
+Rule as written says the check's answer ought to move between these texts: recover_json_object scores the last top-level object, and both texts contain a single top-level object that parses as strict JSON, so the recovered object changes from {"a":1} to {"a":2}. The words: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text" and "A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable".
+input: {"a":1}
+rewrite: changed the value of key a from 1 to 2
+rewritten: {"a":2}
+commitments: {"kernel": "creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+[406ac308f2192b60] (mini.pair-proposal.sweep.v1)
+The rule as written for recover_json_object says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". Since both texts contain a fenced object and a later top-level object, the fenced object is scored in both; changing only the later top-level object leaves the scored object unchanged. Therefore the check's answer ought to be unchanged.
+input: ```json
+{"a":1}
+```
+{"b":2}
+rewrite: Changed the second top-level object's value from 2 to 3 while leaving the fenced object unchanged.
+rewritten: ```json
+{"a":1}
+```
+{"b":3}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "unchanged"}
+[af14b5a0e2578950] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between these two texts. The first text contains a scoreable JSON object; the second contains none. Per the rule: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text" and "A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over". Therefore the recovered object changes from {"a":1} to NO_OBJECT.
+input: {"a": 1}
+rewrite: removed the JSON object
+rewritten: no object here
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

@@ -860,6 +860,20 @@ the pre-registration had already said so before the instruction was written.
 excluded by the instruction. One proposal in 72 runs left the enumeration, which is evidence the
 enumeration was load-bearing rather than redundant.
 
+**WITHDRAWN, 11 September, by OPEN-SWEEP-1.** The paragraph above attributes K1's zero
+rule-quoting contradictions to the enumeration. OPEN-SWEEP-1 ran the same architecture 36 times
+with the answer space opened from 4 nameable kernels to 66 reachable functions, none of them
+listed, everything else held. It produced **one contradiction and zero quoting the rule** — the
+closed arm's numbers exactly. The prediction the attribution implied did not occur, so the
+attribution is withdrawn: the enumeration is not what suppressed rule-quoting contradictions.
+
+Nothing replaces it. With one contradiction per arm, a quoting *rate* is not a measurement, so the
+block cannot separate "the enumeration did not matter" from "contradictions are too rare in either
+arm to measure". What stands from M24 is the fact — the pre-registration refused a grid and the
+instruction carried one — not the consequence I drew from it. The rest of the entry is left as
+written, with this said first, because the error worth keeping visible is that I explained a null
+result by the most recent thing I had been shown to have done wrong.
+
 **Not repaired by editing the instruction.** M21's repair wrote the four ids out in full; it did
 not widen them to six, or to ten, or to the 69. A block that asks whether a loop finds boundary
 points nobody wrote down, while naming the points it may look at, has answered a smaller question

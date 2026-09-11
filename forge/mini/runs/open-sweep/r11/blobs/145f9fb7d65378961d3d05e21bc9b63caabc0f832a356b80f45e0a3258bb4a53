@@ -1,0 +1,38 @@
+# Execute
+
+## Proposals (props)
+[833d418b83b89127] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to be unchanged between these two texts. The rule states: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' Since the first text has a fenced object and no later top-level object, and the second adds a later top-level object outside the fence, the fenced object remains the last one inside a code fence, so the recovered object should be the same.
+input: ```json
+{"a": 1}
+```
+rewrite: append a later top-level object outside the fence
+rewritten: ```json
+{"a": 1}
+```
+{"b": 2}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "unchanged"}
+[d798eed80419fe4c] (mini.pair-proposal.sweep.v1)
+Rule as written says the check's answer ought to move between these texts. The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text. A candidate that parses as strict JSON, or as JSON with repeated keys resolved last-wins, is scoreable; one that does not (a float, for instance) is passed over. In the input the last top-level candidate is the float 3.14, which is passed over, so the earlier object {"a": 1} is scored. In the rewritten text the last top-level candidate is the object {"b": 2}, which is scoreable and becomes the scored object.
+input: {"a": 1} 3.14
+rewrite: Changed the trailing float to a JSON object so the last top-level object is scoreable.
+rewritten: {"a": 1} {"b": 2}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+[d88108ac68daabfc] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to move between these two texts. The docstring for recover_json_object states: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". In the input, the last object inside a code fence is {"b":2}; in the rewritten text, an additional fenced object {"c":3} is added after it, so the last fenced object becomes {"c":3}. Therefore the recovered object changes, so the answer moves.
+input: {"a":1}
+```json
+{"b":2}
+```
+rewrite: moves
+rewritten: {"a":1}
+```json
+{"b":2}
+```
+```json
+{"c":3}
+```
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

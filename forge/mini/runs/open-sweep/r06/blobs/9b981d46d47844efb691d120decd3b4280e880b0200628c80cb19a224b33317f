@@ -1,0 +1,14 @@
+# Verdict
+
+## Executions (execs)
+[12cc87f08d1df760] (mini.pair-execution.open.v1)
+Executed this cycle's pair proposals.
+0bb59dc4d085aa01: unrunnable
+commitments: {"executions": [{"detail": "MINI_KERNEL_UNKNOWN: no kernel 'creib.forge.conformance.oracle.recover_json_object'; known: ['conformance.kernel.grounding', 'conformance.kernel.recovered-from-prose', 'conformance.kernel.recovery', 'conformance.kernel.refusal-phrase', 'conformance.kernel.response-verdict', 'conformance.kernel.span-occurs', 'mini.kernel.carries-because', 'mini.kernel.cut-count', 'mini.kernel.folded', 'mini.kernel.json-readable']", "executed": "unrunnable", "expect": "moves", "input": "{\"a\":1}", "kernel": "creib.forge.conformance.oracle.recover_json_object", "proposal": "0bb59dc4d085aa01", "rewrite": "changed the value of key a from 1 to 2", "rewritten": "{\"a\":2}"}]}
+
+## Criticisms (crits)
+[8a4494b1086f8b34] (mini.criticism.v1)
+The expectation failed because the proposal named a kernel that does not exist in the harness. This is a proposer misread of the rule, not a case where the rule as written and the code part company. The rule lists the available kernels explicitly: 'The kernels: - conformance.kernel.recovery: The object the harness recovers from the reply, as canonical JSON, or NO_OBJECT.' The proposal instead used 'creib.forge.conformance.oracle.recover_json_object', which is the internal function path from the source (line `def recover_json_object(content: str) -> Any:`), not a registered kernel name. The execution confirms the code's known kernels include `conformance.kernel.recovery` but not the path used. A proposer should build next a proposal whose commitment names `conformance.kernel.recovery`, and if the goal is to show the recovered object moves from {"a":1} to {"a":2}, run that kernel on each text or use a kernel that accepts both texts.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

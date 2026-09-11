@@ -1,0 +1,32 @@
+# Execute
+
+## Proposals (props)
+[ab4dab3de660ac72] (mini.pair-proposal.sweep.v1)
+The rule as written says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". In the input, a code fence holds {"a":1}, and a later top-level object {"a":2} appears outside any fence. The check should therefore recover {"a":1} on both texts; changing the later object from 2 to 3 must leave the answer unchanged. If the implementation instead takes the last top-level object, it will move.
+input: ```json
+{"a": 1}
+```
+Here is another object: {"a": 2}
+rewrite: changed the later top-level object's value from 2 to 3
+rewritten: ```json
+{"a": 1}
+```
+Here is another object: {"a": 3}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "unchanged"}
+[bff30d8d1b105402] (mini.pair-proposal.sweep.v1)
+The rule as written says the check's answer ought to be unchanged between these two texts. The docstring for recover_json_object states: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". Since both texts contain a code fence with the same object {"b":2}, and the outside object differs, the recovered object is the fenced one in both, so the answer is unchanged.
+input: Here is a draft: {"a":1}\n```json\n{"b":2}\n```
+rewrite: changed the outside object from {"a":1} to {"a":3}, kept the fenced object {"b":2} unchanged.
+rewritten: Here is a draft: {"a":3}\n```json\n{"b":2}\n```
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "unchanged"}
+[869af4c0289767c6] (mini.pair-proposal.sweep.v1)
+The rule for recover_json_object says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". Between these two texts, the input has a fenced object and the rewritten has an unfenced top-level object, so the recovered object changes: moves.
+input: ```json
+{"a":1}
+```
+rewrite: removed the code fence and changed the object from {"a":1} to {"b":2}
+rewritten: {"b":2}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

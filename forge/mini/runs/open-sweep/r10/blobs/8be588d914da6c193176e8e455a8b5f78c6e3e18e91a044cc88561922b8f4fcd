@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. Read the executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule or the rule as written and the code part company. Quote the rule's words and name the line of code. Say what a proposer should build next.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+For proposal 5fe2b4771a31bc21, the expectation "unchanged" failed: the execution moved from {'a': 1} to {'b': 2}. The proposer's own argument says the rule as written says the answer moves, but the commitment says unchanged. So the proposer misread the rule in the commitment, not in the argument. The rule as written and the code agree: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." The code implements this in recover_json_object at the lines `for pool in (fenced, top_level):` and `for candidate in reversed(pool):`, returning the first dict found from the fenced pool before the top-level pool. In the input, the fenced pool contains {"a":1}, so it returns that; in the rewritten text, no fence holds an object, so it falls to the top-level pool and returns the last top-level object {"b":2}. The proposer should build next a proposal whose commitment matches the rule: expect "moves" for this rewrite, or if they want to test an unchanged answer, choose a rewrite that keeps the fenced object intact (e.g., change only the top-level object after the fence).
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

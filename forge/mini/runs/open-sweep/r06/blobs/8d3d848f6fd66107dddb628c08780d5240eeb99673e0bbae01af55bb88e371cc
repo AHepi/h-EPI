@@ -1,0 +1,16 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not propose. Read the executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule or the rule as written and the code part company. Quote the rule's words and name the line of code. Say what a proposer should build next.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Two proposals failed. 0bb59dc4d085aa01 used kernel 'creib.forge.conformance.oracle.recover_json_object', which is not among the known kernels; the rule lists 'conformance.kernel.recovery' as the kernel that returns the recovered object or NO_OBJECT. The proposer misread the rule by naming the internal function instead of the exposed kernel. Next, build a pair using 'conformance.kernel.recovery' with an input that is a strict JSON object and a rewrite that changes it, expecting the recovery to move.
+
+af14b5a0e2578950 used 'open:creib.forge.conformance.oracle.recover_json_object' and expected a move from an object to NO_OBJECT when the rewritten text has no object. The execution shows the kernel raised an error rather than returning NO_OBJECT: 'open:creib.forge.conformance.oracle.recover_json_object could not read the rewritten text ( raised); a move to or from that verdict is not a move'. The rule as written for conformance.kernel.recovery says the kernel returns 'the object the harness recovers from the reply, as canonical JSON, or NO_OBJECT', but the underlying function recover_json_object raises RecordError when no object is found, as seen in the source line 'raise RecordError("no JSON object could be recovered from the response")'. The proposer misread the rule by expecting the raw function to return NO_OBJECT; the code and the rule part company because the kernel wrapper is what converts the exception to NO_OBJECT. Next, build a pair using 'conformance.kernel.recovery' with an input that is a JSON object and a rewrite that removes it, expecting the recovery to move to NO_OBJECT.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

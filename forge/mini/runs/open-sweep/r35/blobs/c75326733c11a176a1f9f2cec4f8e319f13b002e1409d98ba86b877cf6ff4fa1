@@ -1,0 +1,18 @@
+# Execute
+
+## Proposals (props)
+[ab4dab3de660ac72] (mini.pair-proposal.sweep.v1)
+The rule as written says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". In the input, a code fence holds {"a":1}, and a later top-level object {"a":2} appears outside any fence. The check should therefore recover {"a":1} on both texts; changing the later object from 2 to 3 must leave the answer unchanged. If the implementation instead takes the last top-level object, it will move.
+input: ```json
+{"a": 1}
+```
+Here is another object: {"a": 2}
+rewrite: changed the later top-level object's value from 2 to 3
+rewritten: ```json
+{"a": 1}
+```
+Here is another object: {"a": 3}
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "unchanged"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

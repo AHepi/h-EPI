@@ -1,0 +1,21 @@
+# Verdict
+
+## Executions (execs)
+[1fd0a758459e1dbd] (mini.pair-execution.open.v1)
+Executed this cycle's pair proposals.
+1e6895392bcfee8c: open:creib.forge.conformance.oracle.recover_json_object -> moved, expected moves
+commitments: {"executions": [{"after": "({'a': 1}, ())", "as_expected": true, "before": "({'b': 2}, ())", "executed": "moved", "expect": "moves", "input": "{\"a\":1} {\"b\":2}", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "1e6895392bcfee8c", "rewrite": "swap the order of the two top-level JSON objects", "rewritten": "{\"b\":2} {\"a\":1}"}]}
+[2b3fd88f458b1e92] (mini.pair-execution.open.v1)
+Executed this cycle's pair proposals.
+1e6895392bcfee8c: duplicate
+0b3d8c9fc1fe4a82: conformance.kernel.recovery -> unchanged, expected unchanged
+commitments: {"executions": [{"detail": "this run already executed this kernel on this pair", "executed": "duplicate", "expect": "moves", "input": "{\"a\":1} {\"b\":2}", "kernel": "open:creib.forge.conformance.oracle.recover_json_object", "proposal": "1e6895392bcfee8c", "rewrite": "swap the order of the two top-level JSON objects", "rewritten": "{\"b\":2} {\"a\":1}"}, {"after": "{\"a\":1}", "as_expected": true, "before": "{\"a\":1}", "executed": "unchanged", "expect": "unchanged", "input": "{\"a\": 1}", "kernel": "conformance.kernel.recovery", "proposal": "0b3d8c9fc1fe4a82", "rewrite": "Added prose before the JSON object", "rewritten": "Here is the answer: {\"a\": 1}"}]}
+
+## Criticisms (crits)
+[4e3ed5672acaf4ab] (mini.criticism.v1)
+No expectation failed. The execution for proposal 1e6895392bcfee8c reports `moved`, expected `moves`, and `as_expected: true`, so the proposer read the rule correctly and the code matches the rule as written. There is no misread or code divergence to report, and no next build is required for this pair.
+[7a7c97b2fc14ec7d] (mini.criticism.v1)
+No expectations failed. Proposal 1e6895392bcfee8c expected the recovery to move when the order of two top-level JSON objects is swapped, and the execution shows it moved as expected. Proposal 0b3d8c9fc1fe4a82 expected the recovery to remain unchanged when prose is added before the JSON object, and the execution shows it remained unchanged as expected. The duplicate execution for 1e6895392bcfee8c is a harness note, not a failed expectation. There is nothing to build next.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
