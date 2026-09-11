@@ -278,3 +278,54 @@ artifact types exist*. `F` against `W` holds the types fixed and moves the wirin
   error the blind critic could not see, and it is the one the new wire exposes.
 
 C6 gates C5 and C7: a wire nothing reads is not a wiring change.
+
+## All five arms, read
+
+| arm | calls | distinct verified T1 | per call | targets |
+|---|---|---|---|---|
+| **S** single shot | 2 | 1 | **0.50** | 1 |
+| **R** repeated, no loop | 12 | 4 | 0.33 | 2 |
+| **N** loop, no return | 24 | 3 | 0.12 | 1 |
+| **F** loop + return, blind critic | 24 | 3 | 0.12 | 1 |
+| **W** loop + return, critic sees the reading | 24 | **7** | 0.29 | 2 |
+| **E** enumeration | 0 | 460 collapses, **0 grounded** | — | 8 |
+
+- **C1 fails, twice.** `F` = `N` at three apiece, once starved and once fed. **The return path alone
+  buys nothing.**
+- **C5 holds, strongly.** `W` more than doubles `F` at identical calls with **only wiring changed** —
+  same kinds, same `commitment_call` on each, same install map, same contract. It also eliminated
+  both proposal defects outright: **zero** claims giving two identical texts (against `F`'s two,
+  `N`'s three) and **zero** naming a function that does not exist (against `F`'s two). Six of `W`'s
+  seven witnesses were found by no other arm.
+- **C6 fails.** None of `W`'s eight criticisms names a reading's artifact id, though the instruction
+  asks. The mechanism is **being shown**, not citing, and the pre-registered gate applies.
+- **C7 fails.** `W` relocated eight of eight against `F`'s six: misnaming got *worse*. The wiring
+  fixed the **pair**, not the **name**.
+- **And the comparison that decides the loop:** `W` at 0.29 per call does not beat `R` at 0.33 per
+  call, and both reach the same two targets. **The best-wired loop draws level with no loop at all.**
+
+## Arm A, declared before it runs: criticism that can land
+
+Every arm above had **zero attack supply**. Criticism produced prose that the next stage was shown,
+and "a bare verdict is never an edge". Declaring the loop out on that evidence would repeat the
+starvation error in a new place.
+
+`A` is `W` plus the smallest machinery that makes a criticism land:
+
+1. the critic's commitment names **the artifact it attacks** and **the ground** it stands on, from a
+   closed set carrying `cannot-tell` as an escape road that mints no attack;
+2. a machine seat resolves that name against the record — a name matching nothing, or more than one
+   thing, resolves to no attack — and computes status from the relation, refuted iff some attacker
+   of it is not itself refuted;
+3. the install map carries **what was refuted**, not only what was said.
+
+`W` against `A` is therefore: the same wiring, the same kinds, the same budget, and the difference
+is whether criticism *does* anything.
+
+- **C8.** `A` produces landed attacks at all — at least one criticism naming a target that resolves.
+  If none does, the machinery is unused and `A` says nothing, exactly as C6 gated C5.
+- **C9 — the experiment.** `A` produces more distinct verified T1 witnesses than `W`. If it does
+  not, then criticism that lands buys nothing over criticism that is merely read, and **the loop is
+  out on the strongest version of itself this repository can build.**
+- **C10.** At least one `cannot-tell` is used. A closed ground enum with an escape road that nobody
+  takes is a measurement that the escape was unnecessary, not that it was absent.

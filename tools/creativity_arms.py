@@ -45,6 +45,7 @@ READING = "mini.pair-proposal.reading.v1"
 CRITICISM = "mini.criticism.v1"
 VERDICT = "mini.verdict.v1"
 SOURCE = "mini.kernel-source.v1"
+ADJUDICATION = "mini.adjudication.v1"
 
 #: The contract, held separately from any arm's organisation. Every arm is given this and nothing
 #: in it names a check, a text, or a transformation: a hidden supplied template explaining the
@@ -98,6 +99,11 @@ CRITICISM_INSTRUCTION = (
     "Quote the rule's words."
 )
 
+#: Arm A's critic carries a WARRANT rather than an opinion: its commitment names the artifact it
+#: attacks and the ground it stands on, a machine seat resolves that name against the record, and
+#: status is computed from the relation. "A bare verdict is never an edge"; this is the edge.
+CRITICISM_ADJUDICATED = None  # set below, once CRITICISM_WIRED exists
+
 #: Arm W's critic differs from F's in what it is told to do with the reading it can now see. The
 #: kinds, their commitments and the install map are untouched; only ports and this text move.
 CRITICISM_WIRED = CRITICISM_INSTRUCTION + (
@@ -110,7 +116,18 @@ CRITICISM_WIRED = CRITICISM_INSTRUCTION + (
 )
 
 
-def _kinds_and_ports(with_criticism: bool, wired: bool = False) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+CRITICISM_ADJUDICATED = CRITICISM_WIRED + (
+    "\n\nYour commitments are a STRING holding JSON of the form "
+    '{"attacks": "<the first 16 characters of the artifact id you are attacking>", '
+    '"ground": "<one of: reading-misrenders-conjecture, conjecture-misreads-rule, '
+    'rule-and-code-diverge, cannot-tell>", "why": "<one sentence>"} and nothing else.\n\n'
+    "The id must be one printed in square brackets beside an artifact you were shown; a name "
+    "matching nothing resolves to no attack. Use \"cannot-tell\" when you cannot decide -- it is "
+    "an honest answer and it mints no attack, which is better than inventing a target."
+)
+
+
+def _kinds_and_ports(with_criticism: bool, wired: bool = False, adjudicated: bool = False) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """``wired`` gives the critic the reading, and shows it the conjecture's own commitment.
 
     Nothing else moves: the same kinds, the same commitment_call on each, the same install map. The
@@ -147,10 +164,16 @@ def _kinds_and_ports(with_criticism: bool, wired: bool = False) -> tuple[list[di
     ]
     if with_criticism:
         port_types.append({"port_type": "crits", "draws_from": {"artifact_kinds": [CRITICISM]},
-                           "render": {"rule": "list_bodies", "header": "Criticism"}})
+                           "render": {"rule": "list_bodies_and_commitments", "header": "Criticism"}})
+    if adjudicated:
+        port_types.append({"port_type": "status", "draws_from": {"artifact_kinds": [ADJUDICATION]},
+                           "render": {"rule": "list_bodies_and_commitments", "header": "What stands and what is refuted"}})
+        kinds.append({"kind_id": ADJUDICATION, "title": "Adjudication", "input_ports": [],
+                      "output_port": {"port_id": "out", "produces_kind": ADJUDICATION}})
         kinds.insert(4, {
             "kind_id": CRITICISM, "title": "Criticism",
-            "instruction": CRITICISM_WIRED if wired else CRITICISM_INSTRUCTION,
+            "instruction": (CRITICISM_ADJUDICATED if adjudicated
+                            else CRITICISM_WIRED if wired else CRITICISM_INSTRUCTION),
             "input_ports": [{"port_id": "source", "port_type": "source", "window": "all"},
                             {"port_id": "conj", "port_type": "conj", "window": "this_cycle"},
                             *([{"port_id": "reads", "port_type": "reads", "window": "this_cycle"}] if wired else []),
@@ -159,10 +182,11 @@ def _kinds_and_ports(with_criticism: bool, wired: bool = False) -> tuple[list[di
     return kinds, port_types
 
 
-def manifest(arm: str, index: int, problem: str, with_criticism: bool, wired: bool = False) -> dict[str, Any]:
+def manifest(arm: str, index: int, problem: str, with_criticism: bool, wired: bool = False,
+             adjudicated: bool = False) -> dict[str, Any]:
     """One segment's organisation. ``problem`` is what the install map may rewrite; nothing else is."""
 
-    kinds, port_types = _kinds_and_ports(with_criticism, wired)
+    kinds, port_types = _kinds_and_ports(with_criticism, wired, adjudicated)
     stages = [
         {"stage_id": "source", "kind_id": SOURCE, "seat": "machine", "ports": []},
         {"stage_id": "conjecture", "kind_id": CONJECTURE, "ports": ["problem", "source"]},
@@ -171,6 +195,8 @@ def manifest(arm: str, index: int, problem: str, with_criticism: bool, wired: bo
     ]
     if with_criticism:
         stages.append({"stage_id": "criticise", "kind_id": CRITICISM, "ports": ["source", "conj", "execs"]})
+    if adjudicated:
+        stages.append({"stage_id": "adjudicate", "kind_id": ADJUDICATION, "seat": "machine", "ports": []})
     stages.append({"stage_id": "verdict", "kind_id": VERDICT, "seat": "machine", "ports": ["execs"]})
     stages.append({"stage_id": "end", "end": True})
     return {
@@ -189,7 +215,8 @@ ARMS = {"S": {"segments": 1, "criticism": False, "install": False},
         "R": {"segments": 6, "criticism": False, "install": False},
         "N": {"segments": 8, "criticism": True, "install": False},
         "F": {"segments": 8, "criticism": True, "install": True},
-        "W": {"segments": 8, "criticism": True, "install": True, "wired": True}}
+        "W": {"segments": 8, "criticism": True, "install": True, "wired": True},
+        "A": {"segments": 8, "criticism": True, "install": True, "wired": True, "adjudicated": True}}
 
 
 def _plan(args: argparse.Namespace) -> int:
@@ -200,8 +227,8 @@ def _plan(args: argparse.Namespace) -> int:
             target = out / arm / f"s{index:02d}" / "manifest.json"
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(
-                json.dumps(manifest(arm, index, PROBLEM, spec["criticism"], spec.get("wired", False)),
-                           indent=2, ensure_ascii=False) + "\n",
+                json.dumps(manifest(arm, index, PROBLEM, spec["criticism"], spec.get("wired", False),
+                                    spec.get("adjudicated", False)), indent=2, ensure_ascii=False) + "\n",
                 encoding="utf-8")
             written += 1
     calls = {a: s["segments"] * (3 if s["criticism"] else 2) for a, s in ARMS.items()}
@@ -319,6 +346,33 @@ def _record(root: Path) -> tuple[list[dict[str, Any]], list[str], list[str]]:
     return executions, conjectures, criticisms
 
 
+def _standing_of(root: Path) -> list[str]:
+    """What one segment's adjudication computed, or nothing when the segment did not adjudicate."""
+
+    from creib.forge.mini.common import RUN_HEADER_DOMAIN, content_id
+    from creib.forge.mini.log import BlobStore, replay
+    from creib.strict_json import load_strict
+
+    if not (root / "log.jsonl").is_file():
+        return []
+    state = replay(root / "log.jsonl", content_id(RUN_HEADER_DOMAIN, load_strict(root / "run-header.json")))
+    blobs = BlobStore(root / "blobs")
+    lines: list[str] = []
+    for key in state.artifact_order:
+        record = state.artifacts[key]
+        if str(record["kind_id"]) != ADJUDICATION:
+            continue
+        try:
+            parsed = json.loads(blobs.get(str(record["commitments_ref"])).decode("utf-8"))
+        except (ValueError, TypeError):
+            continue
+        for edge in parsed.get("edges", []):
+            if edge.get("landed"):
+                lines.append(f"- {edge.get('target')} was refuted on the ground "
+                             f"{edge.get('ground')}: {str(edge.get('why'))[:160]}")
+    return lines
+
+
 def _install_text(previous: Sequence[Path]) -> str:
     """The organisation change: what the next segment's operative brief becomes.
 
@@ -330,8 +384,10 @@ def _install_text(previous: Sequence[Path]) -> str:
 
     tried: list[str] = []
     last_criticism = ""
+    standing: list[str] = []
     for root in previous:
         executions, _, criticisms = _record(root)
+        standing.extend(_standing_of(root))
         for entry in executions:
             kernel = str(entry.get("kernel", "?"))
             outcome = str(entry.get("executed", "?"))
@@ -345,6 +401,15 @@ def _install_text(previous: Sequence[Path]) -> str:
     parts.extend(tried or ["- nothing ran"])
     parts.extend(["", "Do not repeat any pair above. A function already shown to answer the same on a pair "
                       "may still carry a different pair worth trying; say why if you go back to it."])
+    if standing:
+        # Arm A only: what the attack relation computed. The other arms carry prose forward and this
+        # carries a STATUS, which is the difference between being told an opinion and being told
+        # what no longer stands.
+        parts.extend(["", "## What has been refuted, computed from the attacks that landed", ""])
+        parts.extend(standing)
+        parts.append("")
+        parts.append("A refuted conjecture is not merely criticised: an attack on it landed and "
+                     "nothing has yet overturned that attack. Do not re-propose one.")
     if last_criticism:
         parts.extend(["", "## The standing criticism of the last attempt", "", last_criticism.strip()])
     return "\n".join(parts)
@@ -365,8 +430,8 @@ def _install(args: argparse.Namespace) -> int:
     (target / "proposed_organisation.txt").write_text(text, encoding="utf-8")
     installed = text if spec["install"] else PROBLEM
     (target / "manifest.json").write_text(
-        json.dumps(manifest(arm, args.index, installed, spec["criticism"], spec.get("wired", False)),
-                   indent=2, ensure_ascii=False) + "\n",
+        json.dumps(manifest(arm, args.index, installed, spec["criticism"], spec.get("wired", False),
+                            spec.get("adjudicated", False)), indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8")
     print(f"{arm} s{args.index:02d}: {'INSTALLED' if spec['install'] else 'retained, not installed'} "
           f"({len(text)} chars, {len(previous)} prior segments)", flush=True)
@@ -447,7 +512,7 @@ def _read(args: argparse.Namespace) -> int:
                       "distinct_pairs": summary["collapses"]}
     keys = ["segments_run", "model_calls", "executor_rows", "executed", "unrunnable",
             "collapse_T1", "grounded_T1", "oversensitive", "distinct_targets", "distinct_pairs"]
-    order = [a for a in ("S", "R", "N", "F", "W", "E") if a in table]
+    order = [a for a in ("S", "R", "N", "F", "W", "A", "E") if a in table]
     print(f"{'measure':<18}" + "".join(f"{a:>10}" for a in order), flush=True)
     for key in keys:
         print(f"{key:<18}" + "".join(f"{table[a][key]:>10}" for a in order), flush=True)
