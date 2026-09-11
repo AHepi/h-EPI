@@ -1,0 +1,24 @@
+# Execute
+
+## Readings (reads)
+[a338c7044b4ebe99] (mini.pair-proposal.reading.v1)
+The conjecture reads the documented rule as: score the last object inside any code fence when a fence contains at least one object; otherwise score the last top-level object. Text A's second fence contains two objects, so the last object inside any fence is {"b":2}. Text B's second fence contains two objects, so the last object inside any fence is {"c":3}. The check instead returns {"x":1} for both, so the expected outputs differ and the check is false.
+input: ```json
+{"x":1}
+```
+```json
+{"a":1}
+{"b":2}
+```
+rewrite: Text B changes the second fenced object's second key-value pair from {"b":2} to {"c":3}.
+rewritten: ```json
+{"x":1}
+```
+```json
+{"a":1}
+{"c":3}
+```
+commitments: {"kernel": "open:creib.forge.conformance.records.recover_json_object", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

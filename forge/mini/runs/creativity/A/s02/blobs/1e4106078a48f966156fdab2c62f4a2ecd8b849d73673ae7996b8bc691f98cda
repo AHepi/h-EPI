@@ -1,0 +1,20 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+Your commitments are a STRING holding JSON of the form {"attacks": "<the first 16 characters of the artifact id you are attacking>", "ground": "<one of: reading-misrenders-conjecture, conjecture-misreads-rule, rule-and-code-diverge, cannot-tell>", "why": "<one sentence>"} and nothing else.
+
+The id must be one printed in square brackets beside an artifact you were shown; a name matching nothing resolves to no attack. Use "cannot-tell" when you cannot decide -- it is an honest answer and it mints no attack, which is better than inventing a target.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Comparing the conjecture [5864aabe58278302] with the source [66cd5f2a4e19968e]: the conjecture claims recover_json_object returns {'a':1} for both Text A and Text B, and the source code does exactly that. The rule says 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' Under the natural reading where 'holds one' means 'contains at least one object', Text A's second fence holds two objects and the last one inside a code fence is {'c':3}, so the rule and the code part company: the code's fenced pool treats each fence's entire content as one candidate, the second fence's content fails to parse as a single object, and it falls back to the first fence's {'a':1}. The conjecture does not misread the rule under that reading. However, the execution artifact [3f195cabd83fd722] does not show the claimed observation: it lists before ({'b':2},()) for Text A, but the source code returns ({'a':1},()) for that input, so that artifact is inconsistent with the source and cannot be used to confirm the conjecture. The reading under [5864aabe58278302] accurately renders the conjecture's prose: it names the function and states the expected outputs {'c':3} for Text A and {'a':1} for Text B, which the prose states. A next conjecture should target the fenced pool's failure to parse multiple top-level objects inside a single fence, and should avoid repeating the execution artifact's before/after values as if they were the function's outputs.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

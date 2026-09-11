@@ -1,0 +1,33 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Conjecture: open:creib.forge.conformance.records.recover_json_object. The documented rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction." Text A is the string '```json\n{"x":1}\n```\n```json\n{"a":1}\n{"b":2}\n```'. Text B is the string '```json\n{"x":1}\n```\n```json\n{"a":1}\n{"c":3}\n```'. Under the natural reading where "holds one" means "contains at least one object", the rule requires Text A to score {"b":2} and Text B to score {"c":3}, because those are the last objects inside any code fence. The check, however, returns {"x":1} for both: its fenced pool treats each fence's entire content as one candidate, the second fence's content fails to parse as a single object, and it falls back to the first fence's {"x":1}. This would be shown false if the check returned {"b":2} for Text A and {"c":3} for Text B, or if the rule were read to ignore objects in a fence that contains more than one object.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

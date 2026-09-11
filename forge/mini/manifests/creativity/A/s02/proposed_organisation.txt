@@ -1,0 +1,22 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.records.recover_json_object on a pair differing by: Text A adds a fenced block containing {"a":1} and {"b":2} before the final {"c":3}; Text B is only the final {"c":3}. -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## What has been refuted, computed from the attacks that landed
+
+- cff1fef80a810854 was refuted on the ground reading-misrenders-conjecture: The reading claims the function expects 'moves', but the conjecture's prose says it returns {'b': 2} unchanged, so the expectation is not in the prose.
+
+A refuted conjecture is not merely criticised: an attack on it landed and nothing has yet overturned that attack. Do not re-propose one.
+
+## The standing criticism of the last attempt
+
+The conjecture is correct that the rule and the code diverge. The rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." For Text A the fence holds two top-level objects, {"a":1} and {"b":2}; the last one inside the fence is {"b":2}, so the rule requires {"b":2}. The code does not split fenced content into separate objects: `_FENCE` captures the whole span between the backticks as one candidate, `loads_strict` fails on the two adjacent objects, `_loads_last_wins` also fails, so the fenced pool yields nothing and the top-level pool returns the last top-level object, {"c":3}. The execution confirms this: input Text A returned `({'c': 3}, ())` before and after, with `as_expected: false` and `expect: moves`. The reading in the conjecture's commitments line faithfully renders the conjecture; it names `open:creib.forge.conformance.records.recover_json_object` and states the expected outputs, so the defect is in the code, not the reading. A next conjecture should try a fenced block containing a single valid object followed by a later top-level object, to test whether the fenced pool is preferred when it does parse; it should avoid repeating the multi-object fence case, because that case is already shown to fall through to the top-level pool.
