@@ -762,3 +762,22 @@ not read. Mini's whole claim is that the wiring is declared. Anywhere a seat rea
 `context.state` and filters it by hand, the declaration is decoration, and only a reader comparing
 the manifest against the seat will find it. Found that way here: by a person reading records,
 not by the loop.
+
+**The audit the general form deserved.** Asserting that a hand-filtering seat is a latent defect is
+cheap; counting them is not. Six sites in `src/creib/forge/mini/` select records from
+`context.state` by cycle without consulting a port: `blindspot.py` lines 289, 421, 590 and 621, and
+`usetest.py` lines 1042 and 1051. Every manifest in the tree was then checked against them — for
+each machine stage whose seat hand-filters, which window does its own declaration name?
+
+**Exactly two declarations in the whole tree name a window their seat does not read, and both are
+ARCH-SWEEP-1's**: `execute`/`props` and `verdict`/`execs`, each `window: all`. Every other manifest
+declares `this_cycle` on those ports, which is what the seats do anyway — the coincidence that hid
+this for the life of the prototype. The `next-cell` and `pair-prediction` seats have no such
+declaration anywhere.
+
+`execute`/`props` is the one repaired above; it is the one the sweep's measure runs through.
+`verdict`/`execs` is **not** repaired, and the reason is stated rather than implied: the sweep was
+already running when the audit was done, the reading takes its rows from the execution artifacts
+and never from a verdict, and in this wiring no port draws from `mini.verdict.v1` at all, so the
+artifact is terminal and read by nobody. It is inert for this block and it is still a seat ignoring
+its declaration. It stays named here, unfixed, rather than folded into a running experiment.

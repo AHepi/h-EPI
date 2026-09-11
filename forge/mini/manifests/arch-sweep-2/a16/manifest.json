@@ -1,0 +1,242 @@
+{
+  "schema_version": "creib.mini.manifest.v1",
+  "manifest_id": "mini.archsweep.a16",
+  "problem": "The checks under test are this repository's own reply-reading functions. The question is whether there is a reply, and a single edit of it, on which a check's answer does something the rule as written does not allow. A machine runs the check on both texts and records what came back; nothing here decides that anything is a defect.",
+  "cycles": {
+    "max_cycles": 3
+  },
+  "port_types": [
+    {
+      "port_type": "rules",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.kernel-rules.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies",
+        "header": "The documented rules of the checks"
+      }
+    },
+    {
+      "port_type": "source",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.kernel-source.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies",
+        "header": "The source of the checks"
+      }
+    },
+    {
+      "port_type": "props",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.pair-proposal.sweep.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies_and_commitments",
+        "header": "Proposals"
+      }
+    },
+    {
+      "port_type": "execs",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.pair-execution.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies_and_commitments",
+        "header": "Executions"
+      }
+    },
+    {
+      "port_type": "crits",
+      "draws_from": {
+        "artifact_kinds": [
+          "mini.criticism.v1"
+        ]
+      },
+      "render": {
+        "rule": "list_bodies",
+        "header": "Criticisms"
+      }
+    }
+  ],
+  "kinds": [
+    {
+      "kind_id": "mini.kernel-rules.v1",
+      "title": "Rules",
+      "input_ports": [],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.kernel-rules.v1"
+      }
+    },
+    {
+      "kind_id": "mini.criticism.v1",
+      "title": "Criticise",
+      "input_ports": [
+        {
+          "port_id": "rules",
+          "port_type": "rules",
+          "window": "all"
+        },
+        {
+          "port_id": "source",
+          "port_type": "source",
+          "window": "all"
+        },
+        {
+          "port_id": "props",
+          "port_type": "props",
+          "window": "all"
+        },
+        {
+          "port_id": "execs",
+          "port_type": "execs",
+          "window": "all"
+        }
+      ],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.criticism.v1"
+      },
+      "instruction": "Do not propose. Read the executions beside the proposals: for each expectation that failed, say whether the proposer misread the rule or the rule as written and the code part company. Quote the rule's words and name the line of code. Say what a proposer should build next."
+    },
+    {
+      "kind_id": "mini.kernel-source.v1",
+      "title": "Source",
+      "input_ports": [],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.kernel-source.v1"
+      }
+    },
+    {
+      "kind_id": "mini.pair-proposal.sweep.v1",
+      "title": "Propose",
+      "input_ports": [
+        {
+          "port_id": "rules",
+          "port_type": "rules",
+          "window": "all"
+        },
+        {
+          "port_id": "problem",
+          "port_type": "problem",
+          "window": "all"
+        }
+      ],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.pair-proposal.sweep.v1"
+      },
+      "commitment_call": "single",
+      "optional_fields": [
+        "input",
+        "rewritten",
+        "rewrite"
+      ],
+      "instruction": "Build two texts. \"input\" is any reply text you like; \"rewritten\" is a second text, different from the first, changed however you judge most informative. Say what the RULE AS WRITTEN says the check's answer ought to do between them: \"moves\" or \"unchanged\". Quote the words you read it from in the body. Your kernel is one of recovery, recovered-from-prose, response-verdict, refusal-phrase, each written in full with its \"conformance.kernel.\" prefix: conformance.kernel.recovery, conformance.kernel.recovered-from-prose, conformance.kernel.response-verdict, conformance.kernel.refusal-phrase. A kernel named without that prefix does not exist and the run is lost. The commitments are a STRING holding JSON of the form {\"kernel\": \"<id>\", \"expect\": \"moves\" or \"unchanged\"} and nothing else; this artifact carries \"input\", \"rewritten\" and \"rewrite\" as fields of its own, each a plain string. Do not repeat a pair already proposed."
+    },
+    {
+      "kind_id": "mini.pair-execution.v1",
+      "title": "Execute",
+      "input_ports": [
+        {
+          "port_id": "props",
+          "port_type": "props",
+          "window": "all"
+        }
+      ],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.pair-execution.v1"
+      }
+    },
+    {
+      "kind_id": "mini.verdict.v1",
+      "title": "Verdict",
+      "input_ports": [
+        {
+          "port_id": "execs",
+          "port_type": "execs",
+          "window": "all"
+        },
+        {
+          "port_id": "crits",
+          "port_type": "crits",
+          "window": "all"
+        }
+      ],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.verdict.v1"
+      }
+    }
+  ],
+  "stages": [
+    {
+      "stage_id": "rules",
+      "kind_id": "mini.kernel-rules.v1",
+      "ports": [],
+      "seat": "machine"
+    },
+    {
+      "stage_id": "criticise",
+      "kind_id": "mini.criticism.v1",
+      "ports": [
+        "rules",
+        "source",
+        "props",
+        "execs"
+      ]
+    },
+    {
+      "stage_id": "source",
+      "kind_id": "mini.kernel-source.v1",
+      "ports": [],
+      "seat": "machine"
+    },
+    {
+      "stage_id": "propose",
+      "kind_id": "mini.pair-proposal.sweep.v1",
+      "ports": [
+        "rules",
+        "problem"
+      ]
+    },
+    {
+      "stage_id": "execute",
+      "kind_id": "mini.pair-execution.v1",
+      "ports": [
+        "props"
+      ],
+      "seat": "machine"
+    },
+    {
+      "stage_id": "verdict",
+      "kind_id": "mini.verdict.v1",
+      "ports": [
+        "execs",
+        "crits"
+      ],
+      "seat": "machine"
+    },
+    {
+      "stage_id": "end",
+      "end": true
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "registry",
+      "text": "the checks under test are named in the rules artifact\n"
+    }
+  ]
+}

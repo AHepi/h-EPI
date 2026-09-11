@@ -173,10 +173,14 @@ def _read(args: argparse.Namespace) -> int:
         runs = _executions(directory)
         ran = [e for e in runs if e.get("executed") in ("moved", "unchanged")]
         contra = [e for e in ran if e.get("as_expected") is False]
+        # An executor row is one decision, not one proposal. Under a window that reaches earlier
+        # cycles a proposal already run is re-delivered and correctly named `duplicate`; counting
+        # that as a loss would report the repair of M22 as breakage.
         per[directory.name] = {
-            "proposals": len(runs),
+            "entries": len(runs),
             "executed": len(ran),
-            "unrunnable": len(runs) - len(ran),
+            "duplicate": sum(1 for e in runs if e.get("executed") == "duplicate"),
+            "unrunnable": sum(1 for e in runs if e.get("executed") not in ("moved", "unchanged", "duplicate")),
             "contradicted": len(contra),
             "quoted": sum(1 for e in contra if _quotes(str(e.get("reading", "")) + str(e.get("rewrite", "")), rules)),
             "behaviours": {(str(e.get("kernel")), str(e.get("before")), str(e.get("after"))) for e in ran},
@@ -201,7 +205,7 @@ def _read(args: argparse.Namespace) -> int:
         meta = index.get(name, {})
         rows.append({"architecture": name, "lagged_edges": meta.get("lagged_edges"),
                      "ordering": " ".join(x[0] for x in meta.get("ordering", [])),
-                     **{k: row[k] for k in ("proposals", "executed", "unrunnable", "contradicted", "quoted")},
+                     **{k: row[k] for k in ("entries", "executed", "duplicate", "unrunnable", "contradicted", "quoted")},
                      "distinct_behaviours": len(row["behaviours"]), "unique_to_it": len(unique),
                      "distinct_probes": len(row["probes"]), "unique_probes": len(unique_probes),
                      "unique_behaviours": sorted(unique), "unique_probe_cells": sorted(unique_probes)})
@@ -213,17 +217,19 @@ def _read(args: argparse.Namespace) -> int:
                "synchronous_alone": a00, "gained_over_synchronous": union - a00,
                "union_of_probes": p_union, "synchronous_probes_alone": p_a00,
                "probes_gained_over_synchronous": p_union - p_a00,
-               "proposals": sum(r["proposals"] for r in per.values()),
+               "entries": sum(r["entries"] for r in per.values()),
+               "duplicate": sum(r["duplicate"] for r in per.values()),
                "unrunnable": sum(r["unrunnable"] for r in per.values())}
     (root / "reading.json").write_text(json.dumps({"summary": summary, "rows": rows}, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    head = (f"{'arch':<5} {'lag':>3} {'prop':>4} {'exec':>4} {'lost':>4} {'contra':>6} {'quoted':>6} "
+    head = (f"{'arch':<5} {'lag':>3} {'rows':>4} {'ran':>4} {'dup':>4} {'lost':>4} {'contra':>6} {'quoted':>6} "
             f"{'behav':>5} {'uniq':>4} {'probe':>5} {'uniq':>4}  ordering")
     print(head, flush=True)
     for row in rows:
-        print(f"{row['architecture']:<5} {str(row['lagged_edges']):>3} {row['proposals']:>4} {row['executed']:>4} "
-              f"{row['unrunnable']:>4} {row['contradicted']:>6} {row['quoted']:>6} {row['distinct_behaviours']:>5} "
+        print(f"{row['architecture']:<5} {str(row['lagged_edges']):>3} {row['entries']:>4} {row['executed']:>4} "
+              f"{row['duplicate']:>4} {row['unrunnable']:>4} {row['contradicted']:>6} {row['quoted']:>6} {row['distinct_behaviours']:>5} "
               f"{row['unique_to_it']:>4} {row['distinct_probes']:>5} {row['unique_probes']:>4}  {row['ordering']}", flush=True)
-    print(f"\nproposals {summary['proposals']}, of which {summary['unrunnable']} did not run", flush=True)
+    print(f"\nexecutor rows {summary['entries']}: {summary['duplicate']} named as repeats, "
+          f"{summary['unrunnable']} could not be run", flush=True)
     print(f"behaviours (pre-registered): union {union}, synchronous alone {a00}, gained {union - a00}", flush=True)
     print(f"probes (amendment 2):        union {p_union}, synchronous alone {p_a00}, gained {p_union - p_a00}", flush=True)
     return 0
