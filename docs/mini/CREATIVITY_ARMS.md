@@ -1,0 +1,93 @@
+# CREATIVITY-ARMS-1: the Blueprint's decisive comparison, on kernel boundaries
+
+A pre-registration. Written and committed before any arm was run.
+
+## What is being asked
+
+Not "does mini's loop beat a reader" — that was the wrong question, asked of the wrong thing. The
+Blueprint asks whether a model can **change the organisation used on the next task**, and says the
+core product must not be a transcript. `docs/mini/PIPELINE_MATH.md` T-A shows the only pair of arms
+that tests it.
+
+The find is a **T1 witness**: a pair of replies the rule as written requires a check to separate, on
+which the check answers the same. Nothing downstream of the check can recover the difference,
+because it is not in the answer. Over-sensitivity — the check separating what the rule says should
+agree — is counted apart, because no impossibility follows from it.
+
+## What is already known, measured before any model call
+
+The mechanical enumeration baseline ran first, at zero model calls, over every function reachable by
+import and a fixed set of fourteen reply-shaped seed texts.
+
+- **66** functions are reachable; **6006** executions.
+- **4795 (80%) raise.** Most of this harness's one-string functions are not about replies at all.
+- **460 collapses**, over **8** distinct functions, and **0** of them quote any rule, because the
+  enumerator writes no prose.
+- Filtering further: 14 functions are live on two or more seeds, 10 of those are non-constant, and
+  **6 of those carry a docstring**. **The target space for a T1 witness against a written rule is
+  six functions, not sixty-six.**
+
+Two things follow, and both are fixed here rather than discovered later. **Finding a collapse is
+worth nothing** — a loop-free enumerator found 460 for free, so the measure cannot be "collapses".
+And the widening to sixty-six was largely illusory for this task; the honest denominator is six.
+
+## The measure
+
+`grounded_T1`: a claimed pair where the machine confirms the collapse **and** the conjecture's prose
+quotes six or more consecutive words that occur verbatim in that function's own docstring or source.
+The enumerator scores **0** on it by construction. It is the one measure on which the model can
+contribute something the host cannot do for free.
+
+Reported beside it: executed rows, unrunnable, raw collapses, over-sensitivity, distinct targets,
+distinct pairs, and model calls.
+
+## The arms, matched on model calls
+
+| arm | segments | criticism | organisation changes between segments | calls |
+|---|---|---|---|---|
+| **S** single shot | 1 | no | — | 2 |
+| **R** repeated | 6 | no | no | 12 |
+| **N** no-return | 4 | **yes** | **no** | 12 |
+| **F** full | 4 | **yes** | **yes** | 12 |
+| **E** enumeration | — | — | — | **0** |
+
+`N` and `F` are the same machinery, the same segment count, the same stages, the same instructions.
+The install map computes the same bytes in both. In `F` those bytes become the next segment's
+operative brief; in `N` they are written to `proposed_organisation.txt` and the next segment runs the
+original. That is the Evidence Report's no-return control: it "retains the correct new syntax tree in
+the experiment's data but does not install it".
+
+Prose first, per the Blueprint: the conjecture carries **no schema**, so a conjecture that cannot be
+parsed stays in the record. A separate reading stage — the translator — carries the only schema, and
+its reading may be wrong, in which case it is a target rather than a discard.
+
+Nothing in the contract text names a check, a text, or a transformation. A hidden supplied template
+explaining the result is the first way the Blueprint says the attribution fails.
+
+## What is predicted, before the run
+
+- **C1 — the experiment.** `F` produces more `grounded_T1` than `N` at equal calls. **If it does
+  not, the return path buys nothing**, serialisation is idle on this task, and mini's reason for
+  existing is unsupported by the one comparison built to test it.
+- **C2 — the floor.** Some model arm produces `grounded_T1 > 0`. If every model arm scores zero
+  while the enumerator produced 460 collapses for free, the model contributed nothing the host does
+  not already do, and **mini is out on this task** regardless of C1.
+- **C3.** `F` reaches more distinct targets than `N`. The carry names what has been tried; if the
+  model uses it, coverage moves.
+- **C4.** `R` produces more than `S` per call, so that repetition is doing something before any loop
+  is credited with it.
+
+**C2 gates C1.** A difference between `N` and `F` in a measure that is zero everywhere is not a
+result.
+
+## What this cannot settle, and the honest risk
+
+Six targets, one model, one seed vocabulary, one budget, four segments. Relative novelty is
+trivially satisfied — the contract names nothing, so every target reached is novel relative to the
+initial organisation — and is therefore **not** a discriminating measure here; it is reported and
+not leaned on. Nothing here is `Origin`.
+
+The risk worth stating: the install map makes the brief **longer** each segment. If the model does
+worse with a longer brief than with a clean one, `F` loses to `N` for a reason that has nothing to
+do with the return path being useless, and the arms cannot tell those apart. Segment-by-segment
+counts are recorded so that at least the shape of any decline is visible.
