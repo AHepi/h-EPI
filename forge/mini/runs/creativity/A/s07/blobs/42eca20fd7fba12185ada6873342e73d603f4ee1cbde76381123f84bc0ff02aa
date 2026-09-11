@@ -1,0 +1,18 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+## The conjecture, as written (conj)
+[6468318ad70b5c91] (mini.conjecture.v1)
+Conjecture: open:creib.forge.conformance.records.recover_json_object. The documented rule says: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text'. Text A: 'The answer is ```{"a":1}``` and then {"b":2}'. Text B: 'The answer is ```{"a":1}``` and then {"c":3}'. The rule requires {"b":2} for A and {"c":3} for B, because the triple backticks are inline and not a markdown code fence, so no fence holds an object, and the last top-level object is the one after 'and then'. The code's _FENCE regex matches any triple backticks, so it treats the inline ``` as a fence, puts {"a":1} in the fenced pool, and returns {"a":1} for both texts, giving the same answer. I would be wrong if the rule's 'code fence' is intended to include any triple backticks regardless of line position, or if the function actually returns different answers on these two texts.
+commitments: The function open:creib.forge.conformance.records.recover_json_object returns the same answer for the two texts because it treats inline triple backticks as a code fence, contrary to the documented rule that only a markdown code fence counts.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.

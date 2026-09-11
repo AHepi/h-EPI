@@ -620,6 +620,30 @@ def _verify(args: argparse.Namespace) -> int:
     return 0
 
 
+def _alarms(args: argparse.Namespace) -> int:
+    """Preflight a manifest, or read a finished segment, and exit non-zero on anything fatal.
+
+    Called by the runner between segments so a block stops the moment its machinery stops being able
+    to measure. Every mode it names cost this repository runs before anyone was looking (ERRATA A1,
+    B/M25, B/M26, and the starvation that made two pre-registered comparisons meaningless).
+    """
+
+    from creib.forge.mini.alarms import FATAL, alarms_for, preflight
+
+    found = (preflight(Path(args.manifest), ROOT) if args.manifest
+             else alarms_for(Path(args.segment),
+                             previous_brief=Path(args.previous_brief).read_text(encoding="utf-8")
+                             if args.previous_brief and Path(args.previous_brief).is_file() else None,
+                             brief=Path(args.brief).read_text(encoding="utf-8")
+                             if args.brief and Path(args.brief).is_file() else None))
+    for alarm in found:
+        print(str(alarm), flush=True)
+    fatal = [a for a in found if a.severity == FATAL]
+    if fatal:
+        print(f"STOPPING: {len(fatal)} fatal alarm(s); the machinery cannot measure anything here", flush=True)
+    return 1 if fatal else 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="command", required=True)
@@ -638,6 +662,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     reader = sub.add_parser("read", help="read every arm on the pre-registered measure")
     reader.add_argument("--root", required=True)
     reader.set_defaults(handler=_read)
+    alarm = sub.add_parser("alarms", help="preflight a manifest, or read a segment, and fail loudly")
+    alarm.add_argument("--manifest", default=None)
+    alarm.add_argument("--segment", default=None)
+    alarm.add_argument("--previous-brief", default=None)
+    alarm.add_argument("--brief", default=None)
+    alarm.set_defaults(handler=_alarms)
     verifier = sub.add_parser("verify", help="re-execute every claim after the fact, equally for every arm")
     verifier.add_argument("--root", required=True)
     verifier.set_defaults(handler=_verify)

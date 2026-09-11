@@ -1,0 +1,20 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+Your commitments are a STRING holding JSON of the form {"attacks": "<the first 16 characters of the artifact id you are attacking>", "ground": "<one of: reading-misrenders-conjecture, conjecture-misreads-rule, rule-and-code-diverge, cannot-tell>", "why": "<one sentence>"} and nothing else.
+
+The id must be one printed in square brackets beside an artifact you were shown; a name matching nothing resolves to no attack. Use "cannot-tell" when you cannot decide -- it is an honest answer and it mints no attack, which is better than inventing a target.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The conjecture misreads the rule. The rule says 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text'; it does not say 'markdown code fence' or require the backticks to be on their own line. The conjecture imports that narrower markdown meaning, so its claim that the rule requires {"b":2} for A and {"c":3} for B is not supported by the rule as written. The execution confirms the code returns {'a':1} for both texts, matching the _FENCE regex that matches any triple backticks, so the rule and code do not diverge on this point. A next conjecture should avoid repeating the assumption that inline triple backticks are not a code fence; instead it should test whether the documented rule intends any triple-backtick span or a markdown block fence, and avoid asserting markdown semantics the rule does not state. No separate reading artifact with an id was shown, so I cannot attack a reading.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.
