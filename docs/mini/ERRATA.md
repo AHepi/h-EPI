@@ -322,6 +322,75 @@ before it. These two did not, because they were typed into a shell heredoc rathe
 one-off felt like it did not need one. A silent no-op is the one failure a text replacement has, and
 it is the reason the check exists.
 
+### C17. The block's own reader counted runs that never finished (**found, by a check I set running**)
+
+`_segments` asked only whether a root held a `log.jsonl`. A transport failure leaves a root holding a
+conjecture, a reading and no execution — the driver sets it aside as `<name>.deadN` and runs the
+segment again — and those set-aside roots sat **inside the block's own records tree**, where the
+glob found them. So:
+
+| cell | segments the reader counted | segments that finished |
+|---|---|---|
+| R.r1 | **20** | 16 |
+| W.r1 | **20** | 16 |
+| A.r1 | **20** | 16 |
+| F.r2 | **19** | 16 |
+
+Both `model_calls` and `executor_rows` carried the difference, and so would any per-call figure read
+off them. **The numbers already reported are unaffected**, because every reading given so far was of
+the first repeat, whose three set-aside roots happen to hold no log at all — but that is luck, not
+design, and a reading of the second or third repeat would have been wrong.
+
+Two things were wrong, not one. The reader's test was too weak (*a log exists* rather than *the run
+reached its end*), and the set-aside roots were in the wrong place. A records directory is read by
+enumeration; a root that is neither a finished record nor an error naming one is a thing every reader
+has to know to skip, and nothing knew.
+
+**Repaired:** `_segments` requires `RUN_ENDED` and refuses a `.dead` name; `_set_aside` moves a root
+out of the block entirely, to `forge/mini/runs/creativity-2-aborted/dead/`; the eighteen existing
+ones were moved there with a note saying what they are; and three tests pin it, one of which asserts
+that the block tree holds no set-aside root at all.
+
+**How it was found.** By the completeness critic in the verification I ran over the description of
+this block's wiring — an agent asked what the claim list left out, read `_segments`, and noticed that
+its glob matches a name the driver itself creates. It is the second defect in this block found by a
+check rather than by a person, and the first found in the measurement path.
+
+### C18. Arm F's critic already sees everything the reading committed to (**found, by a check I set running**)
+
+The block's first prediction is that `W` beats `F` because `W`'s critic is shown the reading and
+`F`'s is not. `F`'s critic **is** shown the reading's content — all of it — inside the execution's
+commitments line, because the `execs` port renders with `list_bodies_and_commitments` and
+`execute_pairs_with` copies the reading's fields into each row:
+
+```
+commitments: {"executions": [{"proposal": "c20ac90c7d7be592",
+  "kernel": "open:creib.forge.conformance.oracle.recover_json_object",
+  "expect": "moves", "input": "```python\n{\"x\": 1}\n```\n{\"y\": 2}",
+  "rewritten": "{\"y\": 2}", "rewrite": "moves",
+  "before": "({'y': 2}, ())", "after": "({'y': 2}, ())", "as_expected": false}]}
+```
+
+That is the reading's kernel, its expectation, both of its texts in full, its rewrite description,
+**and its own sixteen-character identity code** — the same code `W` prints in brackets beside it.
+
+So what `W` actually adds over `F` is: the reading's **prose body** (the translator's note on what it
+was unsure of), the same content a second time under a `Readings` heading, and a bracketed label the
+instruction can tell the critic to name. Not "the critic can see what the reading claimed" — it
+already could.
+
+**What it costs:** the pre-registration's `F` → `W` contrast is much narrower than it says, and so is
+whatever `W` beating `F` turns out to mean. It does beat `F`, on every repeat so far; what it beats it
+by is a labelled copy and a prose note, not access to the claim.
+
+**Not repaired, and not repairable inside this block.** Narrowing it would mean changing what the
+`execs` port renders, which changes `F`, `W` and `A` together and makes a fourth block. Registered as
+CON-EXECS-CARRIES-THE-READING so that nothing built on `F` → `W` is read as more than it is.
+
+**How it was found.** The same completeness critic that found C17, reading `execute_pairs_with`
+against a stored `F` prompt. Three blocks have now been designed around this contrast and none of the
+three noticed that the row the executor writes carries the proposal it ran.
+
 ## The pattern
 
 Of the twenty-odd items above, **three** are about the model. All the rest are about the apparatus:
@@ -333,7 +402,7 @@ The one thing that survived every repair, unchanged, is the conjecture step. It 
 boundaries under every configuration, including the cheapest, and the machinery kept failing to
 execute, see, or count them.
 
-A5 and C12 to C16 were added after the rest, while building and first running the block that was meant
+A5 and C12 to C18 were added after the rest, while building and first running the block that was meant
 to settle the question. C12 was found by reading the run headers, A5 by counting what a segment
 actually sends, and C13 and C14 by alarms firing on live segments — the only items here that a
 machine caught rather than a person, and C14 was additionally diagnosed, correctly and in prose, by

@@ -1,0 +1,33 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+I am testing open:creib.forge.conformance.oracle.recover_json_object. The documented rule I am reading is: “The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.” Reply 1 is: ```yaml\n{"x": 1}\n```\n{"y": 2} . Reply 2 is: {"y": 2} . The rule requires Reply 1 to score the fenced object {"x": 1}, because a ```yaml fence is a code fence and it holds an object, and that object is the last one inside a fence. The rule requires Reply 2 to score the top-level object {"y": 2}, because there is no fence. The check, however, gives the same answer for both: its fence pattern only matches ```json, ```JSON, or a bare ```, so it does not treat the ```yaml fence as a fence. For Reply 1 the fenced pool is empty, and the last top-level object is {"y": 2}; for Reply 2 the last top-level object is also {"y": 2}. Thus the check returns {"y": 2} for both, collapsing a difference the rule requires. I would be wrong if the check returned different answers for these two replies, or if the documented rule were read as excluding ```yaml fences from the phrase “code fence.”
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

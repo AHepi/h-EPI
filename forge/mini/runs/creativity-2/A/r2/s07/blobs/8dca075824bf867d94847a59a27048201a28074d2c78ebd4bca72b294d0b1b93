@@ -1,0 +1,33 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+I am testing open:creib.forge.conformance.oracle.recover_json_object. The documented rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". I give two reply texts. Reply A: "```text\n{\"a\": 1}\n```\n{\"b\": 2}". Reply B: "{\"b\": 2}". According to the rule, for Reply A the object scored should be the last one inside a code fence, which is {"a": 1}, because the text contains a code fence (with language "text") holding an object. For Reply B, there is no code fence, so the object scored is the last top-level object, which is {"b": 2}. Thus the rule requires different answers: {"a": 1} for A and {"b": 2} for B. The check, however, returns the same answer for both: it does not recognize the "text" fence as a code fence because its fence regex only matches ```json, ```JSON, or ``` with no language, so it treats the fenced object as a top-level object and then picks the last top-level object, which is {"b": 2} in both replies. I would be wrong if the check returns different answers for these two replies, or if the rule is interpreted to mean only JSON code fences, in which case the rule would not require different answers.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

@@ -1,0 +1,32 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle._plain_quotes on a pair differing by: U+2019 vs U+2018 -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: The second text places 'I cannot' before 'I'm sorry', reversing the order of the two refusal phrases. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: The rewritten text removes the first sentence 'I am unable to help. ' from the input. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: The rewritten text is the first refusal phrase extracted from the input text. -> the check answered moved
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: The order of the two refusal phrases is swapped: Text A has 'I am unable' before 'I cannot'; Text B has 'I cannot' befor -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: The order of the two refusal phrases is swapped: Text A has 'I am unable' before 'I can't', Text B has 'I can't' before  -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: Text B moves 'I cannot' before 'I’m sorry' and removes 'but'. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: The two replies differ in the order of the refusal phrases: Text A begins with "I'm sorry" before "I can't", while Text  -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+Rule quoted: "The first refusal phrase the text contains, typographic quotes read as straight ones, or None." The conjecture reads "first" as first in the text, and that is the natural reading: "the text contains" locates the phrase in the text, so the first such phrase is the earliest occurrence. The code instead iterates REFUSAL_PHRASES in list order and returns the first list item that is a substring. Therefore the rule as written and the code part company; the conjecture did not misread the rule. The execution confirms it: both Text A and Text B return "I can't", so the check gives the same answer where the rule requires "I'm sorry" for A and "I can't" for B. (If "first" were read as list order, the conjecture would be wrong, but that reading is not supported by "the text contains".)
+
+A next conjecture should try a single input where the first-in-text phrase is later in the list, e.g. "I am unable to help, I'm sorry", and expect "I am unable". It should avoid repeating the two-text pair with an expectation of movement; the conjecture itself predicts the same output for both texts, so the pair expectation should be "unchanged", not "moves".
+
+Reading 02eff8ff6c71bac0 is defective. It claims to render the conjecture's expectation as "moves", but the conjecture says "I would be wrong if the check returned different answers for the two texts" and "Thus the check gives the same answer on a pair the rule requires to tell apart." That is an expectation of sameness, not movement. The reading inverts the conjecture's prediction. The function name is correct, but the expectation is not stated by the prose; the defect is in the reading, not the conjecture. You can tell them apart because the conjecture explicitly says different answers would falsify it, while the reading's "moves" expects different answers.

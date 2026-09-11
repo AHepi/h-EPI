@@ -137,6 +137,30 @@ its manifest builds would have caught this before the first call; nothing does t
 
 ---
 
+### CON-EXECS-CARRIES-THE-READING — the result row carries the claim it ran
+**Couples:** CFG-RENDER, CFG-INPUT-PORTS, CFG-STAGES
+**Status:** **observed** — CREATIVITY-ARMS-2, every segment of arms F, W and A (ERRATA C18).
+
+The pair executor copies the reading's fields into each row it writes — `proposal` (the reading's own
+sixteen-character identity code), `kernel`, `expect`, `input`, `rewritten`, `rewrite` — and adds its
+own `before`, `after` and `as_expected`. Any port that renders the execution with
+`list_bodies_and_commitments` therefore hands the seat **the whole of the reading's commitment and
+all three of its texts**, whether or not a readings port is declared anywhere.
+
+So an arm built to withhold the reading withholds only its prose body and its label. Any contrast of
+the form "this arm can see the claim and that one cannot" is not that contrast, unless the execution
+is rendered with `list_bodies` or the executor is changed to stop copying the row.
+
+**Hold it fixed:** decide what the execution row is allowed to carry before designing an arm around
+who can see the reading, and read a stored prompt from the arm that is supposed to be blind before
+running the block.
+**Record:** the `execs` port's render rule per arm, and one stored prompt from the withholding arm,
+beside any result the contrast is supposed to explain.
+**Alarm:** none. A preflight that diffed one arm's stored prompt against another's would have shown
+it; nothing does that.
+
+---
+
 ### CON-DRAW-VARIANCE — one repeat is not a measurement
 **Couples:** the number of repeats, the endpoint's determinism
 **Status:** **observed.** The endpoint returned **six different answers to a byte-identical prompt**.

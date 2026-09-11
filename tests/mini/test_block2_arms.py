@@ -19,6 +19,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+ROOT_PATH = Path
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 if str(ROOT / "tools") not in sys.path:
@@ -197,3 +198,41 @@ class BriefCeilingTests(unittest.TestCase):
         schema = _json.loads((ROOT / "forge/mini/schema/mini-manifest.schema.json").read_text())
         self.assertLess(BLOCK.BRIEF_CEILING, schema["properties"]["problem"]["maxLength"])
         _ = _Path
+
+
+class FinishedSegmentsOnlyTests(unittest.TestCase):
+    """A log file is not a finished segment, and the reader must not count one as if it were.
+
+    A transport failure leaves a root holding a conjecture, a reading and no execution. `_segments`
+    asked only whether a log existed, so it returned those beside the real ones: `R.r1` read as twenty
+    segments where sixteen had finished, and the call count and the row count both carried the
+    difference. Found by a completeness check run against the records, not by reading the code.
+    """
+
+    def test_a_root_with_a_log_but_no_end_is_not_a_segment(self) -> None:
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as place:
+            root = ROOT_PATH(place)
+            cell = root / "W" / "r0"
+            (cell / "s00").mkdir(parents=True)
+            (cell / "s00" / "log.jsonl").write_text('{"type": "RUN_STARTED"}\n{"type": "RUN_ENDED"}\n')
+            (cell / "s01").mkdir(parents=True)
+            (cell / "s01" / "log.jsonl").write_text('{"type": "RUN_STARTED"}\n')
+            (cell / "s02.dead1").mkdir(parents=True)
+            (cell / "s02.dead1" / "log.jsonl").write_text('{"type": "RUN_STARTED"}\n{"type": "RUN_ENDED"}\n')
+            found = [p.name for p in BLOCK._segments(root, "W", 0)]
+            self.assertEqual(found, ["s00"], "an unfinished root and a set-aside root are not segments")
+
+    def test_a_set_aside_root_leaves_the_block_entirely(self) -> None:
+        """It goes to a directory of its own, because a records directory is read by enumeration."""
+
+        self.assertEqual(BLOCK.DEAD_ROOTS, "creativity-2-aborted/dead")
+        self.assertNotIn("creativity-2/", BLOCK.DEAD_ROOTS + "/")
+
+    def test_the_block_tree_holds_no_set_aside_root(self) -> None:
+        place = ROOT / "forge/mini/runs/creativity-2"
+        if not place.is_dir():
+            self.skipTest("the block's records are not in this checkout")
+        stray = [str(p) for p in place.rglob("*.dead*")]
+        self.assertEqual(stray, [], "a set-aside root inside the block is one the reader can count")

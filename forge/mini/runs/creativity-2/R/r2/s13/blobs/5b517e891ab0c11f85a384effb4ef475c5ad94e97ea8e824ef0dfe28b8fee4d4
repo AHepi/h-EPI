@@ -1,0 +1,12 @@
+Conjecture: The function is open:creib.forge.conformance.oracle.recover_json_object. The documented rule I am reading is: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". The two reply texts are:
+
+Reply A:
+```python
+{"a": 1}
+```
+{"b": 2}
+
+Reply B:
+{"b": 2}
+
+The rule requires Reply A to be scored as {"a": 1}, because it is the last object inside a code fence (the fence is marked python, but the rule says any code fence). The rule requires Reply B to be scored as {"b": 2}, because there is no fence and it is the last top-level object. The check recover_json_object, however, gives the same answer for both: it returns {"b": 2} for each, because its fence regex only matches fences with no language tag or with json/JSON, so the python fence is not recognized as a fence, and the object inside it is treated as a top-level object; the last top-level object in Reply A is {"b": 2}. What would make me wrong: if recover_json_object actually returns {"a": 1} for Reply A (for example, if the fence regex were changed to match any language tag, or if the top-level scan excluded fenced content), then the two replies would be told apart as the rule requires.

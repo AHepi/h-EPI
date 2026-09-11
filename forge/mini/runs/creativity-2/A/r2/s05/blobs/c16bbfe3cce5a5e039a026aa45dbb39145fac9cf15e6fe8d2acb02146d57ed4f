@@ -1,0 +1,41 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+The three texts are fields of the REPLY, beside "body" and "commitments", not inside the commitments string. A reply that omits any of them is refused and you are asked again. In full, a well formed reply looks exactly like this:
+
+{"body": "<what you were unsure of, in prose>",
+ "commitments": "{\"kernel\": \"<the full dotted path>\", \"expect\": \"moves\"}",
+ "input": "<the first reply text, in full>",
+ "rewritten": "<the second reply text, in full>",
+ "rewrite": "<how the two differ>"}
+
+## The conjecture, as written (conj)
+[39038eab2462782e] (mini.conjecture.v1)
+Conjecture: The function open:creib.forge.conformance.oracle.recover_json_object, whose documented rule states "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text", gives the same answer for the following two replies, although the rule requires different answers.
+
+Reply A: ```json\n{"a":1}\n```\n```json\n{"b":2} {\"c\":3}\n```
+
+Reply B: ```json\n{"a":1}\n```\n```json\n{"b":2} {\"c\":4}\n```
+
+For Reply A, the last fenced block contains two objects, {"b":2} and {"c":3}; the last object inside a code fence is {"c":3}, so the rule requires the check to return {"c":3}. For Reply B, the last fenced block contains two objects, {"b":2} and {"c":4}; the last object inside a code fence is {"c":4}, so the rule requires the check to return {"c":4}. The check, however, returns {"a":1} for both, because it treats each fenced block as a single candidate and, when the last fenced block fails to parse as one object, falls back to the earlier fenced block that does parse. This makes the two replies indistinguishable to the check. I would be wrong if the check returns {"c":3} for Reply A and {"c":4} for Reply B, or if it returns different answers for the two replies in any way.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.
+
+## The shape this answer must take
+`input` must contain something matching this expression:
+  \S
+
+`rewrite` must contain something matching this expression:
+  \S
+
+`rewritten` must contain something matching this expression:
+  \S

@@ -1,0 +1,35 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+The three texts are fields of the REPLY, beside "body" and "commitments", not inside the commitments string. A reply that omits any of them is refused and you are asked again. In full, a well formed reply looks exactly like this:
+
+{"body": "<what you were unsure of, in prose>",
+ "commitments": "{\"kernel\": \"<the full dotted path>\", \"expect\": \"moves\"}",
+ "input": "<the first reply text, in full>",
+ "rewritten": "<the second reply text, in full>",
+ "rewrite": "<how the two differ>"}
+
+## The conjecture, as written (conj)
+[a7d4b9a65e9a54c2] (mini.conjecture.v1)
+Conjecture: open:creib.forge.conformance.oracle.recover_json_object. The documented rule says: 'Every top-level balanced object in the text is a candidate, not only the span from the first { to the last }: reasoning prose before or after the answer frequently contains stray braces, and an object nested inside another is not a candidate of its own. The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' I test the pair: Reply A is '[{"a":1}, {"b":2}]'; Reply B is '{"b":2}'. For Reply A, the rule requires no object to be recovered, because the two objects are inside an array and are not top-level; the check should raise RecordError. For Reply B, the rule requires the object {"b":2} to be recovered, because it is the last top-level object. The check gives the same answer for both: it returns {"b":2} for Reply A, because it incorrectly treats the objects inside the array as top-level candidates and picks the last one, and it returns {"b":2} for Reply B. This pair is not a repeat of the earlier array-containing-object pair because the array here contains two objects, not one. What would make me wrong: if recover_json_object('[{"a":1}, {"b":2}]') raises RecordError instead of returning {"b":2}, or if the rule is read to include objects inside arrays as top-level candidates.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.
+
+## The shape this answer must take
+`input` must contain something matching this expression:
+  \S
+
+`rewrite` must contain something matching this expression:
+  \S
+
+`rewritten` must contain something matching this expression:
+  \S

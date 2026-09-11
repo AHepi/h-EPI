@@ -133,6 +133,15 @@ pair. Nothing else differs: the same kinds, the same install map, the same conje
 same failure policy. `tests/mini/test_block2_arms.py` asserts each of those, including the one
 assertion block 1 needed and did not have: that every stage lists every port its kind declares.
 
+> **Withdrawn in part, after the block began (ERRATA C18, CON-EXECS-CARRIES-THE-READING).** `F`'s
+> critic already sees everything the reading committed to — its kernel, its expectation, both of its
+> texts in full, its rewrite description and its own identity code — because the pair executor copies
+> those fields into the row it writes, and the `execs` port renders that row's commitments. So
+> `F` → `W` adds the reading's **prose body**, a second labelled copy of the same content, and a
+> bracketed label the instruction can name. It is not the contrast "the critic can see the claim or
+> cannot", and nothing built on it should be read as though it were. Narrowing it would change what
+> the `execs` port renders, which moves `F`, `W` and `A` together and makes a fourth block.
+
 **`W` → `A` is the warrant and the adjudication.** `A`'s criticism commitment carries
 `{attacks, ground, why}` under a JSON Schema, a machine seat resolves the named target against the
 record, and status is computed from the attack relation rather than stored.
@@ -182,7 +191,8 @@ segment is kept, outside the block, at `forge/mini/runs/creativity-2-aborted/`.
 
 - **P1.** `W` beats `F` on `grounded_T1` per call, at every repeat. If it does not, **the critic
   seeing the readings buys nothing**, and block 1's doubling — already without a cause — has no
-  replacement.
+  replacement. *(Read under C18: whichever way this falls, it is about the reading's prose body and
+  its label, not about access to the claim, which `F` already had.)*
 - **P2 — the experiment.** `A` beats `W`. If it does not, **criticism that lands buys nothing over
   criticism that is only read**, at a point where the format no longer suppresses it, the test can be
   attacked, and there are enough draws to tell. That is the loop losing on the best version this

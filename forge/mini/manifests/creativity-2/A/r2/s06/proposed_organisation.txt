@@ -1,0 +1,26 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The first is an array containing the object; the second is the object itself. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Text 1 contains a top-level object {"a": 1} followed by an array containing {"b": 2}; Text 2 contains only the array [{" -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A includes a fenced float before the top-level object; Reply B contains only the top-level object. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A includes a JavaScript code fence with object {"a":1} before the top-level object {"b":2}; Reply B contains only  -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## What has been refuted, computed from the attacks that landed
+
+- 4cb4ea050e510fb4 was refuted on the ground reading-misrenders-conjecture: The reading sets its expectation to 'moves', but the conjecture states the check returns {"a":1} for both replies, which is unchanged, not moves.
+
+A refuted conjecture is not merely criticised: an attack on it landed and nothing has yet overturned that attack. Do not re-propose one.
+
+## The standing criticism of the last attempt
+
+The reading [4cb4ea050e510fb4] claims to render the conjecture but sets its expectation to "moves". The conjecture says the check "gives the same answer for the following two replies" and "The check, however, returns {\"a\":1} for both". That is unchanged, not moves. The execution returned unchanged, so the reading is the defect.

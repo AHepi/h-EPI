@@ -1,0 +1,28 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply 1 has a tilde code fence containing {\"a\":1} before a top-level {\"a\":2}; Reply 2 has only {\"a\":2}. -> the check answered unrunnable
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply 1 contains a tilde-fenced JSON object; Reply 2 contains no JSON object. -> the check answered unrunnable
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply 1 includes a code fence containing {"a":1} and then a top-level {"a":2}; Reply 2 is only the top-level {"a":2}. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second reply omits the ```python fence and the first JSON object, leaving only the last top-level object. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply 1 includes a fenced JSON object plus a later top-level object; Reply 2 includes only the later top-level object. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply 1 includes a Python code fence containing {\"a\":1} followed by a top-level {\"a\":2}; Reply 2 is only {\"a\":2}. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply 1 contains a ```text code fence with an object inside and an additional top-level object after it; Reply 2 contain -> the check answered unrunnable
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply 1 contains a ```text fenced object {"a":1} followed by top-level {"a":2}; Reply 2 contains only top-level {"a":2}. -> the check answered unchanged
+- None on a pair differing by: Reply 1 contains a json5 fenced object followed by a top-level object; Reply 2 contains only the top-level object. -> the check answered unrunnable
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply 1 has a ```javascript fence containing {"a":1} before {"a":2}; Reply 2 is only {"a":2}. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply 2 drops the ```yaml code fence and the first object, leaving only the final top-level object. -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+The conjecture did not misread the rule. The rule as written says: “The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.” The code’s `_FENCE` pattern is `re.compile('```(?:json|JSON)?\s*(.*?)```', re.DOTALL)`, so it only treats ```json, ```JSON, or a bare ``` as a fence. A ```yaml fence is not matched, so the fenced pool is empty for Reply 1, and the last top-level object `{"a":2}` is returned. Thus the rule as written and the code part company. A next conjecture should try a ```json or bare fence, or a ```yaml fence with no later top-level object, to see whether the fence pool is used at all; it should avoid repeating the ```yaml-plus-later-object example, because the code’s fence regex explicitly excludes ```yaml and the later object will always win as the last top-level candidate.

@@ -497,8 +497,20 @@ def _calls(segment: Path) -> int:
 
 
 def _segments(root: Path, arm: str, repeat: int) -> list[Path]:
+    """This cell's FINISHED segments, and nothing else.
+
+    A log file is not a finished segment. A transport failure leaves a root holding a conjecture, a
+    reading and no execution, and this used to return those beside the real ones because it asked
+    only whether a log existed: R.r1 read as twenty segments where sixteen had finished, and the call
+    count and the row count were both inflated by the difference. A run that did not reach its end is
+    not a measurement of anything.
+    """
+
     place = root / arm / f"r{repeat}"
-    return [s for s in sorted(place.glob("s*")) if (s / "log.jsonl").is_file()] if place.is_dir() else []
+    if not place.is_dir():
+        return []
+    return [s for s in sorted(place.glob("s*"))
+            if _finished(s) and ".dead" not in s.name]
 
 
 def _dropped(segment: Path) -> int:
@@ -742,13 +754,21 @@ def _finished(segment: Path) -> bool:
     return log.is_file() and "RUN_ENDED" in log.read_text(encoding="utf-8")
 
 
+#: Where a half-written root goes. OUTSIDE the block's own records tree: a directory of records is
+#: read by enumeration, and a root that is neither a finished record nor an error naming one is a
+#: thing a reader has to know to skip. Leaving them in place let the block's own reader count them.
+DEAD_ROOTS = "creativity-2-aborted/dead"
+
+
 def _set_aside(segment: Path) -> Path | None:
-    """Move a half-written root out of the block, so the segment can be run again into a clean one."""
+    """Move a half-written root out of the block entirely, so the segment runs again into a clean one."""
 
     if not segment.exists():
         return None
+    place = segment.parents[3] / DEAD_ROOTS / segment.parents[1].name / segment.parent.name
+    place.mkdir(parents=True, exist_ok=True)
     for n in range(1, 100):
-        target = segment.with_name(f"{segment.name}.dead{n}")
+        target = place / f"{segment.name}.dead{n}"
         if not target.exists():
             segment.rename(target)
             return target
