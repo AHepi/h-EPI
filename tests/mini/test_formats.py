@@ -293,3 +293,76 @@ class TheFormatIsShownTests(MiniTestCase):
         self.assertNotIn("was refused", seen[0])
         self.assertIn("- BECAUSE", seen[1])
         self.assertIn("was refused", seen[1])
+
+
+class OwnFieldFormatTests(MiniTestCase):
+    """A kind's own optional fields may carry a declared shape, and a missing one is a failure.
+
+    Nine of thirty-nine readings in CREATIVITY-ARMS-1 returned no texts at all. The executor called
+    each of those claims ``unrunnable`` and the segment produced nothing, and nothing anywhere could
+    tell that reply apart from one that had answered: the format layer read ``body`` and
+    ``commitments`` and a kind's own fields were outside it entirely.
+    """
+
+    def _kind(self, fields: dict) -> dict:
+        return {
+            "kind_id": "k.reading",
+            "title": "Reading",
+            "optional_fields": ["input", "rewritten"],
+            "format": {"fields": fields},
+            "input_ports": [{"port_id": "problem", "port_type": "problem"}],
+            "output_port": {"port_id": "out", "produces_kind": "k.reading"},
+        }
+
+    def test_a_declared_field_the_reply_omits_is_a_failure(self) -> None:
+        compiled = compile_format_spec(
+            {"fields": {"input": {"all_of": [{"check": "regex", "pattern": "\\S"}]}}},
+            "kind 'k.reading' format", ("input", "rewritten"))
+        self.assertEqual(compiled.extra_fields, ("input",))
+        reasons = compiled.failures({"body": "b", "commitments": "c"}, ("body", "commitments", "input"))
+        self.assertEqual(len(reasons), 1)
+        self.assertIn("it is missing", reasons[0])
+
+    def test_a_declared_field_the_reply_carries_is_checked_like_any_other(self) -> None:
+        compiled = compile_format_spec(
+            {"fields": {"input": {"all_of": [{"check": "regex", "pattern": "\\S"}]}}},
+            "kind 'k.reading' format", ("input",))
+        self.assertEqual(compiled.failures({"body": "b", "commitments": "c", "input": "x"},
+                                           ("body", "commitments", "input")), ())
+        self.assertEqual(len(compiled.failures({"body": "b", "commitments": "c", "input": "   "},
+                                               ("body", "commitments", "input"))), 1)
+
+    def test_a_shape_for_a_field_the_kind_does_not_declare_is_refused_at_compile(self) -> None:
+        self.assertRefuses(
+            "MINI_FORMAT_SPEC_INVALID",
+            compile_format_spec,
+            {"fields": {"nowhere": {"all_of": [{"check": "regex", "pattern": "\\S"}]}}},
+            "kind 'k.reading' format",
+            ("input",),
+        )
+
+    def test_the_shape_is_rendered_to_the_seat_beside_the_other_fields(self) -> None:
+        """A seat told its answer was the wrong shape without being told the shape fails twice."""
+
+        compiled = compile_format_spec(
+            {"fields": {"input": {"all_of": [{"check": "regex", "pattern": "\\S"}]}}},
+            "kind 'k.reading' format", ("input",))
+        self.assertTrue(any(item.startswith("`input`") for item in compiled.describe()))
+        self.assertFalse(compiled.freeform)
+
+    def test_a_run_retries_the_reply_that_omitted_the_field_and_accepts_the_one_that_carries_it(self) -> None:
+        manifest = base_manifest()
+        manifest["kinds"].append(self._kind({"input": {"all_of": [{"check": "regex", "pattern": "\\S"}]}}))
+        manifest["stages"] = [
+            {"stage_id": "r1", "kind_id": "k.reading", "ports": ["problem"]},
+            {"stage_id": "end", "end": True},
+        ]
+        script = {"r1": [
+            json.dumps({"body": "no texts", "commitments": "{}"}),
+            json.dumps({"body": "with texts", "commitments": "{}", "input": "{\"a\": 1}"}),
+        ]}
+        _, outcome = self.run_manifest(manifest, script)
+        failures = self.events_of(outcome, FORMAT_FAILURE)
+        self.assertEqual(len(failures), 1)
+        self.assertTrue(any("input: it is missing" in reason for reason in failures[0]["payload"]["reasons"]))
+        self.assertEqual(self.events_of(outcome, "SUBMISSION_DROPPED"), [])

@@ -117,12 +117,40 @@
         "rewritten",
         "rewrite"
       ],
-      "instruction": "You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.\n\nThe commitments are a STRING holding JSON of the form {\"kernel\": \"<path>\", \"expect\": \"moves\" or \"unchanged\"} and nothing else.\n\n\"kernel\" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.\n\nThis artifact carries \"input\", \"rewritten\" and \"rewrite\" as fields of its own, each a plain string: \"input\" and \"rewritten\" are the two reply texts exactly as the prose gave them, and \"rewrite\" says how they differ. Use \"moves\" when the rule requires the two answers to differ.",
+      "instruction": "You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.\n\nThe commitments are a STRING holding JSON of the form {\"kernel\": \"<path>\", \"expect\": \"moves\" or \"unchanged\"} and nothing else.\n\n\"kernel\" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.\n\nThis artifact carries \"input\", \"rewritten\" and \"rewrite\" as fields of its own, each a plain string: \"input\" and \"rewritten\" are the two reply texts exactly as the prose gave them, and \"rewrite\" says how they differ. Use \"moves\" when the rule requires the two answers to differ.\n\nThe three texts are fields of the REPLY, beside \"body\" and \"commitments\", not inside the commitments string. A reply that omits any of them is refused and you are asked again. In full, a well formed reply looks exactly like this:\n\n{\"body\": \"<what you were unsure of, in prose>\",\n \"commitments\": \"{\\\"kernel\\\": \\\"<the full dotted path>\\\", \\\"expect\\\": \\\"moves\\\"}\",\n \"input\": \"<the first reply text, in full>\",\n \"rewritten\": \"<the second reply text, in full>\",\n \"rewrite\": \"<how the two differ>\"}",
       "failure_policy": {
         "retries": 3,
         "tolerance": null,
         "action": "stop",
         "skip_on_empty_port": false
+      },
+      "format": {
+        "fields": {
+          "input": {
+            "all_of": [
+              {
+                "check": "regex",
+                "pattern": "\\S"
+              }
+            ]
+          },
+          "rewritten": {
+            "all_of": [
+              {
+                "check": "regex",
+                "pattern": "\\S"
+              }
+            ]
+          },
+          "rewrite": {
+            "all_of": [
+              {
+                "check": "regex",
+                "pattern": "\\S"
+              }
+            ]
+          }
+        }
       },
       "input_ports": [
         {

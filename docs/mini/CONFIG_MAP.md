@@ -86,10 +86,21 @@ The text a model seat is given for this kind, beside its rendered ports.
   criticism operates on.
 
 ### CFG-OPTIONAL-FIELDS — `kinds[].optional_fields`
-Extra named string fields an artifact may carry beside body and commitments.
+Extra named string fields an artifact may carry beside body and commitments. A kind holds its long
+texts here rather than nested inside the commitments string, where they would need a second level of
+escaping (register M13).
 - **MIS-OPTIONAL-1** — *"optional means the machine will cope without it."* The executor refuses a
   pair whose `input` is missing with "no texts given", which reads as a model failure and is a
   declaration gap.
+- **MIS-OPTIONAL-2** — *"the format layer checks the reply."* It checked `body` and `commitments`
+  and **nothing else**, so a kind that carried its whole payload in its own fields could return
+  none of them and be counted as having answered. **Nine of thirty-nine readings in
+  CREATIVITY-ARMS-1 did exactly that** — `kernel` and `expect` and no pair of texts — and the record
+  called each of those claims `unrunnable`, which reads as the executor's refusal rather than an
+  empty reply. Not evenly spread, either: `N` 4 of 8, `R` 2 of 6, `F` 2 of 8, `A` 1 of 8, `W` **0 of
+  8** — so the arm that looked best is the arm whose translator happened not to drop anything.
+  `format.fields` now declares a shape for these, a missing one is a failure rather than a skip, and
+  **ALM-TRANSLATOR-DROPPED-THE-TEXTS** names the mode in a finished segment.
 
 ### CFG-RETRIES — `kinds[].failure_policy.retries`
 How many times a refused seat is asked again, with the reason appended.

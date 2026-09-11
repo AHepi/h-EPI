@@ -86,13 +86,24 @@ def alarms_for(root: Path, previous_brief: str | None = None, brief: str | None 
                                 "not a function; the field's name is ambiguous in its own context"))
             break
 
+    # A claim the machine could not run because the reply carried no texts is a different failure
+    # from a claim it ran and refused, and it is invisible in the executed counts alone: nine of
+    # thirty-nine readings in CREATIVITY-ARMS-1 returned kernel and expect and no pair, and every
+    # one of those segments was counted as having answered.
+    textless = [e for e in rows if not str(e.get("input", "")).strip() or not str(e.get("rewritten", "")).strip()]
+    if textless:
+        found.append(Alarm("TRANSLATOR_DROPPED_THE_TEXTS", FATAL,
+                            f"{len(textless)} of {len(rows)} claims carry no pair of texts at all, so nothing "
+                            "could have been executed whatever the conjecture said; the kind's own fields "
+                            "came back empty or absent"))
+
     if rows:
         ran = [e for e in rows if e.get("executed") in ("moved", "unchanged")]
         if len(ran) * 2 < len(rows):
             found.append(Alarm("LOOP_STARVED", FATAL,
-                                f"{len(rows) - len(ran)} of {len(rows)} executions did not run, so a critic "
-                                "reads refusals rather than results and any comparison downstream measures "
-                                "the machinery"))
+                                f"{len(rows) - len(ran)} of {len(rows)} executions did not run, so this segment "
+                                "measures the machinery rather than the subject, and any critic downstream "
+                                "reads refusals rather than results"))
     else:
         found.append(Alarm("NOTHING_EXECUTED", FATAL, "the segment ran no pair at all"))
 

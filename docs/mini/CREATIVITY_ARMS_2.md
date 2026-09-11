@@ -63,14 +63,20 @@ on which the live executor and the post-hoc verifier disagree**.
 
 ## The arms
 
-Four arms, sixteen segments each, three repeats. **528 model calls.**
+Four arms, sixteen segments each, three repeats. **864 model calls before any refusal**, and a
+refused submission is a call too.
 
-| arm | segments | criticism | critic sees | install map | adjudication | calls ×3 |
-|---|---|---|---|---|---|---|
-| **R** repeated | 16 | no | — | no | no | 96 |
-| **F** full | 16 | yes | source, conj, execs | **yes** | no | 144 |
-| **W** wired | 16 | yes | + **reads** | yes | no | 144 |
-| **A** adjudicated | 16 | yes | + reads | yes | **yes** | 144 |
+Calls, not stages: the conjecture and the criticism are each `commitment_call: two` and cost two
+calls; the reading is `single` and costs one. Block 1 counted stages and called them calls, so every
+per-call figure in it was low by between 1.7 and 2.0 (ERRATA A5). The corrected block-1 figures are
+in that entry; they are not compared with anything here.
+
+| arm | segments | criticism | critic sees | install map | adjudication | calls/segment | calls ×3 |
+|---|---|---|---|---|---|---|---|
+| **R** repeated | 16 | no | — | no | no | 3 | 144 |
+| **F** full | 16 | yes | source, conj, execs | **yes** | no | 5 | 240 |
+| **W** wired | 16 | yes | + **reads** | yes | no | 5 | 240 |
+| **A** adjudicated | 16 | yes | + reads | yes | **yes** | 5 | 240 |
 
 `S` and `N` are dropped. `S` — one conjecture at two calls — is stable across three blocks and
 nothing further is learnt by paying for it again. `N` is dropped because block 1's `N`-against-`F`
@@ -87,7 +93,7 @@ assertion block 1 needed and did not have: that every stage lists every port its
 `{attacks, ground, why}` under a JSON Schema, a machine seat resolves the named target against the
 record, and status is computed from the attack relation rather than stored.
 
-## The seven repairs, each answering a numbered erratum
+## The nine repairs, each answering a numbered erratum
 
 1. **A format schema on the criticism commitment** (C6). Four of eight of block 1's `A` criticisms
    wrote prose where JSON was asked for and nothing checked, so the attack machinery engaged in under
@@ -113,6 +119,20 @@ record, and status is computed from the attack relation rather than stored.
 7. **One failure policy on every kind of every arm** (CON-FORMAT-KILLS-RUN): three retries, unlimited
    tolerance. Strictness and lifetime are one knob; holding tolerance unlimited is what stops an arm
    dying younger for being asked a stricter question. `format_drops` is recorded per arm anyway.
+8. **A declared shape for the translator's own three texts** (C13). Nine of thirty-nine block-1
+   readings returned `kernel` and `expect` and **no pair of texts at all**, and nothing could see it:
+   mini's format layer read `body` and `commitments` and a kind's own optional fields were outside it
+   entirely. Not evenly spread — `N` 4 of 8, `W` **0 of 8** — so it ran under every arm difference in
+   the block, including the positive one. `format.fields` now declares a shape for a kind's own
+   fields, a missing one is a refusal with the shape rendered rather than a skip, and
+   **ALM-TRANSLATOR-DROPPED-THE-TEXTS** names the mode in a finished segment.
+9. **Calls counted as calls** (A5), everywhere: in the budget, in the reading, and in every figure
+   reported per call. The reader counts each model stage entered at its own commitment cost and adds
+   every refusal, from the record.
+
+**Item 8 was found by item 7's machinery, on the first live segment of this block.** The alarm fired
+after four calls, the arm stopped, and the mode was traced back through block 1. That aborted
+segment is kept, outside the block, at `forge/mini/runs/creativity-2-aborted/`.
 
 ## What is predicted, before the run
 

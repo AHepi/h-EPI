@@ -52,7 +52,7 @@ from creativity_arms import (  # noqa: E402
     CRITICISM_WIRED,
     PROBLEM,
     READING,
-    READING_INSTRUCTION,
+    READING_INSTRUCTION as READING_INSTRUCTION_BLOCK1,
     SOURCE,
     VERDICT,
     _bound,
@@ -60,6 +60,28 @@ from creativity_arms import (  # noqa: E402
     _record,
     _rule_text,
     _standing_of,
+)
+
+#: The translator's three texts, declared as a shape rather than only asked for in prose. Nine of
+#: thirty-nine readings in block 1 returned ``kernel`` and ``expect`` and no pair at all; the format
+#: layer read only ``body`` and ``commitments``, so nothing could tell those replies from an answer
+#: and each was recorded as the executor refusing an ``unrunnable`` claim. A missing field is now a
+#: refusal with the shape rendered, and the seat is asked again.
+READING_FIELDS: dict[str, Any] = {
+    name: {"all_of": [{"check": "regex", "pattern": r"\S"}]} for name in ("input", "rewritten", "rewrite")
+}
+
+#: Block 1's instruction, and a whole worked reply under it. The instruction alone was what failed:
+#: it named the three fields in a sentence and nearly a quarter of the replies did not carry them.
+READING_INSTRUCTION = READING_INSTRUCTION_BLOCK1 + (
+    "\n\nThe three texts are fields of the REPLY, beside \"body\" and \"commitments\", not inside "
+    "the commitments string. A reply that omits any of them is refused and you are asked again. In "
+    "full, a well formed reply looks exactly like this:\n\n"
+    '{"body": "<what you were unsure of, in prose>",\n'
+    ' "commitments": "{\\"kernel\\": \\"<the full dotted path>\\", \\"expect\\": \\"moves\\"}",\n'
+    ' "input": "<the first reply text, in full>",\n'
+    ' "rewritten": "<the second reply text, in full>",\n'
+    ' "rewrite": "<how the two differ>"}'
 )
 
 #: One policy, on every kind of every arm. Three retries rather than one: a seat whose answer misses
@@ -165,7 +187,7 @@ def _kinds_and_ports(with_criticism: bool, wired: bool, adjudicated: bool) -> tu
          "output_port": {"port_id": "out", "produces_kind": CONJECTURE}},
         {"kind_id": READING, "title": "Reading", "commitment_call": "single",
          "optional_fields": ["input", "rewritten", "rewrite"], "instruction": READING_INSTRUCTION,
-         "failure_policy": FAILURE_POLICY,
+         "failure_policy": FAILURE_POLICY, "format": {"fields": READING_FIELDS},
          "input_ports": [{"port_id": "conj", "port_type": "conj", "window": "this_cycle"}],
          "output_port": {"port_id": "out", "produces_kind": READING}},
         {"kind_id": PAIR_EXECUTION_OPEN_KIND, "title": "Execute", "failure_policy": FAILURE_POLICY,
@@ -405,6 +427,26 @@ def _enumerate(args: argparse.Namespace) -> int:
 # ---------------------------------------------------------------------------------------------
 
 
+#: What one entry into a model stage costs in calls. A kind whose ``commitment_call`` is ``two``
+#: costs two; the reading, declared ``single``, costs one. Block 1 counted STAGES and called them
+#: calls, so every per-call figure in it was low by between 1.7 and 2.0 -- unevenly, because a
+#: refused submission is a call the arm paid for and the arms refused at different rates (C13).
+CALLS_PER_STAGE: dict[str, int] = {CONJECTURE: 2, CRITICISM: 2, READING: 1}
+
+
+def _calls(segment: Path) -> int:
+    """Model calls this segment actually made: every model stage entered, plus every refusal."""
+
+    made = 0
+    for line in (segment / "log.jsonl").read_text(encoding="utf-8").splitlines():
+        event = json.loads(line)
+        if event["type"] == "STAGE_ENTERED":
+            made += CALLS_PER_STAGE.get(str(event.get("kind_id")), 0)
+        elif event["type"] == "FORMAT_FAILURE":
+            made += 1
+    return made
+
+
 def _segments(root: Path, arm: str, repeat: int) -> list[Path]:
     place = root / arm / f"r{repeat}"
     return [s for s in sorted(place.glob("s*")) if (s / "log.jsonl").is_file()] if place.is_dir() else []
@@ -475,7 +517,9 @@ def _cell(root: Path, arm: str, repeat: int, varies: dict[str, bool]) -> dict[st
     adjudication = {"criticisms": 0, "attacks_landed": 0, "evidence_edges": 0}
     grounds: dict[str, int] = {}
     segments = _segments(root, arm, repeat)
+    calls = 0
     for segment in segments:
+        calls += _calls(segment)
         rows, conjectures, _ = _record(segment)
         executions.extend(rows)
         prose.extend(conjectures)
@@ -489,7 +533,6 @@ def _cell(root: Path, arm: str, repeat: int, varies: dict[str, bool]) -> dict[st
     collapse = [e for e in ran if str(e.get("expect")) == "moves" and e.get("executed") == "unchanged"]
     grounded = [e for e in collapse if _grounded(joined, _rule_text(str(e.get("kernel"))))]
     non_constant = [e for e in collapse if varies.get(str(e.get("kernel")), False)]
-    calls = len(segments) * (3 if ARMS[arm]["criticism"] else 2)
     return {
         "segments_run": len(segments),
         "model_calls": calls,
@@ -669,8 +712,12 @@ def _plan(args: argparse.Namespace) -> int:
         for repeat in range(REPEATS):
             path = _build(arm, repeat, 0, Path(args.out) / "_norun", manifests)
             print(f"{arm}.r{repeat} s00 -> {path}", flush=True)
-    calls = {a: s["segments"] * (3 if s["criticism"] else 2) * REPEATS for a, s in ARMS.items()}
-    print(f"model calls per arm across {REPEATS} repeats: {calls}; total {sum(calls.values())}", flush=True)
+    # Calls, not stages: the conjecture and the criticism each cost two, the reading one, and a
+    # refused submission is a call as well. A block that budgets in stages under-counts by about
+    # double (C13).
+    calls = {a: s["segments"] * (5 if s["criticism"] else 3) * REPEATS for a, s in ARMS.items()}
+    print(f"model calls per arm across {REPEATS} repeats, before any refusal: {calls}; "
+          f"total {sum(calls.values())}", flush=True)
     return 0
 
 

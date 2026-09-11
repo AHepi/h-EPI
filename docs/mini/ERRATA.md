@@ -48,6 +48,26 @@ its score is zero *by definition*, not by measurement. A control that cannot sco
 
 ---
 
+### A5. Every per-call figure in block 1 was low by between 1.7 and 2.0 (**mine**)
+
+`ARMS` counted model **stages** and the table called them **calls**. A kind whose `commitment_call`
+is `two` costs two calls; the conjecture and the criticism are both `two`, the reading is `single`.
+And a refused submission is a call the arm paid for, which the arms did at different rates. Counted
+from the records:
+
+| arm | reported calls | actual | refusals | witnesses | per call, reported | per call, actual |
+|---|---|---|---|---|---|---|
+| S | 2 | **4** | 1 | 1 | 0.50 | **0.25** |
+| R | 12 | **24** | 6 | 4 | 0.33 | **0.167** |
+| N | 24 | **47** | 7 | 3 | 0.12 | **0.064** |
+| F | 24 | **42** | 2 | 3 | 0.12 | **0.071** |
+| W | 24 | **43** | 3 | 7 | 0.29 | **0.163** |
+| A | 24 | **41** | 1 | 5 | 0.21 | **0.122** |
+
+**What it cost:** one stated conclusion. *"`W` does not beat repetition: 0.29 per call against `R`'s
+0.33"* becomes **0.163 against 0.167** — level, not behind. The rest of the ordering survives. The
+witness counts were never wrong; the denominators were.
+
 ## B. Machinery defects that cost runs
 
 | id | defect | whose | cost |
@@ -139,6 +159,14 @@ undercount and was reported beside a hand reading throughout.
 It pinned a terminal stage (`n!` orderings, not `(n-1)!`), held the artifact kinds fixed, and held
 the wiring fixed for a whole run. The third removed the thing the Blueprint locates creativity in.
 
+### C11. My own hand-verification of W2 was criticised by the machine and may be wrong (**mine**)
+
+`W/s02`'s critic argues the fence rule is determinate under *"holds exactly one object"*, that the
+code obeys it, and that the conjecture misread it. That is a direct criticism of this session's own
+W2 finding, produced by the thing under test, and it has not been adjudicated.
+
+---
+
 ### C12. "Wired" never wired anything: `W`'s critic never saw a reading (**mine**)
 
 Found while building block 2, by reading the run headers rather than the source.
@@ -173,13 +201,35 @@ render constant, so `F`→`W` there is the wiring change alone.
 told apart by a result that moves with both."* I wrote that, and the arm I wrote it about varied two
 settings together and named the effect after a third that was not varying at all.
 
-### C11. My own hand-verification of W2 was criticised by the machine and may be wrong (**mine**)
+### C13. Nine of thirty-nine readings returned no texts, and nothing could see it (**found**)
 
-`W/s02`'s critic argues the fence rule is determinate under *"holds exactly one object"*, that the
-code obeys it, and that the conjecture misread it. That is a direct criticism of this session's own
-W2 finding, produced by the thing under test, and it has not been adjudicated.
+The translator's three texts ride as the kind's **own optional fields**, because nesting them in the
+commitments string needs a second level of escaping (register M13). The format layer read `body` and
+`commitments` and **nothing else**, so a reply carrying `kernel` and `expect` and no pair at all
+passed every check. The executor then called the claim `unrunnable` — which reads as the executor
+refusing something, not as an empty reply.
 
----
+It is **9 of 39** across block 1, and not evenly spread:
+
+| arm | readings carrying the texts | readings that dropped them |
+|---|---|---|
+| S | 1 | 0 |
+| R | 4 | **2** |
+| N | 4 | **4** |
+| F | 6 | **2** |
+| W | **8** | **0** |
+| A | 7 | **1** |
+
+The reading stage is byte-identical in every arm — same kind, same instruction, same port. So this
+is draw variance in one stage, and it lands directly on the headline measure: a textless reading
+yields nothing. Witnesses per reading that carried its texts: `R` 4/4, `W` 7/8, `A` 5/7, `N` 3/4,
+`F` 3/6. **The gap between `W` and `N` largely closes.**
+
+**What it cost:** an uncontrolled source of every arm difference in the block, running under the one
+positive result. Repaired in the machine rather than the prompt: `format.fields` declares a shape for
+a kind's own fields, a missing one is a refusal with the shape rendered rather than a skip, and
+**ALM-TRANSLATOR-DROPPED-THE-TEXTS** names the mode in a finished segment. The first live segment of
+block 2 hit it, the alarm stopped the arm after four calls, and that is how it was found.
 
 ## The pattern
 
@@ -191,6 +241,11 @@ rather than about the loop.
 The one thing that survived every repair, unchanged, is the conjecture step. It found real kernel
 boundaries under every configuration, including the cheapest, and the machinery kept failing to
 execute, see, or count them.
+
+A5, C12 and C13 were added after the rest, while building and first running the block that was meant
+to settle the question. C12 was found by reading the run headers, A5 by counting what a segment
+actually sends, and C13 by an alarm firing on the first live segment — which is the only one of the
+twenty-odd items here that a machine caught rather than a person.
 
 C12 was added after the rest, while building the block that was meant to settle the question. It is
 the only item here that withdraws the *mechanism* of a positive result rather than a null, and it

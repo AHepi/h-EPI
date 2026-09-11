@@ -90,11 +90,19 @@ class ArmDifferenceTests(unittest.TestCase):
                 self.assertEqual(kind["failure_policy"], BLOCK.FAILURE_POLICY, f"{name}.{kind['kind_id']}")
             self.assertIsNone(BLOCK.FAILURE_POLICY["tolerance"], "an arm could die younger for being asked more")
 
-    def test_only_arm_A_declares_a_format_and_it_keeps_the_escape_road(self) -> None:
+    def test_the_reading_declares_a_shape_for_its_own_three_texts_on_every_arm(self) -> None:
+        """Nine of thirty-nine block 1 readings returned no texts and were counted as answers."""
+
         for name, manifest in self.arm.items():
-            formats = [k for k in manifest["kinds"] if k.get("format")]
-            self.assertEqual([k["kind_id"] for k in formats],
-                             [BLOCK.CRITICISM] if name == "A" else [], name)
+            reading = _kind(manifest, BLOCK.READING)
+            self.assertEqual(sorted(reading["format"]["fields"]), ["input", "rewrite", "rewritten"], name)
+            self.assertEqual(sorted(reading["optional_fields"]), ["input", "rewrite", "rewritten"], name)
+
+    def test_only_arm_A_declares_a_format_on_a_criticism_and_it_keeps_the_escape_road(self) -> None:
+        for name, manifest in self.arm.items():
+            formats = [k["kind_id"] for k in manifest["kinds"]
+                       if k.get("format") and k["kind_id"] != BLOCK.READING]
+            self.assertEqual(formats, [BLOCK.CRITICISM] if name == "A" else [], name)
         pattern = BLOCK.CRITICISM_SCHEMA["schema"]["properties"]["ground"]["pattern"]
         self.assertIn("cannot-tell", pattern)
         self.assertIn("test-is-unsound", pattern)

@@ -216,7 +216,13 @@ class Submission:
     recovered: tuple[str, ...] = ()
 
     def as_fields(self) -> dict[str, Any]:
-        return {"body": self.body, "commitments": self.commitments}
+        """The submission as the format layer reads it: the two template fields and the kind's own.
+
+        A kind's optional fields belong here because they are fields of the reply and a kind may
+        declare a shape for them; leaving them out is what made an omitted field unnoticeable.
+        """
+
+        return {"body": self.body, "commitments": self.commitments, **dict(self.extra)}
 
     def joined(self, other: "Submission") -> "Submission":
         """Join a body call's reply to its commitments call's reply."""

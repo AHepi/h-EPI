@@ -75,9 +75,22 @@ class CompiledCheck:
 
 @dataclass(frozen=True)
 class CompiledFormat:
-    """The compiled format of one artifact kind, per field."""
+    """The compiled format of one artifact kind, per field.
+
+    ``extra_fields`` are the kind's own optional fields that carry a declared shape. They exist
+    because a kind may hold its long texts as fields of its own rather than nested inside the
+    commitments string (register M13), and until they could be checked nothing could tell a seat
+    that omitted them from a seat that wrote them: nine of thirty-nine readings in
+    CREATIVITY-ARMS-1 silently returned no texts at all, and every one of those segments produced
+    nothing while the record called the claim ``unrunnable``.
+    """
 
     checks: dict[str, tuple[CompiledCheck, ...]]
+    extra_fields: tuple[str, ...] = ()
+
+    @property
+    def fields(self) -> tuple[str, ...]:
+        return FORMAT_FIELDS + self.extra_fields
 
     @property
     def freeform(self) -> bool:
@@ -87,7 +100,7 @@ class CompiledFormat:
         """The compiled format in full, one entry per field and check."""
 
         return tuple(
-            f"`{field}` {item.rendered}" for field in FORMAT_FIELDS for item in self.checks.get(field, ())
+            f"`{field}` {item.rendered}" for field in self.fields for item in self.checks.get(field, ())
         )
 
     def describe_field(self, field: str) -> tuple[str, ...]:
@@ -118,14 +131,22 @@ class CompiledFormat:
         return tuple(found)
 
     def failures(self, submission: dict[str, Any], fields: tuple[str, ...] = FORMAT_FIELDS) -> tuple[str, ...]:
-        """Return one reason per failing check; empty means the format held."""
+        """Return one reason per failing check; empty means the format held.
+
+        A field with a declared shape that the reply did not carry at all is a failure and not a
+        skip. Skipping it is what let a translator return no texts and be counted as having
+        answered.
+        """
 
         reasons: list[str] = []
         for field in fields:
             value = submission.get(field)
+            declared = self.checks.get(field, ())
             if type(value) is not str:
+                if declared:
+                    reasons.append(f"{field}: it is missing; this artifact must carry it as a string of the reply")
                 continue
-            for item in self.checks.get(field, ()):
+            for item in declared:
                 reason = item.run(value)
                 if reason is not None:
                     reasons.append(f"{field}: {reason}")
@@ -302,8 +323,18 @@ def compile_check(spec: Any, where: str) -> CompiledCheck:
     return _COMPILERS[kind](entry, where)
 
 
-def compile_format_spec(spec: Any, where: str) -> CompiledFormat:
-    """Compile one kind's format specification; ``None`` compiles to freeform."""
+def _field_checks(raw: Any, where: str) -> tuple[CompiledCheck, ...]:
+    block = object_value(raw, where, _INVALID)
+    items = array_value(block.get("all_of"), f"{where}.all_of", _INVALID)
+    return tuple(compile_check(item, f"{where}.all_of[{index}]") for index, item in enumerate(items))
+
+
+def compile_format_spec(spec: Any, where: str, optional_fields: tuple[str, ...] = ()) -> CompiledFormat:
+    """Compile one kind's format specification; ``None`` compiles to freeform.
+
+    ``fields`` declares a shape for the kind's OWN optional fields. A name there that the kind does
+    not declare is refused at compile, before any call, rather than checked against nothing.
+    """
 
     if spec is None:
         return FREEFORM
@@ -311,12 +342,17 @@ def compile_format_spec(spec: Any, where: str) -> CompiledFormat:
     checks: dict[str, tuple[CompiledCheck, ...]] = {}
     for field in FORMAT_FIELDS:
         raw = entry.get(field)
-        if raw is None:
-            checks[field] = ()
-            continue
-        block = object_value(raw, f"{where}.{field}", _INVALID)
-        items = array_value(block.get("all_of"), f"{where}.{field}.all_of", _INVALID)
-        checks[field] = tuple(
-            compile_check(item, f"{where}.{field}.all_of[{index}]") for index, item in enumerate(items)
-        )
-    return CompiledFormat(checks=checks)
+        checks[field] = () if raw is None else _field_checks(raw, f"{where}.{field}")
+    extra: list[str] = []
+    declared = entry.get("fields")
+    if declared is not None:
+        block = object_value(declared, f"{where}.fields", _INVALID)
+        for name in sorted(block):
+            if name not in optional_fields:
+                raise MiniError(
+                    _INVALID,
+                    f"{where}.fields names {name!r}, which the kind does not declare in optional_fields",
+                )
+            checks[name] = _field_checks(block[name], f"{where}.fields.{name}")
+            extra.append(name)
+    return CompiledFormat(checks=checks, extra_fields=tuple(extra))

@@ -534,6 +534,9 @@ def _attempt_submission(
 
     compiled = plan.formats[kind.kind_id]
     checked = FORMAT_FIELDS if phase == PHASE_BOTH else (phase,)
+    # A kind's own optional fields ride on the call that writes the body, so they are checked with
+    # it and not with the commitments call, which never carries them.
+    shaped = checked + (compiled.extra_fields if phase in (PHASE_BOTH, PHASE_BODY) else ())
     policy = kind.failure_policy
     reasons: tuple[str, ...] = ()
     refused_refs: list[str] = []
@@ -592,7 +595,7 @@ def _attempt_submission(
                 body_ref=reply_ref,
             )
             continue
-        reasons = compiled.failures(submission.as_fields(), checked)
+        reasons = compiled.failures(submission.as_fields(), shaped)
         if not reasons:
             # A field whose JSON needed the lenient reading says so on the artifact, beside a
             # fence stripped or a citation recovered from prose (SPEC §17).

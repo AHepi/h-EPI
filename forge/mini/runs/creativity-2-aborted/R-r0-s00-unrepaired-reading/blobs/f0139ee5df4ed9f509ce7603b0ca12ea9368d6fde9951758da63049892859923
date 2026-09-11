@@ -1,0 +1,6 @@
+I am testing `recover_json_object` (open:creib.forge.conformance.records.recover_json_object). Its documented rule says: “The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.” The two replies are:
+
+Reply A is the string "```text\n{\"a\":1}\n```\n{\"a\":2}".
+Reply B is the string "{\"a\":2}".
+
+For Reply A, the rule requires the answer `({"a":1}, ())`, because there is a code fence holding the object `{"a":1}`, and that is the last (only) object inside a code fence. For Reply B, the rule requires `({"a":2}, ())`, because there is no code fence, so the last top-level object is `{"a":2}`. The function, however, gives the same answer for both: `({"a":2}, ())`. It does this because its fence regex only matches fences tagged `json` or `JSON` (or untagged), so the `text`-tagged fence in Reply A is not recognized as a fence; the object inside it is then treated as a top-level object, and the later top-level `{"a":2}` wins. I would be wrong if the function returned `({"a":1}, ())` for Reply A, or if the documented rule were read to exclude non-JSON-tagged fences from “code fence”.

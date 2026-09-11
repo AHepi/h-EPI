@@ -218,7 +218,7 @@ def compile_manifest(path: Path, policy_dir: Path | None = None) -> RunPlan:
                     raise MiniError("MINI_TIER_UNKNOWN", f"{where} draws from the tier {drawn!r}, which nothing declares")
 
     formats = {
-        kind_id: compile_format_spec(kind.format_spec, f"kind {kind_id!r} format")
+        kind_id: compile_format_spec(kind.format_spec, f"kind {kind_id!r} format", kind.optional_fields)
         for kind_id, kind in kinds.items()
     }
 
