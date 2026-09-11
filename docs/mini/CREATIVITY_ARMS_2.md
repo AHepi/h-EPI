@@ -19,6 +19,50 @@ Two other settings moved with it. The doubling is unattributed, and this block d
 recover it: it declares the port on the stage, holds the conjecture's rendering constant across every
 arm, and measures the wiring as a first question.
 
+## Amendments, and one false claim about them
+
+Five changes were made after this document was first committed. Each is listed with what it cost,
+because a pre-registration that is quietly edited is not one.
+
+1. **The source a seat is shown now carries addresses** (ERRATA C14). It showed eight function
+   bodies with no module on any of them, one of which is mini's own wrapper rather than the harness
+   under test, while the instruction asks for a full dotted path. Each body now says which of three
+   it is: nameable, nameable but not runnable on one string with the reason, or not the harness's at
+   all. **Three of the eight cannot carry a runnable claim**; the other five can,
+   `refusal_phrase_in` among them because a binding for its second argument is declared in
+   `openkernels.py`.
+2. **`LOOP_STARVED` is fatal only where a segment had more than one row**, and the driver stops an
+   arm after three consecutive segments that executed nothing. One claim naming a function the
+   harness does not have is the model being wrong, which is a result; stopping an arm on it is the
+   alarm doing the thing alarms exist to stop.
+3. **A transport failure is retried rather than ending an arm.** A half-written root is set aside and
+   the segment run again, up to three times, with a pause of 0, 20 and 90 seconds before each — the
+   local egress proxy restarts on a different port, and three retries spent in three seconds ride out
+   nothing.
+4. **The carried brief keeps the last segment's refutations, not every segment's** (ERRATA C15), and
+   is held to a declared ceiling of 7800 characters, dropping the oldest attempts first, identically
+   on every arm. Only arm `A` produces refutations, so only arm `A`'s brief grew without bound —
+   8075 characters at segment 13 against `W`'s 5530 — and it stopped at segment 14 on the manifest
+   schema's 8192 cap. **"The attacks land" and "the brief is half again as long" were one
+   treatment**, which would have confounded `W` → `A`, the block's own experiment, whichever way it
+   fell.
+5. **The runnable count in amendment 1 was first written as four of eight, and is three.** It was
+   asserted from reading the annotation list rather than from running it.
+
+Nothing in the measures, the arms, the predictions or the manifests changed under any of these.
+
+Thirty-four segments were run before amendment 1 and are **set aside, not counted**, at
+`forge/mini/runs/creativity-2-aborted/round-1/`. Fifteen segments of arm `A` were run before
+amendment 4 and are set aside at `.../round-2/`; regenerating every brief in the block under the
+repaired map leaves `R`, `F` and `W` **byte-identical** (16/16, 16/16, 15/15) and changes `A` from
+segment 2 on, which is why one arm was re-run and not four.
+
+**The false claim.** The commit that made amendments 1 to 3 says in its message *"The
+pre-registration carries the amendment."* It did not. Both edits were written with a text
+replacement anchored on a heading this document does not have, so both silently did nothing and
+nobody looked. This section is the first time any of it was actually recorded, and it is recorded
+here rather than in the commit that claimed it, because published history is not rewritten.
+
 ## What is already known, measured before any model call
 
 `tools/creativity_block2.py enumerate`, at zero model calls, over every function reachable by import

@@ -1,0 +1,38 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+I am testing open:creib.forge.conformance.oracle.recover_json_object. Its documented rule says: "Every top-level balanced object in the text is a candidate, not only the span from the first ``{`` to the last ``}``: reasoning prose before or after the answer frequently contains stray braces, and an object nested inside another is not a candidate of its own. The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." The two reply texts are:
+
+Text 1: {"a": 1} [{"b": 2}]
+Text 2: [{"b": 2}]
+
+For Text 1, the rule requires the answer {"a": 1}, because that is the only top-level object; the object {"b": 2} is nested inside an array and is not a candidate of its own. For Text 2, the rule requires the function to raise RecordError, because there is no top-level object at all. The check, as implemented, returns {"b": 2} for both texts: its top-level scan starts a raw_decode at every '{' without checking whether the brace is inside an array, so it treats the nested object as a candidate and, since it is the last candidate, returns it. Thus the check gives the same answer on a pair the rule requires it to tell apart. I would be wrong if running the function on Text 1 returns {"a": 1} or raises, or if running it on Text 2 raises RecordError, because then the check would not give the same answer on the two texts.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

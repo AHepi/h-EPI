@@ -1,0 +1,23 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply 1 has a tilde code fence containing {\"a\":1} before a top-level {\"a\":2}; Reply 2 has only {\"a\":2}. -> the check answered unrunnable
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply 1 contains a tilde-fenced JSON object; Reply 2 contains no JSON object. -> the check answered unrunnable
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply 1 includes a code fence containing {"a":1} and then a top-level {"a":2}; Reply 2 is only the top-level {"a":2}. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second reply omits the ```python fence and the first JSON object, leaving only the last top-level object. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply 1 includes a fenced JSON object plus a later top-level object; Reply 2 includes only the later top-level object. -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+The conjecture misread the rule. The rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". "Holds one" means the fence body itself is a JSON object, not that it contains one. In Reply 1 the fence body is `prefix {"a":1} suffix`, which is not a JSON object, so no fence holds one; the rule falls to the else branch and scores the last top-level object, `{"a":2}`. The code does exactly that: the fenced pool candidate is the whole fence body, which fails to parse, so it uses the top-level pool and returns `{"a":2}`. Thus rule and code agree; the conjecture's expectation of `{"a":1}` came from misreading "holds one" as "contains one".
+
+Next conjecture should test a reply where a code fence contains exactly one JSON object and a later top-level object exists, e.g. ```json\n{"a":1}\n```\n{"a":2}. The rule says the fenced object should win, and the code should return `{"a":1}`. Avoid repeating the assumption that prose inside a fence still counts as the fence holding an object; also avoid claiming the code fails on a mixed fence body.

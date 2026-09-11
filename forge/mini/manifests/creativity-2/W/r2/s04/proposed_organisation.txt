@@ -1,0 +1,22 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle._plain_quotes on a pair differing by: U+2019 vs U+2018 -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+Conjecture e052d283a55c7b62 did not misread the rule. The rule says: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction.' In the first reply the fence holds two objects, so the last one inside the fence is {'b':2}; the code returns {'c':3} because its fenced pool treats the whole fenced span as one candidate, which fails to parse, and then it falls through to the top-level pool and picks the last top-level object overall, which is outside the fence. So the rule as written and the code part company. The execution confirms: before and after both {'c':3}, unchanged.
+
+A next conjecture should try a pair where the fence contains exactly one object and prose outside contains another, to see whether the code already handles the simple case, or a pair where the fence contains two objects and the last inside is not the last top-level, to isolate the defect. It should avoid repeating the same input with an expectation of 'moves', because the execution shows the function already returns {'c':3} for that input; the defect is that it should return {'b':2}, not that it should move to {'c':3}.
+
+Reading 8e0ccedd5adcfe08 is defective, not the conjecture. It quotes the conjecture's words: 'The first reply has a code fence containing two objects; the rule scores the last object inside the fence, {'b':2}. The second reply has no fence and scores the last top-level object, {'c':3}. The required answers differ.' That prose renders the conjecture. But its commitment 'expect': 'moves' with 'rewritten': {'c':3} does not render the conjecture. The conjecture says recover_json_object returns {'c':3} for both replies; it does not say the function should move to {'c':3}. The reading's expectation is not stated in the prose, and the execution shows unchanged, so the reading is wrong. The defect is in the reading's expectation, not in the conjecture.

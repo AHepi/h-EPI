@@ -1,0 +1,16 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The conjecture misread the rule. The rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". "Holds one" means the fence body itself is a JSON object, not that it contains one. In Reply 1 the fence body is `prefix {"a":1} suffix`, which is not a JSON object, so no fence holds one; the rule falls to the else branch and scores the last top-level object, `{"a":2}`. The code does exactly that: the fenced pool candidate is the whole fence body, which fails to parse, so it uses the top-level pool and returns `{"a":2}`. Thus rule and code agree; the conjecture's expectation of `{"a":1}` came from misreading "holds one" as "contains one".
+
+Next conjecture should test a reply where a code fence contains exactly one JSON object and a later top-level object exists, e.g. ```json\n{"a":1}\n```\n{"a":2}. The rule says the fenced object should win, and the code should return `{"a":1}`. Avoid repeating the assumption that prose inside a fence still counts as the fence holding an object; also avoid claiming the code fails on a mixed fence body.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

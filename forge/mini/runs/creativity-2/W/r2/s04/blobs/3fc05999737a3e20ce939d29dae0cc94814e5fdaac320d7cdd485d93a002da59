@@ -1,0 +1,20 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The conjecture is correct that the rule and the code part company. The rule says 'The first refusal phrase the text contains, typographic quotes read as straight ones, or None.' That means first in the order the phrases occur in the text. The code instead loops over the refusal phrase list and returns the first list item that appears anywhere: 'for phrase in refusal_phrases: if _plain_quotes(phrase).lower() in lowered: return phrase'. With 'I cannot' earlier in the list than 'I'm sorry', both texts return 'I cannot'. So the conjecture did not misread the rule; the code does not implement the rule as written.
+
+The reading cf2431bfd7abbd31 is defective. It says 'No uncertainty; the conjecture is clear' but then sets 'expect': 'moves'. The conjecture predicts the check returns 'I cannot' for both texts, i.e. no move; the observation that would falsify it is different answers, which is what 'moves' names. The reading has mistaken the falsifying observation for the prediction. It also invents a rewrite ('The second text places 'I cannot' before 'I'm sorry', reversing the order of the two refusal phrases.') that the conjecture never stated; the conjecture simply gives two reply texts. The kernel name is correct, but the expectation is not stated by the prose and contradicts it. So the reading is wrong, not the conjecture.
+
+A next conjecture should try: keep the same two texts and the same kernel, but expect the output to be the first phrase in text order for each text, and record the actual outputs to show the code returns list-order instead. Avoid repeating: do not set 'expect': 'moves' as if that were the conjecture's prediction, and do not invent a rewrite operation the conjecture did not propose.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

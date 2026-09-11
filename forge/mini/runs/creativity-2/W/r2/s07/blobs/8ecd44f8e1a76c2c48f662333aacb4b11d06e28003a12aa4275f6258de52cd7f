@@ -1,0 +1,20 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The conjecture did not misread the rule. The rule says "The first refusal phrase the text contains", which means earliest occurrence in the text. The code loops over REFUSAL_PHRASES in list order and returns the first list item found anywhere, so for Text A it returns "I cannot" even though "I am unable" occurs earlier in the text. Thus the rule as written and the code part company; the conjecture correctly identifies this.
+
+The reading 26ddcc6d71fe9c2b is defective. It claims to render the conjecture's expectation as "moves" and supplies a rewrite "I cannot do that.", but the conjecture never says the kernel moves or rewrites anything. The conjecture says the check "gives the same answer for two texts" and states what would make it wrong: "if running the check on Text A returns 'I am unable' rather than 'I cannot', or if the two texts produce different answers from the check." That is an expectation of unchanged output, not a move. The reading is wrong, not the conjecture; the invented "moves" expectation is not in the prose.
+
+A next conjecture should try a single input where the earliest refusal phrase is not first in REFUSAL_PHRASES, e.g. "I am unable to help. I cannot do that.", and assert the kernel returns "I am unable". It should avoid repeating the two-text comparison and the "moves" rewrite expectation, because the kernel returns a phrase or None, not a rewritten text.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

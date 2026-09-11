@@ -1,0 +1,20 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The conjecture does not misread the rule; the rule as written and the code part company. The rule says: 'The first refusal phrase the text contains, typographic quotes read as straight ones, or None.' That means first in the text, not first in REFUSAL_PHRASES. The code loops over REFUSAL_PHRASES in list order and returns the first list item that is a substring, so for Text A it returns 'I cannot' even though 'I'm sorry' occurs first in the text. The machine returned before and after both "'I cannot'", confirming the check gives the same answer on a pair the rule requires to tell apart. So the conjecture is correct.
+
+A next conjecture should try a pair where the first-in-text phrase is not first in the list, but with a different phrase order, and should state the expected outputs for each text explicitly; it should avoid repeating the reading's 'moves' shorthand, which does not render the conjecture's stated expectation.
+
+Reading 750597dd58b61e0d claims to render the conjecture's expectation as 'moves'. The conjecture's words are: 'The rule requires Text A to answer "I'm sorry" because the typographic apostrophe in "I’m" is read as the straight one in "I'm sorry", and that phrase occurs before "I cannot" in the text. The rule requires Text B to answer "I cannot" because that phrase occurs first in the text.' And: 'I would be wrong if the check returned different answers for the two texts, or if the documented rule did not require "I'm sorry" for Text A and "I cannot" for Text B.' The reading does not render these; it reduces the expectation to 'moves', which the prose did not state. The prose states specific outputs and a falsification condition, not a single 'moves' expectation. So the reading is defective, not the conjecture. How to tell them apart: the conjecture explicitly names the expected outputs and says the check should return different answers; the reading's 'moves' is an artifact of the translator, not in the prose.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

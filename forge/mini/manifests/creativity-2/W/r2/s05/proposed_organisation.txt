@@ -1,0 +1,23 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle._plain_quotes on a pair differing by: U+2019 vs U+2018 -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: The second text places 'I cannot' before 'I'm sorry', reversing the order of the two refusal phrases. -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+The conjecture is correct that the rule and the code part company. The rule says 'The first refusal phrase the text contains, typographic quotes read as straight ones, or None.' That means first in the order the phrases occur in the text. The code instead loops over the refusal phrase list and returns the first list item that appears anywhere: 'for phrase in refusal_phrases: if _plain_quotes(phrase).lower() in lowered: return phrase'. With 'I cannot' earlier in the list than 'I'm sorry', both texts return 'I cannot'. So the conjecture did not misread the rule; the code does not implement the rule as written.
+
+The reading cf2431bfd7abbd31 is defective. It says 'No uncertainty; the conjecture is clear' but then sets 'expect': 'moves'. The conjecture predicts the check returns 'I cannot' for both texts, i.e. no move; the observation that would falsify it is different answers, which is what 'moves' names. The reading has mistaken the falsifying observation for the prediction. It also invents a rewrite ('The second text places 'I cannot' before 'I'm sorry', reversing the order of the two refusal phrases.') that the conjecture never stated; the conjecture simply gives two reply texts. The kernel name is correct, but the expectation is not stated by the prose and contradicts it. So the reading is wrong, not the conjecture.
+
+A next conjecture should try: keep the same two texts and the same kernel, but expect the output to be the first phrase in text order for each text, and record the actual outputs to show the code returns list-order instead. Avoid repeating: do not set 'expect': 'moves' as if that were the conjecture's prediction, and do not invent a rewrite operation the conjecture did not propose.

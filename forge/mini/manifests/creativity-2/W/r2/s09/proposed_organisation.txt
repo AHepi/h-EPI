@@ -1,0 +1,25 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle._plain_quotes on a pair differing by: U+2019 vs U+2018 -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: The second text places 'I cannot' before 'I'm sorry', reversing the order of the two refusal phrases. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: The rewritten text removes the first sentence 'I am unable to help. ' from the input. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: The rewritten text is the first refusal phrase extracted from the input text. -> the check answered moved
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+Conjecture fa77b4ba128bd69f vs source 3145b9e536590f37: the conjecture did not misread the rule; it read 'The first refusal phrase the text contains' as first occurrence in the text. The code parts company with that rule. `refusal_phrase_in` iterates `refusal_phrases` in list order and returns the first list item found in the lowered text. `REFUSAL_PHRASES` begins `['I cannot', "I can't", "I'm sorry", 'I am unable', ...]`, so for input 'I am unable to help. I cannot do that.' the function returns 'I cannot', not 'I am unable'. The conjecture's prediction is therefore false, and its stated wrongness condition ('if it returns 'I cannot'') is exactly what the code does. A next conjecture should assert the list-order behavior: for that input, expect 'I cannot', or use an input where the first text occurrence is also first in `REFUSAL_PHRASES` to avoid the ambiguity. It should avoid repeating the assumption that 'first' means first occurrence in text, and avoid the specific input expecting 'I am unable'.
+
+Reading 36729f10f1c742e2 does not render the conjecture. The conjecture says 'returns 'I am unable''; the reading instead records `expect: "moves"` and invents a `rewrite` field ('The rewritten text is the first refusal phrase extracted from the input text.') that the prose never stated. The reading also adds an uncertainty note not in the conjecture. The defect is in the reading, not the conjecture: the prose named the function and stated a return value, while the reading replaced the return expectation with a move expectation and added a rewrite instruction.

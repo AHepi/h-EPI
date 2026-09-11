@@ -1,0 +1,20 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The conjecture does not misread the rule; the code parts company with the rule as written. The rule says "The first refusal phrase the text contains, typographic quotes read as straight ones, or None." That means the phrase whose occurrence is earliest in the text, not the first item in REFUSAL_PHRASES that happens to occur. The implementation loops over REFUSAL_PHRASES in list order and returns the first list item found anywhere, so for Text A it returns 'I cannot' even though 'I am unable' occurs first in the text. The execution confirms this: before and after are both 'I cannot', as_expected false.
+
+The reading 87d35cd2914af39a is defective. It claims to render the conjecture but sets 'expect': 'moves' for the rewrite from Text A to Text B. The conjecture's prose says the check "returns the same answer for two texts" and "gives the same answer for both, collapsing the difference." A reading that expects the output to move is encoding the falsifying observation, not the conjecture's claim. The defect is in the reading, not the conjecture: the prose explicitly states sameness, while the reading expects difference.
+
+A next conjecture should try: assert that open:creib.forge.conformance.oracle.refusal_phrase_in returns 'I cannot' for both 'I am unable to help. I cannot do that.' and 'I cannot do that.', with a reading that expects 'unchanged' for the rewrite, or better, checks the two inputs separately with expected outputs 'I cannot' and 'I cannot'. It should avoid repeating the reading's 'moves' expectation, and avoid any reading that turns the conjecture's falsifying observation into the expected outcome.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

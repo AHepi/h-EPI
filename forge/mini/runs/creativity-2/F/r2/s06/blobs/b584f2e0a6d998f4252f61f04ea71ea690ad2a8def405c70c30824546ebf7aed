@@ -1,0 +1,42 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+The three texts are fields of the REPLY, beside "body" and "commitments", not inside the commitments string. A reply that omits any of them is refused and you are asked again. In full, a well formed reply looks exactly like this:
+
+{"body": "<what you were unsure of, in prose>",
+ "commitments": "{\"kernel\": \"<the full dotted path>\", \"expect\": \"moves\"}",
+ "input": "<the first reply text, in full>",
+ "rewritten": "<the second reply text, in full>",
+ "rewrite": "<how the two differ>"}
+
+## The conjecture, as written (conj)
+[1f7177f418983769] (mini.conjecture.v1)
+Conjecture: The function open:creib.forge.conformance.oracle.recover_json_object, whose documented rule states 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction,' fails to tell apart the following two replies. Reply 1 is:
+```json
+prefix {"a":1} suffix
+```
+{"a":2}
+Reply 2 is:
+{"a":2}
+The rule requires Reply 1 to be scored as {"a":1}, because the code fence holds a JSON object ({"a":1}) and that is the last object inside the fence; the rule requires Reply 2 to be scored as {"a":2}. The check, however, returns {"a":2} for both: for Reply 1, the fenced pool candidate is the entire fence body "prefix {\"a\":1} suffix", which fails strict and last-wins parsing, so the function falls through to the top-level pool and returns the later {"a":2}. This observation would make the conjecture false: if recover_json_object on Reply 1 returns {"a":1} (or any answer other than {"a":2}), then the check does tell the pair apart and the conjecture is wrong.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.
+
+## The shape this answer must take
+`input` must contain something matching this expression:
+  \S
+
+`rewrite` must contain something matching this expression:
+  \S
+
+`rewritten` must contain something matching this expression:
+  \S

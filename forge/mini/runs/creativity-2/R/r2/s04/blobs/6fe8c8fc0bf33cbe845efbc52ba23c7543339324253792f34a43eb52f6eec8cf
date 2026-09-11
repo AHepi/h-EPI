@@ -1,0 +1,35 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+The three texts are fields of the REPLY, beside "body" and "commitments", not inside the commitments string. A reply that omits any of them is refused and you are asked again. In full, a well formed reply looks exactly like this:
+
+{"body": "<what you were unsure of, in prose>",
+ "commitments": "{\"kernel\": \"<the full dotted path>\", \"expect\": \"moves\"}",
+ "input": "<the first reply text, in full>",
+ "rewritten": "<the second reply text, in full>",
+ "rewrite": "<how the two differ>"}
+
+## The conjecture, as written (conj)
+[73b4164a6fa085ee] (mini.conjecture.v1)
+I am testing open:creib.forge.conformance.oracle.recover_json_object. The documented rule I am reading is: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". The first reply text is the string consisting of the characters: backtick backtick backtick javascript newline {"a": 1} newline backtick backtick backtick newline {"b": 2}. The second reply text is the string {"b": 2}. The rule requires the first reply to return {"a": 1}, because it contains a code fence holding a JSON object, and that fenced object is the last one inside a code fence. The rule requires the second reply to return {"b": 2}, because it has no code fence, so the last top-level object is {"b": 2}. The check as implemented returns {"b": 2} for both replies: its fence regex only matches ```json, ```JSON, or a bare ```, so the ```javascript fence is not recognized; the fenced candidate includes the language tag and is not a dict, so it is passed over, and the last top-level object {"b": 2} is returned. What would make me wrong is if the implementation were changed to recognize any code fence and extract the JSON object inside it, so that the first reply returned {"a": 1}; or if the documented rule were read to cover only json or empty fences, in which case the first reply would have no recognized fence and the rule would require {"b": 2} for both, removing the discrepancy.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.
+
+## The shape this answer must take
+`input` must contain something matching this expression:
+  \S
+
+`rewrite` must contain something matching this expression:
+  \S
+
+`rewritten` must contain something matching this expression:
+  \S

@@ -1,0 +1,29 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle._plain_quotes on a pair differing by: U+2019 vs U+2018 -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: The second text places 'I cannot' before 'I'm sorry', reversing the order of the two refusal phrases. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: The rewritten text removes the first sentence 'I am unable to help. ' from the input. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: The rewritten text is the first refusal phrase extracted from the input text. -> the check answered moved
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: The order of the two refusal phrases is swapped: Text A has 'I am unable' before 'I cannot'; Text B has 'I cannot' befor -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+The conjecture did not misread the rule; the rule as written and the code part company. The rule says: 'The first refusal phrase the text contains, typographic quotes read as straight ones, or None.' That wording makes 'first' a property of the text: the earliest refusal phrase in the text. The code, however, iterates `refusal_phrases` in list order and returns the first list item that is a substring: `for phrase in refusal_phrases: if _plain_quotes(phrase).lower() in lowered: return phrase`. So for Text A, 'I am unable' occurs first in the text, but 'I cannot' is earlier in the list, and the machine returned 'I cannot' for both texts, confirming the code parts company with the rule as written.
+
+The reading 07112c630f5c1c40 is defective. It commits `expect: moves`, but the conjecture's prose says 'the check returns 'I cannot' for both' and 'any output other than 'I cannot' for either text' would show the conjecture false. The reading's expectation of moves is not stated by the conjecture; it is a defect in the reading, not in the conjecture. The reading also says 'No uncertainty', but the conjecture is precisely about a discrepancy between the rule and the check.
+
+A next conjecture should try a direct assertion of the implementation's list-order behavior: for input 'I am unable to help. I cannot do that.', the function returns 'I cannot' (the first list item found), not 'I am unable' (the first text occurrence). It should avoid repeating the reading's 'moves' expectation and avoid reusing the ambiguous phrase 'first occurrence in the text' without checking the code.

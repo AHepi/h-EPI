@@ -1,0 +1,30 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A has a fenced block containing two JSON objects followed by a third object outside the fence; Reply B has three t -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A includes a fenced span with two objects and a trailing top-level object; Reply B is only the trailing top-level  -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A wraps the first object in a four-backtick code fence; Reply B has no fence. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A wraps the first object in a tilde code fence; Reply B has no fence, so the last top-level object differs. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply B replaces the tilde-fenced {"a":1} with a backtick-fenced {"b":2} and drops the trailing top-level {"b":2}. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply B removes the fenced block and keeps only the trailing top-level object. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A has a ```jsonc fence holding {"a":1} before the final top-level object {"b":2}; Reply B is only {"b":2}. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: A has a tilde code fence containing an object before the final object; B has only the final object. -> the check answered unrunnable
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: A adds a tilde-fenced object after the backtick-fenced object; B has only the backtick-fenced object. -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## What has been refuted, computed from the attacks that landed
+
+- b59bca7dc43fba3a was refuted on the ground reading-misrenders-conjecture: The reading asserts 'moves' unconditionally, dropping the conjecture's explicit condition that it would be wrong if tilde fences are excluded from 'code fence'.
+
+A refuted conjecture is not merely criticised: an attack on it landed and nothing has yet overturned that attack. Do not re-propose one.
+
+## The standing criticism of the last attempt
+
+The reading b59bca7dc43fba3a commits to 'moves' while the conjecture explicitly conditions that expectation: 'I would be wrong if ... or if the documented rule is read as excluding tilde fences from "code fence".' The reading itself says it is unsure whether 'code fence' includes tilde fences, so it should not assert moves unconditionally. The execution returned unchanged, confirming the reading's expectation is false. The rule's words are 'code fence'; the code's regex only backtick fences, so the rule and code may diverge, but the reading's defect is dropping the conjecture's conditionality. A next conjecture should test whether the rule's 'code fence' includes tilde fences by inspecting the regex or asking for a definition, and avoid assuming tilde is a code fence without evidence.

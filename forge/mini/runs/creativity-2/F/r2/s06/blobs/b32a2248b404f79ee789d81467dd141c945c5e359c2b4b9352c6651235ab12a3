@@ -1,0 +1,40 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Conjecture: The function open:creib.forge.conformance.oracle.recover_json_object, whose documented rule states 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction,' fails to tell apart the following two replies. Reply 1 is:
+```json
+prefix {"a":1} suffix
+```
+{"a":2}
+Reply 2 is:
+{"a":2}
+The rule requires Reply 1 to be scored as {"a":1}, because the code fence holds a JSON object ({"a":1}) and that is the last object inside the fence; the rule requires Reply 2 to be scored as {"a":2}. The check, however, returns {"a":2} for both: for Reply 1, the fenced pool candidate is the entire fence body "prefix {\"a\":1} suffix", which fails strict and last-wins parsing, so the function falls through to the top-level pool and returns the later {"a":2}. This observation would make the conjecture false: if recover_json_object on Reply 1 returns {"a":1} (or any answer other than {"a":2}), then the check does tell the pair apart and the conjecture is wrong.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

@@ -1,0 +1,9 @@
+The function under test is open:creib.forge.conformance.oracle.recover_json_object. Its documented rule states: “The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction.”
+
+Reply 1 is the string '```text\n{"a":1}\n```\n{"a":2}'. Reply 2 is the string '{"a":2}'.
+
+For Reply 1, the rule requires the answer {"a":1}, because the text contains a code fence (the ```text fence) holding an object, and that fenced object is the last one inside any fence. For Reply 2, the rule requires the answer {"a":2}, because there is no fenced object, so the last top-level object in the text is {"a":2}.
+
+The conjecture is that the check will return the same answer for both replies, namely {"a":2}. The implementation’s fence regex only matches unlabeled or json/JSON fences, so it will not treat the ```text fence as a fence. Its fenced pool will be empty for Reply 1, and it will fall through to the top-level pool, where the last top-level object is {"a":2}. Reply 2 also yields {"a":2} from the top-level pool. Thus the check collapses the difference that the documented rule requires.
+
+What would make me wrong is the observation that the check returns different answers for the two replies—for example, if it returns {"a":1} for Reply 1 and {"a":2} for Reply 2, or if it returns any answer for Reply 1 other than {"a":2} while returning {"a":2} for Reply 2. That would show the check does distinguish the pair as the rule requires.

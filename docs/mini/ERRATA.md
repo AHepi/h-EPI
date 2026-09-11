@@ -246,10 +246,19 @@ until it hit the one body relocation cannot save. Arm `A` then named `_grounding
 segments running and the arm stopped.
 
 Worse, the annotation makes a second thing visible that nothing said before: of the eight bodies
-shown, **four cannot carry a runnable claim at all** — `parse_content` takes two required arguments,
-`_span_occurs` takes three, `_grounding_kernel` is not the harness's, and a kernel is one string.
-That is CON-ARITY-HIDES-FINDS as a number rather than a worry: half of what the seat is shown is
-unusable and nothing told it so.
+shown, **three cannot carry a runnable claim at all** — `parse_content` takes two required
+arguments, `_span_occurs` takes three, `_grounding_kernel` is not the harness's, and a kernel is one
+string. The other five are nameable and runnable, `refusal_phrase_in` among them because
+`SECOND_ARGUMENT` in `openkernels.py` binds its second argument. That is CON-ARITY-HIDES-FINDS as a
+number rather than a worry: three of eight of what the seat is shown is unusable and nothing told it
+so.
+
+*(Corrected 11 September, after the count was checked by running it. The first version of this
+entry, and the commit message that carries it, say "four cannot carry a runnable claim" and "half of
+what the seat is shown is unusable". Both are wrong: it is three of eight, not four. The claim was
+asserted from reading the list rather than from running it, which is the rule this repository has
+about counting — **"Count it, don't claim it"** — broken on the entry that exists because somebody
+did not check what the seat could reach.)*
 
 **What it cost:** thirty-four segments of a repeat, set aside at
 `forge/mini/runs/creativity-2-aborted/round-1/` rather than counted. **Found by the streak guard
@@ -292,6 +301,27 @@ repaired map leaves `R`, `F` and `W` **byte-identical** — 16/16, 16/16, 15/15 
 segment 2 on, so the other arms' records are still the block's. That check is the reason only one
 arm was re-run rather than all four.
 
+### C16. Two edits to the pre-registration silently did nothing, and a commit said otherwise (**mine**)
+
+Amendments 1 to 3 of `docs/mini/CREATIVITY_ARMS_2.md` were written with a text replacement anchored
+on the heading `## What is being asked`. That document has no such heading. Both replacements
+returned the unchanged text, neither raised anything, and the commit that carried them says in its
+message: *"The pre-registration carries the amendment."* It did not, for two days of work, and the
+fourth amendment — written the same way, anchored on the third — did not either.
+
+**What it cost:** nothing to the records, which are unaffected, and everything to the thing a
+pre-registration is for. A block whose amendments exist only in a commit message is a block whose
+plan cannot be checked against what ran.
+
+**Repaired:** the amendments are now written into the document, with what each cost and what was set
+aside because of it. The commit message that claimed it stays as it is, because published history is
+not rewritten, and the correction says so instead.
+
+**The rule this broke.** Every other `.replace` in this session's tooling carries an `assert … in s`
+before it. These two did not, because they were typed into a shell heredoc rather than a file, and a
+one-off felt like it did not need one. A silent no-op is the one failure a text replacement has, and
+it is the reason the check exists.
+
 ## The pattern
 
 Of the twenty-odd items above, **three** are about the model. All the rest are about the apparatus:
@@ -303,7 +333,7 @@ The one thing that survived every repair, unchanged, is the conjecture step. It 
 boundaries under every configuration, including the cheapest, and the machinery kept failing to
 execute, see, or count them.
 
-A5 and C12 to C15 were added after the rest, while building and first running the block that was meant
+A5 and C12 to C16 were added after the rest, while building and first running the block that was meant
 to settle the question. C12 was found by reading the run headers, A5 by counting what a segment
 actually sends, and C13 and C14 by alarms firing on live segments — the only items here that a
 machine caught rather than a person, and C14 was additionally diagnosed, correctly and in prose, by

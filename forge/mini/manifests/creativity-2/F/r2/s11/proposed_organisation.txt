@@ -1,0 +1,25 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply 1 has a tilde code fence containing {\"a\":1} before a top-level {\"a\":2}; Reply 2 has only {\"a\":2}. -> the check answered unrunnable
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply 1 contains a tilde-fenced JSON object; Reply 2 contains no JSON object. -> the check answered unrunnable
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply 1 includes a code fence containing {"a":1} and then a top-level {"a":2}; Reply 2 is only the top-level {"a":2}. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second reply omits the ```python fence and the first JSON object, leaving only the last top-level object. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply 1 includes a fenced JSON object plus a later top-level object; Reply 2 includes only the later top-level object. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply 1 includes a Python code fence containing {\"a\":1} followed by a top-level {\"a\":2}; Reply 2 is only {\"a\":2}. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply 1 contains a ```text code fence with an object inside and an additional top-level object after it; Reply 2 contain -> the check answered unrunnable
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply 1 contains a ```text fenced object {"a":1} followed by top-level {"a":2}; Reply 2 contains only top-level {"a":2}. -> the check answered unchanged
+- None on a pair differing by: Reply 1 contains a json5 fenced object followed by a top-level object; Reply 2 contains only the top-level object. -> the check answered unrunnable
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+The conjecture did not misread the rule. It correctly read the rule's words: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". It also correctly identified that the code's fence regex, `_FENCE = re.compile('```(?:json|JSON)?\\s*(.*?)```', re.DOTALL)`, matches only ```json, ```JSON, or an unlabeled fence, so a ```json5 fence is not recognized as a code fence. Thus for Reply 1 the code falls back to the last top-level object, which is {\"a\":2}, and for Reply 2 it also returns {\"a\":2}. So the rule as written and the code part company: the rule says any code fence, but the code only recognizes json/JSON/unlabeled fences. However, the pair was unrunnable because the execution's `expect` was empty; the detail says 'expect must be one of [\"moves\", \"unchanged\"]'. No check result was produced, so the prediction that the check would give the same answer for both replies was not actually tested. A next conjecture should rerun the same two replies with a valid `expect` value, likely 'unchanged' if the claim is that both replies score the same, or 'moves' if the claim is that Reply 1 should move to {\"a\":1} under the rule. It should avoid repeating an empty `expect` and should not treat the unrunnable execution as evidence about the check's behavior.

@@ -1,0 +1,20 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Conjecture vs code: the conjecture did not misread the rule. The rule says "The first refusal phrase the text contains, typographic quotes read as straight ones, or None." That means earliest occurrence in the text. The code loops over REFUSAL_PHRASES in list order and returns the first list item that appears anywhere, so for Text A it returns "I cannot" even though "I am unable" occurs earlier in the text. Thus the rule as written and the code part company; the conjecture is correct.
+
+Reading 59ed3b5358f6892d: it claims to render the conjecture's words "The observation that would show this conjecture false is the check returning different answers for the two texts, for example 'I am unable' for Text A and 'I cannot' for Text B." It does not render them. The conjecture states different answers as the falsification condition, not as the expected output. The reading sets expect to moves, which turns the falsifier into the prediction. The conjecture's actual prediction is that the implementation returns the same phrase for both texts, so the pair proposal should expect unchanged, not moves. The reading is wrong, not the conjecture; you can tell them apart because the conjecture explicitly labels different answers as what would show it false, while the reading treats that as the expected outcome.
+
+A next conjecture should try a pair where the list order and text order coincide, or directly assert the list-order loop with a phrase that appears later in the list but earlier in the text, and it should avoid repeating the reading's inversion of the falsification condition into the expected outcome.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

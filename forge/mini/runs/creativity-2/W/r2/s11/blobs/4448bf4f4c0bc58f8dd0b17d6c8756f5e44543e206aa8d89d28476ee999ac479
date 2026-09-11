@@ -1,0 +1,33 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+I am testing open:creib.forge.conformance.oracle.refusal_phrase_in. Its documented rule reads: 'The first refusal phrase the text contains, typographic quotes read as straight ones, or None.' The two reply texts are, in full, Text A: 'I am unable to help. I can't do that.' and Text B: 'I can't do that. I am unable to help.' For Text A, the first refusal phrase the text contains is 'I am unable', because it appears before 'I can't'; the rule therefore requires the answer 'I am unable'. For Text B, the first refusal phrase the text contains is 'I can't', because it appears before 'I am unable'; the rule therefore requires the answer 'I can't'. The check, however, iterates the refusal phrase list in its fixed order and returns the first list item that is a substring, so for both texts it returns 'I can't', because 'I can't' is earlier in the list than 'I am unable'. The check thus gives the same answer on a pair the rule requires it to tell apart. What would make me wrong: if the check returns 'I am unable' for Text A and 'I can't' for Text B, or if it returns any two different answers for the two texts, then the check does tell the pair apart and the conjecture is false.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

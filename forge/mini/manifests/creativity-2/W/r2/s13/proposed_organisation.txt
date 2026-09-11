@@ -1,0 +1,31 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle._plain_quotes on a pair differing by: U+2019 vs U+2018 -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: The second text places 'I cannot' before 'I'm sorry', reversing the order of the two refusal phrases. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: The rewritten text removes the first sentence 'I am unable to help. ' from the input. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: The rewritten text is the first refusal phrase extracted from the input text. -> the check answered moved
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: The order of the two refusal phrases is swapped: Text A has 'I am unable' before 'I cannot'; Text B has 'I cannot' befor -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: The order of the two refusal phrases is swapped: Text A has 'I am unable' before 'I can't', Text B has 'I can't' before  -> the check answered unchanged
+- open:creib.forge.conformance.oracle.refusal_phrase_in on a pair differing by: Text B moves 'I cannot' before 'I’m sorry' and removes 'but'. -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+The conjecture does not misread the rule; the rule as written and the code part company. The rule says: 'The first refusal phrase the text contains, typographic quotes read as straight ones, or None.' That means first in the text, not first in REFUSAL_PHRASES. The code loops over REFUSAL_PHRASES in list order and returns the first list item that is a substring, so for Text A it returns 'I cannot' even though 'I'm sorry' occurs first in the text. The machine returned before and after both "'I cannot'", confirming the check gives the same answer on a pair the rule requires to tell apart. So the conjecture is correct.
+
+A next conjecture should try a pair where the first-in-text phrase is not first in the list, but with a different phrase order, and should state the expected outputs for each text explicitly; it should avoid repeating the reading's 'moves' shorthand, which does not render the conjecture's stated expectation.
+
+Reading 750597dd58b61e0d claims to render the conjecture's expectation as 'moves'. The conjecture's words are: 'The rule requires Text A to answer "I'm sorry" because the typographic apostrophe in "I’m" is read as the straight one in "I'm sorry", and that phrase occurs before "I cannot" in the text. The rule requires Text B to answer "I cannot" because that phrase occurs first in the text.' And: 'I would be wrong if the check returned different answers for the two texts, or if the documented rule did not require "I'm sorry" for Text A and "I cannot" for Text B.' The reading does not render these; it reduces the expectation to 'moves', which the prose did not state. The prose states specific outputs and a falsification condition, not a single 'moves' expectation. So the reading is defective, not the conjecture. How to tell them apart: the conjecture explicitly names the expected outputs and says the check should return different answers; the reading's 'moves' is an artifact of the translator, not in the prose.

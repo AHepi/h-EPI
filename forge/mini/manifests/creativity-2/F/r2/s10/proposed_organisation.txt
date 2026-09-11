@@ -1,0 +1,24 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply 1 has a tilde code fence containing {\"a\":1} before a top-level {\"a\":2}; Reply 2 has only {\"a\":2}. -> the check answered unrunnable
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply 1 contains a tilde-fenced JSON object; Reply 2 contains no JSON object. -> the check answered unrunnable
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply 1 includes a code fence containing {"a":1} and then a top-level {"a":2}; Reply 2 is only the top-level {"a":2}. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second reply omits the ```python fence and the first JSON object, leaving only the last top-level object. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply 1 includes a fenced JSON object plus a later top-level object; Reply 2 includes only the later top-level object. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply 1 includes a Python code fence containing {\"a\":1} followed by a top-level {\"a\":2}; Reply 2 is only {\"a\":2}. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply 1 contains a ```text code fence with an object inside and an additional top-level object after it; Reply 2 contain -> the check answered unrunnable
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply 1 contains a ```text fenced object {"a":1} followed by top-level {"a":2}; Reply 2 contains only top-level {"a":2}. -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+The conjecture did not misread the rule; it correctly identified that the code's fence regex matches only unlabeled or json/JSON fences and ignores the ```text fence. However, the rule as written says "any fence" and "code fence" without restricting the label, so the rule and the code part company. The machine returned {'a': 2} for Reply 1, confirming that the code ignores the ```text fence and scores the last top-level object. A next conjecture should test whether a ```text fence is treated as a code fence by the rule, perhaps by checking if a ```text fenced object is recovered when it is the only object, or by comparing with a ```json fence. It should avoid repeating the assumption that all triple-backtick fences are collected, avoid conflating "code fence" with "json fence", and avoid predicting the same answer without checking fence label handling. The rule's words are: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text".

@@ -1,0 +1,20 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Conjecture e915d9cbd5fdcf37 does not misread the rule; the rule as written and the code part company. The rule says: "The first refusal phrase the text contains, typographic quotes read as straight ones, or None." The code in open:creib.forge.conformance.oracle.refusal_phrase_in loops over refusal_phrases in list order and returns the first list item that is a substring, not the first phrase in the text. For Text A, the first phrase in the text is "I am unable", but the code returns "I can't" because "I can't" appears earlier in REFUSAL_PHRASES. For Text B, the first phrase in the text is "I can't", and the code returns "I can't". The machine returned unchanged before/after "\"I can't\"", which matches the conjecture's prediction of the same answer for both texts. The as_expected=false is an artifact of the reading, not the conjecture.
+
+Reading f2774c90eefe07a0 claims to render the conjecture but ends with "so I take the expected outcome as moves." That does not render the conjecture. The conjecture explicitly says "The check thus gives the same answer on a pair the rule requires it to tell apart" and its falsification condition is any two different answers. Therefore the expected outcome is unchanged, not moves. The reading is wrong, not the conjecture; the two can be told apart because the conjecture's own words state the check gives the same answer, while the reading's expectation contradicts that.
+
+A next conjecture should try a different aspect of the same function, such as typographic quote folding (e.g. "I’m sorry" should match "I'm sorry") or case-insensitivity, and should avoid repeating the reading's error of setting expected outcome to moves when the conjecture predicts unchanged. It should also avoid a pair where list order and text order coincide, since that would not expose the bug.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.
