@@ -64,6 +64,9 @@ READING_NEITHER = "expectation and prediction both failed"
 READING_UNREADABLE = "prediction unreadable"
 READINGS: tuple[str, ...] = (READING_ABSENT, READING_AGREE, READING_RULE_DIVERGES, READING_CODE_MISREAD, READING_NEITHER, READING_UNREADABLE)
 CRITICISM_KIND = "mini.criticism.v1"
+#: Every criticism kind shares this prefix, so a seat that resolves attacks reads a run's
+#: criticisms whichever kind produced them.
+CRITICISM_KIND_PREFIX = "mini.criticism."
 VERDICT_KIND = "mini.verdict.v1"
 CATALOGUE_SOURCE = "catalogue"
 
