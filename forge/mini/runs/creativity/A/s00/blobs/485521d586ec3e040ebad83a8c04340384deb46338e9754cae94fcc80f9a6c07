@@ -1,0 +1,4 @@
+I am testing open:creib.forge.conformance.records.recover_json_object. The documented rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." The two reply texts are: Text A: ```python
+{"a": 1}
+```
+{"b": 2} ; Text B: {"b": 2}. For Text A, the rule requires the object inside the code fence, {"a": 1}, because a fence holds one. For Text B, the rule requires the last top-level object, {"b": 2}. The function returns {"b": 2} for both, because its fence regex only matches ```json, ```JSON, or bare ```, so the python fence in Text A is not recognized and the object inside it is treated as a top-level candidate; the last top-level object is {"b": 2}. I would be wrong if recover_json_object returned {"a": 1} for Text A, or if the rule's 'code fence' is interpreted to exclude ```python fences, making Text A's fenced object not count and thus the rule also requires {"b": 2}.

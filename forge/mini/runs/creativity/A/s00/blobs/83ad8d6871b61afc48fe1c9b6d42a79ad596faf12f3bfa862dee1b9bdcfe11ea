@@ -1,0 +1,36 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+I am testing open:creib.forge.conformance.records.recover_json_object. The documented rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." The two reply texts are: Text A: ```python
+{"a": 1}
+```
+{"b": 2} ; Text B: {"b": 2}. For Text A, the rule requires the object inside the code fence, {"a": 1}, because a fence holds one. For Text B, the rule requires the last top-level object, {"b": 2}. The function returns {"b": 2} for both, because its fence regex only matches ```json, ```JSON, or bare ```, so the python fence in Text A is not recognized and the object inside it is treated as a top-level candidate; the last top-level object is {"b": 2}. I would be wrong if recover_json_object returned {"a": 1} for Text A, or if the rule's 'code fence' is interpreted to exclude ```python fences, making Text A's fenced object not count and thus the rule also requires {"b": 2}.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

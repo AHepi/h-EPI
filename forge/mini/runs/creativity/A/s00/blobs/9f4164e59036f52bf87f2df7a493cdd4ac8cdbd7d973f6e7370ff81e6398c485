@@ -1,0 +1,20 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+Your commitments are a STRING holding JSON of the form {"attacks": "<the first 16 characters of the artifact id you are attacking>", "ground": "<one of: reading-misrenders-conjecture, conjecture-misreads-rule, rule-and-code-diverge, cannot-tell>", "why": "<one sentence>"} and nothing else.
+
+The id must be one printed in square brackets beside an artifact you were shown; a name matching nothing resolves to no attack. Use "cannot-tell" when you cannot decide -- it is an honest answer and it mints no attack, which is better than inventing a target.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The conjecture's outcome is right but its mechanism is wrong. The source's fence regex has an optional 'json|JSON' group followed by whitespace and a capture; it does not require the fence tag to be json. For ```python\n{'a': 1}\n```, the optional group is skipped, the whitespace matches zero, and the capture takes 'python\n{'a': 1}\n'. So the fence is recognized, but the captured candidate is not valid JSON, so recover_json_object falls through to the top-level pool and returns the last top-level object, {'b': 2}. The conjecture's claim that the regex 'only matches ```json, ```JSON, or bare ```' is false. The rule and code still diverge for Text A, but for a different reason: the fenced candidate includes the language tag and fails strict JSON parsing, so no fenced object is recovered. The rule's words are: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' A next conjecture should test a bare fence or a ```json fence with valid JSON, and avoid repeating the claim that ```python fences are not recognized by the regex. Separately, the reading in [cff1fef80a810854] says 'expect': 'moves', but the conjecture's prose says the function returns {'b': 2} for both inputs, which is unchanged, not moves; that expectation is not in the prose.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

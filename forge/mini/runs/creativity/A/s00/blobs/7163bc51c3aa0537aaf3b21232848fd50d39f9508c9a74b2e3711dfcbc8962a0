@@ -1,0 +1,7 @@
+I am testing recover_json_object (open:creib.forge.conformance.records.recover_json_object). The documented rule I am reading is: “The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction.”
+
+The first reply text is "```json\n{\"a\":1} {\"b\":2}\n```\n{\"c\":3}". The second reply text is "{\"c\":3}".
+
+For the first reply, the rule requires the answer to be the object {"b":2}, because there is a code fence holding objects, and the last object inside that fence is {"b":2}. For the second reply, the rule requires the answer to be the object {"c":3}, because there is no code fence, so the last top-level object in the text is {"c":3}. The function recover_json_object returns {"c":3} for both replies, so the check gives the same answer where the rule requires different answers.
+
+I would be wrong if recover_json_object returned {"b":2} for the first reply, or if it returned anything other than {"c":3} for the second reply, or if the documented rule were read as allowing the outside object to be scored when the fenced block contains multiple objects.
