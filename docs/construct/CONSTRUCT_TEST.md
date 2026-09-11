@@ -115,3 +115,100 @@ whether a proposal **reaches the operative state and changes what the next actio
 `Deploy` conjunct — on one task, in one finite domain, with the candidate grammar, the reference
 checker, the extension rule and the task all supplied by the experimenter. A more autonomous
 system would construct those itself, and that would need its own evidence and its own charged cost.
+
+---
+
+# Block 1: findings
+
+Six models, two paths, four conditions each, plus two non-model conditions and five controls.
+Records under `forge/construct/runs/block-1/`. Method version 1, pre-registered at `ff45422`
+before any model was called.
+
+## The result
+
+**Five of six models produced a correct, verified guard in the sealed condition, and the controller
+still committed all 34 violations.**
+
+| Model | sealed: correct artifact? | sealed: violations | install: violations |
+|---|---|---|---|
+| deepseek-v4-pro | yes | **34** | **0** |
+| deepseek-flash | yes | **34** | **0** |
+| deepseek-v4-pro:0813 | yes | **34** | **0** |
+| gemma4:31b | yes | **34** | **0** |
+| mistral-large-3:675b | yes | **34** | **0** |
+| qwen3.5:397b | no | 34 | 34 |
+
+Same proposer, same brief, same returned counterexample, same rejections, same verifier, the same
+accepted syntax tree sitting in the record. The two conditions differ in one thing, and that one
+thing is the entire difference between a controller that breaks its contract thirty-four times and
+one that never breaks it.
+
+A transcript containing a correct, verified, well-argued repair is worth exactly nothing to the
+next action. That is not an inference from the Blueprint; it is the measured outcome of running its
+own control on five models.
+
+## The predictions
+
+- **C1 — `evidence-install` ends with fewer violations than `evidence-sealed`. Confirmed** on all
+  five models where it could be tested, 0 against 34 every time. Vacuous on `qwen3.5:397b`, which
+  produced no accepted proposal in either condition, so there was nothing to install or withhold.
+- **C2 — `evidence-sealed` ends at exactly 34. Confirmed on all six.** The number never moved,
+  including on the five that had the answer in hand.
+- **C3 — some model reaches zero in fewer than the baseline's eight proposals. Confirmed, and by a
+  wide margin.** `deepseek-flash`, single-shot: one proposal, 162 completion tokens. Enumeration
+  needs eight. `mistral-large-3:675b` reached it in one proposal once given the counterexample.
+  This is the only prediction here about a model rather than about wiring, and it holds.
+- **C4 — single-shot does no better than `evidence-install`. Refuted, in the direction that
+  matters.** Single-shot failed on four of six models; on three of those four, the same model given
+  the returned counterexample succeeded — `deepseek-v4-pro:0813` and `mistral-large-3:675b` in one
+  proposal, `gemma4:31b` in three. For the two models on the vendor path the task was trivial
+  either way, so evidence added nothing there. The evidence channel is not decoration for models
+  that need it.
+- **C5 — every control holds. Confirmed.** No-return: 34 unchanged sealed, 0 installed.
+  Corrupted evaluator: accepts the constant-false program, and the independent contract check still
+  finds it missing every current result. Identity aliasing: defeats the verified guard at every
+  modulus below the start count, and refuses its own vacuous configuration.
+
+## The counter-case, which is not tidied away
+
+`qwen3.5:397b` is the one model where returned evidence **hurt**. Its `repeated` condition — eight
+asks, nothing returned between them — found the guard at the seventh proposal and reached zero
+violations. Both its evidence conditions exhausted eight proposals and accepted none. Whatever the
+counterexample did for three other models, it moved this one away from the answer. One model, one
+task; recorded because a protocol that reports only its confirmations is not reporting.
+
+## Cost against the baseline
+
+| | proposals to zero violations | completion tokens |
+|---|---|---|
+| enumeration (no model) | 8 | 0 |
+| `deepseek-flash`, single-shot | **1** | 162 |
+| `deepseek-v4-pro:0813`, evidence-install | **1** | 121 |
+| `mistral-large-3:675b`, evidence-install | **1** | 121 |
+| `qwen3.5:397b`, repeated | 7 | 673 |
+
+Three models beat an exhaustive enumeration of the candidate language by a factor of eight on
+proposals. That is a real contribution and a small one: the language has fourteen members, the
+extension rule was supplied, and a model that has seen this idiom a million times is not thereby
+shown to have constructed it.
+
+## What broke
+
+**Three models proposed an `equal` node whose operands were whole trees rather than field names.**
+That is not the registered grammar. The evaluator raised `TypeError` rather than the refusal its
+caller handles, so the exception escaped `verify` and ended the condition: `gemma4:31b`,
+`qwen3.5:397b` and `mistral-large-3:675b` produced no records at all on the first attempt. Fixed by
+refusing a malformed node as a rejected candidate. The grammar was **not** widened to admit the
+shape three models independently reached for — that would be a post-hoc change to the registered
+language, and the right record is that the brief's grammar is ambiguous to models and the
+experiment refused their reading rather than adopting it.
+
+## What this does not establish
+
+Nothing here is `Origin`, and nothing here claims to be. `New` is unestablishable for a model whose
+prior repertoire is not inspectable, and `active and current == incoming` is a stock idiom. The
+task, the candidate grammar, the extension rule and the reference checker were all supplied by the
+experimenter; the models chose among fourteen trees. What is established is narrower and was the
+point: **a proposal that does not reach the operative state changes nothing, and the same proposal
+that does reach it changes everything measurable here** — on five models, against a reference
+relation none of them saw.

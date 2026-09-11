@@ -41,12 +41,20 @@ def evaluate(tree: Any, view: Mapping[str, Any]) -> bool:
         return False
     if op == FIELD:
         name = tree.get("name")
+        if type(name) is not str:
+            raise RecordError(f"a field is named by a string; got {type(name).__name__}")
         if name not in view:
             raise RecordError(f"the candidate reads {name!r}, which this interface does not expose")
         return bool(view[name])
     if op == EQUAL:
         left, right = tree.get("left"), tree.get("right")
         for name in (left, right):
+            # A malformed node is refused, never guessed at. Three models proposed an `equal`
+            # whose operands were whole trees rather than field names; that is not this grammar,
+            # and reading it as one would be inventing a language nobody registered. It has to
+            # raise the refusal the caller handles, not a TypeError that ends the run.
+            if type(name) is not str:
+                raise RecordError(f"an equal compares two field names; got {type(name).__name__}")
             if name not in view:
                 raise RecordError(f"the candidate reads {name!r}, which this interface does not expose")
         return view[left] == view[right]

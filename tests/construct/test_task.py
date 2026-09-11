@@ -84,6 +84,19 @@ class ConstructionTests(unittest.TestCase):
         self.assertFalse(outcome.accepted)
         self.assertIn("does not expose", str(outcome.first_failure))
 
+    def test_a_malformed_equal_is_refused_and_does_not_end_the_run(self) -> None:
+        """Three models proposed an equal over whole trees. That is not this grammar."""
+
+        nested = {"op": "equal", "left": {"op": "field", "name": "current"}, "right": {"op": "field", "name": "incoming"}}
+        outcome = verify(nested, VIEW_TWO, 4)
+        self.assertFalse(outcome.accepted)
+        self.assertIn("two field names", str(outcome.first_failure))
+
+    def test_a_field_named_by_something_that_is_not_a_string_is_refused(self) -> None:
+        outcome = verify({"op": "field", "name": {"op": "true"}}, VIEW_TWO, 4)
+        self.assertFalse(outcome.accepted)
+        self.assertIn("named by a string", str(outcome.first_failure))
+
     def test_an_unknown_operator_is_refused(self) -> None:
         with self.assertRaises(RecordError):
             evaluate({"op": "xor", "left": "a", "right": "b"}, {"a": True, "b": False})
