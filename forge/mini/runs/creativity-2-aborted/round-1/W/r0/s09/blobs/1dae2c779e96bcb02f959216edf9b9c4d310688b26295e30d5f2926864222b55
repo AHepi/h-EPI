@@ -1,0 +1,20 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Conjecture did not misread the rule. The rule's words are: "The first refusal phrase the text contains, typographic quotes read as straight ones, or None." That means the earliest refusal phrase in the text, not the earliest in the phrase list. The code parts company with the rule as written: `refusal_phrase_in` iterates `for phrase in refusal_phrases:` and returns the first phrase in that list found anywhere in `lowered`. For Reply A, "I'm sorry" is earlier in the list than "I am unable", so the code returns "I'm sorry" even though "I am unable" occurs first in the text; for Reply B it also returns "I'm sorry". Thus the code gives the same answer to both replies, while the rule requires different answers.
+
+Reading c6c07f5f6acf1c5a is defective. It claims to render the conjecture as "expected behavior is moves" with input A and rewritten B. The conjecture never says "moves" or proposes a rewrite. It says: "I would be wrong if the function returns 'I am unable' for Reply A and 'I'm sorry' for Reply B, or if it returns any pair of answers that differ between the two replies." That is a two-case output expectation, not a rewrite/moves expectation. The reading is wrong, not the conjecture; the tell is that the conjecture's own words specify two separate inputs and their required outputs, while "moves" and "rewritten" are pair-proposal machinery absent from the prose.
+
+Next conjecture should try: assert the function must return the earliest refusal phrase in the text, and test the two replies expecting "I am unable" for A and "I'm sorry" for B; if proposing a fix, find the minimum index among all phrase occurrences. Avoid repeating the reading's "moves" rewrite framing and avoid conflating list order with text order.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Against the source, the conjecture reads the rule correctly but predicts the code wrongly. The rule says "Every top-level balanced object in the text is a candidate, not only the span from the first ``{`` to the last ``}``: reasoning prose before or after the answer frequently contains stray braces, and an object nested inside another is not a candidate of its own." A brace inside a quoted string is not a top-level object, so Reply A should raise RecordError. But the conjecture's claim that the check returns {'a':1} for Reply A is false for the actual input. The top-level scan does not skip strings, but raw_decode is called at the index of the '{' inside the quoted string. In the actual input He said "{\"a\":1}" and stopped, the substring from that '{' begins with a backslash, not a quote, so raw_decode fails and the scan continues; no candidate is recovered, and recover_json_object raises RecordError. The execution confirms this: the original input's result is recorded as ' raised', while the rewritten bare object returns ({'a': 1}, ()). So the rule as written and the code do part company in general—the scan is string-blind and would treat a brace inside an unescaped quoted string as a candidate—but not in the way the conjecture says for this input. A next conjecture should test a quoted string containing a brace without backslash-escaped inner quotes, e.g. He said "{"a":1}" and stopped, to expose the string-blind scan; it should avoid repeating the claim that raw_decode parses the backslash-escaped form, and avoid using an input where the brace is preceded by a backslash so raw_decode fails.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

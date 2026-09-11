@@ -1,0 +1,25 @@
+{
+  "body": "Execution was unrunnable (`MINI_OPEN_KERNEL_NOT_FOUND: 'oracle' has no '_grounding_kernel'`), so no outputs to compare. Reading the source, the conjecture misread the rule. The rule says 'The grounding verdict as the harness gives it, with no relaxation and the value-in-span check on.' The 'no relaxation' applies to the span-in-document check: `_span_occurs(fields[\"span\"], fields[\"document\"], ())` is called with an empty relaxations tuple. The value-in-span check is separate and deliberately casefolds: `_normalise_whitespace(fields[\"value\"]).casefold() not in _normalise_whitespace(fields[\"span\"]).casefold()`. So the rule as written and the code agree: both Reply A and Reply B are GROUNDED. The conjecture's claim that the rule requires VALUE_NOT_IN_SPAN for Reply B is a misread; it extended 'no relaxation' to the value-in-span check, which the rule does not state. A next conjecture should test the actual casefold behavior directly, expecting GROUNDED for both case-differing inputs, and should avoid repeating the assumption that 'no relaxation' forbids case folding in the value-in-span check. It should also avoid the nonexistent `open:creib.forge.conformance.oracle._grounding_kernel` path; the source block shows `_grounding_kernel` in `mini.kernel-source.v1`, not `oracle`.\n\nReading `5d25ac57da4d61e8` is defective in its expectation. It claims to render the conjecture's prediction but sets `expect: moves`. The conjecture says: 'I would be wrong if the check returns different answers for the two replies, specifically GROUNDED for Reply A and VALUE_NOT_IN_SPAN for Reply B.' That means the conjecture expects the check to return the same answer (GROUNDED) for both; the reading's 'so expect is moves' expects the opposite. That is a defect in the reading, not the conjecture. The kernel path in the reading is copied from the prose, so that part is faithful; the defect there is in the conjecture, which named a function that does not exist in `oracle`.",
+  "citations": [
+    {
+      "id": "66cd5f2a4e19968e",
+      "quote": "_span_occurs(fields[\"span\"], fields[\"document\"], ())"
+    },
+    {
+      "id": "66cd5f2a4e19968e",
+      "quote": "_normalise_whitespace(fields[\"value\"]).casefold() not in _normalise_whitespace(fields[\"span\"]).casefold()"
+    },
+    {
+      "id": "a09bfb57c37897f3",
+      "quote": "I would be wrong if the check returns different answers for the two replies, specifically GROUNDED for Reply A and VALUE_NOT_IN_SPAN for Reply B."
+    },
+    {
+      "id": "5d25ac57da4d61e8",
+      "quote": "so expect is moves"
+    },
+    {
+      "id": "1724a2948b585fe4",
+      "quote": "MINI_OPEN_KERNEL_NOT_FOUND: 'oracle' has no '_grounding_kernel'"
+    }
+  ]
+}

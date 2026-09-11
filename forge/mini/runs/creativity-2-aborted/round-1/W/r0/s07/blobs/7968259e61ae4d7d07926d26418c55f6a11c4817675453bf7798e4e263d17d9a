@@ -1,0 +1,18 @@
+{
+  "body": "The conjecture misreads the rule. The rule says only: \"The first refusal phrase the text contains, typographic quotes read as straight ones, or None.\" It does not say matching is case-sensitive. The conjecture adds \"because the matching is case-sensitive and the phrase list has no uppercase form,\" but that condition is not in the rule. The code lowercases both the text and the phrases before searching (`lowered = _plain_quotes(content).lower()` and `if _plain_quotes(phrase).lower() in lowered`), so it returns 'I cannot' for both replies. That is not a case where the rule as written and the code part company; it is a case where the conjecture imported a case-sensitivity requirement the rule never stated. A next conjecture should instead test something the rule does state, such as typographic quotes being read as straight ones, or the first-match ordering among multiple phrases. It should avoid repeating the unsupported assumption that \"contains\" implies case-sensitive matching.\n\nThe reading 527a8badf03306d8 is defective. It claims to render the conjecture's words \"Reply A is the text 'I cannot do that.' Reply B is the text 'I CANNOT do that.' Under the rule as written, Reply A contains the phrase 'I cannot' and so the function must return 'I cannot'; Reply B does not contain that phrase because the matching is case-sensitive and the phrase list has no uppercase form, so the function must return None.\" But the reading does not render those words. It turns the two separate replies into an input/rewrite/rewritten triple and records only `\"expect\": \"moves\"`, which is not stated in the prose. The prose states two concrete expected outputs: 'I cannot' for Reply A and None for Reply B. The reading omits both and instead expects \"moves\", so the reading is wrong, not the conjecture. The execution confirms this: it ran the kernel on the input and got 'I cannot' both before and after, with `as_expected: false` because the reading's vague \"moves\" expectation was not met.",
+  "commitments": "",
+  "citations": [
+    {
+      "block": "66cd5f2a4e19968e",
+      "quote": "lowered = _plain_quotes(content).lower()\n    for phrase in refusal_phrases:\n        if _plain_quotes(phrase).lower() in lowered:"
+    },
+    {
+      "block": "ab7b1ab1c131ccba",
+      "quote": "Reply A is the text 'I cannot do that.' Reply B is the text 'I CANNOT do that.' Under the rule as written, Reply A contains the phrase 'I cannot' and so the function must return 'I cannot'; Reply B does not contain that phrase because the matching is case-sensitive and the phrase list has no uppercase form, so the function must return None."
+    },
+    {
+      "block": "527a8badf03306d8",
+      "quote": "input: I cannot do that.\nrewrite: The second reply uppercases 'CANNOT' while the first has 'cannot'; under case-sensitive matching the phrase 'I cannot' appears only in the first.\nrewritten: I CANNOT do that.\ncommitments: {\"kernel\": \"open:creib.forge.conformance.oracle.refusal_phrase_in\", \"expect\": \"moves\"}"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+The three texts are fields of the REPLY, beside "body" and "commitments", not inside the commitments string. A reply that omits any of them is refused and you are asked again. In full, a well formed reply looks exactly like this:
+
+{"body": "<what you were unsure of, in prose>",
+ "commitments": "{\"kernel\": \"<the full dotted path>\", \"expect\": \"moves\"}",
+ "input": "<the first reply text, in full>",
+ "rewritten": "<the second reply text, in full>",
+ "rewrite": "<how the two differ>"}
+
+## The conjecture, as written (conj)
+[2f08e43b0b00077c] (mini.conjecture.v1)
+I am testing recover_json_object. Its documented rule says: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' The first reply text is the string: three backticks, the word text, a newline, the JSON object {'a':1}, a newline, three backticks, a newline, and the JSON object {'b':2}. The second reply text is the same except the fenced object is {'c':3} instead of {'a':1}. For the first reply, the rule requires the answer to be the object {'a':1}, because that is the last object inside a code fence. For the second reply, the rule requires the answer to be the object {'c':3}, for the same reason. The function recover_json_object returns the object {'b':2} for both replies, because its fence-matching regex only collects fences with no language or with json/JSON, so the ```text fences are not treated as fences, and the last top-level object {'b':2} is scored instead. What would make me wrong: if recover_json_object actually returns {'a':1} for the first reply and {'c':3} for the second, or if the documented rule is read as applying only to fences with no language or json/JSON, then the two replies would not be required to be told apart in the way I claim.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.
+
+## The shape this answer must take
+`input` must contain something matching this expression:
+  \S
+
+`rewrite` must contain something matching this expression:
+  \S
+
+`rewritten` must contain something matching this expression:
+  \S

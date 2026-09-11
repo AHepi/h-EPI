@@ -1,0 +1,20 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Conjecture vs source: the conjecture did not misread the rule. The rule as written is 'The first refusal phrase the text contains, typographic quotes read as straight ones, or None.' The code's `refusal_phrase_in` iterates `for phrase in refusal_phrases:` and returns the first phrase in that tuple that is a substring, not the first phrase in the text. So the rule as written and the code part company. The execution confirms this: for input 'I am unable to comply. I cannot.' the function returned 'I cannot' before and after, unchanged, so the conjecture's prediction of the same answer was correct and its falsification condition was not met.
+
+Reading: artifact 5c575220b590eb0f is defective. It names the kernel correctly, since the conjecture explicitly says 'I am testing open:creib.forge.conformance.oracle.refusal_phrase_in.' But its expectation 'moves' is not stated by the conjecture. The conjecture's words are: 'I would be wrong if the check returns different answers for the two replies, specifically 'I am unable' for Reply A and 'I cannot' for Reply B.' That is a falsification condition, not an expectation of movement; the conjecture actually predicts the check returns the same answer. The reading therefore attributes an expectation the prose did not state. The reading is wrong, not the conjecture.
+
+Next conjecture: try the other documented part of the rule, the typographic-quote folding: e.g. input 'I’m sorry' should match 'I'm sorry' after `_plain_quotes`. Avoid repeating the tuple-order mismatch already demonstrated, and avoid stating an expectation of 'moves' that the prose does not contain.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

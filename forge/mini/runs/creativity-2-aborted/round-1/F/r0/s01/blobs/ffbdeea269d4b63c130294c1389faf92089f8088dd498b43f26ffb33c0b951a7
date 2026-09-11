@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The conjecture did not misread the rule. The rule as written says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." The code parts company with that rule. Its fence regex is `_FENCE = re.compile('```(?:json|JSON)?\\s*(.*?)```', re.DOTALL)`, which only recognizes bare fences or fences tagged `json`/`JSON`; a ```javascript fence is a code fence under the documented rule, but the code ignores it and falls through to the last top-level object `{"final": true}`. The machine's unchanged output confirms this: before and after both `({'final': True}, ())`, with `as_expected: false` and `expect: moves`. A next conjecture should try instead: broaden `_FENCE` to match any language tag (or at least `javascript`), e.g. by changing the optional group from `(?:json|JSON)?` to `(?:[A-Za-z0-9_+-]+)?` or by matching any non-backtick text after the opening fence, so a fenced object with a non-json language tag is recovered as the last fenced object. It should avoid repeating the assumption that the current regex's optional `json|JSON` covers all code fences, and avoid using a language tag outside `json`/`JSON`/bare in the test input while expecting the current code to honor the documented rule.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

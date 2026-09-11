@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import unittest
 
 from creib.forge.mini import conformance_kernels as kernels
 from creib.forge.mini.blindspot import (
@@ -410,3 +411,38 @@ class GroundingKernelTests(MiniTestCase):
         self.assertEqual(grounding('{"value": "five", "span": "five days", "document": "away for five\ndays."}'), "GROUNDED", "M11: a line break written into the string is the line break meant")
         self.assertEqual(grounding('{"value": "five", "span": "five days", "document": "away for five\ndays.", "span": "x"}'), kernels.UNREADABLE, "M11 admits a control character and nothing else: a duplicate key is still refused")
         self.assertEqual(occurs(json.dumps({"span": 3, "document": document})), kernels.UNREADABLE)
+
+
+class SourceAddressTests(unittest.TestCase):
+    """The source a seat is shown says where each function lives, and which cannot be named.
+
+    Arm A of CREATIVITY-ARMS-2 proposed ``_grounding_kernel`` under three different wrong module
+    paths in three consecutive segments and every one was unrunnable. The brief said "name any
+    function of one string in one of these modules"; the source showed a function that is in none of
+    them and gave no addresses at all, so the seat had to guess, and the alarm stopped the arm.
+    """
+
+    def test_every_shown_function_carries_the_module_it_lives_in(self) -> None:
+        text = kernels.kernel_source_text()
+        for function in kernels.SOURCE_FUNCTIONS:
+            self.assertIn(f"# {function.__module__}.{function.__name__} --", text)
+
+    def test_a_function_outside_the_open_package_is_marked_as_unnameable(self) -> None:
+        text = kernels.kernel_source_text()
+        outside = [f for f in kernels.SOURCE_FUNCTIONS
+                   if not f.__module__.startswith(kernels.OPEN_PACKAGE_PREFIX)]
+        self.assertTrue(outside, "the case this test exists for is a function shown from elsewhere")
+        for function in outside:
+            line = next(l for l in text.split("\n") if l.startswith(f"# {function.__module__}.{function.__name__} "))
+            self.assertIn("NOT a function of the harness under test", line)
+            self.assertNotIn("name it as open:", line)
+
+    def test_every_open_name_the_source_offers_actually_resolves(self) -> None:
+        """The check the mismatch needed: what the seat is told to write must be runnable."""
+
+        from creib.forge.mini.openkernels import resolve_any_kernel
+
+        for line in kernels.kernel_source_text().split("\n"):
+            if "name it as open:" not in line:
+                continue
+            resolve_any_kernel(line.rsplit("name it as ", 1)[1].strip())

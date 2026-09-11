@@ -26,6 +26,7 @@ import re
 import hashlib
 import inspect
 import json
+from typing import Any
 
 from creib.canonical import canonical_bytes
 from creib.errors import RecordError
@@ -142,11 +143,47 @@ SOURCE_FUNCTIONS = tuple(
 KERNEL_SOURCE_KIND = "mini.kernel-source.v1"
 
 
+#: The package whose functions a seat may name. A function shown from anywhere else is shown with a
+#: line saying so, because a seat told "name any function in these modules" and then shown one that
+#: is not in them will name it: arm A of CREATIVITY-ARMS-2 proposed ``_grounding_kernel`` under
+#: three different wrong module paths in three consecutive segments, and each was unrunnable.
+OPEN_PACKAGE_PREFIX = "creib.forge.conformance."
+
+
+def _where(function: Any) -> str:
+    """The line above one function's source saying where it lives, and whether it can be named.
+
+    Three cases, and the last two are why this line exists. A function of mini's own is not a
+    function of the harness under test and has no ``open:`` name at all. A function of the harness
+    that takes more than one string cannot be run on a pair unless a binding for its other argument
+    is declared, and a seat shown its body and told to name a function will name it anyway: that is
+    CON-ARITY-HIDES-FINDS, and it cost block 1 the finds it kept making about ``refusal_phrase_in``.
+    """
+
+    from .common import MiniError
+    from .openkernels import OPEN_PREFIX, resolve_any_kernel  # here, to keep the import one-way
+
+    path = f"{function.__module__}.{function.__name__}"
+    if not function.__module__.startswith(OPEN_PACKAGE_PREFIX):
+        return (f"# {path} -- this is mini's own wrapper, NOT a function of the harness under test. "
+                "There is no open: name for it and a claim about it cannot be run.")
+    try:
+        resolve_any_kernel(f"{OPEN_PREFIX}{path}")
+    except MiniError as error:
+        return (f"# {path} -- open:{path} names it, but a claim about it CANNOT BE RUN as it stands: "
+                f"{error}")
+    return f"# {path} -- name it as open:{path}"
+
+
 def kernel_source_text() -> str:
-    """The source of the harness functions behind the kernels, as a seat is shown it."""
+    """The source of the harness functions behind the kernels, as a seat is shown it.
+
+    Each function carries the module it actually lives in. Without that the source is a list of
+    bodies with no addresses, and a seat asked to name one by its dotted path has to guess.
+    """
 
     parts = [f"_FENCE = re.compile({oracle._FENCE.pattern!r}, re.DOTALL)", f"REFUSAL_PHRASES = {list(REFUSAL_PHRASES)!r}"]
-    parts.extend(inspect.getsource(function).rstrip() for function in SOURCE_FUNCTIONS)
+    parts.extend(f"{_where(function)}\n{inspect.getsource(function).rstrip()}" for function in SOURCE_FUNCTIONS)
     return "\n\n".join(parts) + "\n"
 
 

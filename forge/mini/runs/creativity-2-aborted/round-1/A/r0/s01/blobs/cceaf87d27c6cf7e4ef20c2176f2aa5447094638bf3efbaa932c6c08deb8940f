@@ -1,0 +1,39 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+I am testing open:creib.forge.conformance.records._grounding_kernel. Its documented rule says, "The grounding verdict as the harness gives it, with no relaxation and the value-in-span check on." The two reply texts are:
+
+Reply A: {"value": "a", "span": "a b", "document": "a b"}
+
+Reply B: {"value": "a", "span": "a  b", "document": "a b"}
+
+The rule requires GROUNDED for Reply A, because the span "a b" occurs verbatim in the document "a b" and the value "a" is in the span. The rule requires SPAN_NOT_IN_DOCUMENT for Reply B, because the span "a  b" (with two spaces) does not occur verbatim in the document "a b" (with one space), and no relaxation is allowed. But the function returns GROUNDED for both: its span check calls _span_occurs with relaxations=(), yet _span_occurs normalises whitespace before checking, so "a  b" becomes "a b" and matches the document. This makes the two replies indistinguishable to the check. The conjecture is false if _grounding_kernel returns SPAN_NOT_IN_DOCUMENT for Reply B, or if the documented rule is read as permitting whitespace normalisation even when no relaxation is specified.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

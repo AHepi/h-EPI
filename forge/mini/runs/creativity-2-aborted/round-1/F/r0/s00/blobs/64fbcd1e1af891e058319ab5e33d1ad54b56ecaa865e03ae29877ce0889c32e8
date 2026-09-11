@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The conjecture misread the rule. The rule says 'Every top-level balanced object in the text is a candidate, not only the span from the first ``{`` to the last ``}``: reasoning prose before or after the answer frequently contains stray braces, and an object nested inside another is not a candidate of its own.' It does not say that an object inside a string is excluded. The code's top-level scan finds every `{` and calls `raw_decode` from that position; it does not check whether the `{` is inside a string. So for the first reply `"{\"a\":1}"`, the `{` at index 1 begins a balanced object `{"a":1}` that is not nested inside another object, and the code returns `({'a': 1}, ())`. The machine returned exactly that, unchanged, with `as_expected: false`, so the conjecture's predicted `RecordError` is not what the rule as written requires. The rule and code agree here; the conjecture added an unstated 'outside any string' condition to 'top-level balanced object'. A next conjecture should test a case where the rule and code actually part company, such as an object nested inside another object, a stray brace in prose, duplicate keys, or a fenced object versus a later top-level object. It should avoid repeating the string-embedded object as if it were excluded, and avoid reading 'top-level' as 'outside strings' unless the rule says so.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

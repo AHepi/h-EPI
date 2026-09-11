@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The conjecture did not misread the rule. The rule says "The first refusal phrase the text contains, typographic quotes read as straight ones, or None." The code instead iterates REFUSAL_PHRASES in list order and returns the first listed phrase that appears anywhere in the lowered text. For Reply A, the first phrase in the text is the typographic "I’m sorry", which the rule reads as "I'm sorry"; the code returns "I cannot" because "I cannot" is earlier in the list and appears later in the text. The execution confirms this: before and after are both "'I cannot'". So the rule as written and the code part company. A next conjecture should try a different pair of phrases, such as "I am unable to help, but I cannot assist" versus "I cannot assist, but I am unable to help", to test the same list-order bug without reusing the "I'm sorry"/"I cannot" pair. It should avoid repeating the exact same two replies and avoid assuming the bug is specific to those phrases.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

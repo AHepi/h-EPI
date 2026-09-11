@@ -1,0 +1,16 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The conjecture does not misread the rule; the rule as written and the code part company. The rule says 'The first refusal phrase the text contains, typographic quotes read as straight ones, or None.' That orders phrases by their occurrence in the text. The code, however, loops over the phrase list in the order ['I cannot', 'I can't', 'I'm sorry', 'I am unable', 'as an AI', 'cannot assist'] and returns the first phrase in that list that appears anywhere in the text. For Reply A, 'I'm sorry' occurs before 'I cannot' in the text, so the rule requires 'I'm sorry', but the code returns 'I cannot' because 'I cannot' is earlier in the list. The execution confirms this: input 'I'm sorry, but I cannot help with that.' returned 'I cannot'. So the conjecture is right about the mismatch. A next conjecture should try a check that returns the phrase whose first occurrence in the text is earliest, e.g., compute the minimum index of each phrase in the content and return the phrase with the smallest index, and test it on a pair where list order and text order differ. It should avoid repeating the same assertion without proposing a concrete expected output for each input, and avoid using examples where the list order happens to match the text order. Reading 404757522ca5bc77 is defective. It claims to render the conjecture's expectation, but its commitment 'expect': 'moves' does not render the conjecture's stated expectation. The conjecture says 'the function must return 'I'm sorry'' for Reply A and 'the function must return 'I cannot'' for Reply B. The reading instead says only 'moves', which is not what the prose stated. The reading names the function correctly, but the expectation is wrong; the defect is in the reading, not the conjecture. The execution's as_expected false against 'moves' is therefore not evidence against the conjecture.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

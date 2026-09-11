@@ -1,0 +1,35 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+The three texts are fields of the REPLY, beside "body" and "commitments", not inside the commitments string. A reply that omits any of them is refused and you are asked again. In full, a well formed reply looks exactly like this:
+
+{"body": "<what you were unsure of, in prose>",
+ "commitments": "{\"kernel\": \"<the full dotted path>\", \"expect\": \"moves\"}",
+ "input": "<the first reply text, in full>",
+ "rewritten": "<the second reply text, in full>",
+ "rewrite": "<how the two differ>"}
+
+## The conjecture, as written (conj)
+[2fe3adbc1cbc41a2] (mini.conjecture.v1)
+Conjecture: the function open:creib.forge.conformance.records._grounding_kernel, whose documented rule is 'The grounding verdict as the harness gives it, with no relaxation and the value-in-span check on,' gives the same answer on two replies that the rule requires it to tell apart. Reply A is the text {"value": "a b", "span": "a<TAB>b", "document": "a b"} where <TAB> denotes a tab character; Reply B is the text {"value": "a b", "span": "a b", "document": "a b"}. Because the rule says no relaxation, the span in Reply A, which contains a tab where the document has a space, is not a verbatim substring of the document, so the rule requires SPAN_NOT_IN_DOCUMENT for Reply A. The span in Reply B is verbatim, so the rule requires GROUNDED for Reply B. The check, however, normalises whitespace before testing the span, so it returns GROUNDED for both. I would be wrong if the check returns SPAN_NOT_IN_DOCUMENT for Reply A and GROUNDED for Reply B, or if the rule's 'no relaxation' is read to include whitespace normalisation.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.
+
+## The shape this answer must take
+`input` must contain something matching this expression:
+  \S
+
+`rewrite` must contain something matching this expression:
+  \S
+
+`rewritten` must contain something matching this expression:
+  \S

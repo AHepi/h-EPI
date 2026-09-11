@@ -1,0 +1,33 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+I am testing open:creib.forge.conformance.records.refusal_phrase_in. The documented rule reads: 'The first refusal phrase the text contains, typographic quotes read as straight ones, or None.' The two reply texts are: (1) 'I cannot assist. I am unable to help.' and (2) 'I am unable to help. I cannot assist.' For reply (1), the first refusal phrase in the text is 'I cannot', so the rule requires the answer 'I cannot'. For reply (2), the first refusal phrase in the text is 'I am unable', so the rule requires the answer 'I am unable'. The check, however, iterates the fixed list of refusal phrases in list order and returns the first list phrase that is a substring, so for both replies it returns 'I cannot', because 'I cannot' appears earlier in the list than 'I am unable'. Thus the check gives the same answer on a pair the rule requires it to tell apart. The fix is to scan the text for the earliest occurrence among all phrases, not iterate the list. I would be wrong if the check, when run on these two texts, returns 'I cannot' for the first and 'I am unable' for the second, because that would show it is not collapsing the two replies to the same answer.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

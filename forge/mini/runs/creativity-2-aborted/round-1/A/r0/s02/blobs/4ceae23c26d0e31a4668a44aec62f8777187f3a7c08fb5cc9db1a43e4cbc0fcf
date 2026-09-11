@@ -1,0 +1,33 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+I am testing open:creib.forge.conformance.records._grounding_kernel. Its documented rule says "The grounding verdict as the harness gives it, with no relaxation and the value-in-span check on." The two reply texts are: Reply A: {"value": "a b", "span": "a\nb", "document": "a b"}; Reply B: {"value": "a b", "span": "a b", "document": "a b"}. Under the rule, Reply A's span "a\nb" is not a verbatim substring of the document "a b", so the required answer is SPAN_NOT_IN_DOCUMENT. Reply B's span "a b" is a verbatim substring and its value "a b" is in the span, so the required answer is GROUNDED. The check, however, normalises whitespace in _span_occurs before the verbatim test, so both spans become "a b" and both replies return GROUNDED. The observation that would show this conjecture false is if the bound _grounding_kernel returns SPAN_NOT_IN_DOCUMENT for Reply A and GROUNDED for Reply B when run on these two texts.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

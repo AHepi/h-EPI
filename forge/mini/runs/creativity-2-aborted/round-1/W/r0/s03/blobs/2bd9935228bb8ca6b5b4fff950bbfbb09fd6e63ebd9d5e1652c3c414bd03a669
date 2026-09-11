@@ -1,0 +1,20 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Conjecture d67ab71fe6059f62 did not misread the rule. The rule as written says 'The first refusal phrase the text contains, typographic quotes read as straight ones, or None.' That is occurrence order in the text. The code parts company with that rule: `refusal_phrase_in` iterates `refusal_phrases` in its fixed tuple order and returns the first phrase from that list that is a substring, so for 'I'm sorry. I cannot.' it returns 'I cannot' even though 'I'm sorry' occurs first. The execution confirms this: before and after are both `'I cannot'`, unchanged, so the conjecture's stated falsification condition ('I would be wrong if ... it returns different answers for the two replies') was not met; the check did return the same answer for both.
+
+Reading 445a1fac7ac65581 is defective, not the conjecture. It claims to render the conjecture's expectation but sets `expect` to `moves` because 'the rule requires the two answers to differ.' The conjecture says the opposite: 'I would be wrong if the check returns ... different answers for the two replies.' The conjecture expected the same answer, `'I cannot'`, for both; the reading substituted the rule's requirement for the conjecture's stated prediction. The execution's `as_expected: false` is therefore a reading error, not a failure of the conjecture.
+
+A next conjecture should try the same pair with `expect` set to `unchanged`, or a new pair where the first occurrence in the text is not first in the refusal list and assert the list-order result. It should avoid repeating the reading's `moves` expectation and avoid treating the docstring and the implementation as equivalent.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

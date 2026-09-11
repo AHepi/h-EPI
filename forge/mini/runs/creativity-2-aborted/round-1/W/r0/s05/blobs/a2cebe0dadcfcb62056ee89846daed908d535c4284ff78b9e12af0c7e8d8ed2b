@@ -1,0 +1,33 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+I am testing open:creib.forge.conformance.oracle._grounding_kernel. Its documented rule says: "The grounding verdict as the harness gives it, with no relaxation and the value-in-span check on." I read "no relaxation" as requiring the span to appear verbatim in the document and the value to appear exactly in the span, with no case folding. Reply A is the string {"value": "Hello", "span": "Hello", "document": "Hello world"}. Reply B is the string {"value": "hello", "span": "Hello", "document": "Hello world"}. For Reply A the rule requires GROUNDED, because the span "Hello" is verbatim in the document and the value "Hello" is exactly in the span. For Reply B the rule requires VALUE_NOT_IN_SPAN, because although the span is verbatim, the value "hello" is not exactly in the span "Hello"; the case differs. The check, however, casefolds the value and the span before the value-in-span test, so it returns GROUNDED for both replies. I would be wrong if the check returns different answers for the two replies, specifically GROUNDED for Reply A and VALUE_NOT_IN_SPAN for Reply B.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

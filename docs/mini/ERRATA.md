@@ -231,6 +231,36 @@ a kind's own fields, a missing one is a refusal with the shape rendered rather t
 **ALM-TRANSLATOR-DROPPED-THE-TEXTS** names the mode in a finished segment. The first live segment of
 block 2 hit it, the alarm stopped the arm after four calls, and that is how it was found.
 
+### C14. The source a seat is shown had no addresses, and one body was not even the subject (**found**)
+
+The `mini.kernel-source.v1` seat shows eight function bodies. Seven are
+`creib.forge.conformance.oracle`; the eighth, `_grounding_kernel`, is
+`creib.forge.mini.conformance_kernels` — **mini's own wrapper, not the harness under test**. None of
+the eight carried the module it lives in, and the brief asks the seat to name a function by its full
+dotted path in one of fifteen `creib.forge.conformance.*` modules.
+
+So the seat was shown bodies and asked for addresses it had not been given. Across thirty-four
+segments of block 2's first repeat it wrote each of the two runnable functions under **both**
+`oracle.` and `records.`; the executor's relocation absorbed that, which is why it stayed invisible
+until it hit the one body relocation cannot save. Arm `A` then named `_grounding_kernel` three
+segments running and the arm stopped.
+
+Worse, the annotation makes a second thing visible that nothing said before: of the eight bodies
+shown, **four cannot carry a runnable claim at all** — `parse_content` takes two required arguments,
+`_span_occurs` takes three, `_grounding_kernel` is not the harness's, and a kernel is one string.
+That is CON-ARITY-HIDES-FINDS as a number rather than a worry: half of what the seat is shown is
+unusable and nothing told it so.
+
+**What it cost:** thirty-four segments of a repeat, set aside at
+`forge/mini/runs/creativity-2-aborted/round-1/` rather than counted. **Found by the streak guard
+added four hours earlier**, and diagnosed correctly, in prose, by the arm's own critic — which then
+committed `cannot-tell` and so never landed the attack.
+
+**Repaired:** each body now carries the module it lives in and says which of three it is — nameable,
+nameable but unrunnable with the reason, or not the harness's at all. A test resolves every `open:`
+name the source offers, so a name the seat is told to write and the executor refuses fails the suite
+rather than a run.
+
 ## The pattern
 
 Of the twenty-odd items above, **three** are about the model. All the rest are about the apparatus:
@@ -242,10 +272,11 @@ The one thing that survived every repair, unchanged, is the conjecture step. It 
 boundaries under every configuration, including the cheapest, and the machinery kept failing to
 execute, see, or count them.
 
-A5, C12 and C13 were added after the rest, while building and first running the block that was meant
+A5, C12, C13 and C14 were added after the rest, while building and first running the block that was meant
 to settle the question. C12 was found by reading the run headers, A5 by counting what a segment
-actually sends, and C13 by an alarm firing on the first live segment — which is the only one of the
-twenty-odd items here that a machine caught rather than a person.
+actually sends, and C13 and C14 by alarms firing on live segments — the only items here that a
+machine caught rather than a person, and C14 was additionally diagnosed, correctly and in prose, by
+the arm's own critic.
 
 C12 was added after the rest, while building the block that was meant to settle the question. It is
 the only item here that withdraws the *mechanism* of a positive result rather than a null, and it

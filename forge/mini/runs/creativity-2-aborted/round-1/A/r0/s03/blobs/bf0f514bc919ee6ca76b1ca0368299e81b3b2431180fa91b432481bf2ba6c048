@@ -1,0 +1,52 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+Your commitments are a STRING holding JSON of the form {"attacks": "<the first 16 characters of the artifact id you are attacking>", "ground": "<one of: reading-misrenders-conjecture, conjecture-misreads-rule, rule-and-code-diverge, test-is-unsound, cannot-tell>", "why": "<one sentence>"} and nothing else.
+
+The id must be one printed in square brackets beside an artifact you were shown; a name matching nothing resolves to no attack.
+
+Use "test-is-unsound" when the fault is in the RUN rather than in what was claimed: the executor refused a claim it should have been able to run, bound the wrong thing, or answered on something other than what the claim named. Its target is the EXECUTION artifact, not the conjecture. The machine has already recorded, against each reading, whether the run bore its claim out; attacking the execution as unsound is how a reading the machine wrongly refused gets back up.
+
+Use "cannot-tell" when you cannot decide -- it is an honest answer and it mints no attack, which is better than inventing a target.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The conjecture does not misread the rule. The rule's words are 'The grounding verdict as the harness gives it, with no relaxation and the value-in-span check on.' The conjecture reads 'no relaxation' as forbidding whitespace normalisation, so Reply A's tab-containing span should not match the document's space. The code, however, normalises whitespace in _span_occurs before the verbatim check, so it returns GROUNDED for both replies. Thus the rule as written and the code part company. A next conjecture should target this divergence directly, perhaps by proposing a pair where the rule and code agree, or by asserting that the code's whitespace normalisation violates the documented 'no relaxation'. It should avoid repeating the assumption that the check returns SPAN_NOT_IN_DOCUMENT for Reply A, since the code does not.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.
+
+## The shape this answer must take
+`commitments` must be a STRING whose content is JSON text fitting exactly this schema (the field itself is a string, not an object):
+{
+  "additionalProperties": false,
+  "properties": {
+    "attacks": {
+      "maxLength": 64,
+      "minLength": 8,
+      "type": "string"
+    },
+    "ground": {
+      "pattern": "^(reading-misrenders-conjecture|conjecture-misreads-rule|rule-and-code-diverge|test-is-unsound|cannot-tell)$",
+      "type": "string"
+    },
+    "why": {
+      "maxLength": 2000,
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "attacks",
+    "ground",
+    "why"
+  ],
+  "type": "object"
+}

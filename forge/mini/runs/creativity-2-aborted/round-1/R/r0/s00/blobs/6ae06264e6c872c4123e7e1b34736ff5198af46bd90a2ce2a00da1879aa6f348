@@ -1,0 +1,33 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Conjecture: the function open:creib.forge.conformance.records.recover_json_object is documented with the rule "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." I read this as: when a code fence contains at least one scoreable object, the returned object must be the last scoreable object inside that fence. The two reply texts are, in full, Reply A: "```json\n{\"a\":1} {\"b\":2}\n```\n{\"z\":3}" and Reply B: "```json\n{\"a\":1} {\"c\":2}\n```\n{\"z\":3}". For Reply A the last object inside the fence is {\"b\":2}, so the rule requires {\"b\":2}. For Reply B the last object inside the fence is {\"c\":2}, so the rule requires {\"c\":2}. The implementation, however, treats each fenced block as a single candidate; because the fenced content in each reply contains two objects, it fails to parse as one object, falls through to the top-level scan, and returns the last top-level object in the whole text, which is {\"z\":3} in both replies. Thus the check gives the same answer, {\"z\":3}, to both replies even though the rule requires different answers. I would be wrong if recover_json_object returned {\"b\":2} for Reply A and {\"c\":2} for Reply B, or if it returned any pair of different values for the two replies.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

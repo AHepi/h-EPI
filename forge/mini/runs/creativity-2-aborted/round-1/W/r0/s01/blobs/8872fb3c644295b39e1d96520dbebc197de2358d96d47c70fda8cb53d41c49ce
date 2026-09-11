@@ -1,0 +1,20 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Conjecture fd6442b40b267996 did not misread the rule. It quotes the rule exactly: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text..." For Reply A the fence holds two objects, so the rule requires the last one inside the fence, {"b": 2}. The conjecture then predicts the check returns {"c": 3} for both replies because the fenced span '{"a": 1}\n{"b": 2}' does not parse as a single JSON object, so the fenced pool is skipped and the top-level fallback returns the last top-level object. The execution confirms this: before and after are both ({'c': 3}, ()). Therefore the rule as written and the code part company; the conjecture correctly identified the divergence rather than misreading the rule.
+
+Reading f954e3a15124657d is defective. It claims to render the final sentence: "I would be wrong if the check returns {"b": 2} for Reply A, or if it returns different answers for the two replies." The reading says "The final sentence of the conjecture says the check would be wrong if it returns different answers," but the conjecture says "I would be wrong," not "the check would be wrong." More importantly, the reading sets rewrite to 'moves' and expect 'moves' because the documented rule requires the two answers to differ. That is the rule's requirement, not the conjecture's stated prediction. The conjecture predicts the check returns the same answer for both, so its expectation is unchanged/same, not moves. The reading names the function correctly, but it does not render the expectation the prose stated; the defect is in the reading, not the conjecture.
+
+A next conjecture should try: keep the prediction that the check returns {"c": 3} for both replies, and state explicitly that this is a code/rule divergence, not a misreading. It should avoid repeating the reading's error of treating "I would be wrong if different" as "the check would be wrong if different," and avoid setting expect to moves when the conjecture predicts unchanged.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

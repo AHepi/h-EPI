@@ -1,0 +1,12 @@
+I am testing recover_json_object. Its documented rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". The two reply texts are:
+
+Reply A:
+```json
+{"a": "```"}
+```
+{"b": 2}
+
+Reply B:
+{"b": 2}
+
+For Reply A, the fence holds the JSON object {"a": "```"}, so the rule requires the answer to be that object, i.e. {'a': '```'}. For Reply B, there is no fence, so the rule requires the last top-level object, which is {'b': 2}. The function recover_json_object returns {'b': 2} for both replies, because the fence regex ```(?:json|JSON)?\s*(.*?)``` stops at the first ``` inside the string in Reply A, so the fenced candidate is truncated to `{"a": "` and is not a scoreable dict; the function then falls through to the top-level pool and scores the later {'b': 2}. This makes the two replies indistinguishable to the check even though the rule requires different answers. I would be wrong if, on Reply A, recover_json_object actually returned {'a': '```'} (or raised), or if the documented rule were read as not requiring the fenced object to be scored when the fence contains a string with triple backticks.

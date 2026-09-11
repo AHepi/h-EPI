@@ -1,0 +1,33 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Conjecture: the function open:creib.forge.conformance.records._grounding_kernel, whose documented rule is 'The grounding verdict as the harness gives it, with no relaxation and the value-in-span check on,' gives the same answer on two replies that the rule requires it to tell apart. Reply A is the text {"value": "a b", "span": "a<TAB>b", "document": "a b"} where <TAB> denotes a tab character; Reply B is the text {"value": "a b", "span": "a b", "document": "a b"}. Because the rule says no relaxation, the span in Reply A, which contains a tab where the document has a space, is not a verbatim substring of the document, so the rule requires SPAN_NOT_IN_DOCUMENT for Reply A. The span in Reply B is verbatim, so the rule requires GROUNDED for Reply B. The check, however, normalises whitespace before testing the span, so it returns GROUNDED for both. I would be wrong if the check returns SPAN_NOT_IN_DOCUMENT for Reply A and GROUNDED for Reply B, or if the rule's 'no relaxation' is read to include whitespace normalisation.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.
