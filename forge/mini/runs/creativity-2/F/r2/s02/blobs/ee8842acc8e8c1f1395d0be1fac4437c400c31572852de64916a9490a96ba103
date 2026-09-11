@@ -1,0 +1,33 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The function under test is open:creib.forge.conformance.oracle.recover_json_object. Its documented rule states: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." Reply 1 is the string "```json\n{\"a\":1}\n{\"a\":2}\n```\n{\"a\":3}". Reply 2 is the string "{\"a\":3}". The rule requires Reply 1 to score the object {"a":2}, because the code fence holds objects and the last one inside it is {"a":2}; it requires Reply 2 to score the object {"a":3}, because there is no fence and the last top-level object is {"a":3}. The check, however, returns {"a":3} for both replies. For Reply 1, the fenced candidate is the entire fence content '{"a":1}\n{"a":2}', which is not a single valid JSON object, so the check skips it; the top-level scan then finds {"a":3} as the last top-level object and returns it. For Reply 2, the top-level scan finds {"a":3} and returns it. I would be wrong if the check returned {"a":2} for Reply 1, or if the rule were read as scoring the last top-level object even when a fence holds multiple objects.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

@@ -1,0 +1,16 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply 1 has a tilde code fence containing {\"a\":1} before a top-level {\"a\":2}; Reply 2 has only {\"a\":2}. -> the check answered unrunnable
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply 1 contains a tilde-fenced JSON object; Reply 2 contains no JSON object. -> the check answered unrunnable
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+The conjecture did not misread the rule. The rule as written says "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text"; "code fence" in Markdown includes tilde fences, and the conjecture correctly read that. The code parts company: its `_FENCE` regex only matches triple backticks, so a tilde-fenced object is not recovered. The machine returned `unrunnable` for the tilde-fenced input, confirming the mismatch. A next conjecture should test a triple-backtick fence containing a JSON object, because the code's regex matches that and the rule says the last object inside a code fence is scored. Avoid repeating the claim that tilde fences are recovered by the current code; instead test what the code actually does with backtick fences and top-level objects.

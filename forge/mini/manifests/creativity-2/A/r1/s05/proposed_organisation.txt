@@ -1,0 +1,25 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A has a fenced block containing two JSON objects followed by a third object outside the fence; Reply B has three t -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A includes a fenced span with two objects and a trailing top-level object; Reply B is only the trailing top-level  -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A wraps the first object in a four-backtick code fence; Reply B has no fence. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A wraps the first object in a tilde code fence; Reply B has no fence, so the last top-level object differs. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply B replaces the tilde-fenced {"a":1} with a backtick-fenced {"b":2} and drops the trailing top-level {"b":2}. -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## What has been refuted, computed from the attacks that landed
+
+- 061b6237e51f8ced was refuted on the ground reading-misrenders-conjecture: The reading's 'expect': 'moves' contradicts the conjecture's explicit prediction that both replies return {'b':2}, so it misrenders the conjecture.
+
+A refuted conjecture is not merely criticised: an attack on it landed and nothing has yet overturned that attack. Do not re-propose one.
+
+## The standing criticism of the last attempt
+
+The reading [061b6237e51f8ced] claims the conjecture expects the output to move between Reply A and Reply B, but the conjecture explicitly says the observation that would show it false is if recover_json_object returns {'a':1} for A and {'b':2} for B, i.e., it distinguishes them. The conjecture predicts no move: both return {'b':2}. The reading's 'expect': 'moves' is the opposite. The execution confirms unchanged, so the reading is wrong, not the conjecture. A next conjecture should assert that recover_json_object returns {'b':2} for both replies, and avoid expecting a move. The rule's words are: 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.'

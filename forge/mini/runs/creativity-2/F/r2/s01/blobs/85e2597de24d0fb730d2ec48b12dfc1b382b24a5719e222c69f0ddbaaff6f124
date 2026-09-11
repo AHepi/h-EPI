@@ -1,0 +1,38 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+I am testing open:creib.forge.conformance.oracle.recover_json_object. The documented rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction." I read that as: if any code fence (including tilde fences, which are code fences in Markdown) contains a JSON object, that object is scored; otherwise the last top-level object is scored. The two reply texts are:
+
+Reply 1: "~~~json\n{\"a\": 1}\n~~~"
+Reply 2: "No JSON here."
+
+For Reply 1, the rule requires the answer to be the object {"a": 1}, because it is inside a code fence (tilde fence) and there is no top-level object outside. For Reply 2, the rule requires no object to be recovered, so the function should raise RecordError (and the kernel should report unrunnable). The check under test, however, uses a regex that only matches triple backticks, so it does not recognize the tilde fence in Reply 1. It then looks for top-level objects in Reply 1 and finds none, so it raises RecordError, and the kernel reports unrunnable. For Reply 2 it also raises RecordError and reports unrunnable. Thus the check gives the same answer (unrunnable) to both replies, even though the rule requires different answers. I would be wrong if the kernel, when run on Reply 1, actually returns the object {"a": 1} (or any non-unrunnable answer), or if the rule as written is interpreted to exclude tilde fences from "code fence" (but the standing criticism says the rule as written includes them, and the code's regex is the bug).
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

@@ -1,0 +1,27 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A has a fenced block containing two JSON objects followed by a third object outside the fence; Reply B has three t -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A includes a fenced span with two objects and a trailing top-level object; Reply B is only the trailing top-level  -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A wraps the first object in a four-backtick code fence; Reply B has no fence. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A wraps the first object in a tilde code fence; Reply B has no fence, so the last top-level object differs. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply B replaces the tilde-fenced {"a":1} with a backtick-fenced {"b":2} and drops the trailing top-level {"b":2}. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply B removes the fenced block and keeps only the trailing top-level object. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## What has been refuted, computed from the attacks that landed
+
+- 52be38a617592e06 was refuted on the ground execution-contradicts-claim: the check answered unchanged and the reading expected unchanged: the rule and the code do not part company on this pair
+
+A refuted conjecture is not merely criticised: an attack on it landed and nothing has yet overturned that attack. Do not re-propose one.
+
+## The standing criticism of the last attempt
+
+The conjecture does not misread the rule. The rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". A ```jsonc fence is a code fence, so the rule requires {"a":1} for Reply A. The code's fence regex only matches ```, ```json, or ```JSON, so it does not treat ```jsonc as a fenced candidate; rule and code diverge. The reading misrenders the conjecture: it expected 'unchanged' and rewrote the input by removing the fence, whereas the conjecture explicitly required {"a":1} for the fenced reply and {"b":2} for the unfenced reply. A next conjecture should test the exact fenced input and assert recover_json_object returns {"a":1}, avoiding the reading's rewrite that strips the fence and its 'unchanged' expectation.

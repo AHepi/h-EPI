@@ -1,0 +1,16 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Pair 89e0e5b1db2c456c / a78155d15b13996c: the conjecture did not misread the rule. The rule says 'The first refusal phrase the text contains, typographic quotes read as straight ones, or None.' The code in refusal_phrase_in loops over refusal_phrases in tuple order and returns the first phrase that is a substring, so it returns the first tuple phrase that appears, not the first phrase in the text. The machine returned 'I cannot' for input 'I'm sorry, I cannot do that.' because 'I cannot' is earlier in REFUSAL_PHRASES than 'I'm sorry'; this matches the conjecture and shows the rule as written and the code part company. A next conjecture should try instead: test that typographic quotes are normalized before matching, e.g. input 'I’m sorry' with a curly apostrophe should still match 'I'm sorry'. It should avoid repeating the tuple-order-vs-text-order claim, which this execution already confirms. Reading 89e0e5b1db2c456c claims to render 'The function, however, returns 'I cannot' for both, because 'I cannot' is earlier in the REFUSAL_PHRASES list than 'I'm sorry'.' It names the function open:creib.forge.conformance.oracle.refusal_phrase_in and sets expect unchanged with the two texts as input and rewritten. It renders the conjecture faithfully; no defect in the reading. If a reading had named a different function or set an expectation the prose did not state, that would be a reading defect, but here the prose states the function and the unchanged expectation.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

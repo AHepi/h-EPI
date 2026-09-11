@@ -1,0 +1,15 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply 1 has a tilde code fence containing {\"a\":1} before a top-level {\"a\":2}; Reply 2 has only {\"a\":2}. -> the check answered unrunnable
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+The conjecture did not misread the rule. The rule as written says, "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." The code's _FENCE regex only matches triple backticks, not tilde fences, so for Reply 1 the tilde fence is not recognized and the last top-level object {"a":2} is returned. Thus the rule as written and the code part company. However the machine returned "unrunnable", not {"a":2} for both, so the conjecture's claim that the check returns {"a":2} for both was not observed. A next conjecture should run the kernel on the input directly or use a runnable kernel and assert the actual returned value, avoiding claiming a check output when the execution was unrunnable.

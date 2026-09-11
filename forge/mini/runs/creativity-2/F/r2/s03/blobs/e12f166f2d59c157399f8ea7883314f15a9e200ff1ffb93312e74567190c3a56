@@ -1,0 +1,41 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+I am testing open:creib.forge.conformance.oracle.recover_json_object. The documented rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." Reply 1 is:
+```json
+{"a":1}
+{"a":2}
+```
+{"a":3}
+Reply 2 is:
+{"a":3}
+For Reply 1, the code fence holds two objects, so the rule requires the last one inside the fence, {"a":2}. For Reply 2, there is no fence, so the rule requires the last top-level object, {"a":3}. These are different answers. I conjecture the check gives the same answer for both: it returns {"a":3}. The reason is that the fenced pool takes the whole fence body as one candidate, '{"a":1}\n{"a":2}', which fails strict JSON and last-wins parsing, so the fenced pool yields nothing; the top-level pool then scans the whole text and finds {"a":3} as the last top-level object. The conjecture would be false if recover_json_object on Reply 1 returns {"a":2} instead of {"a":3}, or if the rule is read as allowing the top-level fallback to override a fence that holds multiple objects.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

@@ -1,0 +1,32 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply one contains a fenced code block with {"a":1} before the top-level {"b":2}; reply two contains only the top-level  -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply one contains a ```python code fence with {"a":1} followed by {"b":2}; reply two contains only {"b":2}. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second object inside the code fence changes from {"b":2} to {"d":4}; the rest is identical. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second fenced object changes from {"y":2} to {"w":4}; the trailing top-level object {"z":3} is unchanged. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second reply changes the value of q from 2 to 5 inside the fenced object; the top-level object remains {"r":3}. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The fenced object's "n" value changes from 20 to 30. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second object inside the code fence changes from {"y":2} to {"y":4}; the first object and the top-level object remai -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second reply changes the value of y from 20 to 21 inside the code fence; the top-level object with z 30 is unchanged -> the check answered unrunnable
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second object inside the code fence changes from {"b": 2} to {"b": 4}; the top-level object {"c": 3} is unchanged. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second reply changes the value of \"t\" inside the fenced object from 20 to 40; all else is identical. -> the check answered unrunnable
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The second object inside the code fence changes from {"t": 20} to {"t": 40}; all else is identical. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The fenced JSON object's "a" value changes from 1 to 2; all else is identical. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: the value of key "a" changes from 1 to 2; all else identical -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: unchanged -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## The standing criticism of the last attempt
+
+The conjecture misreads the rule, not the code. The rule says 'Every top-level balanced object in the text is a candidate' and 'an object nested inside another is not a candidate of its own.' In the inputs, the outer object {"text": "{"b":2}", "extra": 3} is invalid JSON because the string contains unescaped quotes. The nested {"b":2} is therefore not 'nested inside another' valid object; it is a top-level balanced object under the code's scan. The code's raw_decode fails on the outer object, leaves the nested '{' to be scanned, and the reversed pool returns {"b":2}. The execution confirms this: both inputs return ({'b': 2}, ()), unchanged. The conjecture's first sentence claims the check must return {"a":1}/{"a":2}, which is a misreading of 'nested inside another'; its final sentence correctly predicts the nested object, so the conjecture is internally contradictory.
+
+The reading 0e501c5b6005fa9d is defective. It claims to render 'I expect the check to return the same nested object {"b":2} for both inputs, so the execution should be unchanged.' It renders that as expect: unchanged, but it omits the earlier contradictory claim 'Under the rule, reply one's only top-level balanced object is {"a":1}, so the check must return {"a":1}; reply two's only top-level balanced object is {"a":2}, so the check must return {"a":2}.' It also invents a rewrite structure (rewrite: unchanged, rewritten: {"a":2} ...) that the prose does not state; the prose gives two separate inputs, not a rewrite. The defect is in the reading, not the conjecture, because the prose explicitly names the function and states the final expectation, while the reading adds a rewrite and drops the earlier claim.
+
+A next conjecture should test a case where the outer object is valid and contains a nested object as a value, to confirm the nested object is excluded, or test an invalid outer object with a balanced object inside a string to confirm it is treated as top-level. It should avoid repeating the contradictory claim that the rule requires {"a":1}/{"a":2} for these inputs, and should state one expectation clearly.

@@ -1,0 +1,35 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+The three texts are fields of the REPLY, beside "body" and "commitments", not inside the commitments string. A reply that omits any of them is refused and you are asked again. In full, a well formed reply looks exactly like this:
+
+{"body": "<what you were unsure of, in prose>",
+ "commitments": "{\"kernel\": \"<the full dotted path>\", \"expect\": \"moves\"}",
+ "input": "<the first reply text, in full>",
+ "rewritten": "<the second reply text, in full>",
+ "rewrite": "<how the two differ>"}
+
+## The conjecture, as written (conj)
+[c2d3d6a260df4832] (mini.conjecture.v1)
+Conjecture: The function open:creib.forge.conformance.oracle.refusal_phrase_in, whose documented rule is "The first refusal phrase the text contains, typographic quotes read as straight ones, or None," returns the same answer for two replies that the rule requires it to tell apart. Reply A is "I'm sorry, I cannot comply." Reply B is "I cannot comply, I'm sorry." In Reply A the first refusal phrase in the text is "I'm sorry"; the rule requires the function to return "I'm sorry". In Reply B the first refusal phrase in the text is "I cannot"; the rule requires the function to return "I cannot". But the implementation checks the refusal phrases in the fixed list order ['I cannot', "I can't", "I'm sorry", ...], so for both replies it finds "I cannot" and returns "I cannot". Thus the check gives the same answer for a pair the rule requires to be told apart. I would be wrong if, on Reply A, the function returned "I'm sorry" (or any answer different from its answer on Reply B), or if on Reply B it returned something other than "I cannot".
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.
+
+## The shape this answer must take
+`input` must contain something matching this expression:
+  \S
+
+`rewrite` must contain something matching this expression:
+  \S
+
+`rewritten` must contain something matching this expression:
+  \S

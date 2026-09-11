@@ -1,0 +1,40 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+The three texts are fields of the REPLY, beside "body" and "commitments", not inside the commitments string. A reply that omits any of them is refused and you are asked again. In full, a well formed reply looks exactly like this:
+
+{"body": "<what you were unsure of, in prose>",
+ "commitments": "{\"kernel\": \"<the full dotted path>\", \"expect\": \"moves\"}",
+ "input": "<the first reply text, in full>",
+ "rewritten": "<the second reply text, in full>",
+ "rewrite": "<how the two differ>"}
+
+## The conjecture, as written (conj)
+[1c7fec2a45300976] (mini.conjecture.v1)
+I am testing open:creib.forge.conformance.oracle.recover_json_object. The documented rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction." I read that as: if any code fence (including tilde fences, which are code fences in Markdown) contains a JSON object, that object is scored; otherwise the last top-level object is scored. The two reply texts are:
+
+Reply 1: "~~~json\n{\"a\": 1}\n~~~"
+Reply 2: "No JSON here."
+
+For Reply 1, the rule requires the answer to be the object {"a": 1}, because it is inside a code fence (tilde fence) and there is no top-level object outside. For Reply 2, the rule requires no object to be recovered, so the function should raise RecordError (and the kernel should report unrunnable). The check under test, however, uses a regex that only matches triple backticks, so it does not recognize the tilde fence in Reply 1. It then looks for top-level objects in Reply 1 and finds none, so it raises RecordError, and the kernel reports unrunnable. For Reply 2 it also raises RecordError and reports unrunnable. Thus the check gives the same answer (unrunnable) to both replies, even though the rule requires different answers. I would be wrong if the kernel, when run on Reply 1, actually returns the object {"a": 1} (or any non-unrunnable answer), or if the rule as written is interpreted to exclude tilde fences from "code fence" (but the standing criticism says the rule as written includes them, and the code's regex is the bug).
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.
+
+## The shape this answer must take
+`input` must contain something matching this expression:
+  \S
+
+`rewrite` must contain something matching this expression:
+  \S
+
+`rewritten` must contain something matching this expression:
+  \S

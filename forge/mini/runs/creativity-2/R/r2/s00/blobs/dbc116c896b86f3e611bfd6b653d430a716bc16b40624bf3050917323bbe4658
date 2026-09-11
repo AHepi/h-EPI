@@ -1,0 +1,4 @@
+{
+  "body": "Conjecture: open:creib.forge.conformance.oracle.recover_json_object fails to distinguish a reply whose final answer is inside a non-JSON code fence from a reply with the same objects but no fence. The documented rule says: \"The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.\" Reply A is: ```python\n{\"a\": 1}\n```\n{\"b\": 2}. Reply B is: {\"a\": 1}\n{\"b\": 2}. For Reply A the rule requires the fenced object {\"a\": 1}, because a code fence holds one; for Reply B the rule requires the last top-level object {\"b\": 2}. The function returns {\"b\": 2} for both, because its fence regex only matches ```, ```json, or ```JSON, so the ```python fence is not collected and both objects are treated as top-level. I would be wrong if the function returned {\"a\": 1} for Reply A.",
+  "commitments": ""
+}

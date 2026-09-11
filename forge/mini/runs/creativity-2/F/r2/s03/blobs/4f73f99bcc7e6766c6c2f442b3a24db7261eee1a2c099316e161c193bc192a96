@@ -1,0 +1,9 @@
+I am testing open:creib.forge.conformance.oracle.recover_json_object. The documented rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." Reply 1 is:
+```json
+{"a":1}
+{"a":2}
+```
+{"a":3}
+Reply 2 is:
+{"a":3}
+For Reply 1, the code fence holds two objects, so the rule requires the last one inside the fence, {"a":2}. For Reply 2, there is no fence, so the rule requires the last top-level object, {"a":3}. These are different answers. I conjecture the check gives the same answer for both: it returns {"a":3}. The reason is that the fenced pool takes the whole fence body as one candidate, '{"a":1}\n{"a":2}', which fails strict JSON and last-wins parsing, so the fenced pool yields nothing; the top-level pool then scans the whole text and finds {"a":3} as the last top-level object. The conjecture would be false if recover_json_object on Reply 1 returns {"a":2} instead of {"a":3}, or if the rule is read as allowing the top-level fallback to override a fence that holds multiple objects.

@@ -1,0 +1,11 @@
+The function under test is open:creib.forge.conformance.oracle.recover_json_object. Its documented rule states: “The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text”. I read that rule as requiring the check to return the JSON object contained in the last code fence whenever such a fence holds a JSON object, regardless of the fence’s language tag.
+
+The two reply texts are:
+
+Reply 1: ```python\n{"x": 1}\n```\n{"y": 2}
+
+Reply 2: ```python\n{"x": 3}\n```\n{"y": 2}
+
+For Reply 1, the rule requires the answer to be the object inside the code fence, {"x": 1}. For Reply 2, the rule requires the answer to be {"x": 3}. The check, however, gives the same answer for both: it returns {"y": 2}, because its fence regex only recognizes ```, ```json, or ```JSON, so it does not treat the ```python fence as a code fence, ignores the fenced object, and falls back to the last top-level object in the text, which is {"y": 2} in both replies.
+
+What would make me wrong: if the check actually returns {"x": 1} for Reply 1 and {"x": 3} for Reply 2, or if it raises on either reply, or if the documented rule is interpreted to exclude ```python fences from “code fence” so that the top-level object is the correct answer for both.

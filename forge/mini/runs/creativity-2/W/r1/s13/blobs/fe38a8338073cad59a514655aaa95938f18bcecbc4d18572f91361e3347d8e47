@@ -1,0 +1,20 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The conjecture misreads the rule, not the code. The rule says 'Every top-level balanced object in the text is a candidate' and 'an object nested inside another is not a candidate of its own.' In the inputs, the outer object {"text": "{"b":2}", "extra": 3} is invalid JSON because the string contains unescaped quotes. The nested {"b":2} is therefore not 'nested inside another' valid object; it is a top-level balanced object under the code's scan. The code's raw_decode fails on the outer object, leaves the nested '{' to be scanned, and the reversed pool returns {"b":2}. The execution confirms this: both inputs return ({'b': 2}, ()), unchanged. The conjecture's first sentence claims the check must return {"a":1}/{"a":2}, which is a misreading of 'nested inside another'; its final sentence correctly predicts the nested object, so the conjecture is internally contradictory.
+
+The reading 0e501c5b6005fa9d is defective. It claims to render 'I expect the check to return the same nested object {"b":2} for both inputs, so the execution should be unchanged.' It renders that as expect: unchanged, but it omits the earlier contradictory claim 'Under the rule, reply one's only top-level balanced object is {"a":1}, so the check must return {"a":1}; reply two's only top-level balanced object is {"a":2}, so the check must return {"a":2}.' It also invents a rewrite structure (rewrite: unchanged, rewritten: {"a":2} ...) that the prose does not state; the prose gives two separate inputs, not a rewrite. The defect is in the reading, not the conjecture, because the prose explicitly names the function and states the final expectation, while the reading adds a rewrite and drops the earlier claim.
+
+A next conjecture should test a case where the outer object is valid and contains a nested object as a value, to confirm the nested object is excluded, or test an invalid outer object with a balanced object inside a string to confirm it is treated as top-level. It should avoid repeating the contradictory claim that the rule requires {"a":1}/{"a":2} for these inputs, and should state one expectation clearly.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.
