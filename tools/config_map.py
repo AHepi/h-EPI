@@ -119,9 +119,16 @@ def _audit(args: argparse.Namespace) -> int:
         for path in config.get("evidence", []):
             if not (ROOT / path).exists():
                 problems.append(f"{cid} cites evidence that does not exist: {path}")
-        for field in ("shows", "proven", "not_proven"):
+        # A designed config has not run, so it cannot say what it shows or proves -- but it CAN say
+        # what it is for and what it will not settle, and both are knowable before a call is paid
+        # for. Requiring "shows" of it would invite a guess written as a result.
+        required = (("tests", "not_proven") if config["status"] == "designed"
+                    else ("shows", "proven", "not_proven"))
+        for field in required:
             if not str(config.get(field, "")).strip():
-                problems.append(f"{cid} leaves {field!r} empty; a registered config says what it does and does not show")
+                problems.append(f"{cid} is {config['status']} and leaves {field!r} empty")
+        if config["status"] == "designed" and str(config.get("shows", "")).strip():
+            problems.append(f"{cid} is designed and already claims what it shows")
 
     print(f"settings {len(settings)}, misreadings {len(misreadings)}, confounds {len(confounds)}, "
           f"configs {len(registry['configs'])}, alarms {len(real)}", flush=True)

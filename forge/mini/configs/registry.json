@@ -5,7 +5,7 @@
     "works": "ran, produced a reading, and no fatal confound applies to that reading",
     "confounded": "ran, but a named confound makes its reading unattributable",
     "fails": "could not measure: the machinery stopped, starved, or refused",
-    "designed": "specified and not yet run"
+    "designed": "specified and not yet run: says what it tests and what it will not settle, never what it shows"
   },
   "configs": [
     {
@@ -13,25 +13,42 @@
       "title": "Single shot: one conjecture, no loop, no criticism",
       "manifest": "forge/mini/manifests/creativity/S/s00/manifest.json",
       "status": "works",
-      "sets": {"CFG-MAX-CYCLES": "1", "CFG-STAGES": "source, conjecture, reading, execute, verdict"},
-      "evidence": ["forge/mini/runs/creativity/S"],
+      "sets": {
+        "CFG-MAX-CYCLES": "1",
+        "CFG-STAGES": "source, conjecture, reading, execute, verdict"
+      },
+      "evidence": [
+        "forge/mini/runs/creativity/S"
+      ],
       "shows": "1 verified T1 witness at 2 model calls, 0.50 per call: the best yield per call in the block.",
       "proven": "The conjecture step produces a real kernel boundary without any loop. Verified by hand against the rule.",
       "not_proven": "Nothing about coverage: one target, one witness, one draw.",
-      "confounds": ["CON-DRAW-VARIANCE", "CON-ARITY-HIDES-FINDS"],
-      "errata": ["C9"]
+      "confounds": [
+        "CON-DRAW-VARIANCE",
+        "CON-ARITY-HIDES-FINDS"
+      ],
+      "errata": [
+        "C9"
+      ]
     },
     {
       "config_id": "CONF-ARMS-R",
       "title": "Equal-budget repetition: six independent conjectures, no loop",
       "manifest": "forge/mini/manifests/creativity/R/s00/manifest.json",
       "status": "works",
-      "sets": {"CFG-MAX-CYCLES": "1", "CFG-PROBLEM": "identical every segment"},
-      "evidence": ["forge/mini/runs/creativity/R"],
+      "sets": {
+        "CFG-MAX-CYCLES": "1",
+        "CFG-PROBLEM": "identical every segment"
+      },
+      "evidence": [
+        "forge/mini/runs/creativity/R"
+      ],
       "shows": "4 witnesses at 12 calls, 0.33 per call, 2 distinct targets.",
       "proven": "Repetition alone reaches both targets the block ever reached. No loop arm beat it per call.",
       "not_proven": "That repetition is a ceiling: it was never run at 24 calls.",
-      "confounds": ["CON-DRAW-VARIANCE"],
+      "confounds": [
+        "CON-DRAW-VARIANCE"
+      ],
       "errata": []
     },
     {
@@ -39,52 +56,95 @@
       "title": "No-return: loop with criticism, organisation never changes",
       "manifest": "forge/mini/manifests/creativity/N/s00/manifest.json",
       "status": "confounded",
-      "sets": {"CFG-INPUT-PORTS": "critic reads source, conj, execs", "CFG-PROBLEM": "never rewritten"},
-      "evidence": ["forge/mini/runs/creativity/N", "forge/mini/runs/creativity-starved/N"],
+      "sets": {
+        "CFG-INPUT-PORTS": "critic reads source, conj, execs",
+        "CFG-PROBLEM": "never rewritten"
+      },
+      "evidence": [
+        "forge/mini/runs/creativity/N",
+        "forge/mini/runs/creativity-starved/N"
+      ],
       "shows": "3 witnesses at 24 calls, 0.12 per call, 1 target.",
       "proven": "Nothing about the loop. Its critic read 7 unrunnable rows against 1 result.",
       "not_proven": "That a loop without a return path is worthless; this one was starved.",
-      "confounds": ["CON-STARVED-CRITIC", "CON-DRAW-VARIANCE"],
-      "errata": ["A1"]
+      "confounds": [
+        "CON-STARVED-CRITIC",
+        "CON-DRAW-VARIANCE"
+      ],
+      "errata": [
+        "A1"
+      ]
     },
     {
       "config_id": "CONF-ARMS-F",
       "title": "Full: loop, criticism, and the organisation rewritten between segments",
       "manifest": "forge/mini/manifests/creativity/F/s00/manifest.json",
       "status": "confounded",
-      "sets": {"CFG-INPUT-PORTS": "critic reads source, conj, execs", "CFG-PROBLEM": "rewritten from the previous record"},
-      "evidence": ["forge/mini/runs/creativity/F", "forge/mini/runs/creativity-starved/F"],
+      "sets": {
+        "CFG-INPUT-PORTS": "critic reads source, conj, execs",
+        "CFG-PROBLEM": "rewritten from the previous record"
+      },
+      "evidence": [
+        "forge/mini/runs/creativity/F",
+        "forge/mini/runs/creativity-starved/F"
+      ],
       "shows": "3 witnesses at 24 calls, equal to N; and repeated an earlier pair TWICE while being told not to.",
       "proven": "The carry is not inert: it was obeyed toward the wrong target, because the critic could not see the layer the errors were in.",
       "not_proven": "That the return path buys nothing. That reading was WITHDRAWN.",
-      "confounds": ["CON-CARRY-AMPLIFIES", "CON-STARVED-CRITIC", "CON-DRAW-VARIANCE"],
-      "errata": ["A1"]
+      "confounds": [
+        "CON-CARRY-AMPLIFIES",
+        "CON-STARVED-CRITIC",
+        "CON-DRAW-VARIANCE"
+      ],
+      "errata": [
+        "A1"
+      ]
     },
     {
       "config_id": "CONF-ARMS-W",
       "title": "Wired: F with the critic able to see the reading and the conjecture's commitment",
       "manifest": "forge/mini/manifests/creativity/W/s00/manifest.json",
       "status": "works",
-      "sets": {"CFG-INPUT-PORTS": "critic reads source, conj, reads, execs", "CFG-RENDER": "conj renders list_bodies_and_commitments"},
-      "evidence": ["forge/mini/runs/creativity/W"],
+      "sets": {
+        "CFG-INPUT-PORTS": "critic reads source, conj, reads, execs",
+        "CFG-RENDER": "conj renders list_bodies_and_commitments"
+      },
+      "evidence": [
+        "forge/mini/runs/creativity/W"
+      ],
       "shows": "7 witnesses at 24 calls, 0.29 per call, 2 targets, zero repeats, zero identical-text claims, zero invented functions. Six witnesses found by no other arm.",
       "proven": "Wiring alone more than doubles the yield with the kinds, the commitments, the install map and the budget all held fixed. The critic discusses the reading in 7 of 8 segments where F does so in 0 of 8.",
       "not_proven": "That it beats repetition: 0.29 per call against R's 0.33, same two targets.",
-      "confounds": ["CON-DRAW-VARIANCE"],
-      "errata": ["A2"]
+      "confounds": [
+        "CON-DRAW-VARIANCE"
+      ],
+      "errata": [
+        "A2"
+      ]
     },
     {
       "config_id": "CONF-ARMS-A",
       "title": "Adjudicated: W plus a criticism that names a target and a ground, and a computed status",
       "manifest": "forge/mini/manifests/creativity/A/s00/manifest.json",
       "status": "confounded",
-      "sets": {"CFG-STAGES": "adjudicate added", "CFG-INSTRUCTION": "critic commitment names attacks and ground", "CFG-FORMAT": "NONE DECLARED"},
-      "evidence": ["forge/mini/runs/creativity/A"],
+      "sets": {
+        "CFG-STAGES": "adjudicate added",
+        "CFG-INSTRUCTION": "critic commitment names attacks and ground",
+        "CFG-FORMAT": "NONE DECLARED"
+      },
+      "evidence": [
+        "forge/mini/runs/creativity/A"
+      ],
       "shows": "5 witnesses at 24 calls, 0.21 per call. 2 attacks landed; cannot-tell used once and minted no attack.",
       "proven": "An attack can land, and the one that did caught the reading misrendering the conjecture: the error class structurally invisible to N, F and W.",
       "not_proven": "That adjudication does not beat wiring. Four of eight criticism commitments did not parse, so the machinery engaged in under half the arm.",
-      "confounds": ["CON-FORMAT-KILLS-RUN", "CON-DRAW-VARIANCE"],
-      "errata": ["C6"]
+      "confounds": [
+        "CON-FORMAT-KILLS-RUN",
+        "CON-DRAW-VARIANCE"
+      ],
+      "errata": [
+        "C6"
+      ]
     },
     {
       "config_id": "CONF-BASELINE-E",
@@ -92,12 +152,169 @@
       "manifest": null,
       "status": "fails",
       "sets": {},
-      "evidence": ["forge/mini/runs/creativity/E"],
+      "evidence": [
+        "forge/mini/runs/creativity/E"
+      ],
       "shows": "460 collapses at zero model calls, over 8 functions.",
       "proven": "Nothing. 458 of the 460 are on functions whose entire range over the seeds is one value.",
       "not_proven": "Anything about what a mechanical search can do: the seeds, not the search, were the limit.",
-      "confounds": ["CON-BASELINE-SEEDS", "CON-MEASURE-EXCLUDES-BASELINE"],
-      "errata": ["A3", "A4"]
+      "confounds": [
+        "CON-BASELINE-SEEDS",
+        "CON-MEASURE-EXCLUDES-BASELINE"
+      ],
+      "errata": [
+        "A3",
+        "A4"
+      ]
+    },
+    {
+      "config_id": "CONF-B2-E",
+      "title": "Repaired baseline: seeds found per function so the function varies",
+      "manifest": null,
+      "status": "designed",
+      "sets": {
+        "CFG-FORMAT": "none; mechanical, no model"
+      },
+      "evidence": [],
+      "tests": "Whether a mechanical search, given inputs that actually make each function vary, finds collapses a model arm does not. CONF-BASELINE-E could not: 458 of its 460 collapses were on functions constant over its seeds.",
+      "not_proven": "It will not show what a model contributes beyond search unless the primary measure is one this arm can also score on. grounded_T1 was not (CON-MEASURE-EXCLUDES-BASELINE).",
+      "confounds": [
+        "CON-BASELINE-SEEDS",
+        "CON-MEASURE-EXCLUDES-BASELINE"
+      ],
+      "errata": [
+        "A3",
+        "A4"
+      ]
+    },
+    {
+      "config_id": "CONF-B2-R",
+      "title": "Repeated, repaired: no loop, resolution inside the arm",
+      "manifest": null,
+      "status": "designed",
+      "sets": {
+        "CFG-MAX-CYCLES": "1",
+        "CFG-PROBLEM": "identical every segment"
+      },
+      "evidence": [],
+      "tests": "The floor every loop arm must beat. CONF-ARMS-R beat all of them per call at 12 calls and was never run at 24.",
+      "not_proven": "Nothing about the loop. It is the thing the loop is measured against, not a treatment.",
+      "confounds": [
+        "CON-DRAW-VARIANCE"
+      ],
+      "errata": []
+    },
+    {
+      "config_id": "CONF-B2-F",
+      "title": "Full, repaired: return path with a critic that cannot see the reading",
+      "manifest": null,
+      "status": "designed",
+      "sets": {
+        "CFG-PROBLEM": "rewritten from the previous record",
+        "CFG-INPUT-PORTS": "critic reads source, conj, execs"
+      },
+      "evidence": [],
+      "tests": "Replication of the F-against-W contrast with a stochastic floor under it, so the wiring effect is not one draw.",
+      "not_proven": "It will not show the return path is worthless if it loses: CON-CARRY-AMPLIFIES says the carry is only as good as the critic feeding it, and this arm's critic is deliberately blind.",
+      "confounds": [
+        "CON-CARRY-AMPLIFIES",
+        "CON-DRAW-VARIANCE"
+      ],
+      "errata": [
+        "A1"
+      ]
+    },
+    {
+      "config_id": "CONF-B2-W",
+      "title": "Wired, repaired: the critic sees the reading and the conjecture's commitment",
+      "manifest": null,
+      "status": "designed",
+      "sets": {
+        "CFG-INPUT-PORTS": "critic reads source, conj, reads, execs",
+        "CFG-RENDER": "conj renders list_bodies_and_commitments"
+      },
+      "evidence": [],
+      "tests": "Whether the one effect this session established -- wiring more than doubling the yield -- replicates with repeats under it, and whether it beats CONF-B2-R per call, which CONF-ARMS-W did not.",
+      "not_proven": "That citation is the mechanism. C6 measured correctly shows the critic discusses the reading in 7 of 8 segments, which is being shown rather than a proven causal route.",
+      "confounds": [
+        "CON-DRAW-VARIANCE"
+      ],
+      "errata": [
+        "A2"
+      ]
+    },
+    {
+      "config_id": "CONF-B2-A",
+      "title": "Adjudicated, repaired: a format schema with an escape road, and a test that can be attacked",
+      "manifest": null,
+      "status": "designed",
+      "sets": {
+        "CFG-FORMAT": "json_schema on the criticism commitment, ground enum including cannot-tell",
+        "CFG-STAGES": "adjudicate",
+        "CFG-TOLERANCE": "identical to every other arm"
+      },
+      "evidence": [],
+      "tests": "The experiment. Whether criticism that LANDS beats criticism that is only read, at a point where the format no longer suppresses it -- CONF-ARMS-A had four of eight commitments unparseable -- and where a test-is-unsound ground lets the executor itself be attacked.",
+      "not_proven": "It will not settle whether mini needs untyped interface dispatch or commitments carrying an eval and a budget. Those stand unrepaired (ERRATA C3, C4) and a block that fixed them is a different machine.",
+      "confounds": [
+        "CON-FORMAT-KILLS-RUN",
+        "CON-DRAW-VARIANCE"
+      ],
+      "errata": [
+        "C6"
+      ]
+    },
+    {
+      "config_id": "CONF-PROBE-STRICT",
+      "title": "Deliberately bad: a closed ground enum with NO escape road",
+      "manifest": null,
+      "status": "designed",
+      "sets": {
+        "CFG-FORMAT": "ground enum without cannot-tell",
+        "CFG-TOLERANCE": "identical to CONF-B2-A"
+      },
+      "evidence": [],
+      "tests": "MIS-FORMAT-2 on this machine. DeepReason measures a required closed field without an escape road taking fabrication from 0-2 to 100 per cent; this asks whether attacks land on targets the record does not support when the honest answer is unavailable.",
+      "not_proven": "A fabrication rate here is about this task and this model. It is a probe of the config, not a result about schemas in general.",
+      "confounds": [
+        "CON-FORMAT-KILLS-RUN"
+      ],
+      "errata": []
+    },
+    {
+      "config_id": "CONF-PROBE-NO-TRANSLATOR",
+      "title": "Schema on the conjecture itself, no separate reading stage",
+      "manifest": null,
+      "status": "designed",
+      "sets": {
+        "CFG-FORMAT": "json_schema on the conjecture",
+        "CFG-STAGES": "reading removed"
+      },
+      "evidence": [],
+      "tests": "T-D of PIPELINE_MATH directly: whether putting the schema on the conjecture rather than downstream of it loses the wrong readings that make a disagreement visible. It also removes the layer W's critic gained by seeing.",
+      "not_proven": "If it does worse, that is not evidence for the translator specifically: removing the reading stage also removes a call, so the arms differ in cost unless the budget is matched deliberately.",
+      "confounds": [
+        "CON-FORMAT-KILLS-RUN",
+        "CON-DRAW-VARIANCE"
+      ],
+      "errata": []
+    },
+    {
+      "config_id": "CONF-PROBE-SHORT-CARRY",
+      "title": "Carry only the last segment, not the accumulated history",
+      "manifest": null,
+      "status": "designed",
+      "sets": {
+        "CFG-PROBLEM": "rewritten from the previous segment only"
+      },
+      "evidence": [],
+      "tests": "The risk named in CREATIVITY-ARMS-1's own pre-registration and never tested: the install map makes the brief longer each segment, so a full-carry arm may lose to a short-carry one for a reason that has nothing to do with the return path.",
+      "not_proven": "It will not separate brief length from brief content unless the two carries are matched on length, which they cannot be while one accumulates.",
+      "confounds": [
+        "CON-CARRY-AMPLIFIES",
+        "CON-DRAW-VARIANCE"
+      ],
+      "errata": []
     }
   ]
 }
