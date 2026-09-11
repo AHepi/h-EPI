@@ -1,0 +1,30 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+## The conjecture, as written (conj)
+[3f046fc67baff14e] (mini.conjecture.v1)
+Conjecture: open:creib.forge.conformance.records.recover_json_object. The documented rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." Reply A is:
+
+Here is the draft:
+```text
+{"a": 1}
+```
+And here is the final:
+{"b": 2}
+
+Reply B is:
+
+{"b": 2}
+
+The rule requires recover_json_object(A) to return {"a": 1}, because Reply A contains a code fence (```text) holding that object, and it is the last object inside any fence. The rule requires recover_json_object(B) to return {"b": 2}, because Reply B has no fence and its last top-level object is {"b": 2}. The check, however, returns {"b": 2} for both replies: its _FENCE regex is '```(?:json|JSON)?\\s*(.*?)```', which does not match a ```text fence, so the fenced object in Reply A is not collected; the code then falls through to the last top-level object, which is {"b": 2}. This would be shown false if recover_json_object(A) returned {"a": 1}, or if recover_json_object(B) returned anything other than {"b": 2}, or if the _FENCE regex matched ```text fences.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.

@@ -1,0 +1,17 @@
+# Execute
+
+## Readings (reads)
+[7795d8df16ba5e2f] (mini.pair-proposal.reading.v1)
+The conjecture concerns open:creib.forge.conformance.records.recover_json_object. It claims the documented rule says the scored object is the last one inside a code fence when any fence holds one, else the last top-level object. Reply A contains a ```text fence holding {"a": 1}, so the rule requires recover_json_object(A) to return {"a": 1}. Reply B has no fence, so the rule requires recover_json_object(B) to return {"b": 2}. The check returns {"b": 2} for both because its _FENCE regex does not match ```text fences. The conjecture would be shown false if A returned {"a": 1}, or if B returned anything other than {"b": 2}, or if the _FENCE regex matched ```text fences.
+input: Here is the draft:
+```text
+{"a": 1}
+```
+And here is the final:
+{"b": 2}
+rewrite: moves
+rewritten: {"b": 2}
+commitments: {"kernel": "open:creib.forge.conformance.records.recover_json_object", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.

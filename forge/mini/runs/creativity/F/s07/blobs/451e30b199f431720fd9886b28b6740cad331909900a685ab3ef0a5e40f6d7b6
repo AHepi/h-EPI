@@ -1,0 +1,33 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+I conjecture that open:creib.forge.conformance.oracle._grounding_kernel fails to tell apart two replies that its documented rule requires it to tell apart. The rule I am reading is the function's own docstring: 'The grounding verdict as the harness gives it, with no relaxation and the value-in-span check on,' together with the helper's rule: 'Return None when the span is not in the document, else how it was matched ("verbatim" or a relaxation).' Because the call passes relaxations=(), only a verbatim match may ground. Reply A is the JSON object {"value": "hello", "span": "hello world", "document": "hello world"}. Reply B is the JSON object {"value": "hello", "span": "hello   world", "document": "hello world"}. In A the span occurs in the document exactly as written, so the rule requires GROUNDED. In B the span has three spaces where the document has one; with no relaxation allowed, the span is not in the document verbatim, so the rule requires SPAN_NOT_IN_DOCUMENT. The check, however, normalises whitespace in _span_occurs before the containment test, so it will see 'hello world' in 'hello world' for both and return GROUNDED for both. What would make me wrong: if the execution of open:creib.forge.conformance.oracle._grounding_kernel on Reply B returns SPAN_NOT_IN_DOCUMENT (or any answer other than GROUNDED), then the check does tell the pair apart and the conjecture is false; likewise if the documented rule is read as allowing whitespace normalisation to count as verbatim.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

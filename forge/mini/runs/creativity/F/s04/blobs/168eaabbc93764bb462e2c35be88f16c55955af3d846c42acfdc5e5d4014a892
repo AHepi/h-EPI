@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The conjecture did not misread the rule. The rule as written says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." The code parts company with that rule: its _FENCE regex is '```(?:json|JSON)?\\s*(.*?)```', which only collects ```json or ```JSON fences, not ```text. For Reply A the fenced pool is therefore empty, and the reversed top-level pool yields {"b": 2}. The execution confirms this: before and after are both ("{'b': 2}", ()), executed unchanged, expected moves, as_expected false. So the current code does not move on A. The B half of the conjecture was not executed, so it is neither confirmed nor refuted here. A next conjecture should assert the current behavior directly: recover_json_object on a reply whose only fenced object is in a ```text fence returns the last top-level object, because _FENCE does not match that fence. It should avoid repeating the claim that the docstring's generic 'code fence' includes ```text when predicting the current output; instead test a ```json fence if the fenced pool is meant to be non-empty.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

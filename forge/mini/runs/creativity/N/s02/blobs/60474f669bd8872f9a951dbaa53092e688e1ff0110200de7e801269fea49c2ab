@@ -1,0 +1,14 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+The execution was unrunnable (proposal 2e2d5d28766bc1dc: 'the rewritten text is the input unchanged'), so there is no runtime output to compare. Reading the source beside the conjecture: the conjecture's predicted code behavior is correct. recover_json_object builds fenced candidates from the entire fenced content, not from objects inside that content. For Reply A the fenced pool is ['Here is {"b":2}', '{"a":1}']; reversed, it tries 'Here is {"b":2}', fails strict and last-wins parsing, then returns '{"a":1}' from the first fence, never reaching top_level. The documented rule says 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text.' The last object inside a code fence in Reply A is {"b":2}, because it sits inside the second fence even though the fenced content as a whole is not a JSON object. So the rule as written and the code part company; the conjecture did not misread the rule. A next conjecture should try a case where the last fence contains prose plus a JSON object and assert that recover_json_object should extract that object, or should propose changing the fenced pool to scan fenced content for top-level objects. It should avoid repeating the assumption that the fenced pool already extracts objects from within fenced content, and avoid relying on an unrunnable execution as evidence.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

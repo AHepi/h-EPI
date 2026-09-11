@@ -1,0 +1,16 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Do not conjecture. Read what the machine returned beside what was claimed. For each pair, say whether the conjecture misread the rule, or the rule as written and the code part company. Then say what a next conjecture should try instead, and name what it should avoid repeating. Quote the rule's words.
+
+You are also shown the READING: the structured commitment a translator made of the conjecture's prose, naming the function and what it expected. Attack it. Name the reading's artifact id, quote the words of the conjecture it claims to render, and say whether it renders them. A reading that names a function the prose did not name, or a module the function does not live in, or an expectation the prose did not state, is a defect in the reading and not in the conjecture -- say which of the two is wrong, and how you can tell them apart.
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Conjecture 68aa0cc305d6e61c is correct that the code violates the rule, and it does not misread the rule. The rule says "Every top-level balanced object in the text is a candidate" and "an object nested inside another is not a candidate of its own." A brace inside a string literal is not a top-level object; it is part of a JSON string token. The code in recover_json_object scans every `{` and calls raw_decode without tracking whether the brace is inside a string, so for `"{"a":1}"` it recovers `{"a":1}`. The execution confirms this: input `"{"a":1}"` produced `({'a': 1}, ())` with `as_expected: false` and `executed: unchanged`, not RecordError. Thus the rule as written and the code part company; the conjecture's reading is not the defect. A next conjecture should try a case where a brace inside a string is followed by a valid object outside the string, or a string containing only a brace, to force the function to distinguish lexical tokens. It should avoid repeating the claim that the rule explicitly mentions string literals; the rule does not use that word, and the defect is the code's failure to respect JSON tokenization, not an explicit string-literal clause.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.
