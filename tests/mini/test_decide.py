@@ -20,12 +20,16 @@ if str(ROOT / "src") not in sys.path:
 from creib.forge.mini.common import MiniError  # noqa: E402
 from creib.forge.mini.decide import (  # noqa: E402
     ABLATED,
+    BLOCKS,
     BRIEFS,
     CONTRAST,
     FORM_BRIEFS,
+    ORDERS,
     PLAIN,
     RELABELLED,
     REORDERED,
+    REORDERED_2,
+    REORDERED_3,
     REPEAT,
     ADD_NOTHING,
     ADDITIONS,
@@ -155,15 +159,36 @@ class BriefTests(unittest.TestCase):
     def test_repeat_is_the_same_bytes_as_plain(self) -> None:
         self.assertEqual(brief(_state(), REPEAT), brief(_state(), PLAIN))
 
-    def test_reordered_holds_every_block_plain_holds_and_in_another_order(self) -> None:
-        plain, moved = brief(_state(), PLAIN), brief(_state(), REORDERED)
-        for block in ("You are running a search", "## The checks, in full",
-                      "## What has been spent", "## The options"):
-            self.assertIn(block, plain)
-            self.assertIn(block, moved)
-        self.assertNotEqual(plain, moved)
-        self.assertLess(moved.index("## The options"), moved.index("## The checks, in full"))
-        self.assertLess(plain.index("## The checks, in full"), plain.index("## The options"))
+    def test_every_reordering_holds_every_block_plain_holds_and_in_another_order(self) -> None:
+        state = _state()
+        plain = brief(state, PLAIN)
+        for variant in (REORDERED, REORDERED_2, REORDERED_3):
+            moved = brief(state, variant)
+            for block in ("You are running a search", "## The checks, in full",
+                          "## What has been spent", "## The options"):
+                self.assertIn(block, plain)
+                self.assertIn(block, moved)
+            self.assertNotEqual(plain, moved, variant)
+            # The same blocks in a different order: the same characters, so the same length.
+            self.assertEqual(len(plain), len(moved), variant)
+
+    def test_the_three_reorderings_are_three_different_orders(self) -> None:
+        state = _state()
+        self.assertEqual(len({brief(state, variant)
+                              for variant in (PLAIN, REORDERED, REORDERED_2, REORDERED_3)}), 4)
+        self.assertEqual(len({ORDERS[variant]
+                              for variant in (PLAIN, REORDERED, REORDERED_2, REORDERED_3)}), 4)
+
+    def test_the_instruction_is_last_in_every_brief(self) -> None:
+        for variant in BRIEFS:
+            self.assertTrue(brief(_state(), variant).rstrip().endswith(
+                "names none of them."), variant)
+
+    def test_every_order_is_a_permutation_of_the_declared_blocks(self) -> None:
+        for variant, order in ORDERS.items():
+            self.assertEqual(len(set(order)), len(order), variant)
+            self.assertTrue(set(order) <= set(BLOCKS), variant)
+        self.assertEqual(set(ORDERS), set(BRIEFS))
 
     def test_relabelled_names_no_check_and_keeps_every_figure(self) -> None:
         state = _state()
@@ -298,6 +323,14 @@ class CampaignTests(unittest.TestCase):
             self.assertNotEqual(contrast, rule_that_fires(state), state.state_id)
             fired.append(contrast)
         self.assertGreater(len(set(fired)), 3)
+
+    def test_the_campaign_briefs_reorder_the_blocks_it_has(self) -> None:
+        state = campaign_states()[1]
+        plain = campaign_brief(state, PLAIN)
+        for variant in (REORDERED, REORDERED_2, REORDERED_3):
+            moved = campaign_brief(state, variant)
+            self.assertNotEqual(plain, moved, variant)
+            self.assertEqual(len(plain), len(moved), variant)
 
     def test_the_campaign_briefs_move_the_figures_and_not_the_options(self) -> None:
         state = campaign_states()[1]

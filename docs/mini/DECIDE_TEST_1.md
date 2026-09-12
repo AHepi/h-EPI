@@ -35,8 +35,8 @@ refused when the plan is built.* The same refusal applies here.
 
 The model is asked anyway, three times — once for the plain loop, once for the loop with the first step
 taken, once with the first two — with what the plain loop cost and produced across this block's own grid
-in front of it, and with what each further step would cost in model calls. Three states, six briefs
-each, **18 calls**. There is no key, so what is reported is what it chose, and whether the choice moved
+in front of it, and with what each further step would cost in model calls. Three states, eight briefs
+each, **24 calls**. There is no key, so what is reported is what it chose, and whether the choice moved
 with the form and with the content. The first step is shown as the two changes it was, because block 2
 made the attacking seat and the carried brief together and no run separates them: a brief that tidied
 that into one change would be describing an experiment nobody ran.
@@ -100,9 +100,9 @@ tie is recorded and a choice of any tied option counts as right.
 The last is the one that matters. A model that says `stay` twelve times scores exactly what
 always-stay scores, and that is not deciding, however high the number is.
 
-## The six briefs: form must not move the choice, content must
+## The eight briefs: form must not move the choice, content must
 
-Each decision point is put six times, one call each. This is the part taken from the miniReason
+Each decision point is put eight times, one call each. This is the part taken from the miniReason
 repository, whose own words are that *a content-preserving recoding and a content-changing contrast on
 an active route are stronger probes than observing that a port was populated*
 (`docs/mini/FROM_MINIREASON.md`).
@@ -112,9 +112,19 @@ an active route are stronger probes than observing that a port was populated*
 | `plain` | nothing; the canonical stacking | — |
 | `repeat` | nothing at all; the same bytes, a second call | the floor: how often the choice moves when nothing did |
 | `reordered` | the same blocks stacked in a different order | the choice must not move |
-| `relabelled` | every check renamed `check-one`, `check-two`, `check-three`, consistently, sources included | the choice must not move |
+| `reordered-2` | the same blocks in a second different order | the choice must not move |
+| `reordered-3` | the same blocks in a third different order | the choice must not move |
+| `relabelled` | every check renamed `check_one`, `check_two`, `check_three`, consistently, the shown source included | the choice must not move |
 | `contrast` | the figures rewritten so a different option has the most remaining yield | the choice must move |
 | `ablated` | the figures removed; task, sources and options remain | the choice must move, or the figures were never read |
+
+**Three reorderings and not one.** The transfer from miniReason is a measure of how much stacking order
+moves an answer, and one alternative order gives a single comparison rather than a rate. A brief is
+stacked from four blocks -- the task, the checks in full, the figures, the options -- and each
+reordering is a different permutation of them. The instruction is last in every brief, because it is the
+shape of the reply and not part of the state, and moving it would change two things at once. The three
+reorderings are byte-for-byte the same length as `plain`: the same characters, stacked differently. What
+is reported is how many distinct choices the four orders produced at each point.
 
 `repeat` is not ceremony. The endpoint is called at temperature zero with a fixed seed, and block 2's
 rules-only arm produced a different check on 12 of 45 consecutive segments under a brief that never
@@ -130,7 +140,8 @@ where two rules fire, which tests whether the model picks the one the ordering p
 shown the same six numbers in plain words and the same six options, and asked which one thing to do.
 Its answer is compared with the first rule `decide()` fires.
 
-Six briefs each, as above: **48 calls**.
+Eight briefs each, as above: **64 calls**. Its briefs have three blocks rather than four, so the three
+reorderings permute those three.
 
 **This compares the model with a policy a person wrote, not with a measured optimum.** The five rules
 are the five rewrites five rounds of experiments made by hand. Agreement with them is agreement with a
@@ -146,8 +157,9 @@ Each is refutable by this block's records and none can be confirmed by them.
   *Refuted by at least four more hits than random's expectation over the twelve points.*
 - **DEC-2.** The model's choices are its modal choice: its hit rate does not exceed the hit rate of
   always choosing whatever it chose most often. *Refuted when its hit rate exceeds that.*
-- **DEC-3.** The choice does not survive a change of form: `reordered` and `relabelled` agree with
-  `plain` no more often than `contrast` does. *Refuted when form agreement exceeds contrast agreement.*
+- **DEC-3.** The choice does not survive a change of form: the three reorderings and the relabelling
+  agree with `plain` no more often than `contrast` does. *Refuted when form agreement exceeds contrast
+  agreement.*
 - **DEC-4.** The choice does not follow the figures: `contrast` agrees with `plain` as often as
   `repeat` does. *Refuted when contrast agreement falls below the repeat floor.*
 - **DEC-5.** The figures are not read: `ablated` agrees with `plain` as often as `repeat` does.
@@ -174,7 +186,7 @@ sensitive to content while reading nothing.
 - **Equal ceilings are not equal spending.** A decision call and a segment do not cost the same, so
   every figure is reported in model calls and the two are never added together.
 - **Twelve points and eight states are small.** A hit rate over twelve points has a wide interval, and
-  the block is designed so that the sensitivity measures, which are 72 paired comparisons rather than
+  the block is designed so that the sensitivity measures, which are 84 paired comparisons rather than
   12, carry the weight.
 - **The three checks are not a sample of the harness.** They are the three whose rules are implemented,
   which is a property of this repository's reading and not of the checks.
@@ -227,10 +239,10 @@ into every manifest, so what was sent is in the record rather than in a shipped 
 | part | calls |
 |---|---|
 | the grid | 54 |
-| twelve decision points, six briefs each | 72 |
-| three what-to-add states, six briefs each (not scored) | 18 |
-| eight campaign states, six briefs each | 48 |
-| **total, one seed** | **192** |
+| twelve decision points, eight briefs each | 96 |
+| three what-to-add states, eight briefs each (not scored) | 24 |
+| eight campaign states, eight briefs each | 64 |
+| **total, one seed** | **238** |
 
 A second seed on the `plain` briefs only adds 20, and is run only if the first seed's repeat floor is
 above zero, because that is the condition under which a second seed says something.

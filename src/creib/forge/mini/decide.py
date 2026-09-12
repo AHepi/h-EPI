@@ -32,20 +32,44 @@ STAY = "stay"
 STOP = "stop"
 MOVE = "move-to-"
 
-#: The six briefs. ``plain`` is the canonical stacking; the rest change one thing each.
+#: The eight briefs. ``plain`` is the canonical stacking; the rest change one thing each.
 PLAIN = "plain"
 REPEAT = "repeat"
 REORDERED = "reordered"
+REORDERED_2 = "reordered-2"
+REORDERED_3 = "reordered-3"
 RELABELLED = "relabelled"
 CONTRAST = "contrast"
 ABLATED = "ablated"
-BRIEFS: tuple[str, ...] = (PLAIN, REPEAT, REORDERED, RELABELLED, CONTRAST, ABLATED)
+BRIEFS: tuple[str, ...] = (PLAIN, REPEAT, REORDERED, REORDERED_2, REORDERED_3, RELABELLED,
+                           CONTRAST, ABLATED)
 
 #: Which briefs change only the form of the state and which change what it says. A decider must be
 #: insensitive to the first and sensitive to the second; the pre-registration turns each into a
 #: conjecture that this block's records can refute.
-FORM_BRIEFS: tuple[str, ...] = (REORDERED, RELABELLED)
+FORM_BRIEFS: tuple[str, ...] = (REORDERED, REORDERED_2, REORDERED_3, RELABELLED)
 CONTENT_BRIEFS: tuple[str, ...] = (CONTRAST, ABLATED)
+
+#: The blocks a brief is stacked from, and the order each variant stacks them in. Three reorderings
+#: rather than one because the point of the transfer from miniReason is a MEASURE of how much stacking
+#: order moves an answer, and one alternative order gives a single comparison rather than a rate. The
+#: instruction stays last in every one of them: it is the shape of the reply and not part of the state,
+#: and moving it would change two things at once.
+TASK_BLOCK = "task"
+SOURCES_BLOCK = "sources"
+FIGURES_BLOCK = "figures"
+OPTIONS_BLOCK = "options"
+BLOCKS: tuple[str, ...] = (TASK_BLOCK, SOURCES_BLOCK, FIGURES_BLOCK, OPTIONS_BLOCK)
+ORDERS: dict[str, tuple[str, ...]] = {
+    PLAIN: BLOCKS,
+    REPEAT: BLOCKS,
+    RELABELLED: BLOCKS,
+    CONTRAST: BLOCKS,
+    ABLATED: (TASK_BLOCK, SOURCES_BLOCK, OPTIONS_BLOCK),
+    REORDERED: (OPTIONS_BLOCK, FIGURES_BLOCK, SOURCES_BLOCK, TASK_BLOCK),
+    REORDERED_2: (FIGURES_BLOCK, TASK_BLOCK, OPTIONS_BLOCK, SOURCES_BLOCK),
+    REORDERED_3: (SOURCES_BLOCK, OPTIONS_BLOCK, TASK_BLOCK, FIGURES_BLOCK),
+}
 
 #: The neutral names ``relabelled`` gives the checks, in a fixed order, so the recoding preserves
 #: content exactly and is the same every time it is built. They are valid identifiers because the
@@ -355,8 +379,6 @@ def brief(state: State, variant: str) -> str:
         shown = contrast_of(state)
     if variant == RELABELLED:
         names = relabelling(state)
-    figures = _figures_block(shown, names)
-    sources = _sources_block(shown, names)
     if variant == RELABELLED:
         options = "\n".join(
             line.replace(f"`{option}`", f"`{option_ids(state, variant)[option]}`")
@@ -364,12 +386,9 @@ def brief(state: State, variant: str) -> str:
         options = "## The options, and there are no others\n\n" + options
     else:
         options = _options_block(shown, names)
-    blocks = [TASK, sources, figures, options, INSTRUCTION]
-    if variant == ABLATED:
-        blocks = [TASK, sources, options, INSTRUCTION]
-    if variant == REORDERED:
-        blocks = [options, figures, sources, TASK, INSTRUCTION]
-    return "\n\n".join(blocks) + "\n"
+    written = {TASK_BLOCK: TASK, SOURCES_BLOCK: _sources_block(shown, names),
+               FIGURES_BLOCK: _figures_block(shown, names), OPTIONS_BLOCK: options}
+    return "\n\n".join([written[block] for block in ORDERS[variant]] + [INSTRUCTION]) + "\n"
 
 
 def name_choice(body: str, shown: Mapping[str, str]) -> str:
@@ -635,17 +654,12 @@ def campaign_brief(state: CampaignState, variant: str) -> str:
     figures = _campaign_figures(state)
     if variant == CONTRAST:
         figures = _campaign_figures(campaign_contrast_of(state))
-    blocks = [CAMPAIGN_TASK, figures, option_block, INSTRUCTION]
-    if variant == ABLATED:
-        blocks = [CAMPAIGN_TASK, option_block, INSTRUCTION]
-    if variant == REORDERED:
-        blocks = [option_block, figures, CAMPAIGN_TASK, INSTRUCTION]
-    if variant == RELABELLED:
-        # There is nothing to rename here: the options are the changes themselves and the figures are
-        # numbers. Renaming would have to change the words that say what an option does, which is
-        # content. The brief is therefore the plain one, and the pairing is recorded as unavailable.
-        blocks = [CAMPAIGN_TASK, figures, option_block, INSTRUCTION]
-    return "\n\n".join(blocks) + "\n"
+    # There is no sources block here and nothing to rename: the options are the changes themselves and
+    # the figures are numbers. RELABELLED is therefore the plain brief and its pairing is recorded as
+    # unavailable rather than as agreement.
+    written = {TASK_BLOCK: CAMPAIGN_TASK, FIGURES_BLOCK: figures, OPTIONS_BLOCK: option_block}
+    order = [block for block in ORDERS[variant] if block in written]
+    return "\n\n".join([written[block] for block in order] + [INSTRUCTION]) + "\n"
 
 
 def campaign_contrast_of(state: CampaignState) -> CampaignState:
@@ -854,14 +868,10 @@ def add_brief(state: AddState, variant: str) -> str:
     shown = add_contrast_of(state) if variant == CONTRAST else state
     names = (add_relabelling(state) if variant == RELABELLED
              else {name: name for name, _, _ in ADDITIONS})
-    figures = _add_figures(shown, names)
-    options = _add_options_block(state, variant)
-    blocks = [ADD_TASK, figures, options, INSTRUCTION]
-    if variant == ABLATED:
-        blocks = [ADD_TASK, options, INSTRUCTION]
-    if variant == REORDERED:
-        blocks = [options, figures, ADD_TASK, INSTRUCTION]
-    return "\n\n".join(blocks) + "\n"
+    written = {TASK_BLOCK: ADD_TASK, FIGURES_BLOCK: _add_figures(shown, names),
+               OPTIONS_BLOCK: _add_options_block(state, variant)}
+    order = [block for block in ORDERS[variant] if block in written]
+    return "\n\n".join([written[block] for block in order] + [INSTRUCTION]) + "\n"
 
 
 def add_states(segments: int = 6, finds: int = 5, real_classes: int = 3) -> tuple[AddState, ...]:
