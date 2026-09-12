@@ -699,3 +699,181 @@ def campaign_states() -> tuple[CampaignState, ...]:
         state("fields-and-breaks", ran=2, format_failures=3, escaped_breaks=2, in_fields_form=False,
               carries_break_instruction=False),
     )
+
+
+# ------------------------------------------------------------------------------------------------
+# What to add: asked, and not scored, for the reason the pre-registration gives
+# ------------------------------------------------------------------------------------------------
+
+
+#: The three steps block 2's arms took from the plain loop, in the order it took them, each with what it
+#: does and what it adds to a segment's call count. The description is the content of the option; the id
+#: is its form, so the ``relabelled`` brief can replace the id and leave the description word for word.
+#:
+#: The first step is two changes at once, and says so. That is not a simplification here: block 2's
+#: ``F`` arm added the attacking seat and the carried brief together, so no run separates them, and a
+#: brief that presented them as one tidy change would be describing an experiment nobody ran.
+ADDITIONS: tuple[tuple[str, str, int], ...] = (
+    ("the-attacking-seat-and-the-carried-brief",
+     "a second seat that attacks the conjecture after the machine has run it, and a brief that tells "
+     "the next segment what has already been run and not to repeat it (two changes, made together)",
+     2),
+    ("the-readings-port",
+     "the attacking seat also being shown the second seat's own rendering of the conjecture, and not "
+     "only the conjecture itself",
+     0),
+    ("the-warrant-schema",
+     "the attacking seat naming, in a fixed shape, which artifact it attacks and on what ground, with "
+     "what its attacks settle computed and shown to the next segment",
+     0),
+)
+
+ADD_NOTHING = "add-nothing"
+
+
+def _describes() -> dict[str, str]:
+    return {name: description for name, description, _ in ADDITIONS}
+
+
+def _costs() -> dict[str, int]:
+    return {name: extra for name, _, extra in ADDITIONS}
+
+
+@dataclass(frozen=True)
+class AddState:
+    """A loop as it stands: what is in it, what it costs a segment, and what it has produced."""
+
+    state_id: str
+    present: tuple[str, ...]
+    segments: int
+    finds: int
+    real_classes: int
+    calls_per_segment: int
+
+    def __post_init__(self) -> None:
+        declared = {name for name, _, _ in ADDITIONS}
+        unknown = [name for name in self.present if name not in declared]
+        if unknown:
+            raise MiniError("MINI_COLLAPSE_CLASS_INVALID",
+                            f"{self.state_id}: {unknown} is not one of the declared additions "
+                            f"{sorted(declared)}")
+
+    @property
+    def absent(self) -> tuple[str, ...]:
+        return tuple(name for name, _, _ in ADDITIONS if name not in self.present)
+
+
+def add_options(state: AddState) -> tuple[str, ...]:
+    """Adding nothing, and adding each thing the loop does not already have."""
+
+    return (ADD_NOTHING,) + tuple(f"add-{name}" for name in state.absent)
+
+
+def add_relabelling(state: AddState) -> dict[str, str]:
+    """Addition to a neutral name, in the declared order. Descriptions are never touched."""
+
+    if len(ADDITIONS) > len(NEUTRAL_NAMES):
+        raise MiniError("MINI_COLLAPSE_CLASS_INVALID",
+                        f"{len(ADDITIONS)} additions and only {len(NEUTRAL_NAMES)} neutral names")
+    return {name: NEUTRAL_NAMES[index].replace("check", "part")
+            for index, (name, _, _) in enumerate(ADDITIONS)}
+
+
+def add_option_ids(state: AddState, variant: str) -> dict[str, str]:
+    """The id shown for each option under one brief, so a reply can be read back."""
+
+    if variant != RELABELLED:
+        return {option: option for option in add_options(state)}
+    names = add_relabelling(state)
+    shown = {ADD_NOTHING: ADD_NOTHING}
+    for name in state.absent:
+        shown[f"add-{name}"] = f"add-{names[name]}"
+    return shown
+
+
+def add_contrast_of(state: AddState) -> AddState:
+    """The same loop with what it has produced turned around, and nothing else moved.
+
+    A loop that is finding something is a reason to leave it alone; a loop that has found nothing in
+    the same number of segments is a reason to change something. So this is the content the decision is
+    about, and the spend, the parts present and the wording of every option stay exactly as they were.
+    """
+
+    barren = state.real_classes > 0
+    return AddState(state_id=state.state_id + ".contrast", present=state.present,
+                    segments=state.segments,
+                    finds=0 if barren else state.segments,
+                    real_classes=0 if barren else state.segments,
+                    calls_per_segment=state.calls_per_segment)
+
+
+ADD_TASK = (
+    "A loop is running the search described below. It writes a conjecture in prose, a second seat "
+    "renders it as something a machine can run, and the machine runs it. What it is looking for is a "
+    "pair of reply texts that a check answers the SAME on, where the check's own documented rule "
+    "requires it to answer differently.\n\n"
+    "You are deciding whether to add one thing to that loop, or nothing. Every call costs money, so "
+    "adding something is worth doing only if it will find more than the calls it spends."
+)
+
+
+def _add_figures(state: AddState, names: Mapping[str, str]) -> str:
+    lines = ["## The loop as it stands", ""]
+    if state.present:
+        for name in state.present:
+            lines.append(f"- it already has {names.get(name, name)}: "
+                         + _describes()[name])
+    else:
+        lines.append("- it has none of the things below: it writes a conjecture, renders it, runs it")
+    lines.extend([
+        f"- it costs {state.calls_per_segment} model call(s) per segment",
+        f"- in {state.segments} segment(s) it has found {state.finds} pair(s), which are "
+        f"{state.real_classes} distinct way(s) of breaking a check",
+    ])
+    return "\n".join(lines)
+
+
+def _add_options_block(state: AddState, variant: str) -> str:
+    shown = add_option_ids(state, variant)
+    lines = ["## The options, and there are no others", "",
+             f"- `{shown[ADD_NOTHING]}` -- leave the loop as it is and run another segment"]
+    for name in state.absent:
+        extra = _costs()[name]
+        cost = (f" This adds {extra} model call(s) to every segment." if extra
+                else " This adds no model call to a segment.")
+        lines.append(f"- `{shown['add-' + name]}` -- {_describes()[name]}.{cost}")
+    return "\n".join(lines)
+
+
+def add_brief(state: AddState, variant: str) -> str:
+    """One what-to-add decision, put one of the same six ways."""
+
+    if variant not in BRIEFS:
+        raise MiniError("MINI_COLLAPSE_CLASS_INVALID",
+                        f"unknown brief: {variant!r}; the briefs are {BRIEFS}")
+    shown = add_contrast_of(state) if variant == CONTRAST else state
+    names = (add_relabelling(state) if variant == RELABELLED
+             else {name: name for name, _, _ in ADDITIONS})
+    figures = _add_figures(shown, names)
+    options = _add_options_block(state, variant)
+    blocks = [ADD_TASK, figures, options, INSTRUCTION]
+    if variant == ABLATED:
+        blocks = [ADD_TASK, options, INSTRUCTION]
+    if variant == REORDERED:
+        blocks = [options, figures, ADD_TASK, INSTRUCTION]
+    return "\n\n".join(blocks) + "\n"
+
+
+def add_states(segments: int = 6, finds: int = 5, real_classes: int = 3) -> tuple[AddState, ...]:
+    """One state per amount already added, with the plain loop's own figures from the grid.
+
+    The loop with everything already in it is left out: its only option is to add nothing, and a
+    decision with one option is not a decision.
+    """
+
+    ladder = [(), (ADDITIONS[0][0],), (ADDITIONS[0][0], ADDITIONS[1][0])]
+    return tuple(
+        AddState(state_id=f"loop-with-{len(present)}" if present else "plain-loop", present=present,
+                 segments=segments, finds=finds, real_classes=real_classes,
+                 calls_per_segment=3 + sum(_costs()[name] for name in present))
+        for present in ladder)

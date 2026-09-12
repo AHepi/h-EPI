@@ -27,14 +27,22 @@ from creib.forge.mini.decide import (  # noqa: E402
     RELABELLED,
     REORDERED,
     REPEAT,
+    ADD_NOTHING,
+    ADDITIONS,
     STAY,
     STOP,
     UNCHANGED,
     WORKING_SET,
+    AddState,
     CampaignState,
     Grid,
     State,
     Tally,
+    add_brief,
+    add_contrast_of,
+    add_options,
+    add_relabelling,
+    add_states,
     agreement,
     brief,
     campaign_brief,
@@ -390,3 +398,73 @@ class DriverTests(unittest.TestCase):
     def test_every_declared_brief_is_put_at_every_point(self) -> None:
         driver = self._driver()
         self.assertEqual(set(driver.BRIEFS), set(BRIEFS))
+
+
+class AddTests(unittest.TestCase):
+    """The what-to-add family, which is asked and not scored. Its briefs still have to be honest."""
+
+    def test_the_ladder_is_the_one_block_two_climbed(self) -> None:
+        states = add_states()
+        self.assertEqual([len(state.present) for state in states], [0, 1, 2])
+        self.assertEqual(add_options(states[0])[0], ADD_NOTHING)
+        self.assertEqual(len(add_options(states[0])), 1 + len(ADDITIONS))
+        self.assertEqual(len(add_options(states[-1])), 2)
+
+    def test_the_step_that_bundles_two_changes_says_so(self) -> None:
+        text = add_brief(add_states()[0], PLAIN)
+        self.assertIn("two changes, made together", text)
+
+    def test_the_call_cost_of_each_step_is_shown(self) -> None:
+        text = add_brief(add_states()[0], PLAIN)
+        self.assertIn("This adds 2 model call(s) to every segment", text)
+        self.assertIn("This adds no model call to a segment", text)
+
+    def test_a_loop_carrying_the_costly_step_is_shown_the_higher_cost(self) -> None:
+        self.assertEqual(add_states()[0].calls_per_segment, 3)
+        self.assertEqual(add_states()[1].calls_per_segment, 5)
+        self.assertIn("costs 5 model call(s) per segment", add_brief(add_states()[1], PLAIN))
+
+    def test_relabelling_moves_the_ids_and_leaves_every_description_word_for_word(self) -> None:
+        state = add_states()[0]
+        plain, renamed = add_brief(state, PLAIN), add_brief(state, RELABELLED)
+        for _, description, _ in ADDITIONS:
+            self.assertIn(description, plain)
+            self.assertIn(description, renamed)
+        self.assertIn("add-part_two", renamed)
+        self.assertNotIn("add-the-readings-port", renamed)
+
+    def test_the_contrast_turns_what_the_loop_produced_around_and_moves_nothing_else(self) -> None:
+        state = add_states()[0]
+        swapped = add_contrast_of(state)
+        self.assertEqual(swapped.present, state.present)
+        self.assertEqual(swapped.segments, state.segments)
+        self.assertEqual(swapped.calls_per_segment, state.calls_per_segment)
+        self.assertEqual(swapped.real_classes, 0)
+        self.assertEqual(add_contrast_of(swapped).real_classes, swapped.segments)
+
+    def test_ablated_drops_the_figures_and_keeps_the_options(self) -> None:
+        text = add_brief(add_states()[0], ABLATED)
+        self.assertNotIn("## The loop as it stands", text)
+        self.assertIn("## The options", text)
+
+    def test_an_undeclared_addition_is_refused(self) -> None:
+        with self.assertRaises(MiniError):
+            AddState(state_id="x", present=("the-kitchen-sink",), segments=1, finds=0,
+                     real_classes=0, calls_per_segment=3)
+
+    def test_an_unknown_add_brief_is_refused(self) -> None:
+        with self.assertRaises(MiniError):
+            add_brief(add_states()[0], "quicker")
+
+    def test_more_additions_than_neutral_names_is_refused(self) -> None:
+        import creib.forge.mini.decide as module
+
+        held = module.ADDITIONS
+        try:
+            module.ADDITIONS = held + (("a", "a", 0), ("b", "b", 0))
+            with self.assertRaises(MiniError):
+                module.add_relabelling(module.AddState(
+                    state_id="x", present=(), segments=1, finds=0, real_classes=0,
+                    calls_per_segment=3))
+        finally:
+            module.ADDITIONS = held

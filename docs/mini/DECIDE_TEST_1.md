@@ -24,14 +24,22 @@ the pre-registration rather than a result.
 **What to do next — scored.** Three checks of the harness differ in measured yield, so choosing among
 them has a right answer that a grid of runs establishes. That is this block's scored decision.
 
-**What to add — not scored, and the reason is a measurement.** Block 2 ran four arms differing in what
-the loop carries: rules only, plus the readings port, plus the warrant schema, plus the criticism
-stage. On five measures the four arms come out in five different orders, and the spread within one arm
-across three repeats is 2 to 10 collapse classes (`docs/mini/CREATIVITY_ARMS_2.md`, ERRATA C23). The
-additions did not differ enough to be worth deciding between, so a choice among them has no measured
-better answer and scoring one would be scoring noise. `CLAUDE.md`: *a control whose corruption leaves
-the reference output unchanged is refused when the plan is built.* The same refusal applies here. The
-model is still asked what to add, and only the sensitivity measures below apply to its answer.
+**What to add — asked, and not scored, and the reason is a measurement.** Block 2 ran four arms
+differing in what the loop carries: rules only, plus an attacking seat and a carried brief, plus the
+readings port, plus the warrant schema. On five measures the four arms come out in five different
+orders, and the spread within one arm across three repeats is 2 to 10 collapse classes
+(`docs/mini/CREATIVITY_ARMS_2.md`, ERRATA C23). The additions did not differ enough to be worth
+deciding between, so a choice among them has no measured better answer and scoring one would be
+scoring noise. `CLAUDE.md`: *a control whose corruption leaves the reference output unchanged is
+refused when the plan is built.* The same refusal applies here.
+
+The model is asked anyway, three times — once for the plain loop, once for the loop with the first step
+taken, once with the first two — with what the plain loop cost and produced across this block's own grid
+in front of it, and with what each further step would cost in model calls. Three states, six briefs
+each, **18 calls**. There is no key, so what is reported is what it chose, and whether the choice moved
+with the form and with the content. The first step is shown as the two changes it was, because block 2
+made the attacking seat and the carried brief together and no run separates them: a brief that tidied
+that into one change would be describing an experiment nobody ran.
 
 ## The working set
 
@@ -153,7 +161,9 @@ sensitive to content while reading nothing.
 
 ## What this block does not control, declared before it runs
 
-- **What to add is not scored**, for the reason given above. Only the sensitivity measures apply to it.
+- **What to add is not scored**, for the reason given above. Only the sensitivity measures apply to it,
+  and its `relabelled` brief renames the option ids while leaving every description word for word, so
+  what moves is the name and not what the thing does.
 - **One model, one endpoint, one temperature, one task.** Nothing here is about models in general, and
   a claim of that shape would have to be written into a pilot's `claims.json` and tested there.
 - **The grid is six segments a check.** A check whose yield arrives at segment seven is recorded as
@@ -218,8 +228,9 @@ into every manifest, so what was sent is in the record rather than in a shipped 
 |---|---|
 | the grid | 54 |
 | twelve decision points, six briefs each | 72 |
+| three what-to-add states, six briefs each (not scored) | 18 |
 | eight campaign states, six briefs each | 48 |
-| **total, one seed** | **174** |
+| **total, one seed** | **192** |
 
 A second seed on the `plain` briefs only adds 20, and is run only if the first seed's repeat floor is
 above zero, because that is the condition under which a second seed says something.

@@ -46,6 +46,10 @@ from creib.forge.mini.decide import (  # noqa: E402
     UNCHANGED,
     WORKING_SET,
     Grid,
+    add_brief,
+    add_option_ids,
+    add_options,
+    add_states,
     agreement,
     brief,
     campaign_brief,
@@ -269,20 +273,35 @@ def _plan(args: argparse.Namespace) -> int:
             _write(out / "campaign" / state.state_id / f"{variant}.json",
                    _decision_manifest(f"mini.decide1.campaign.{state.state_id}.{variant}",
                                       campaign_brief(state, variant)))
+    for adding in add_states():
+        for variant in BRIEFS:
+            _write(out / "add" / adding.state_id / f"{variant}.json",
+                   _decision_manifest(f"mini.decide1.add.{adding.state_id}.{variant}",
+                                      add_brief(adding, variant)))
     grid_calls = len(WORKING_SET) * GRID_SEGMENTS * 3
     campaign_calls = len(campaign_states()) * len(BRIEFS)
+    add_calls = len(add_states()) * len(BRIEFS)
     point_calls = len(WORKING_SET) * len(CUTS) * len(BRIEFS)
     print(f"grid: {len(WORKING_SET)} checks x {GRID_SEGMENTS} segments x 3 calls = {grid_calls}", flush=True)
     print(f"points: {len(WORKING_SET)} x {len(CUTS)} cuts x {len(BRIEFS)} briefs = {point_calls} "
           "(written after the grid, because a point's figures are the grid's)", flush=True)
+    print(f"add: {len(add_states())} states x {len(BRIEFS)} briefs = {add_calls} (not scored)", flush=True)
     print(f"campaign: {len(campaign_states())} states x {len(BRIEFS)} briefs = {campaign_calls}", flush=True)
-    print(f"total {grid_calls + point_calls + campaign_calls} calls at seed {SEED}", flush=True)
+    print(f"total {grid_calls + point_calls + add_calls + campaign_calls} calls at seed {SEED}",
+          flush=True)
     return 0
 
 
 def _grid(args: argparse.Namespace) -> int:
     manifests, runs = Path(args.manifests), Path(args.runs)
-    for check in WORKING_SET:
+    wanted = WORKING_SET
+    if args.check:
+        wanted = tuple(check for check in WORKING_SET if check.rsplit(".", 1)[-1] == args.check)
+        if not wanted:
+            raise MiniError("MINI_COLLAPSE_CLASS_INVALID",
+                            f"{args.check!r} is not in the working set: "
+                            f"{[c.rsplit('.', 1)[-1] for c in WORKING_SET]}")
+    for check in wanted:
         for index in range(GRID_SEGMENTS):
             root = _grid_root(runs, check, index)
             label = f"grid {check.rsplit('.', 1)[-1]} s{index:02d}"
@@ -337,9 +356,22 @@ def _points(args: argparse.Namespace) -> int:
     return 0
 
 
+def _add_states_from(grid: Grid, spend: dict[str, Any]) -> tuple[Any, ...]:
+    """The what-to-add states, carrying what the plain loop did across the whole grid.
+
+    Pooled over the three checks, because that is what the plain loop actually did in this block. A
+    per-check figure would be the loop at its best or at its worst and neither is the loop.
+    """
+
+    segments = sum(row["segments"] for row in spend.values())
+    found = sum(row["finds"] for row in spend.values())
+    classes = sum(row["real_classes"] for row in spend.values())
+    return add_states(segments=segments, finds=found, real_classes=classes)
+
+
 def _ask(args: argparse.Namespace) -> int:
     manifests, runs = Path(args.manifests), Path(args.runs)
-    grid, finds, _ = _read_grid(runs)
+    grid, finds, spend = _read_grid(runs)
     for state in states_from_grid(grid, CUTS, finds):
         for variant in BRIEFS:
             root = runs / "points" / state.point_id / variant
@@ -351,6 +383,19 @@ def _ask(args: argparse.Namespace) -> int:
                           _decision_manifest(
                               f"mini.decide1.point.{state.point_id.replace('.', '-')}.{variant}",
                               brief(state, variant)))
+            if not _run(label, path, root, args):
+                print(f"{label}: giving up on this brief", flush=True)
+    for adding in _add_states_from(grid, spend):
+        for variant in BRIEFS:
+            root = runs / "add" / adding.state_id / variant
+            label = f"add {adding.state_id} {variant}"
+            if _finished(root):
+                print(f"{label}: already finished", flush=True)
+                continue
+            path = _write(manifests / "add" / adding.state_id / f"{variant}.json",
+                          _decision_manifest(
+                              f"mini.decide1.add.{adding.state_id}.{variant}",
+                              add_brief(adding, variant)))
             if not _run(label, path, root, args):
                 print(f"{label}: giving up on this brief", flush=True)
     for campaign in campaign_states():
@@ -392,6 +437,7 @@ def _read(args: argparse.Namespace) -> int:
     runs = Path(args.runs)
     grid, finds, spend = _read_grid(runs)
     states = states_from_grid(grid, CUTS, finds)
+    adding_states = _add_states_from(grid, spend)
 
     chosen: dict[str, dict[str, str]] = {variant: {} for variant in BRIEFS}
     reasons: dict[str, str] = {}
@@ -441,6 +487,28 @@ def _read(args: argparse.Namespace) -> int:
     print(f"  {CONTRAST:12} {same:3} of {both:3}  (on the {len(flipping)} point(s) where the contrast "
           "changes what the figures indicate; DEC-4 is measured here)", flush=True)
 
+    # What to add: asked, not scored. There is no key, for the reason the pre-registration gives --
+    # block 2's four arms did not separate, so no addition has a measured better answer. What is read
+    # is what it chose and whether the choice moved with the form and with the content.
+    add_chosen: dict[str, dict[str, str]] = {variant: {} for variant in BRIEFS}
+    for adding in adding_states:
+        for variant in BRIEFS:
+            body, commitments = _reply(runs / "add" / adding.state_id / variant)
+            if not body and not commitments:
+                continue
+            add_chosen[variant][adding.state_id] = name_choice(body, add_option_ids(adding, variant))
+    print("", flush=True)
+    print(f"{'what to add (not scored)':30}{'chose':50}{'options':>9}", flush=True)
+    for adding in adding_states:
+        choice = add_chosen[PLAIN].get(adding.state_id, "(not run)")
+        print(f"{adding.state_id:30}{choice or '(no option named)':50}{len(add_options(adding)):>9}",
+              flush=True)
+    for variant in (REPEAT,) + FORM_BRIEFS + CONTENT_BRIEFS:
+        same, both = agreement(add_chosen[PLAIN], add_chosen[variant])
+        note = ("the floor" if variant == REPEAT else "must not move" if variant in FORM_BRIEFS
+                else "must move")
+        print(f"  {variant:12} {same:3} of {both:3}  ({note})", flush=True)
+
     campaign_chosen: dict[str, dict[str, str]] = {variant: {} for variant in BRIEFS}
     for campaign in campaign_states():
         for variant in BRIEFS:
@@ -482,6 +550,7 @@ def _read(args: argparse.Namespace) -> int:
                       "always_stay": fixed_hit_rate(grid, states, STAY),
                       "always_stop": fixed_hit_rate(grid, states, STOP)},
         "modal_choice": modal, "modal_hit_rate": modal_hits,
+        "add": {variant: add_chosen[variant] for variant in BRIEFS},
         "campaign": {variant: campaign_chosen[variant] for variant in BRIEFS},
         "campaign_key": {state.state_id: rule_that_fires(state) for state in campaign_states()},
         "campaign_hits": campaign_hits, "campaign_answered": campaign_answered,
@@ -503,6 +572,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         command.add_argument("--runs", required=True)
         command.add_argument("--timeout-seconds", type=int, default=None)
         command.add_argument("--retries", type=int, default=4)
+        # One check at a time, so the three grids can run beside each other. The grids are
+        # independent -- a segment is a fresh run with no carry -- so running them together changes
+        # nothing about what each measures.
+        command.add_argument("--check", default=None,
+                             help="grid only: the bare name of one check of the working set")
         command.set_defaults(handler=handler)
     pointer = sub.add_parser("points", help="read the grid and write the decision points it puts")
     pointer.add_argument("--runs", required=True)
