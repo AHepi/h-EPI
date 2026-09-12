@@ -448,6 +448,52 @@ against `R`'s 583k — and on a token basis it comes **last**, behind the arm it
 columns and this entry carries the sentence about which flatters what. The reader still prints calls
 only; a token column is a small change and is not made retroactively to a pre-registered measure.
 
+### C21. An escaping defect discarded eleven confirmed finds, and correcting it widens R's lead (**found, by reading the record instead of the score**)
+
+Fifteen rows across the block were scored `unrunnable`. **Eleven of them are confirmed finds**, and
+all eleven pass the grounding filter.
+
+The translator sometimes writes its own field values with **one extra level of JSON string
+escaping** — a literal backslash-n where a newline belongs, a literal backslash-quote where a quote
+belongs. The record stores the field exactly as it arrived, which is correct and is not the defect.
+The executor then runs the check on text full of backslashes, the check raises, and the row is scored
+as nothing. One defect with two faces: where the *commitments* were escaped the same way, `expect`
+vanished entirely and the row was refused for having no expectation — although the reading had
+written `"expect": "moves"`, in escaped form, right there in the blob.
+
+Undoing exactly one level of escaping is well defined, so this is a rescue and not a reinterpretation:
+
+| | refused rows | rescued | still unrunnable | separates on re-run |
+|---|---|---|---|---|
+| all arms | 15 | **11** | 3 | 1 |
+
+**Where the finds went, and what correcting it does.** First two repeats, complete for every arm:
+
+| arm | scored | rescued | corrected | change | per send | per 1,000 tokens |
+|---|---|---|---|---|---|---|
+| **R** | 27 | 3 | **30** | +11% | 0.263 | 0.0515 |
+| **F** | 25 | 2 | 27 | +8% | 0.164 | 0.0391 |
+| **W** | 27 | 2 | 29 | +7% | 0.176 | 0.0358 |
+| **A** | 29 | 1 | 30 | +3% | 0.176 | 0.0419 |
+
+`R` over the best loop arm goes from **1.39× to 1.49×** per send and from **1.14× to 1.23×** per
+token. **The correction widens the gap it was reasonable to hope it would close.** I guessed the
+other way out loud before finishing the count — on a partial rescue of seven rows the split looked
+like `F` 3, `W` 2, `A` 1, `R` 1 — and the full count is `R` 3, `F` 5, `W` 2, `A` 1, which is
+proportionally worst for the loop. The reading stage is byte-identical in all four arms, so this is
+draw variance in one shared stage landing unevenly, not a property of any arm.
+
+**What it cost:** 6.5% of the block's confirmed finds, thrown away in a way no measure could see,
+for the whole run.
+
+**Repaired:** nothing yet in the machine. Undoing one level of escaping inside the executor would
+change what `unrunnable` means mid-block, and the honest move is to name it and correct the reading.
+A successor should reject a reply whose field values contain literal escape sequences at the format
+layer — `format.fields` already exists (C13) and a check for it is a two-line addition.
+
+**How it was found.** The operator asked whether anything of value inside the runs had never reached
+the end. Fifteen rows had been counted and none of them read.
+
 ## The pattern
 
 Of the twenty-odd items above, **three** are about the model. All the rest are about the apparatus:
@@ -459,7 +505,7 @@ The one thing that survived every repair, unchanged, is the conjecture step. It 
 boundaries under every configuration, including the cheapest, and the machinery kept failing to
 execute, see, or count them.
 
-A5 and C12 to C20 were added after the rest, while building and first running the block that was meant
+A5 and C12 to C21 were added after the rest, while building and first running the block that was meant
 to settle the question. C12 was found by reading the run headers, A5 by counting what a segment
 actually sends, and C13 and C14 by alarms firing on live segments — the only items here that a
 machine caught rather than a person, and C14 was additionally diagnosed, correctly and in prose, by
