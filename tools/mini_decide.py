@@ -505,32 +505,58 @@ def _read(args: argparse.Namespace) -> int:
         print(f"{state.point_id:26}{choice or '(no option named)':40}"
               f"{','.join(sorted(keyed[state.point_id])):40}{mark:>5}", flush=True)
     print("", flush=True)
-    counted: dict[str, int] = {}
-    for choice in chosen[PLAIN].values():
-        counted[choice or "(none)"] = counted.get(choice or "(none)", 0) + 1
-    modal = max(counted, key=lambda name: (counted[name], name)) if counted else "(none)"
-    modal_hits = (sum(1 for state in states if modal in options_of(state)
-                      and modal in keyed[state.point_id]) / len(states)) if modal != "(none)" else 0.0
-    print(f"answered {len(answered)} of {len(states)} points; hit {hits}", flush=True)
-    print(f"hit rate {hits / len(answered) if answered else 0:.3f} against "
-          f"uniform random {random_hit_rate(grid, states):.3f}, always-stay "
-          f"{fixed_hit_rate(grid, states, STAY):.3f}, always-stop "
-          f"{fixed_hit_rate(grid, states, STOP):.3f}", flush=True)
-    print(f"what it chose: {counted}; its modal choice {modal} would have hit {modal_hits:.3f}", flush=True)
+    # Amendment A1: DEC-1 and DEC-2 are read on the points whose key the figures support, and the
+    # figure over every point is reported beside it. Both sets, computed the same way.
+    scored: dict[str, dict[str, Any]] = {}
+    for label, subset in (("every point", list(states)),
+                          ("the points whose key does not need the grid's length",
+                           [state for state in states if not length_dependent(grid, state)])):
+        ids = [state.point_id for state in subset]
+        said = [point for point in ids if chosen[PLAIN].get(point)]
+        got = sum(1 for point in said if chosen[PLAIN][point] in keyed[point])
+        tally: dict[str, int] = {}
+        for point in ids:
+            choice = chosen[PLAIN].get(point) or "(none)"
+            tally[choice] = tally.get(choice, 0) + 1
+        modal = max(tally, key=lambda name: (tally[name], name)) if tally else "(none)"
+        modal_hits = (sum(1 for state in subset if modal in options_of(state)
+                          and modal in keyed[state.point_id]) / len(subset)) if modal != "(none)" else 0.0
+        scored[label] = {"points": len(ids), "answered": len(said), "hits": got,
+                         "hit_rate": got / len(said) if said else 0.0,
+                         "uniform_random": random_hit_rate(grid, subset),
+                         "always_stay": fixed_hit_rate(grid, subset, STAY),
+                         "always_stop": fixed_hit_rate(grid, subset, STOP),
+                         "best_fixed": max(fixed_hit_rate(grid, subset, move_option(check))
+                                           for check in WORKING_SET),
+                         "chose": tally, "modal_choice": modal, "modal_hit_rate": modal_hits}
+    for label, row in scored.items():
+        print(f"over {label}: answered {row['answered']} of {row['points']}, hit {row['hits']}",
+              flush=True)
+        print(f"  hit rate {row['hit_rate']:.3f} against uniform random {row['uniform_random']:.3f}, "
+              f"always-stay {row['always_stay']:.3f}, always-stop {row['always_stop']:.3f}, "
+              f"best fixed move {row['best_fixed']:.3f}", flush=True)
+        print(f"  what it chose: {row['chose']}; its modal choice {row['modal_choice']} would have hit "
+              f"{row['modal_hit_rate']:.3f}", flush=True)
 
     print("", flush=True)
     print("agreement with the plain brief, and the floor a byte-identical brief sets", flush=True)
     floor = agreement(chosen[PLAIN], chosen[REPEAT])
-    print(f"  {REPEAT:12} {floor[0]:3} of {floor[1]:3}  (the floor)", flush=True)
+    print(f"  {REPEAT:12} {floor[0]:3} of {floor[1]:3}  the floor: how often the same bytes agree "
+          "with themselves", flush=True)
     for variant in FORM_BRIEFS + CONTENT_BRIEFS:
         same, both = agreement(chosen[PLAIN], chosen[variant])
         wanted = "must not move" if variant in FORM_BRIEFS else "must move"
-        print(f"  {variant:12} {same:3} of {both:3}  ({wanted})", flush=True)
+        against = ("at the floor" if both and floor[1] and abs(same / both - floor[0] / floor[1]) < 0.1
+                   else "below the floor" if both and floor[1] and same / both < floor[0] / floor[1]
+                   else "above the floor")
+        print(f"  {variant:12} {same:3} of {both:3}  ({wanted}; {against})", flush=True)
     flipping = [state.point_id for state in states if contrast_flips(grid, state)]
     same, both = agreement({point: chosen[PLAIN][point] for point in chosen[PLAIN] if point in flipping},
                            {point: chosen[CONTRAST][point] for point in chosen[CONTRAST] if point in flipping})
     print(f"  {CONTRAST:12} {same:3} of {both:3}  (on the {len(flipping)} point(s) where the contrast "
           "changes what the figures indicate; DEC-4 is measured here)", flush=True)
+    print("  nothing whose agreement sits at the floor can be told from the floor: the floor is what "
+          "the same bytes do.", flush=True)
 
     # What to add: asked, not scored. There is no key, for the reason the pre-registration gives --
     # block 2's four arms did not separate, so no addition has a measured better answer. What is read
@@ -590,11 +616,10 @@ def _read(args: argparse.Namespace) -> int:
         "points": {variant: chosen[variant] for variant in BRIEFS},
         "reasons": reasons,
         "key": {point: sorted(options) for point, options in keyed.items()},
-        "hits": hits, "answered": len(answered),
-        "baselines": {"uniform_random": random_hit_rate(grid, states),
-                      "always_stay": fixed_hit_rate(grid, states, STAY),
-                      "always_stop": fixed_hit_rate(grid, states, STOP)},
-        "modal_choice": modal, "modal_hit_rate": modal_hits,
+        "scored": scored,
+        "repeat_floor": {"same": floor[0], "both": floor[1]},
+        "agreement": {variant: dict(zip(("same", "both"), agreement(chosen[PLAIN], chosen[variant])))
+                      for variant in BRIEFS if variant != PLAIN},
         "add": {variant: add_chosen[variant] for variant in BRIEFS},
         "campaign": {variant: campaign_chosen[variant] for variant in BRIEFS},
         "campaign_key": {state.state_id: rule_that_fires(state) for state in campaign_states()},

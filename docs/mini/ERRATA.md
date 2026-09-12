@@ -635,3 +635,51 @@ same as pre-registration. The amendment is under its own heading in
 What it cost: nothing in calls, because the split is a reading of the grid. What it would have cost if
 it had gone unnoticed: a headline hit rate a quarter of whose points punish a correct reading, against
 baselines computed over the same contaminated set.
+
+## C26 -- the contrast probe could manufacture an unexplored check, and I nearly reported the model for it
+
+DECIDE-TEST-1's `contrast` brief rewrites a decision point's figures so that a different option is the
+indicated one, and the pre-registered measure is how often the choice moves. It moved on 7 of 12 points,
+so agreement with the plain brief was 5 of 12 against a repeat floor of 6 of 12 -- indistinguishable
+from nothing changing. I was one paragraph from reporting that what the figures *say* does not steer the
+decision.
+
+The replies say otherwise. `contrast_of` swaps two checks' whole tallies, **segments included**, so at
+`recover_json_object.s1` the check being worked came out showing no segments run at all, and the reply
+read it correctly: *"recover_json_object has not been run yet, so the search should run a segment on it
+before moving to another check."* Same option as the plain brief, a different and valid ground for it,
+and agreement between briefs cannot tell that from insensitivity to content.
+
+The measure that can, written after the records and labelled as a description of them: does each choice
+equal what its own brief's figures point at? `plain` 10 of 12, `contrast` 8 of 12. The choice tracks the
+figures on both briefs. The pre-registered figure and this one point opposite ways and this one answers
+the question that was asked.
+
+What it cost: nothing, because the reading was done before the conclusion was written. What it would
+have cost unnoticed: a reported finding that a model ignores its input, resting on a probe that had
+changed the input in a way that made a second answer correct.
+
+The repair is a new probe and a new block, not a re-reading: swap the class counts and hold the segment
+counts fixed, so an unexplored check cannot be manufactured. `contrast_flips` would also need to be
+computed under more than one policy for reading the figures, because it was computed under one
+(most classes) and the model uses at least two (most classes, and fewest segments run).
+
+## C27 -- a refutation that disappears when the same bytes are sent again
+
+DECIDE-TEST-1 pre-registered that the search family's hit rate is read on the `plain` brief. On `plain`
+it is 7 of 9 = 0.778, against a uniform-random baseline of 0.250 and a hindsight-optimal constant policy
+at 0.667, and DEC-1's refuting condition -- four more hits than chance expects -- is met.
+
+On `repeat`, which is byte-identical to `plain` and was sent to the same endpoint at temperature zero
+with the same seed, it is 3 of 9 = 0.333, which is chance, and the condition is not met.
+
+So the block does not settle DEC-1, and the favourable figure is the pre-registered one. It is recorded
+here rather than banked because a refutation that flips when the same bytes are resent is a coin. The
+rest of that family goes the same way: the repeat floor is 6 of 12, and every form and content
+comparison except the ablation sits within a few points of it.
+
+What this changes for future blocks: a brief sent twice is not a luxury, it is the first measurement,
+and it should be run before the other 236 calls rather than beside them. On the campaign family the same
+brief twice gave the same answer 8 times of 8 and the whole family's result is stable across all eight
+briefs; on the search family it gave a different answer half the time and nothing in that family is
+readable. One call would have said which of the two questions was worth paying for.

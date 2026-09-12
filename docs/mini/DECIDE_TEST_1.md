@@ -285,3 +285,174 @@ rate: this paragraph is committed before any reply is read.
 
 A second seed on the `plain` briefs only adds 20, and is run only if the first seed's repeat floor is
 above zero, because that is the condition under which a second seed says something.
+
+---
+
+# What the block found
+
+238 calls, one seed, all of them in, nothing set aside. Read with
+`python tools/mini_decide.py read --runs forge/mini/runs/decide-1`.
+
+## The one-sentence answer
+
+The small model **can** make the decision that is a written rule over measurements, and it is
+demonstrably reading the measurements to do it; whether it can make the decision that is a judgement
+about where to look next **this block cannot say**, because on that question one call is not a
+measurement -- the same brief sent twice scored 0.778 and 0.333.
+
+## The campaign decision: a rule over six numbers, and the model computes it
+
+Eight states, each a set of six numbers on which `creib.forge.mini.campaign` fires one of five ordered
+rules or none. The key is what `decide()` returns, so it is exact and no sampling is in it. The chance
+rate over six options is 0.167.
+
+| brief | agrees with the rule that fired |
+|---|---|
+| `plain` | 5 of 8 = **0.625** |
+| `repeat` (identical bytes) | 5 of 8 = **0.625** |
+| `reordered` | 4 of 8 = 0.500 |
+| `reordered-2` | 6 of 8 = 0.750 |
+| `reordered-3` | 5 of 8 = 0.625 |
+| `relabelled` (also identical bytes here) | 6 of 8 = 0.750 |
+| `contrast`, scored against the rule **its own** numbers fire | 5 of 8 = **0.625** |
+| `ablated`, the numbers removed | 1 of 8 = **0.125** |
+
+Read the three bold rows together. Sending the same bytes twice gives the same score. Changing the
+numbers so a different rule fires gives the same score **against the new rule** -- so the model is
+not pattern-matching an option list, it is computing over the numbers. Removing the numbers drops it
+to 0.125, below the chance rate of 0.167. That is a decision being made from the state, not beside it.
+
+Agreement between briefs says the same thing from the other side: `repeat` 8 of 8, `reordered-3` 8 of
+8, `reordered` 7 of 8, `reordered-2` 7 of 8, `relabelled` 7 of 8 -- and `contrast` **0 of 8** and
+`ablated` **0 of 8**. Stable under every change of form, moved by every change of content, with no
+overlap between the two. Nothing in this family is ambiguous.
+
+**DEC-6 is refuted**: 0.625 against a uniform-random baseline of 0.167, and the figure is unchanged
+when the brief is resent.
+
+What the three misses were, because they are not all the same kind of miss. On `none-fires`, where no
+rule fires, it named `space-exhausted`, which does not fire: a plain error. On the two states where
+**two** rules fire, it named the other one -- `one-change-per-pair` where the machine's ordering takes
+`real-line-breaks`, and `real-line-breaks` where the ordering takes `fields-form`. Both of those name a
+rule that genuinely fires on those numbers. So 5 of 8 match the machine exactly and 7 of 8 name a rule
+the numbers warrant; what it does not reproduce is the machine's own precedence between two warranted
+rules, which is a convention written into the rule order and not a fact about the numbers.
+
+## The search decision: one call is not a measurement
+
+Twelve points, four options each, the key from the grid. Three of the twelve have a key the figures
+cannot reach (Amendment A1), so every figure is given over all twelve and over the nine.
+
+| brief | hit rate over 12 | over the 9 |
+|---|---|---|
+| `plain` (**the pre-registered reading**) | 7/12 = 0.583 | 7/9 = **0.778** |
+| `repeat` -- byte-identical to `plain` | 3/12 = 0.250 | 3/9 = **0.333** |
+| `relabelled` | 7/12 = 0.583 | 7/9 = 0.778 |
+| `reordered` | 3/12 = 0.250 | 3/9 = 0.333 |
+| `reordered-2` | 3/12 = 0.250 | 3/9 = 0.333 |
+| `reordered-3` | 2/12 = 0.167 | 1/9 = 0.111 |
+| `contrast` | 3/12 = 0.250 | 3/9 = 0.333 |
+| `ablated` | 1/12 = 0.083 | 1/9 = 0.111 |
+| uniform random | 0.250 | 0.250 |
+| best fixed option, in hindsight | 0.500 | 0.667 |
+
+**The pre-registered reading and the byte-identical resend of it disagree by a factor of two.** The
+pre-registration says the hit rate is read on `plain`; on `plain` it is 0.778, comfortably above the
+0.250 chance rate and above the 0.667 a hindsight-optimal constant policy would get. On `repeat` --
+the same bytes, the same endpoint, temperature zero, seed 11 -- it is 0.333, which is chance.
+
+So, stated the way it has to be stated: **DEC-1's refuting condition is met on the brief the
+pre-registration nominated and not met on an identical copy of that brief, and this block therefore
+does not settle DEC-1.** The favourable figure is the pre-registered one and it is not being banked. A
+refutation that disappears when the same bytes are sent again is not a refutation; it is a coin.
+
+Everything else in this family follows from that. The repeat floor -- how often the same bytes agree
+with themselves -- is **6 of 12**. Agreement with `plain` is `reordered` 6, `reordered-2` 7,
+`reordered-3` 3, `relabelled` 9, `contrast` 5, `ablated` 1, all of 12. Only `ablated` sits clearly
+below the floor; the three reorderings, the relabelling and the contrast are all within a few points
+of it, and nothing whose agreement sits at the floor can be told from the floor.
+
+- **DEC-2 is not refuted.** Over the nine, the model's 0.778 exceeds the best fixed policy's 0.667 by
+  one point of nine. Its own choices split evenly between `stay` and `move-to-recover_json_object`, so
+  there is no single modal choice; on the tie-break that favours the baseline it gets 0.667. One point
+  is not a margin.
+- **DEC-3 cannot be read as written.** Its condition compares "form agreement" with contrast
+  agreement, and no aggregate over the four form briefs was pre-registered -- a defect in the
+  pre-registration, not in the records. By their mean (6.25 of 12) form exceeds contrast (5 of 12); by
+  `reordered-3` alone (3 of 12) it does not. Both are stated; neither is banked.
+- **DEC-4's measure does not do what it was built to do**, and the records show why. See below.
+- **DEC-5 is refuted, weakly.** `ablated` agrees with `plain` on 1 of 12 against a floor of 6 of 12, so
+  removing the figures moves the choice further than nothing does. With a floor that wide, "weakly" is
+  the honest adverb.
+
+## Withdrawn before it was reported: what the contrast measures
+
+On the first reading of this block I was about to report that the contrast does not move the choice --
+5 of 12 agreement against a floor of 6 of 12 -- and conclude that what the figures *say* does not steer
+the decision. Then I read the replies. The conclusion is not supported and the measure is at fault.
+
+`contrast_of` swaps two checks' whole tallies, segments included. At `recover_json_object.s1` that
+turned the check being worked into one with **no segments run**, and the reply said so: *"recover_json_
+object has not been run yet, so the search should run a segment on it before moving to another check"*
+-- a correct reading of the corrupted figures, reaching the same option by a different and valid route.
+Agreement between briefs cannot tell that from insensitivity.
+
+The measure that can, computed after the records and therefore a description of them: does each choice
+equal what **its own brief's** figures point at? `plain` 10 of 12, `contrast` 8 of 12. The choice does
+track the figures, on both briefs, and where the contrast moved it, it moved to what the corrupted
+figures point at. The pre-registered agreement figure (5 of 12) and this one (8 of 12) point opposite
+ways, and this one is the one that answers the question asked.
+
+What a corrected contrast would do: swap the class counts and hold the segment counts fixed, so an
+unexplored check cannot be manufactured. That is a new probe and a new block, not a re-reading of this
+one. Recorded in `docs/mini/ERRATA.md`, C26.
+
+## What to add: asked, unscored, and it always added something
+
+Three states, no key, for the reason given above. It chose `add-the-attacking-seat-and-the-carried-
+brief` on the plain loop and `add-the-warrant-schema` on both loops that already had something, so on
+three states out of three it chose to spend calls rather than to add nothing -- including on the state
+where the loop was shown as having found three distinct ways in eighteen segments. With three states
+its repeat floor is 2 of 3 and nothing about sensitivity can be measured, which is what the
+pre-registration said would happen.
+
+## The stacking order, which is what miniReason explores
+
+Four blocks, three permutations of them beside the canonical one. On the campaign family the order
+changes nothing that can be told from the floor: 0.500, 0.750, 0.625 against 0.625, with an identical
+brief giving 0.625.
+
+On the search family `reordered-3` is the lowest row in every table -- hit rate 1 of 9, follows its own
+figures 2 of 12, agreement with `plain` 3 of 12. It is the one permutation that puts the figures **last**,
+after the task block; `plain` puts them third of four. Against a floor of 6 of 12 that difference cannot
+be attributed to the ordering, and it is written here as a thing to test rather than a thing shown: one
+permutation, twelve points, and a floor wide enough to hold most of the effect.
+
+## The usable finding, which is free
+
+The two families differ in the kind of decision and the tell costs one extra call: **send the same
+brief twice.**
+
+| | the campaign's rule over six numbers | which check to work next |
+|---|---|---|
+| identical brief, twice | same answer, 8 of 8 | different answer, 6 of 12 |
+| score on the first copy | 0.625 | 0.778 |
+| score on the second copy | 0.625 | 0.333 |
+| numbers changed | follows them, 0.625 against the new key | cannot be told from the floor |
+| numbers removed | falls to 0.125, below chance | falls to 0.111 |
+
+A decision a small model can be given is one where resending the brief gives the same answer. That
+test needs no larger model, no key, and no grid: it is one call, and it would have told us before any of
+the other 236 which of these two questions was worth asking.
+
+## What this block does not show
+
+- Nothing about models in general. One model, one endpoint, temperature zero, seed 11, one task.
+- Nothing about whether a second seed would move the search family. The pre-registration said a second
+  seed runs only if the repeat floor is above zero; it is 6 of 12, so a second seed is now warranted and
+  has not been run.
+- Nothing about what to add, by design.
+- Nothing about the machine's rule precedence being right. The campaign key is a policy a person wrote,
+  and 0.625 agreement with it is agreement with that person's judgement.
+- Nothing about `stop` as a decision. The three points where `stop` was the key are the three the
+  figures cannot reach, and the model never chose `stop` on any plain brief.

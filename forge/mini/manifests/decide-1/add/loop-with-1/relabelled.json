@@ -1,0 +1,84 @@
+{
+  "schema_version": "creib.mini.manifest.v1",
+  "manifest_id": "mini.decide1.add.loop-with-1.relabelled",
+  "problem": "A loop is running the search described below. It writes a conjecture in prose, a second seat renders it as something a machine can run, and the machine runs it. What it is looking for is a pair of reply texts that a check answers the SAME on, where the check's own documented rule requires it to answer differently.\n\nYou are deciding whether to add one thing to that loop, or nothing. Every call costs money, so adding something is worth doing only if it will find more than the calls it spends.\n\n## The loop as it stands\n\n- it already has part_one: a second seat that attacks the conjecture after the machine has run it, and a brief that tells the next segment what has already been run and not to repeat it (two changes, made together)\n- it costs 5 model call(s) per segment\n- in 18 segment(s) it has found 13 pair(s), which are 5 distinct way(s) of breaking a check\n\n## The options, and there are no others\n\n- `add-nothing` -- leave the loop as it is and run another segment\n- `add-part_two` -- the attacking seat also being shown the second seat's own rendering of the conjecture, and not only the conjecture itself. This adds no model call to a segment.\n- `add-part_three` -- the attacking seat naming, in a fixed shape, which artifact it attacks and on what ground, with what its attacks settle computed and shown to the next segment. This adds no model call to a segment.\n\nChoose exactly one of the options you are shown and say in one sentence why.\n\nYour reply is one JSON object and nothing else. Its \"body\" is the option id, copied exactly from the list and by itself with no other words. Its \"commitments\" is your one sentence. Nothing is nested inside either: they are plain strings.\n\nIn full, a well formed reply looks exactly like this:\n\n{\"body\": \"stop\", \"commitments\": \"Nothing has been found on any of them in the segments run so far.\"}\n\nAn id that is not on the list is not a choice, and a body holding more than one of the ids names none of them.\n",
+  "cycles": {
+    "max_cycles": 1
+  },
+  "endpoint": {
+    "kind": "ollama-chat",
+    "base_url": "https://ollama.com",
+    "timeout_seconds": 900,
+    "options": {
+      "temperature": 0,
+      "seed": 11
+    },
+    "think": null
+  },
+  "port_types": [],
+  "kinds": [
+    {
+      "kind_id": "mini.decision.v1",
+      "title": "Decision",
+      "commitment_call": "single",
+      "instruction": "Answer the question you have been given, in the shape it asks for.",
+      "failure_policy": {
+        "retries": 2,
+        "tolerance": null,
+        "action": "stop",
+        "skip_on_empty_port": false
+      },
+      "input_ports": [
+        {
+          "port_id": "problem",
+          "port_type": "problem",
+          "window": "all"
+        }
+      ],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.decision.v1"
+      }
+    },
+    {
+      "kind_id": "mini.verdict.v1",
+      "title": "Verdict",
+      "input_ports": [],
+      "failure_policy": {
+        "retries": 0,
+        "tolerance": null,
+        "action": "stop",
+        "skip_on_empty_port": false
+      },
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.verdict.v1"
+      }
+    }
+  ],
+  "stages": [
+    {
+      "stage_id": "decide",
+      "kind_id": "mini.decision.v1",
+      "ports": [
+        "problem"
+      ]
+    },
+    {
+      "stage_id": "verdict",
+      "kind_id": "mini.verdict.v1",
+      "seat": "machine",
+      "ports": []
+    },
+    {
+      "stage_id": "end",
+      "end": true
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "contract",
+      "text": "one decision, one call\n"
+    }
+  ]
+}

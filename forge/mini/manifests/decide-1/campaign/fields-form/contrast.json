@@ -1,0 +1,84 @@
+{
+  "schema_version": "creib.mini.manifest.v1",
+  "manifest_id": "mini.decide1.campaign.fields-form.contrast",
+  "problem": "A loop has just finished a round. It proposed pairs of texts, a translator turned each into something a machine could run, and the machine ran what it could. You are deciding what the NEXT round should change -- one thing, or nothing.\n\nThese are the only things that can be changed, and each is worth doing only when the numbers say so. If more than one looks warranted, choose the one that is most pressing.\n\n## What the round did\n\n- the machine ran 8 pair(s)\n- 0 reply/replies were refused for not carrying the shape asked for\n- 0 reply/replies were dropped before anything could read them\n- 3 of the pairs it ran carried the two characters backslash and n where a line break belonged\n- 0 of the pairs it ran differed in more than one line\n- the round had 4 cell(s) of its grid to cover and reached 4 of them\n- the machine was handed 0 pair(s) it had already run\n- the round ended because: completed\n\n## How the round is set up now\n\n- the long texts are separate fields of the reply\n- the proposer has not been told to write real line breaks\n- the proposer has been told to change one thing per pair\n\n## The options, and there are no others\n\n- `fields-form` -- move the long texts out of the nested string and make them separate fields of the reply\n- `real-line-breaks` -- tell the proposer to write real line breaks instead of the two characters backslash and n\n- `one-change-per-pair` -- tell the proposer to change exactly one thing between the two texts of a pair\n- `cover-the-grid` -- raise the number of cycles so the cells the round never reached can be reached\n- `space-exhausted` -- stop this shape: it has nothing left to run\n- `run-again-unchanged` -- change nothing and run the same round again\n\nChoose exactly one of the options you are shown and say in one sentence why.\n\nYour reply is one JSON object and nothing else. Its \"body\" is the option id, copied exactly from the list and by itself with no other words. Its \"commitments\" is your one sentence. Nothing is nested inside either: they are plain strings.\n\nIn full, a well formed reply looks exactly like this:\n\n{\"body\": \"stop\", \"commitments\": \"Nothing has been found on any of them in the segments run so far.\"}\n\nAn id that is not on the list is not a choice, and a body holding more than one of the ids names none of them.\n",
+  "cycles": {
+    "max_cycles": 1
+  },
+  "endpoint": {
+    "kind": "ollama-chat",
+    "base_url": "https://ollama.com",
+    "timeout_seconds": 900,
+    "options": {
+      "temperature": 0,
+      "seed": 11
+    },
+    "think": null
+  },
+  "port_types": [],
+  "kinds": [
+    {
+      "kind_id": "mini.decision.v1",
+      "title": "Decision",
+      "commitment_call": "single",
+      "instruction": "Answer the question you have been given, in the shape it asks for.",
+      "failure_policy": {
+        "retries": 2,
+        "tolerance": null,
+        "action": "stop",
+        "skip_on_empty_port": false
+      },
+      "input_ports": [
+        {
+          "port_id": "problem",
+          "port_type": "problem",
+          "window": "all"
+        }
+      ],
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.decision.v1"
+      }
+    },
+    {
+      "kind_id": "mini.verdict.v1",
+      "title": "Verdict",
+      "input_ports": [],
+      "failure_policy": {
+        "retries": 0,
+        "tolerance": null,
+        "action": "stop",
+        "skip_on_empty_port": false
+      },
+      "output_port": {
+        "port_id": "out",
+        "produces_kind": "mini.verdict.v1"
+      }
+    }
+  ],
+  "stages": [
+    {
+      "stage_id": "decide",
+      "kind_id": "mini.decision.v1",
+      "ports": [
+        "problem"
+      ]
+    },
+    {
+      "stage_id": "verdict",
+      "kind_id": "mini.verdict.v1",
+      "seat": "machine",
+      "ports": []
+    },
+    {
+      "stage_id": "end",
+      "end": true
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "contract",
+      "text": "one decision, one call\n"
+    }
+  ]
+}
