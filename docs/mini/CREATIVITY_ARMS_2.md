@@ -89,6 +89,12 @@ The record is `forge/mini/runs/creativity-2/E/enumeration.json`.
 
 ## The measures
 
+> **Per segment, added after the block ran (ERRATA C22).** Each segment produces exactly one claim,
+> so finds per segment removes the call count. On it, `A` equals `R` and the pre-registered ordering
+> F < W < A holds monotonically — neither is visible per call. See
+> `docs/mini/WHY_THE_LOOP_ARMS_SCORE_LOW.md`. Per call remains the declared primary; a measure is not
+> swapped after seeing the records.
+
 > **Unit added after the block ran (ERRATA C20).** "Per model call" is the pre-registered unit and
 > nothing asked what a call costs. Per token the ordering is unchanged and the gap is about a third
 > of the size; `W` moves from third to last. Both columns are reported from here on, with the

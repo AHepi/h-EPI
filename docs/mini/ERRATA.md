@@ -494,6 +494,41 @@ layer — `format.fields` already exists (C13) and a check for it is a two-line 
 **How it was found.** The operator asked whether anything of value inside the runs had never reached
 the end. Fifteen rows had been counted and none of them read.
 
+### C22. The block never counted per segment, which is the measure that answers its own question (**mine**)
+
+Every segment of every arm produces **exactly one claim**. So finds per segment is available, removes
+the call count entirely, and was never computed. Taking it (`docs/mini/WHY_THE_LOOP_ARMS_SCORE_LOW.md`)
+changes what the block is read as saying:
+
+| arm | per segment | calls per segment |
+|---|---|---|
+| R | 0.958 | 3.56 |
+| F | 0.875 | 5.21 |
+| W | 0.896 | 5.15 |
+| A | **0.951** | 5.32 |
+
+`A` finds as often per segment as the arm with no loop. Over the two repeats complete for every arm
+the two are **identical**, 0.938 each.
+
+So `R`'s per-call lead over `A` — 1.4914 — is the calls-per-segment ratio, 1.4912, and that identity
+is arithmetic rather than evidence: when two arms find the same per segment, the per-call ratio *is*
+the inverse call ratio. It locates the whole gap in one place. **"A scores badly per call" is the
+sentence "the criticism stage costs two calls", restated as a rate**, and it was read for two days as
+though it were a result about criticism.
+
+And the two pre-registered predictions **hold on this measure and were invisible on the reported
+one**: per segment F 0.875 < W 0.896 < A 0.951, monotone, which is P1 and P2 exactly. What they are
+made of is the finding: across those steps, claims that BROKE fall 9 → 2 → 1, so each addition to the
+loop is recovering claims the loop's own machinery broke rather than producing new ones.
+
+**What it cost:** the block's central comparison was reported for two days in a unit that could not
+show its own pre-registered predictions, and the one measure that could was a division away the whole
+time.
+
+**Not repaired in the pre-registration**, which keeps per call as its declared primary — a measure is
+not swapped after seeing the records. Per segment and per token are reported beside it, with this
+entry saying which is which.
+
 ## The pattern
 
 Of the twenty-odd items above, **three** are about the model. All the rest are about the apparatus:
@@ -505,7 +540,7 @@ The one thing that survived every repair, unchanged, is the conjecture step. It 
 boundaries under every configuration, including the cheapest, and the machinery kept failing to
 execute, see, or count them.
 
-A5 and C12 to C21 were added after the rest, while building and first running the block that was meant
+A5 and C12 to C22 were added after the rest, while building and first running the block that was meant
 to settle the question. C12 was found by reading the run headers, A5 by counting what a segment
 actually sends, and C13 and C14 by alarms firing on live segments — the only items here that a
 machine caught rather than a person, and C14 was additionally diagnosed, correctly and in prose, by
