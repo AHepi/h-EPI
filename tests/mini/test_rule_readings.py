@@ -22,8 +22,11 @@ if str(ROOT / "src") not in sys.path:
 
 from creib.forge.mini.common import MiniError  # noqa: E402
 from creib.forge.mini.rule_readings import (  # noqa: E402
+    CURLY_ONLY,
+    EVERY_TYPOGRAPHIC_MARK,
     FIRST_IN_LIST,
     FIRST_IN_TEXT,
+    QUOTES,
     REAL,
     RECOVERY,
     REFUSAL,
@@ -31,6 +34,7 @@ from creib.forge.mini.rule_readings import (  # noqa: E402
     STRINGS_HOLD_CANDIDATES,
     UNREAD,
     UNSUPPORTED,
+    quotes_answer,
     refusal_answer,
     rule_answer,
     rule_requires_a_move,
@@ -112,9 +116,38 @@ class RefusalReadingTests(unittest.TestCase):
             verdict(REFUSAL, "a", "b", FIRST_IN_TEXT, None)
 
 
+class FoldingReadingTests(unittest.TestCase):
+    def test_both_readings_fold_the_four_curly_quotes(self) -> None:
+        for reading in (CURLY_ONLY, EVERY_TYPOGRAPHIC_MARK):
+            self.assertEqual(quotes_answer("\u2018a\u2019 \u201cb\u201d", reading), "'a' \"b\"")
+
+    def test_the_single_folding_find_of_block_two_is_unsupported_under_both_readings(self) -> None:
+        # The pair is U+2019 against U+2018 in the same word, and folding both to a straight
+        # apostrophe is the rule being obeyed rather than broken. It sat inside the reported find
+        # count for a week (ERRATA C24), and this is the assertion that would have caught it.
+        for reading in (CURLY_ONLY, EVERY_TYPOGRAPHIC_MARK):
+            self.assertEqual(verdict(QUOTES, "I\u2019m", "I\u2018m", reading), UNSUPPORTED)
+
+    def test_a_modifier_apostrophe_separates_the_two_readings(self) -> None:
+        self.assertEqual(verdict(QUOTES, "I'm", "I\u02bcm", CURLY_ONLY), REAL)
+        self.assertEqual(verdict(QUOTES, "I'm", "I\u02bcm", EVERY_TYPOGRAPHIC_MARK), UNSUPPORTED)
+
+    def test_a_guillemet_is_folded_by_the_wide_reading_only(self) -> None:
+        self.assertEqual(quotes_answer("\u00aba\u00bb", CURLY_ONLY), "\u00aba\u00bb")
+        self.assertEqual(quotes_answer("\u00aba\u00bb", EVERY_TYPOGRAPHIC_MARK), '"a"')
+
+    def test_an_unknown_reading_of_the_folding_rule_is_refused(self) -> None:
+        with self.assertRaises(MiniError):
+            quotes_answer("text", "all-punctuation")
+
+    def test_a_folding_text_that_is_not_a_string_is_refused(self) -> None:
+        with self.assertRaises(MiniError):
+            quotes_answer(None)  # type: ignore[arg-type]
+
+
 class VerdictTests(unittest.TestCase):
     def test_a_check_no_reading_speaks_for_is_unread_and_not_doubted(self) -> None:
-        self.assertEqual(verdict("_plain_quotes", "I’m", "I‘m", STRINGS_HOLD_CANDIDATES), UNREAD)
+        self.assertEqual(verdict("parse_instructions", "a", "b", STRINGS_HOLD_CANDIDATES), UNREAD)
 
     def test_the_largest_class_of_block_two_is_real_under_both_readings(self) -> None:
         before, after = '```jsonc\n{"a":1}\n```\n{"b":2}', '{"b":2}'

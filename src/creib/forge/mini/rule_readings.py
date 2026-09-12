@@ -6,7 +6,7 @@ recorded its two answers, and a pre-registered verification pass re-ran every cl
 disagreement -- but nothing checked the other half, whether the RULE really requires a move. That
 half was taken from the model's own prose.
 
-This module implements the rule for two checks, from their docstrings and not from their bodies, so
+This module implements the rule for three checks, from their docstrings and not from their bodies, so
 the two can be compared. For ``recover_json_object``, reading the docstring:
 
     Every top-level balanced object in the text is a candidate, not only the span from the first
@@ -40,7 +40,19 @@ told apart from the words:
 ``FIRST_IN_LIST``
     The earliest phrase of the declared list that occurs anywhere. The code reads it this way.
 
-WHAT THIS CANNOT DO. It speaks for two checks of the fifteen modules a conjecture may name; every
+For ``_plain_quotes``, the docstring is "Fold typographic apostrophes and quotation marks to their
+ASCII forms", and *typographic* has two readings that its words cannot settle:
+
+``CURLY_ONLY``
+    The four curly quotes and nothing else. Read this way the code folds MORE than the rule says: it
+    also folds a modifier letter apostrophe and a prime, so a pair differing only in one of those is
+    required by the rule to stay apart and the code brings it together.
+``EVERY_TYPOGRAPHIC_MARK``
+    Every mark a typographer would call a quotation mark, low-9 quotes and guillemets included. Read
+    this way the code folds FEWER than the rule says, and the pairs that show it are the check
+    separating what the rule would join, which is oversensitivity and not a collapse.
+
+WHAT THIS CANNOT DO. It speaks for three checks of the fifteen modules a conjecture may name; every
 other check is ``unread`` and its finds are neither confirmed nor doubted here. It is a reading, so a
 reader may hold a third one; the readings implemented are named so that disagreeing with them is
 possible. And it settles nothing about whether the code or the docstring is the thing that should
@@ -59,6 +71,7 @@ from creib.forge.mini.common import MiniError
 #: The checks this module reads the rule of. Nothing else is claimed.
 RECOVERY = "recover_json_object"
 REFUSAL = "refusal_phrase_in"
+QUOTES = "_plain_quotes"
 
 #: The two readings that differ on whether a brace inside a quoted string opens a candidate.
 STRINGS_HOLD_CANDIDATES = "strings-hold-candidates"
@@ -70,8 +83,26 @@ FIRST_IN_TEXT = "first-in-text"
 FIRST_IN_LIST = "first-in-list"
 REFUSAL_READINGS: tuple[str, ...] = (FIRST_IN_TEXT, FIRST_IN_LIST)
 
+#: The two readings of "typographic apostrophes and quotation marks".
+CURLY_ONLY = "curly-only"
+EVERY_TYPOGRAPHIC_MARK = "every-typographic-mark"
+QUOTE_READINGS: tuple[str, ...] = (CURLY_ONLY, EVERY_TYPOGRAPHIC_MARK)
+
+#: What each reading folds, written out rather than computed from a Unicode category, so a reader can
+#: see the whole of it and disagree with a particular character.
+_CURLY = {"\u2018": "'", "\u2019": "'", "\u201c": '"', "\u201d": '"'}
+_EVERY_MARK = dict(_CURLY, **{
+    "\u02bc": "'", "\u2032": "'", "\u201a": "'", "\u201b": "'", "\u2039": "'", "\u275b": "'",
+    "\u275c": "'", "\uff07": "'",
+    "\u2033": '"', "\u201e": '"', "\u201f": '"', "\u00ab": '"', "\u00bb": '"', "\u203a": '"',
+    "\u275d": '"', "\u275e": '"', "\u301d": '"', "\u301e": '"', "\uff02": '"',
+})
+_QUOTE_TABLES: dict[str, dict[str, str]] = {CURLY_ONLY: _CURLY,
+                                           EVERY_TYPOGRAPHIC_MARK: _EVERY_MARK}
+
 #: Which readings belong to which check, so a caller can ask without knowing the vocabulary.
-READINGS_OF: dict[str, tuple[str, ...]] = {RECOVERY: READINGS, REFUSAL: REFUSAL_READINGS}
+READINGS_OF: dict[str, tuple[str, ...]] = {RECOVERY: READINGS, REFUSAL: REFUSAL_READINGS,
+                                           QUOTES: QUOTE_READINGS}
 
 #: What one find is worth under one reading.
 REAL = "real"
@@ -199,6 +230,20 @@ def _fold(text: str) -> str:
     return text.translate(_TYPOGRAPHIC).lower()
 
 
+def quotes_answer(text: str, reading: str = CURLY_ONLY) -> str:
+    """What folding the rule requires, under one reading of "typographic"."""
+
+    if reading not in QUOTE_READINGS:
+        raise MiniError("MINI_COLLAPSE_CLASS_INVALID",
+                        f"unknown reading of the folding rule: {reading!r}; "
+                        f"the readings are {QUOTE_READINGS}")
+    if not isinstance(text, str):
+        raise MiniError("MINI_COLLAPSE_CLASS_INVALID",
+                        f"a reply text must be a string, not {type(text).__name__}")
+    table = _QUOTE_TABLES[reading]
+    return "".join(table.get(character, character) for character in text)
+
+
 def verdict(check: str, before: str, after: str, reading: str,
             phrases: "tuple[str, ...] | None" = None) -> str:
     """What one find is worth under one reading: :data:`REAL`, :data:`UNSUPPORTED`, :data:`UNREAD`.
@@ -215,5 +260,8 @@ def verdict(check: str, before: str, after: str, reading: str,
             raise MiniError("MINI_COLLAPSE_CLASS_INVALID",
                             "the refusal rule cannot be read without the phrase list it is about")
         moved = refusal_answer(before, phrases, reading) != refusal_answer(after, phrases, reading)
+        return REAL if moved else UNSUPPORTED
+    if check == QUOTES:
+        moved = quotes_answer(before, reading) != quotes_answer(after, reading)
         return REAL if moved else UNSUPPORTED
     return UNREAD
