@@ -1,0 +1,30 @@
+The checks under test are this repository's own functions for reading a model's reply. Each takes one string and answers something about it.
+
+Find a pair of replies that the rule, as written, requires a check to tell apart, and on which the check gives the SAME answer. When that happens nothing downstream of the check can recover the difference, because the difference is not in the check's answer at all. That is the find.
+
+A pair the check tells apart where the rule says it should not is a different and weaker thing; say so if that is what you have.
+
+## What this inquiry has already run
+
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: The first is an array containing the object; the second is the object itself. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Text 1 contains a top-level object {"a": 1} followed by an array containing {"b": 2}; Text 2 contains only the array [{" -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A includes a fenced float before the top-level object; Reply B contains only the top-level object. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A includes a JavaScript code fence with object {"a":1} before the top-level object {"b":2}; Reply B contains only  -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: moves -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A contains a Python code fence with object {"a":1} followed by top-level {"b":2}; Reply B contains only the top-le -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: A contains a fenced object {"a": 1} before the top-level {"b": 2}; B contains only {"b": 2}. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply B drops the fenced object and keeps only the top-level object. -> the check answered unchanged
+- open:creib.forge.conformance.oracle.recover_json_object on a pair differing by: Reply A contains a ```text fenced object {"a": 1} followed by {"b": 2}; Reply B is only {"b": 2}. -> the check answered unchanged
+
+Do not repeat any pair above. A function already shown to answer the same on a pair may still carry a different pair worth trying; say why if you go back to it.
+
+## What has been refuted, computed from the attacks that landed
+
+- 8d377a35de604a14 was refuted on the ground reading-misrenders-conjecture: The reading's 'expect': 'moves' is not stated in the conjecture, which expects unchanged output {'b': 2} for both replies, and it omits Reply B, so the reading
+
+A refuted conjecture is not merely criticised: an attack on it landed and nothing has yet overturned that attack. Do not re-propose one.
+
+## The standing criticism of the last attempt
+
+Reading 8d377a35de604a14 misrenders the conjecture. The conjecture quotes the rule, 'The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text,' and says the check returns {"b": 2} for each reply because its fence regex misses ```text. That is an expectation of unchanged output, not 'moves'. The reading's commitment 'expect': 'moves' is not stated in the prose, and its input only includes Reply A, omitting Reply B. The execution therefore only ran A and marked the reading false. The conjecture itself is sound: the rule and code diverge because the regex only matches ```json, ```JSON, or bare ```. A next conjecture should test the fence regex against ```text directly and expect the same {"b": 2} output, avoiding the invented 'moves' expectation and including both replies.

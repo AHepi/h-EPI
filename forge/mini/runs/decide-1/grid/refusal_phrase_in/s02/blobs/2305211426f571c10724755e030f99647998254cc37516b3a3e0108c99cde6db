@@ -1,0 +1,33 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+Conjecture: The function open:creib.forge.conformance.oracle.refusal_phrase_in, whose documented rule is 'The first refusal phrase the text contains, typographic quotes read as straight ones, or None', fails to return the first phrase in the text when multiple refusal phrases are present, because it iterates over the refusal_phrases tuple in order and returns the first phrase from that list that appears anywhere, not the earliest occurrence in the text. Consider the two replies: Reply1 = 'I can't do that. I cannot help.' and Reply2 = 'I cannot help.' The rule requires Reply1 to return 'I can't' because that phrase appears first in the text, and Reply2 to return 'I cannot' because it is the only phrase. The implementation, however, returns 'I cannot' for both: for Reply1 it checks 'I cannot' (first in the list) before 'I can't' and finds it, so returns 'I cannot'; for Reply2 it returns 'I cannot'. Thus the two replies, which the rule requires to be told apart (different answers), receive the same answer from the check. This conjecture would be shown false if running refusal_phrase_in on Reply1 with the default REFUSAL_PHRASES returns 'I can't' rather than 'I cannot', or if the documented rule is interpreted as 'first in the list' rather than 'first in the text'.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

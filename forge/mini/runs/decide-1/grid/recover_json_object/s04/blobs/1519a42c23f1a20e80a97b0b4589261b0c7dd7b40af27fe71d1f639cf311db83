@@ -1,0 +1,33 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+I am testing open:creib.forge.conformance.oracle.recover_json_object. The documented rule says: "Every top-level balanced object in the text is a candidate, not only the span from the first { to the last }: reasoning prose before or after the answer frequently contains stray braces, and an object nested inside another is not a candidate of its own. The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text, because a model places its final answer last and marks it: a reply that quotes its previous answer and then gives a corrected one is scored on the correction." The two reply texts are as follows. First reply: "```json\n{\"a\": 1}\n```\nHere is another fence with prose:\n```\nSome text {\"b\": 2} more\n```". Second reply: "```json\n{\"a\": 1}\n```\nHere is another fence with prose:\n```\nSome text {\"c\": 3} more\n```". For the first reply, the rule requires the answer to be the object {\"b\": 2}, because that is the last top-level object inside a code fence; the earlier fenced object {\"a\": 1} is not the last one inside a fence. For the second reply, the rule requires {\"c\": 3} for the same reason. The function, however, returns {\"a\": 1} for both replies, because its fenced pool takes the last fence whose entire content parses as a single JSON object, which is the first fence in both, and it never considers the object inside the second fence's prose as a fenced candidate. I would be wrong if recover_json_object returns {\"b\": 2} for the first reply and {\"c\": 3} for the second, or if the rule is read as requiring the first fenced dict to win whenever any fence contains a parseable dict, regardless of later objects inside other fences.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

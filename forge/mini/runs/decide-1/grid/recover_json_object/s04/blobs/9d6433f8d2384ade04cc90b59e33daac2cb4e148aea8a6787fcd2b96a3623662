@@ -1,0 +1,24 @@
+# Execute
+
+## Readings (reads)
+[8436e0d4c889b623] (mini.pair-proposal.reading.v1)
+I am unsure whether the rule's phrase 'inside a code fence' requires the fence's entire content to parse as a single JSON object, or whether any top-level object appearing within a fence qualifies. The conjecture reads it as the latter, so the last fenced object is {"b": 2} in the first reply and {"c": 3} in the second.
+input: ```json
+{"a": 1}
+```
+Here is another fence with prose:
+```
+Some text {"b": 2} more
+```
+rewrite: moves
+rewritten: ```json
+{"a": 1}
+```
+Here is another fence with prose:
+```
+Some text {"c": 3} more
+```
+commitments: {"kernel": "open:creib.forge.conformance.oracle.recover_json_object", "expect": "moves"}
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
