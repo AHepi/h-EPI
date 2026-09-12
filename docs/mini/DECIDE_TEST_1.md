@@ -234,6 +234,45 @@ state's numbers, which spreads the key across six of the six options by construc
 **One seed, 11, declared in the driver.** The endpoint, its temperature of zero and its seed are written
 into every manifest, so what was sent is in the record rather than in a shipped default.
 
+## Amendment A1: three of the twelve points have a key the model cannot see
+
+Made after the block began and before any reply was read. Where it sits on the pre-registration rule
+(`CLAUDE.md`: *a conjecture written after the records is a description of them, and the document that
+reports it says so*): the limit itself is pre-registered above, in two sentences -- *the grid's own
+length is a scope limit on every hit rate in this block*, and *a `stop` called right at s = 6 is right
+relative to six segments of evidence and not in general*. What is new is the number and a second
+reported figure beside the first. It was computed from the grid, which was complete before the first
+decision call was sent, and no reply had been read when it was written, so no reply could have
+influenced it. That is not the same as having been pre-registered, and this heading says so.
+
+**What the grid turned out to be.** Six segments each: `recover_json_object` gave five distinct ways of
+breaking it, one per segment bar the last; `refusal_phrase_in` gave six finds and not one that survives
+the reading of *first* its own code follows, so zero; `_plain_quotes` gave no T1 witness at all. The key
+over the twelve points is therefore `stay` at three, `move-to-recover_json_object` at six, and `stop` at
+three, and the contrast changes what the figures indicate at every one of the twelve.
+
+**The problem with the three `stop` points.** They are the deepest cut, where every check's segments are
+used up, so every option's remaining yield is zero and `stop` is the right answer. But the figures a
+model is shown say the opposite: a check with five ways found in six segments looks like one worth
+moving to, and the model cannot know the grid has no seventh segment. On those three points a reasonable
+reading of the figures is scored wrong, and scoring it wrong is an artefact of how long the grid is.
+
+**What is done about it.** `creib.forge.mini.decide.length_dependent` marks such a point -- nothing left
+anywhere, and some check spent to the end of its grid -- and every hit rate is reported twice, over all
+twelve points and over the nine whose key does not depend on the grid's length. The baselines differ
+between the two, so both sets are given here:
+
+| baseline | over all twelve | over the nine |
+|---|---|---|
+| uniform random | 0.250 | 0.250 |
+| always `stay` | 0.250 | 0.333 |
+| always `stop` | 0.250 | 0.000 |
+| always `move-to-recover_json_object` (the best fixed option) | 0.500 | 0.667 |
+
+DEC-1 and DEC-2 are read on the nine, because that is the set whose key the figures support, and the
+figure over all twelve is reported beside it. Neither figure is chosen after seeing the model's hit
+rate: this paragraph is committed before any reply is read.
+
 ## The cost
 
 | part | calls |

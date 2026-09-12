@@ -608,3 +608,30 @@ pattern does not match is not treated as a fence (61 finds), and a fence holding
 is skipped entirely (36). Both change which object a conformance run would score. Both are candidate
 kernel points, recorded as such in `docs/mini/CANDIDATE_POINTS.md`, and promoting either is a person's
 reading.
+
+## C25 -- a quarter of DECIDE-TEST-1's key needed the grid's length, and the block had started
+
+The pre-registration says twice that the grid's own length is a scope limit on every hit rate in the
+block, and that a `stop` called right at the deepest cut is right relative to six segments of evidence
+and not in general. Both sentences were committed before the first call. What was not committed was the
+number: of the twelve decision points, **three** have a key that no reading of the figures can reach.
+
+At the deepest cut every check's segments are used up, so every option's remaining yield is zero and
+`stop` is the right answer. The figures the model is shown say the opposite -- `recover_json_object` with
+five distinct ways found in six segments looks like a check worth moving to -- and the model cannot know
+there is no seventh segment. On those three points a reasonable reading of the figures is scored wrong,
+and that is an artefact of how long the grid is.
+
+`creib.forge.mini.decide.length_dependent` now marks such a point and every hit rate is reported twice,
+over all twelve and over the nine whose key the figures support. The baselines differ between the two
+sets -- always-`stay` is 0.250 over twelve and 0.333 over nine, always-`stop` 0.250 and 0.000 -- so
+reporting one figure would have hidden the other.
+
+The timing, stated rather than glossed: the grid was complete and the first decision call had been sent
+when this was written, and no reply had been read, so no reply could have influenced it. That is not the
+same as pre-registration. The amendment is under its own heading in
+`docs/mini/DECIDE_TEST_1.md`, which says the same thing there.
+
+What it cost: nothing in calls, because the split is a reading of the grid. What it would have cost if
+it had gone unnoticed: a headline hit rate a quarter of whose points punish a correct reading, against
+baselines computed over the same contaminated set.

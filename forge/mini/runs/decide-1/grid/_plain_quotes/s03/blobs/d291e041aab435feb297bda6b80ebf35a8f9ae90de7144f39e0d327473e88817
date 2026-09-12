@@ -1,0 +1,35 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+The three texts are fields of the REPLY, beside "body" and "commitments", not inside the commitments string. A reply that omits any of them is refused and you are asked again. In full, a well formed reply looks exactly like this:
+
+{"body": "<what you were unsure of, in prose>",
+ "commitments": "{\"kernel\": \"<the full dotted path>\", \"expect\": \"moves\"}",
+ "input": "<the first reply text, in full>",
+ "rewritten": "<the second reply text, in full>",
+ "rewrite": "<how the two differ>"}
+
+## The conjecture, as written (conj)
+[15707f524b36adb1] (mini.conjecture.v1)
+I conjecture that open:creib.forge.conformance.oracle._plain_quotes gives the same answer for two replies that its documented rule requires it to tell apart. The documented rule is: “Fold typographic apostrophes and quotation marks to their ASCII forms.” The two replies are: “a‐b” (with U+2010 HYPHEN) and “a-b” (with ASCII hyphen). The rule mentions only typographic apostrophes and quotation marks, so it requires the check to preserve the difference between U+2010 and ASCII hyphen: the first should return “a‐b” and the second “a-b”. But I conjecture that the translation table _TYPOGRAPHIC_QUOTES erroneously includes U+2010 mapping to '-', so the check returns “a-b” for both. What would make me wrong: if _TYPOGRAPHIC_QUOTES does not contain U+2010, then the outputs would differ, and the check would tell the pair apart as the rule requires.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.
+
+## The shape this answer must take
+`input` must contain something matching this expression:
+  \S
+
+`rewrite` must contain something matching this expression:
+  \S
+
+`rewritten` must contain something matching this expression:
+  \S

@@ -202,6 +202,26 @@ def right_options(grid: Grid, state: State) -> frozenset[str]:
     return frozenset(option for option, score in scores.items() if score == best)
 
 
+def length_dependent(grid: Grid, state: State) -> bool:
+    """Whether this point's right answer depends on the grid's length rather than on the figures.
+
+    At the deepest cut every check's segments are used up, so every option's remaining yield is zero
+    and ``stop`` is the right answer -- but the figures a model is shown say the opposite: a check with
+    five ways found in six segments looks like one worth moving to. The model cannot know the grid has
+    no seventh segment, so on such a point a reasonable reading of the figures is scored wrong.
+
+    The pre-registration declares the grid's length as a scope limit on every hit rate here. This makes
+    the limit a number rather than a sentence: a point is length-dependent when nothing is left anywhere
+    AND some check's segments are spent to the end of its grid, and the hit rate is reported over all
+    points and over the rest separately.
+    """
+
+    if right_options(grid, state) != frozenset({STOP}):
+        return False
+    return any(state.tally_of(tally.check).segments >= grid.segments(tally.check)
+               for tally in state.tallies if tally.check in grid.new_real_classes)
+
+
 def random_hit_rate(grid: Grid, states: Sequence[State]) -> float:
     """The expected hit rate of choosing uniformly among the enumerated options."""
 

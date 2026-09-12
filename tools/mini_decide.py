@@ -57,6 +57,7 @@ from creib.forge.mini.decide import (  # noqa: E402
     campaign_states,
     contrast_flips,
     fixed_hit_rate,
+    length_dependent,
     move_option,
     options_of,
     random_hit_rate,
@@ -315,6 +316,16 @@ def _grid(args: argparse.Namespace) -> int:
     return 0
 
 
+def _baselines(grid: Grid, states: "Sequence[Any]") -> dict[str, float]:
+    """Every baseline over one set of points, so two sets are computed the same way and comparable."""
+
+    return {"uniform_random": random_hit_rate(grid, states),
+            "always_stay": fixed_hit_rate(grid, states, STAY),
+            "always_stop": fixed_hit_rate(grid, states, STOP),
+            **{f"always_{move_option(check)}": fixed_hit_rate(grid, states, move_option(check))
+               for check in WORKING_SET}}
+
+
 def _points(args: argparse.Namespace) -> int:
     """Write the decision points the grid puts the search in, and their briefs. No call is made."""
 
@@ -330,15 +341,14 @@ def _points(args: argparse.Namespace) -> int:
                     "options": list(options_of(state)),
                     "right": sorted(right_options(grid, state)),
                     "contrast_flips": contrast_flips(grid, state),
+                    "length_dependent": length_dependent(grid, state),
                     "tallies": [{"check": tally.check, "segments": tally.segments,
                                  "finds": tally.finds, "real_classes": tally.real_classes}
                                 for tally in state.tallies]}
                    for state in states],
-        "baselines": {"uniform_random": random_hit_rate(grid, states),
-                      "always_stay": fixed_hit_rate(grid, states, STAY),
-                      "always_stop": fixed_hit_rate(grid, states, STOP),
-                      **{f"always_{move_option(check)}": fixed_hit_rate(grid, states, move_option(check))
-                         for check in WORKING_SET}},
+        "baselines": _baselines(grid, states),
+        "baselines_length_independent": _baselines(
+            grid, [state for state in states if not length_dependent(grid, state)]),
     }
     _write(runs / "points.json", table)
     print(f"{'check':24}{'segments':>9}{'calls':>7}{'finds':>7}{'real classes':>14}", flush=True)
@@ -346,13 +356,17 @@ def _points(args: argparse.Namespace) -> int:
         print(f"{check.rsplit('.', 1)[-1]:24}{row['segments']:9}{row['calls']:7}{row['finds']:7}"
               f"{row['real_classes']:14}", flush=True)
     print("", flush=True)
-    print(f"{'point':26}{'right':40}{'contrast moves what the figures say':>36}", flush=True)
+    print(f"{'point':26}{'right':40}{'contrast moves it':>18}{'key needs the grid length':>27}",
+          flush=True)
     for point in table["points"]:
         print(f"{point['point_id']:26}{','.join(point['right']):40}"
-              f"{str(point['contrast_flips']):>36}", flush=True)
+              f"{str(point['contrast_flips']):>18}{str(point['length_dependent']):>27}", flush=True)
     print("", flush=True)
-    for name, value in sorted(table["baselines"].items()):
-        print(f"baseline {name:34} {value:.3f}", flush=True)
+    for label, key in (("over all points", "baselines"),
+                       ("over the length-independent points", "baselines_length_independent")):
+        print(label, flush=True)
+        for name, value in sorted(table[key].items()):
+            print(f"  baseline {name:34} {value:.3f}", flush=True)
     return 0
 
 

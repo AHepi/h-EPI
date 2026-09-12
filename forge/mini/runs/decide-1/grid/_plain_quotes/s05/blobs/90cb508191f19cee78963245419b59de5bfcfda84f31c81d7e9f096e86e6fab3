@@ -1,0 +1,33 @@
+# Commitments
+
+Below is one piece of writing. Say what is being committed to if it is taken up.
+
+Write, in plain prose, one conjecture: name the function you are testing, quote the words of its documented rule you are reading, give the two reply texts in full, and say which answer the rule requires for each. Say what would make you wrong -- the observation that would show this conjecture false. Do not write JSON. Do not use a fenced block. Prose only.
+
+A kernel id may instead be written open:creib.forge.conformance.<module>.<function>, naming any function of one string in one of these modules of the harness under test. No list of functions is given: read the source and choose. A function that raises on a text has not answered, and a pair on which either side raised is not a move.
+
+- creib.forge.conformance.appraisal
+- creib.forge.conformance.claims
+- creib.forge.conformance.compare
+- creib.forge.conformance.controls
+- creib.forge.conformance.corpus
+- creib.forge.conformance.cycles
+- creib.forge.conformance.dependence
+- creib.forge.conformance.families
+- creib.forge.conformance.oracle
+- creib.forge.conformance.prompt
+- creib.forge.conformance.records
+- creib.forge.conformance.report
+- creib.forge.conformance.routing
+- creib.forge.conformance.spec
+- creib.forge.conformance.units
+
+
+You are shown nothing else, and nothing else is relevant.
+
+## The writing
+
+I am testing open:creib.forge.conformance.oracle._plain_quotes. The documented rule I am reading is: “Fold typographic apostrophes and quotation marks to their ASCII forms.” The two reply texts are, in full, “I´m sorry” (with U+00B4 ACUTE ACCENT) and “I'm sorry” (with ASCII apostrophe). The rule requires _plain_quotes to return “I´m sorry” for the first, because U+00B4 is an acute accent, not a typographic apostrophe or quotation mark, so it must remain unchanged; and to return “I'm sorry” for the second, because the ASCII apostrophe is already the ASCII form and remains unchanged. These required answers differ. The conjecture is that _plain_quotes gives the same answer for both, namely “I'm sorry”, because its translation table _TYPOGRAPHIC_QUOTES mistakenly includes U+00B4 and maps it to the ASCII apostrophe. What would make me wrong: if _TYPOGRAPHIC_QUOTES does not contain U+00B4, then _plain_quotes(“I´m sorry”) returns “I´m sorry” and _plain_quotes(“I'm sorry”) returns “I'm sorry”, so the answers differ and the conjecture is false.
+
+## What to return
+A JSON object carrying "commitments", a string, and nothing else.

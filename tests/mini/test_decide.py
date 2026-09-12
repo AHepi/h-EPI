@@ -57,6 +57,7 @@ from creib.forge.mini.decide import (  # noqa: E402
     contrast_flips,
     contrast_of,
     fixed_hit_rate,
+    length_dependent,
     move_option,
     option_ids,
     options_of,
@@ -149,6 +150,29 @@ class GridTests(unittest.TestCase):
         self.assertGreater(len(answers), 1)
         self.assertLess(max(fixed_hit_rate(grid, points, option)
                             for option in (STAY, STOP, move_option(RICH))), 1.0)
+
+    def test_a_point_whose_key_needs_the_grids_length_is_marked(self) -> None:
+        # Amendment A1: at the deepest cut every check is spent, so ``stop`` is right -- and the
+        # figures shown say the opposite, because a check with five ways found looks worth moving to
+        # and the model cannot know there is no seventh segment.
+        grid = _grid()
+        points = states_from_grid(grid)
+        deep = [point for point in points if point.point_id.endswith(".s6")]
+        self.assertEqual(len(deep), 3)
+        for point in deep:
+            self.assertEqual(right_options(grid, point), frozenset({STOP}), point.point_id)
+            self.assertTrue(length_dependent(grid, point), point.point_id)
+        for point in points:
+            if point not in deep:
+                self.assertFalse(length_dependent(grid, point), point.point_id)
+
+    def test_the_two_baseline_sets_differ_so_reporting_one_would_hide_the_other(self) -> None:
+        grid = _grid()
+        points = states_from_grid(grid)
+        free = [point for point in points if not length_dependent(grid, point)]
+        self.assertEqual(len(free), 9)
+        self.assertNotEqual(fixed_hit_rate(grid, points, STAY), fixed_hit_rate(grid, free, STAY))
+        self.assertEqual(fixed_hit_rate(grid, free, STOP), 0.0)
 
     def test_a_grid_holding_no_check_of_the_working_set_is_refused(self) -> None:
         with self.assertRaises(MiniError):

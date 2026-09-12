@@ -1,0 +1,35 @@
+# Reading
+
+You are reading someone else's prose conjecture, not writing your own. Render it as the machine needs it. If the prose is unclear, render your best reading of it and say in the body where you were unsure; do not substitute a conjecture of your own.
+
+The commitments are a STRING holding JSON of the form {"kernel": "<path>", "expect": "moves" or "unchanged"} and nothing else.
+
+"kernel" is the FUNCTION'S FULL DOTTED IMPORT PATH, exactly as the conjecture gives it, beginning open:creib.forge.conformance. -- for example open:creib.forge.conformance.oracle.recover_json_object. **It is never the bracketed hexadecimal identifier printed beside an artifact.** That identifies the artifact you are reading; it is not the function the artifact is about. If the conjecture names no such path, write the path it most nearly names.
+
+This artifact carries "input", "rewritten" and "rewrite" as fields of its own, each a plain string: "input" and "rewritten" are the two reply texts exactly as the prose gave them, and "rewrite" says how they differ. Use "moves" when the rule requires the two answers to differ.
+
+The three texts are fields of the REPLY, beside "body" and "commitments", not inside the commitments string. A reply that omits any of them is refused and you are asked again. In full, a well formed reply looks exactly like this:
+
+{"body": "<what you were unsure of, in prose>",
+ "commitments": "{\"kernel\": \"<the full dotted path>\", \"expect\": \"moves\"}",
+ "input": "<the first reply text, in full>",
+ "rewritten": "<the second reply text, in full>",
+ "rewrite": "<how the two differ>"}
+
+## The conjecture, as written (conj)
+[2e10a4a7673b984c] (mini.conjecture.v1)
+Conjecture: The function `open:creib.forge.conformance.oracle._plain_quotes` is documented to "Fold typographic apostrophes and quotation marks to their ASCII forms." This rule requires that only typographic apostrophes and quotation marks be folded; any other character, such as the prime symbol U+2032, must remain unchanged. I conjecture that the function incorrectly maps U+2032 (′) to the ASCII apostrophe ('), causing two distinct reply texts to receive the same answer. The two reply texts are "a′" and "a'". For the first, the rule requires the answer "a′" because the prime is not a typographic apostrophe and should not be folded. For the second, the rule requires the answer "a'" because the ASCII apostrophe is already in its ASCII form. The check, however, gives the same answer "a'" for both, erasing the difference between a prime and an apostrophe. This conjecture would be shown false if `_plain_quotes("a′")` returns "a′" rather than "a'", demonstrating that the prime is not folded.
+
+## What to return
+A JSON object carrying "body" and "commitments". Both are strings and nothing else is required.
+This artifact also carries "input", "rewritten", "rewrite", each a string.
+
+## The shape this answer must take
+`input` must contain something matching this expression:
+  \S
+
+`rewrite` must contain something matching this expression:
+  \S
+
+`rewritten` must contain something matching this expression:
+  \S
