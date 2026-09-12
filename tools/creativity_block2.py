@@ -855,6 +855,185 @@ def _block(args: argparse.Namespace) -> int:
     return 0
 
 
+def _classes(args: argparse.Namespace) -> int:
+    """Read every cell on the collapse-class measure beside the pre-registered find measure.
+
+    A find is one pair the check answered the same on where its rule required a move. A collapse
+    class is the check together with the shapes of the two texts (``creib.forge.mini.collapses``),
+    so a class counts a distinct WAY of making the check collapse and a find counts a distinct pair
+    of texts. The block was pre-registered on finds; this measure was written afterwards and is a
+    description of the records, not a conjecture they were run to test.
+
+    It matters because it reorders the arms: on finds per segment ``A`` leads, on classes per
+    segment ``W`` does, and on either measure per call ``R`` leads because it is the cheapest.
+    """
+
+    from creib.forge.mini.collapses import class_of, is_find
+
+    root = Path(args.root)
+    rows: list[dict[str, Any]] = []
+    pooled: dict[str, set[Any]] = {}
+    order: list[tuple[str, int, int, Any]] = []
+    for arm in sorted(ARMS):
+        for repeat in range(REPEATS):
+            segments = _segments(root, arm, repeat)
+            if not segments:
+                continue
+            calls = 0
+            found: list[Any] = []
+            for segment in segments:
+                calls += _calls(segment)
+                executions, _, _ = _record(segment)
+                for entry in executions:
+                    if not is_find(entry):
+                        continue
+                    klass = class_of(entry).as_row()
+                    found.append(klass)
+                    order.append((arm, repeat, int(segment.name[1:]), klass))
+            pooled.setdefault(arm, set()).update(found)
+            rows.append({"arm": arm, "repeat": repeat, "segments": len(segments), "calls": calls,
+                         "finds": len(found), "classes": len(set(found))})
+    if not rows:
+        raise MiniError("MINI_COLLAPSE_CLASS_INVALID", f"no finished segment under {root}")
+    print(f"{'cell':8}{'segments':>9}{'calls':>7}{'finds':>7}{'classes':>9}"
+          f"{'finds/seg':>11}{'classes/seg':>13}{'classes/call':>14}", flush=True)
+    for row in rows:
+        cell = f"{row['arm']}.r{row['repeat']}"
+        print(f"{cell:8}{row['segments']:9}{row['calls']:7}{row['finds']:7}{row['classes']:9}"
+              f"{row['finds'] / row['segments']:11.3f}{row['classes'] / row['segments']:13.3f}"
+              f"{row['classes'] / row['calls']:14.4f}", flush=True)
+    print("", flush=True)
+    print(f"{'arm':8}{'segments':>9}{'calls':>7}{'finds':>7}{'classes':>9}"
+          f"{'finds/seg':>11}{'classes/seg':>13}{'classes/call':>14}", flush=True)
+    for arm in sorted(pooled):
+        mine = [r for r in rows if r["arm"] == arm]
+        segments = sum(r["segments"] for r in mine)
+        calls = sum(r["calls"] for r in mine)
+        finds = sum(r["finds"] for r in mine)
+        classes = len(pooled[arm])
+        print(f"{arm:8}{segments:9}{calls:7}{finds:7}{classes:9}{finds / segments:11.3f}"
+              f"{classes / segments:13.3f}{classes / calls:14.4f}", flush=True)
+    every = set().union(*pooled.values())
+    alone = sum(1 for klass in every if sum(klass in pooled[a] for a in pooled) == 1)
+    counted: dict[Any, int] = {}
+    for _, _, _, klass in order:
+        counted[klass] = counted.get(klass, 0) + 1
+    biggest = sorted(counted.values(), reverse=True)[:5]
+    print("", flush=True)
+    print(f"pooled across every arm: {sum(counted.values())} finds in {len(every)} classes; "
+          f"the five largest hold {sum(biggest)} of them; {alone} class(es) were reached by one arm only",
+          flush=True)
+    # The cells ran at the same time, so there is no order between them and no "first cell to reach
+    # a class". What is well defined is how early in a RUN a class becomes available: the smallest
+    # segment index at which any cell reached it, and how many cells of twelve ever did.
+    earliest: dict[Any, int] = {}
+    cells_of: dict[Any, set[tuple[str, int]]] = {}
+    for arm, repeat, index, klass in order:
+        earliest[klass] = min(earliest.get(klass, index), index)
+        cells_of.setdefault(klass, set()).add((arm, repeat))
+    print("", flush=True)
+    print("each class: its finds, the earliest segment index any cell reached it at, and how many "
+          "of the twelve cells ever did", flush=True)
+    for klass, count in sorted(counted.items(), key=lambda item: (-item[1], str(item[0]))):
+        check = str(klass[0]).rsplit(".", 1)[-1]
+        print(f"  {count:4} finds  from s{earliest[klass]:02d}  in {len(cells_of[klass]):2} cell(s)  "
+              f"{check}  {klass[1]} -> {klass[2]}", flush=True)
+    (root / "classes.json").write_text(
+        json.dumps({"cells": rows, "classes_by_arm": {a: len(v) for a, v in sorted(pooled.items())},
+                    "pooled_classes": len(every), "reached_by_one_arm_only": alone},
+                   indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return 0
+
+
+def _rules(args: argparse.Namespace) -> int:
+    """Adjudicate every find against the documented rule, read apart from the code.
+
+    The pre-registered find measure asked two things of a pair and only ever checked one. The
+    executor recorded that the check answers the same on both texts, and ``verify`` re-ran every
+    claim and found no disagreement. Whether the RULE requires the two to differ was taken from the
+    model's prose and never checked at all. ``creib.forge.mini.rule_readings`` implements the rule of
+    two checks from their docstrings; a find is ``real`` under a reading when the rule's two answers
+    differ, ``unsupported`` when they do not, and ``unread`` when no reading of that check exists.
+
+    ``unsupported`` is not ``refuted``: the conjecture the pair was offered for may still hold of some
+    other pair. It says this pair does not show it.
+    """
+
+    from creib.forge.mini.collapses import class_of, is_find
+    from creib.forge.mini.conformance_kernels import REFUSAL_PHRASES
+    from creib.forge.mini.rule_readings import READINGS_OF, REAL, UNREAD, UNSUPPORTED, verdict
+
+    root = Path(args.root)
+    finds: list[tuple[str, int, int, dict[str, Any], Any]] = []
+    for arm in sorted(ARMS):
+        for repeat in range(REPEATS):
+            for segment in _segments(root, arm, repeat):
+                executions, _, _ = _record(segment)
+                for entry in executions:
+                    if is_find(entry):
+                        finds.append((arm, repeat, int(segment.name[1:]), entry,
+                                      class_of(entry).as_row()))
+    if not finds:
+        raise MiniError("MINI_COLLAPSE_CLASS_INVALID", f"no find under {root}")
+    verdicts: dict[tuple[str, str], str] = {}
+    for _, _, _, entry, _ in finds:
+        check = str(entry.get("kernel")).rsplit(".", 1)[-1]
+        for reading in READINGS_OF.get(check, ("",)):
+            key = (str(entry.get("input")) + "\x00" + str(entry.get("rewritten")), reading)
+            verdicts[key] = verdict(check, str(entry.get("input")), str(entry.get("rewritten")),
+                                    reading or "first-in-text", REFUSAL_PHRASES) if reading else UNREAD
+    rows: list[dict[str, Any]] = []
+    for check in sorted({str(e.get("kernel")).rsplit(".", 1)[-1] for _, _, _, e, _ in finds}):
+        mine = [f for f in finds if str(f[3].get("kernel")).rsplit(".", 1)[-1] == check]
+        readings = READINGS_OF.get(check, ())
+        if not readings:
+            rows.append({"check": check, "reading": "-", "finds": len(mine), "real": 0,
+                         "unsupported": 0, "unread": len(mine)})
+            continue
+        for reading in readings:
+            got = [verdicts[(str(f[3].get("input")) + "\x00" + str(f[3].get("rewritten")), reading)]
+                   for f in mine]
+            rows.append({"check": check, "reading": reading, "finds": len(mine),
+                         "real": got.count(REAL), "unsupported": got.count(UNSUPPORTED),
+                         "unread": got.count(UNREAD)})
+    print(f"{'check':24}{'reading':26}{'finds':>7}{'real':>7}{'unsupported':>13}{'unread':>8}", flush=True)
+    for row in rows:
+        print(f"{row['check']:24}{row['reading']:26}{row['finds']:7}{row['real']:7}"
+              f"{row['unsupported']:13}{row['unread']:8}", flush=True)
+
+    # The same adjudication by class, because a class is what a find is evidence of: one way of
+    # making the check collapse. A class every one of whose finds is unsupported is not a way.
+    print("", flush=True)
+    # A class is a WAY of making the check collapse, so one find that holds up under every reading
+    # shows the way exists, and the class is real however many of its other finds do not hold up. A
+    # class is unsupported when not one of its finds survives every reading.
+    print("by collapse class: real when one of its finds holds up under every reading", flush=True)
+    worst: dict[Any, str] = {}
+    for _, _, _, entry, klass in finds:
+        check = str(entry.get("kernel")).rsplit(".", 1)[-1]
+        readings = READINGS_OF.get(check, ())
+        got = [verdicts[(str(entry.get("input")) + "\x00" + str(entry.get("rewritten")), reading)]
+               for reading in readings] or [UNREAD]
+        here = UNSUPPORTED if UNSUPPORTED in got else (REAL if REAL in got else UNREAD)
+        if worst.get(klass) != REAL:
+            worst[klass] = here
+    counted: dict[Any, int] = {}
+    for _, _, _, _, klass in finds:
+        counted[klass] = counted.get(klass, 0) + 1
+    tally: dict[str, int] = {}
+    found: dict[str, int] = {}
+    for klass, label in worst.items():
+        tally[label] = tally.get(label, 0) + 1
+        found[label] = found.get(label, 0) + counted[klass]
+    for label in (REAL, UNSUPPORTED, UNREAD):
+        print(f"  {label:14} {tally.get(label, 0):3} class(es), {found.get(label, 0):4} find(s)", flush=True)
+    (root / "rules.json").write_text(
+        json.dumps({"by_check": rows, "classes_by_least_favourable_reading": tally,
+                    "finds_by_least_favourable_reading": found}, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8")
+    return 0
+
+
 def _plan(args: argparse.Namespace) -> int:
     """Write every arm's first manifest, so the block can be validated before a call is paid for."""
 
@@ -894,6 +1073,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     reader = sub.add_parser("read", help="read every cell on the pre-registered measures")
     reader.add_argument("--root", required=True)
     reader.set_defaults(handler=_read)
+    adjudicator = sub.add_parser("rules", help="adjudicate every find against the rule read apart from the code")
+    adjudicator.add_argument("--root", required=True)
+    adjudicator.set_defaults(handler=_rules)
+    classifier = sub.add_parser("classes", help="read every cell on the collapse-class measure as well")
+    classifier.add_argument("--root", required=True)
+    classifier.set_defaults(handler=_classes)
     verifier = sub.add_parser("verify", help="re-execute every claim, and name where it disagrees with the executor")
     verifier.add_argument("--root", required=True)
     verifier.set_defaults(handler=_verify)

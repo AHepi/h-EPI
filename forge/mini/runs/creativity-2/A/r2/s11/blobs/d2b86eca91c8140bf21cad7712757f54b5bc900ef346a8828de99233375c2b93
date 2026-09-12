@@ -1,0 +1,8 @@
+I conjecture that open:creib.forge.conformance.oracle.recover_json_object fails to distinguish two replies that its documented rule requires it to tell apart. The rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text." Reply A is:
+```python
+{"x": 10}
+```
+{"y": 20}
+Reply B is:
+{"y": 20}
+For Reply A, the rule requires {"x": 10}, because the ```python fence holds one object and it is the last fenced object. For Reply B, the rule requires {"y": 20}, because no fence holds one and it is the last top-level object. The check, however, returns {"y": 20} for both: its _FENCE regex matches only ```json, ```JSON, or bare ```, so the ```python fence is not recognized, the fenced pool is empty, and the last top-level object in each reply is {"y": 20}. This would be shown false if the check returned {"x": 10} for Reply A, or if the two answers differed.

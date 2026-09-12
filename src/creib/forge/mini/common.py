@@ -70,6 +70,7 @@ MINI_CODES: frozenset[str] = frozenset(
         "MINI_STAGE_UNKNOWN",
         "MINI_STAGE_NO_END",
         "MINI_STAGE_END_NOT_LAST",
+        "MINI_COLLAPSE_CLASS_INVALID",
         "MINI_ROUTE_TARGET_UNKNOWN",
         "MINI_ROUTE_INVALID",
         "MINI_POLICY_UNKNOWN",

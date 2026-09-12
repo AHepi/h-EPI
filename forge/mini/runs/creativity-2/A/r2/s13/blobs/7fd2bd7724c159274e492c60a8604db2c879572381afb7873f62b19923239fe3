@@ -1,0 +1,8 @@
+I am testing open:creib.forge.conformance.oracle.recover_json_object. Its documented rule says: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text". Reply A is:
+```yaml
+{"first": 1}
+```
+{"second": 2}
+Reply B is:
+{"second": 2}
+The rule requires Reply A to be scored as {"first": 1}, because it contains a code fence holding an object, and the last object inside a code fence is {"first": 1}. Reply B has no code fence, so the rule requires it to be scored as the last top-level object, {"second": 2}. The check, however, returns {"second": 2} for both replies, because its fence regex only recognizes ```json, ```JSON, or an unlabeled fence, not ```yaml, so it treats the fenced object in Reply A as a top-level object and picks the later one. I would be wrong if the check returned {"first": 1} for Reply A, or if either reply raised.

@@ -1,9 +1,0 @@
-I am testing open:creib.forge.conformance.oracle.recover_json_object. The documented rule I am reading is: "The object scored is the last one inside a code fence when any fence holds one, else the last top-level object in the text."
-
-Reply A is the text: ```text\n{"alpha": 1}\n```\n{"beta": 2}. Reply B is the text: {"beta": 2}.
-
-The rule requires Reply A to be scored as {"alpha": 1}, because it contains a code fence holding that object, and the rule says to take the last object inside a code fence when any fence holds one. The rule requires Reply B to be scored as {"beta": 2}, because it has no code fence, so the last top-level object is taken.
-
-The check gives the same answer for both: it returns {"beta": 2} for each, with no duplicate keys. This is because the check's fence regex only matches fences whose language is json, JSON, or absent, so it does not recognise the ```text fence in Reply A, and it falls back to the last top-level object, which is {"beta": 2} in both replies.
-
-What would make me wrong is the observation that the check returns {"alpha": 1} for Reply A and {"beta": 2} for Reply B, or any other pair of different answers for the two replies.

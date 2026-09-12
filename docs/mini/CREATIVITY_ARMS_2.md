@@ -244,3 +244,103 @@ retrospective explanation of a different arm.
 And the result that needs no further block: **the conjecture step found real kernel boundaries under
 every configuration tried, including the cheapest.** Whatever the loop turns out to be worth, that is
 not what is in question.
+
+## What the finds are, counted four more ways
+
+Everything in this section was written after the records existed. It is a description of them, not a
+conjecture the block was run to test, and the pre-registered measure is the first row of the table
+below and no other.
+
+### A find claims two things and only one of them was ever checked
+
+A find is a pair of reply texts on which a check answers the same where its documented rule requires
+different answers. That is two claims. The executor recorded the check's two answers, and
+`python tools/creativity_block2.py verify` re-ran every claim and found no disagreement in any of the
+twelve cells -- so the first claim is checked. Whether the **rule** requires the two to differ was
+taken from the model's prose, and nothing checked it at all.
+
+`creib.forge.mini.rule_readings` implements the documented rule of two checks from their docstrings
+rather than from their bodies, so the two can be compared. Each rule has two readings that its own
+words cannot decide between, and both are run:
+
+- `recover_json_object` -- whether a brace group that begins inside a quoted string is still "a
+  top-level balanced object in the text". The code reads it as yes.
+- `refusal_phrase_in` -- whether "the **first** refusal phrase the text contains" means the earliest
+  occurrence in the text or the earliest phrase of the declared list. The code reads it as the list.
+
+A find is **real** under a reading when the rule's two answers differ, and **unsupported** when they
+do not. Unsupported is not refuted: the conjecture the pair was offered for may be true of some other
+pair, and this says only that this pair does not show it. `python tools/creativity_block2.py rules`
+writes the adjudication.
+
+| check | reading | finds | real | unsupported |
+|---|---|---|---|---|
+| `recover_json_object` | brace in a string is a candidate | 134 | 110 | 24 |
+| `recover_json_object` | brace in a string is not | 134 | 121 | 13 |
+| `refusal_phrase_in` | first occurrence in the text | 31 | 30 | 1 |
+| `refusal_phrase_in` | first phrase of the list | 31 | 0 | 31 |
+| `_plain_quotes` | no reading implemented | 1 | -- | -- |
+
+All 31 `refusal_phrase_in` finds are real under one reading of *first* and unsupported under the
+other, so the block's second-largest group of finds turns entirely on a reading of one word. The
+single `_plain_quotes` find is false on inspection and not merely unread: the rule is "fold
+typographic apostrophes and quotation marks to their ASCII forms", the pair is `I’m` against
+`I‘m`, and folding both to `I'm` is the rule being obeyed rather than broken.
+
+### The collapse class, and five measures that do not agree
+
+A find is a pair of texts, so a count of finds does not say how many distinct ways of breaking the
+check they represent. `creib.forge.mini.collapses` partitions them: each side of a pair is described
+by the shape distinctions the checks under test make -- whether the text opens a fenced block,
+whether the fence carries a tag the oracle's own pattern matches (the pattern is `(?:json|JSON)?`, so
+`json`, `JSON`, an empty tag, and nothing else, `Json` included in the nothing else), how many brace
+groups sit inside the fence and how many outside, whether a brace group sits inside a quoted string.
+A **collapse class** is the check together with the two descriptions, so two finds in one class were
+made in the same way. A class is **real** when one of its finds holds up under every reading of the
+rule, because one surviving instance shows the way exists.
+
+The whole block, twelve cells of sixteen segments, 922 model calls, 166 finds:
+
+| measure | A | F | R | W | order |
+|---|---|---|---|---|---|
+| finds per segment (**pre-registered**) | **0.938** | 0.771 | 0.896 | 0.854 | A > R > W > F |
+| real finds per segment | 0.458 | **0.708** | 0.625 | 0.500 | F > R > W > A |
+| collapse classes per segment | 0.271 | 0.188 | 0.250 | **0.292** | W > A > R > F |
+| real classes per segment | 0.125 | 0.125 | 0.146 | **0.167** | W > R > A > F |
+| real classes per model call | 0.024 | 0.024 | **0.041** | 0.032 | R > W > F > A |
+
+**Five measures, five orderings.** `A` is first on the pre-registered one and last on two others;
+`F` is last on three and first on one. The two pre-registered predictions -- `F` below `W`, and `W`
+below `A` -- hold on the pre-registered measure, and the second fails on three of the four measures
+written afterwards. `A` and `W` lose the most under adjudication because they spent finds on
+`refusal_phrase_in`, every one of which turns on the reading of *first*; `F` loses least because it
+worked almost only the fence pairs.
+
+The honest reading of that table is not that one of the five measures is the true one. It is that
+**three repeats of four arms did not separate them.** The per-cell spread says the same thing on its
+own: `A`'s three repeats gave 2, 10 and 5 collapse classes, and `W`'s gave 8, 5 and 3.
+
+### What the block did find
+
+Pooled across every arm the 166 finds fall in 25 classes; 13 classes are real under every reading and
+hold 111 finds, 11 classes holding 54 finds are unsupported under at least one reading, and 1 is
+unread. Of the 111, **97 are two facts about one function**:
+
+- **A fenced block whose tag the oracle's pattern does not match is not treated as a fence** (61
+  finds, in 6 classes, from `jsonc`, `Json`, `text`, `javascript`, `python` and a four-backtick
+  fence). The docstring says "the last one inside a code fence when any fence holds one" and does not
+  qualify the tag; `_FENCE` is `` ```(?:json|JSON)?\s*(.*?)``` ``. So a reply that fences its answer
+  as ```` ```jsonc ```` has the fence ignored and a stray object from its own prose scored instead.
+  Reached at segment 0, in 10 of the 12 cells.
+- **A fence holding more than one top-level object is skipped entirely** (36 finds, in 4 classes).
+  The whole fence body is collected as one candidate string, two objects do not parse as one object,
+  and the candidate is passed over -- so the rule's "the last one inside a code fence" never happens
+  and an object outside the fence is scored.
+
+Both are divergences between what `recover_json_object`'s docstring says and what its body does, both
+change which object a real conformance run would score, and neither is in `docs/kernel.md`. They are
+candidate kernel points, and whether they become rows of that table -- or whether the docstring is
+what should change -- is a person's reading and not this block's to make.
+
+So the block's 922 model calls produced two candidate defects in the harness's own reply reader, one
+contested reading of a one-line rule, and no separation between the four arms.

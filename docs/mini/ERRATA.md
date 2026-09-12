@@ -550,3 +550,61 @@ C12 was added after the rest, while building the block that was meant to settle 
 the only item here that withdraws the *mechanism* of a positive result rather than a null, and it
 found its way in the same way as all the others: by reading what the record says the run did,
 instead of what the code that wrote it was supposed to do.
+
+## C23 -- the arms result was reported on one measure, and five measures give five orderings
+
+Block 2 was pre-registered on finds: one pair of reply texts a check answers the same on where its
+documented rule requires a move. I reported the arms on that measure and said which ordering held. A
+find is a pair of texts, and nothing in a count of them says how many distinct ways of breaking the
+check they represent, nor whether the rule really requires the move.
+
+Two readings written afterwards say both. `creib.forge.mini.collapses` partitions the finds by the
+shape difference each exploits; `creib.forge.mini.rule_readings` implements the documented rule of two
+checks from their docstrings rather than their bodies, so a find can be called real or unsupported
+without a model's word for it. `python tools/creativity_block2.py classes` and `... rules` write them.
+
+The cost of having reported only the pre-registered measure: **five measures, five orderings.**
+
+| measure | A | F | R | W | order |
+|---|---|---|---|---|---|
+| finds per segment (pre-registered) | 0.938 | 0.771 | 0.896 | 0.854 | A > R > W > F |
+| real finds per segment | 0.458 | 0.708 | 0.625 | 0.500 | F > R > W > A |
+| collapse classes per segment | 0.271 | 0.188 | 0.250 | 0.292 | W > A > R > F |
+| real classes per segment | 0.125 | 0.125 | 0.146 | 0.167 | W > R > A > F |
+| real classes per model call | 0.024 | 0.024 | 0.041 | 0.032 | R > W > F > A |
+
+`A` is first on the pre-registered measure and last on two of the others; `F` is last on three and
+first on one. The second of the two pre-registered predictions, `W` below `A`, fails on three of the
+four measures written afterwards. What I should have said, and am saying now, is that **three repeats
+of four arms did not separate them**: the per-cell spread of collapse classes is 2 to 10 within one
+arm.
+
+What this does not say: that some later measure is the true one. All four of the new measures are
+readings, each names what it cannot see, and `tests/mini/test_collapses.py` and
+`tests/mini/test_rule_readings.py` assert those limits so that a reading which starts to see more
+fails a test rather than quietly changing a number.
+
+## C24 -- a third of the finds do not survive a reading of the rule, and one is false
+
+Nothing in the block ever checked the half of a find that says *the rule requires these to differ*.
+The executor checked the other half and `verify` re-ran every claim, which is why I kept calling the
+find count checked. It was half-checked.
+
+Adjudicated against the rule read apart from the code: of 166 finds, 111 are real under every reading
+and 54 are unsupported under at least one. All 31 `refusal_phrase_in` finds are unsupported under one
+of the two readings of the word *first* in "the first refusal phrase the text contains" -- the reading
+the code follows -- so the block's second-largest group turns entirely on one word. Eleven finds are a
+fence holding the object and then the object alone, which the rule scores the same either way, so they
+never showed anything.
+
+One find is false outright, and the module does not catch it because no reading of that check is
+implemented: `_plain_quotes` on `I’m` against `I‘m`. The rule is "fold typographic
+apostrophes and quotation marks to their ASCII forms", so both folding to `I'm` is the rule being
+obeyed. It was reported inside the find count for a week.
+
+What the block did find, and what I had not said plainly: 97 of the 111 surviving finds are two
+divergences between one function's docstring and its body -- a fenced block whose tag the oracle's
+pattern does not match is not treated as a fence (61 finds), and a fence holding more than one object
+is skipped entirely (36). Both change which object a conformance run would score. Both are candidate
+kernel points, recorded as such in `docs/mini/CANDIDATE_POINTS.md`, and promoting either is a person's
+reading.
