@@ -135,6 +135,34 @@ the campaign runs unattended and refutes; a person is called only when a written
 claim falls, and reads one thing — whether that mattered. Per rule, bounded, and
 done once, instead of per candidate, unbounded, and done forever.
 
+## The third thing has been started, for three checks
+
+Written 12 September 2026. The section above says the work that buys autonomy is to write each check's
+own rule down in a form an execution can contradict, once, and that this is the only one of the three
+changes worth making. `creib.forge.mini.rule_readings` is that work, begun: it implements the documented
+rule of `recover_json_object`, `refusal_phrase_in` and `_plain_quotes` from their docstrings rather than
+from their bodies, so the rule's answer on a text can be computed and set beside the code's.
+
+What that bought immediately. A find claims two things -- the check answers the same on two texts, and
+the rule requires it to answer differently -- and until this existed only the first was ever checked;
+the second came from the model's prose. Adjudicated, 111 of block 2's 166 finds hold up under every
+reading of the rule, 54 do not hold under at least one, and one was false (`docs/mini/ERRATA.md`, C24).
+That adjudication is mechanical and unattended, which is the thing this document said was worth buying.
+
+What it did not buy. Each rule carries the readings its own words cannot settle, and every count is
+reported under each, so a person still chooses between readings when they disagree -- and that is a
+smaller and better-bounded question than reading every candidate. Three checks of many are done.
+
+## Whether a model can decide has now been put to one
+
+Also 12 September. This document's first row says a campaign runs unattended, and the row is about the
+MACHINE: `creib.forge.mini.campaign` picks the next round from six numbers by five fixed rules. A model
+has never been asked to make that choice, or any other. `docs/mini/DECIDE_TEST_1.md` pre-registers the
+block that asks -- what to work on next, what to add, and what the campaign's own rules decide -- and
+scores what can be scored against a grid of runs and a function of six numbers, with nothing larger than
+the model under test adjudicating anything. Its results, whatever they are, belong in that document and
+change nothing here until they are read.
+
 ## What stays human whatever happens
 
 Publication. Work happens on a branch, publication is a pull request, and
