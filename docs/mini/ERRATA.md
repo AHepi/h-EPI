@@ -418,6 +418,36 @@ find was well grounded rather than merely prose-bearing.
 **Not repaired.** Tightening the threshold after seeing the records is fitting a measure to data. It
 is named here, and a block that wants a filter that filters must pre-register a different one.
 
+### C20. The measure's unit was never declared, and it changes the gap by nearly three (**mine**)
+
+The pre-registered measure is `grounded_T1` **per model call**. Nothing ever asked what a call costs.
+The records carry every call's prompt and completion tokens, so the question was answerable at any
+point for nothing, and was not asked until a sibling project's method said *"equal ceilings are not
+equal spending"*.
+
+Over the first two repeats, complete for every arm:
+
+| arm | finds | sends | tokens | per send | per 1,000 tokens |
+|---|---|---|---|---|---|
+| **R** | 27 | 114 | 582,829 | **0.237** | **0.0463** |
+| **F** | 25 | 165 | 689,678 | 0.152 | 0.0362 |
+| **W** | 27 | 165 | 810,223 | 0.164 | 0.0333 |
+| **A** | 29 | 170 | 716,556 | 0.171 | 0.0405 |
+
+`R` leads the best loop arm by **1.39×** per send and **1.14×** per token. The ordering does not
+move; the size of the gap moves by nearly three.
+
+**Which measure favours which conclusion, stated rather than left to a reader.** Per call is the
+pre-registered figure and is the one that makes the loop look worst. Per token is not pre-registered
+and is the one that goes against that reading. Both are reported from here on, with the unit named.
+
+`W` is the arm this most changes, and against it: it spends more tokens than any other arm — 810k
+against `R`'s 583k — and on a token basis it comes **last**, behind the arm it exists to improve on.
+
+**Repaired** in the reading rather than the machine: `docs/mini/FROM_MINIREASON.md` carries both
+columns and this entry carries the sentence about which flatters what. The reader still prints calls
+only; a token column is a small change and is not made retroactively to a pre-registered measure.
+
 ## The pattern
 
 Of the twenty-odd items above, **three** are about the model. All the rest are about the apparatus:
@@ -429,7 +459,7 @@ The one thing that survived every repair, unchanged, is the conjecture step. It 
 boundaries under every configuration, including the cheapest, and the machinery kept failing to
 execute, see, or count them.
 
-A5 and C12 to C19 were added after the rest, while building and first running the block that was meant
+A5 and C12 to C20 were added after the rest, while building and first running the block that was meant
 to settle the question. C12 was found by reading the run headers, A5 by counting what a segment
 actually sends, and C13 and C14 by alarms firing on live segments — the only items here that a
 machine caught rather than a person, and C14 was additionally diagnosed, correctly and in prose, by

@@ -89,6 +89,11 @@ The record is `forge/mini/runs/creativity-2/E/enumeration.json`.
 
 ## The measures
 
+> **Unit added after the block ran (ERRATA C20).** "Per model call" is the pre-registered unit and
+> nothing asked what a call costs. Per token the ordering is unchanged and the gap is about a third
+> of the size; `W` moves from third to last. Both columns are reported from here on, with the
+> pre-registered one named as such — it is the one that makes the loop look worst.
+
 **Primary, and reported first whichever way it falls:** `collapse_on_non_constant` — a claimed pair
 the machine confirms collapsed, on a function that is not constant over the pool. The enumerator
 scores 1,801 on it. **It is expected to win, and that is the point of reporting it**: the model's
