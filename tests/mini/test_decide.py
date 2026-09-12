@@ -452,6 +452,20 @@ class DriverTests(unittest.TestCase):
         driver = self._driver()
         self.assertGreaterEqual(driver.GRID_SEGMENTS, max(driver.CUTS))
 
+    def test_a_run_is_staged_outside_the_tree_it_will_be_recorded_in(self) -> None:
+        driver = self._driver()
+        runs = Path("/w/forge/mini/runs/decide-1")
+        staging = Path("/tmp/staging")
+        root = runs / "points" / "a.s1" / "plain"
+        self.assertEqual(driver._staging_for(staging, root, runs),
+                         staging / "points" / "a.s1" / "plain")
+
+    def test_a_root_outside_the_runs_tree_still_stages_somewhere(self) -> None:
+        driver = self._driver()
+        self.assertEqual(
+            driver._staging_for(Path("/tmp/staging"), Path("/elsewhere/odd"), Path("/w/runs")),
+            Path("/tmp/staging/odd"))
+
     def test_every_declared_brief_is_put_at_every_point(self) -> None:
         driver = self._driver()
         self.assertEqual(set(driver.BRIEFS), set(BRIEFS))

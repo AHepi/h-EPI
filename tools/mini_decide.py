@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -158,29 +159,59 @@ def _finished(root: Path) -> bool:
     return log.is_file() and any("RUN_ENDED" in line for line in log.read_text().splitlines())
 
 
-def _run(label: str, manifest_path: Path, root: Path, args: argparse.Namespace) -> bool:
-    """Run one manifest into one root, retrying a transport failure into a clean root."""
+def _staging_for(staging: Path, root: Path, runs: Path) -> Path:
+    """Where a run is written while it is in flight, outside the tree the record will live in."""
 
+    try:
+        inner = root.relative_to(runs)
+    except ValueError:
+        inner = Path(root.name)
+    return staging / inner
+
+
+def _run(label: str, manifest_path: Path, root: Path, args: argparse.Namespace) -> bool:
+    """Run one manifest, write it outside the tree, and move it in only once it is a record.
+
+    A root a model is still writing into is not a record, and nothing in a record's identity depends on
+    where it was written -- the run header carries the manifest and no path -- so the run happens in a
+    staging directory and the finished root is moved into place. That makes "a root under the runs tree
+    is a finished record" true by construction rather than true because whoever commits was careful.
+
+    An attempt that does not finish is moved to ``<runs>-aborted/`` rather than deleted, so what was set
+    aside is still readable, as block 2 did with its own dead roots.
+    """
+
+    runs = Path(args.runs)
+    staging = Path(args.staging)
+    aborted = runs.with_name(runs.name + "-aborted")
     for attempt in range(TRANSPORT_ATTEMPTS):
         pause = TRANSPORT_BACKOFF[min(attempt, len(TRANSPORT_BACKOFF) - 1)]
         if pause:
             print(f"{label}: waiting {pause}s before attempt {attempt + 1}", flush=True)
             time.sleep(pause)
-        if root.exists() and not _finished(root):
-            aside = root.with_name(root.name + f".dead{attempt}")
-            root.rename(aside)
-            print(f"{label}: a half-written root was set aside as {aside.name}", flush=True)
-        root.mkdir(parents=True, exist_ok=True)
+        working = _staging_for(staging, root, runs)
+        if working.exists():
+            shutil.rmtree(working)
+        working.mkdir(parents=True, exist_ok=True)
         command = [sys.executable, str(ROOT / "tools" / "run_mini.py"), "live",
                    "--manifest", str(manifest_path), "--model", args.model,
-                   "--output-dir", str(root), "--retries", str(args.retries)]
+                   "--output-dir", str(working), "--retries", str(args.retries)]
         if args.timeout_seconds:
             command += ["--timeout-seconds", str(args.timeout_seconds)]
         completed = subprocess.run(command, cwd=ROOT, env={**os.environ, "PYTHONPATH": str(ROOT / "src")})
-        if completed.returncode == 0 and _finished(root):
+        if completed.returncode == 0 and _finished(working):
+            root.parent.mkdir(parents=True, exist_ok=True)
+            if root.exists():
+                shutil.rmtree(root)
+            shutil.move(str(working), str(root))
             return True
+        kept = _staging_for(aborted, root, runs).with_name(root.name + f".attempt{attempt}")
+        kept.parent.mkdir(parents=True, exist_ok=True)
+        if kept.exists():
+            shutil.rmtree(kept)
+        shutil.move(str(working), str(kept))
         print(f"{label}: attempt {attempt + 1} of {TRANSPORT_ATTEMPTS} did not finish "
-              f"(exit {completed.returncode})", flush=True)
+              f"(exit {completed.returncode}); it was set aside as {kept}", flush=True)
     return False
 
 
@@ -591,6 +622,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         # nothing about what each measures.
         command.add_argument("--check", default=None,
                              help="grid only: the bare name of one check of the working set")
+        command.add_argument("--staging", required=True,
+                             help="where a run is written while in flight, outside the runs tree; a "
+                                  "finished root is moved in, an unfinished one to <runs>-aborted")
         command.set_defaults(handler=handler)
     pointer = sub.add_parser("points", help="read the grid and write the decision points it puts")
     pointer.add_argument("--runs", required=True)
