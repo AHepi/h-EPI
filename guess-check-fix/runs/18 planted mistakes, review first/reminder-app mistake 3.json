@@ -1,0 +1,268 @@
+{
+ "world": "reminder-app",
+ "planted": {
+  "kind": "hidden",
+  "how": "picked by the fixed shuffle",
+  "description": "in rule \"overdue after a day when urgent\": condition \"task is urgent\" replaced by \"snoozes is 1\"",
+  "form": {
+   "things": {
+    "task": [
+     "new",
+     "urgent",
+     "overdue",
+     "done"
+    ],
+    "snoozes": [
+     "0",
+     "1",
+     "2"
+    ]
+   },
+   "events": [
+    "snooze",
+    "finish",
+    "day passes"
+   ],
+   "start": {
+    "task": "new",
+    "snoozes": "0"
+   },
+   "rules": [
+    {
+     "name": "first snooze",
+     "when": [
+      "snooze happens",
+      "snoozes is 0",
+      "task is not done"
+     ],
+     "then": "snoozes is 1"
+    },
+    {
+     "name": "second snooze",
+     "when": [
+      "snooze happens",
+      "snoozes is 1",
+      "task is not done"
+     ],
+     "then": "snoozes is 2"
+    },
+    {
+     "name": "urgent after two snoozes",
+     "when": [
+      "snoozes is 2",
+      "task is new"
+     ],
+     "then": "task is urgent"
+    },
+    {
+     "name": "overdue after a day when urgent",
+     "when": [
+      "day passes happens",
+      "snoozes is 1"
+     ],
+     "then": "task is overdue"
+    },
+    {
+     "name": "finishing",
+     "when": [
+      "finish happens"
+     ],
+     "then": "task is done"
+    }
+   ]
+  },
+  "before": {
+   "shown": "3/3",
+   "held_back": "3/4",
+   "nearby": {
+    "tried": 400,
+    "differ": 129,
+    "cannot_run": 0,
+    "examples": [
+     "the situation of job \"put off twice then a day\": task urgent, world says overdue",
+     "the situation of job \"put off twice\", but \"day passes\" also happens after \"snooze\": task overdue, world says urgent",
+     "the situation of job \"put off twice\", but \"day passes\" also happens after \"snooze\": task urgent, world says overdue"
+    ]
+   }
+  }
+ },
+ "guesser": "deepseek-flash",
+ "counts": {
+  "requests": 3,
+  "replies": 3,
+  "cut_off": 0,
+  "plain_form": 0,
+  "refused": 0,
+  "thinking_characters": 82264,
+  "answer_characters": 2394,
+  "tokens_in": 4603,
+  "tokens_out": 22265
+ },
+ "results": [
+  {
+   "corrector": "review first",
+   "shown": "3/3",
+   "held_back": "4/4",
+   "held_back_asked": [
+    "put off once",
+    "put off twice then a day",
+    "finish an overdue task"
+   ],
+   "questions_to_world": 12,
+   "deepseek_asked": 3,
+   "nearby": {
+    "tried": 400,
+    "differ": 0,
+    "cannot_run": 0,
+    "examples": []
+   },
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "3/3",
+     "problems": 0
+    },
+    {
+     "step": "self review",
+     "verdict": "no change",
+     "kept": true,
+     "lost": [],
+     "seen": "3/3"
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 3,
+     "seen": "6/6"
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 1,
+     "seen": "6/7"
+    },
+    {
+     "step": "guesser rewrites first",
+     "verdict": "accepted",
+     "repaired": [
+      "world answer 4"
+     ],
+     "lost": [],
+     "seen": "7/7"
+    },
+    {
+     "step": "look for surprises",
+     "added": 4,
+     "surprises": 0,
+     "seen": "11/11"
+    },
+    {
+     "step": "look for surprises",
+     "added": 4,
+     "surprises": 1,
+     "seen": "14/15"
+    },
+    {
+     "step": "guesser rewrites first",
+     "verdict": "accepted",
+     "repaired": [
+      "world answer 10"
+     ],
+     "lost": [],
+     "seen": "15/15"
+    }
+   ],
+   "model": {
+    "things": {
+     "task": [
+      "new",
+      "urgent",
+      "overdue",
+      "done"
+     ],
+     "snoozes": [
+      "0",
+      "1",
+      "2"
+     ]
+    },
+    "events": [
+     "snooze",
+     "finish",
+     "day passes"
+    ],
+    "start": {
+     "task": "new",
+     "snoozes": "0"
+    },
+    "rules": [
+     {
+      "name": "first snooze",
+      "when": [
+       "snooze happens",
+       "snoozes is 0",
+       "task is not done"
+      ],
+      "then": "snoozes is 1"
+     },
+     {
+      "name": "second snooze",
+      "when": [
+       "snooze happens",
+       "snoozes is 1",
+       "task is not done"
+      ],
+      "then": "snoozes is 2"
+     },
+     {
+      "name": "urgent after two snoozes",
+      "when": [
+       "snoozes is 2",
+       "task is new"
+      ],
+      "then": "task is urgent"
+     },
+     {
+      "name": "third snooze makes overdue",
+      "when": [
+       "snooze happens",
+       "task is overdue",
+       "snoozes is 0"
+      ],
+      "then": "task is overdue"
+     },
+     {
+      "name": "overdue after a day when urgent",
+      "when": [
+       "day passes happens",
+       "task is urgent"
+      ],
+      "then": "task is overdue"
+     },
+     {
+      "name": "finishing",
+      "when": [
+       "finish happens"
+      ],
+      "then": "task is done"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "Task: I want a to-do app where things I keep putting off get more urgent, and done things go away.\n\nThings and states to use:\n  task: new, urgent, overdue, done\nEvents to use: snooze, finish, day passes\n\nThe checker will test your model on these jobs:\n- \"finish a new task\": events in order: finish; expected at the end: task is done.\n- \"put off twice\": events in order: snooze, then snooze; expected at the end: task is urgent.\n- \"nothing happens\": no events; expected at the end: task is new.\n\nHere is a model for this task. It may contain mistakes, including mistakes the jobs above do not catch.\n\n{\"things\":{\"task\":[\"new\",\"urgent\",\"overdue\",\"done\"],\"snoozes\":[\"0\",\"1\",\"2\"]},\"events\":[\"snooze\",\"finish\",\"day passes\"],\"start\":{\"task\":\"new\",\"snoozes\":\"0\"},\"rules\":[{\"name\":\"first snooze\",\"when\":[\"snooze happens\",\"snoozes is 0\",\"task is not done\"],\"then\":\"snoozes is 1\",\"made_by\":\"guesser first guess\"},{\"name\":\"second snooze\",\"when\":[\"snooze happens\",\"snoozes is 1\",\"task is not done\"],\"then\":\"snoozes is 2\",\"made_by\":\"guesser first guess\"},{\"name\":\"urgent after two snoozes\",\"when\":[\"snoozes is 2\",\"task is new\"],\"then\":\"task is urgent\",\"made_by\":\"guesser first guess\"},{\"name\":\"overdue after a day when urgent\",\"when\":[\"day passes happens\",\"snoozes is 1\"],\"then\":\"task is overdue\",\"made_by\":\"guesser first guess\"},{\"name\":\"finishing\",\"when\":[\"finish happens\"],\"then\":\"task is done\",\"made_by\":\"guesser first guess\"}]}\n\nGo through the task sentence by sentence and check that every part of it is in the model, and that every rule does what the task says, in every situation the task describes, not only in the jobs. Correct every mistake you find. Write the whole corrected model. If you find no mistake, write it unchanged.",
+     "replied": "{\"things\": {\"task\": [\"new\", \"urgent\", \"overdue\", \"done\"], \"snoozes\": [\"0\", \"1\", \"2\"]}, \"events\": [\"snooze\", \"finish\", \"day passes\"], \"start\": {\"task\": \"new\", \"snoozes\": \"0\"}, \"rules\": [{\"name\": \"first snooze\", \"when\": [\"snooze happens\", \"snoozes is 0\", \"task is not done\"], \"then\": \"snoozes is 1\"}, {\"name\": \"second snooze\", \"when\": [\"snooze happens\", \"snoozes is 1\", \"task is not done\"], \"then\": \"snoozes is 2\"}, {\"name\": \"urgent after two snoozes\", \"when\": [\"snoozes is 2\", \"task is new\"], \"then\": \"task is urgent\"}, {\"name\": \"third snooze makes overdue\", \"when\": [\"snooze happens\", \"task is urgent\"], \"then\": \"task is overdue\"}, {\"name\": \"overdue after a day when urgent\", \"when\": [\"day passes happens\", \"task is urgent\"], \"then\": \"task is overdue\"}, {\"name\": \"finishing\", \"when\": [\"finish happens\"], \"then\": \"task is done\"}]}",
+     "seconds": 63
+    },
+    {
+     "asked": "Task: I want a to-do app where things I keep putting off get more urgent, and done things go away.\n\nThings and states to use:\n  task: new, urgent, overdue, done\nEvents to use: snooze, finish, day passes\n\nThe checker will test your model on these jobs:\n- \"finish a new task\": events in order: finish; expected at the end: task is done.\n- \"put off twice\": events in order: snooze, then snooze; expected at the end: task is urgent.\n- \"nothing happens\": no events; expected at the end: task is new.\n- \"world answer 1\": events in order: snooze, then snooze, then snooze; expected at the end: snoozes is 2.\n- \"world answer 2\": events in order: finish, then snooze; expected at the end: snoozes is 0.\n- \"world answer 3\": events in order: snooze, then finish, then snooze; expected at the end: snoozes is 1.\n- \"world answer 4\": events in order: snooze, then snooze, then snooze; expected at the end: task is urgent.\n\nThe current model:\n{\"things\":{\"task\":[\"new\",\"urgent\",\"overdue\",\"done\"],\"snoozes\":[\"0\",\"1\",\"2\"]},\"events\":[\"snooze\",\"finish\",\"day passes\"],\"start\":{\"task\":\"new\",\"snoozes\":\"0\"},\"rules\":[{\"name\":\"first snooze\",\"when\":[\"snooze happens\",\"snoozes is 0\",\"task is not done\"],\"then\":\"snoozes is 1\"},{\"name\":\"second snooze\",\"when\":[\"snooze happens\",\"snoozes is 1\",\"task is not done\"],\"then\":\"snoozes is 2\"},{\"name\":\"urgent after two snoozes\",\"when\":[\"snoozes is 2\",\"task is new\"],\"then\":\"task is urgent\"},{\"name\":\"third snooze makes overdue\",\"when\":[\"snooze happens\",\"task is urgent\"],\"then\":\"task is overdue\"},{\"name\":\"overdue after a day when urgent\",\"when\":[\"day passes happens\",\"task is urgent\"],\"then\":\"task is overdue\"},{\"name\":\"finishing\",\"when\":[\"finish happens\"],\"then\":\"task is done\"}]}\n\nThe checker ran it.\n\nPASS: job \"finish a new task\"\nPASS: job \"put off twice\"\nPASS: job \"nothing happens\"\nPASS: job \"world answer 1\"\nPASS: job \"world answer 2\"\nPASS: job \"world answer 3\"\nFAIL: job \"world answer 4\"\n  - What happened: step 1: first snooze made snoozes 1; step 2: second snooze made snoozes 2; step 3: urgent after two snoozes made task urgent; step 4: third snooze makes overdue made task overdue.\n  - Wanted task is urgent at the end; got task overdue.\n  - Rule \"urgent after two snoozes\" made task urgent at step 3, then at step 4 rule \"third snooze makes overdue\" changed it to overdue.\n6 of 7 jobs pass.\n\nSMALL FIX FOUND: in rule \"third snooze makes overdue\": condition \"snoozes is 0\" added repairs \"world answer 4\" and breaks nothing.\nSMALL FIX FOUND: in rule \"third snooze makes overdue\": condition \"snoozes is 1\" added repairs \"world answer 4\" and breaks nothing.\nSMALL FIX FOUND: in rule \"third snooze makes overdue\": condition \"snooze happens\" changed to \"finish happens\" repairs \"world answer 4\" and breaks nothing.\nSMALL FIX FOUND: in rule \"third snooze makes overdue\": condition \"snooze happens\" changed to \"day passes happens\" repairs \"world answer 4\" and breaks nothing.\nSMALL FIX FOUND: in rule \"third snooze makes overdue\": condition \"task is urgent\" changed to \"task is overdue\" repairs \"world answer 4\" and breaks nothing.\nSMALL FIX FOUND: in rule \"third snooze makes overdue\": condition \"task is urgent\" changed to \"task is done\" repairs \"world answer 4\" and breaks nothing.\n\nWrite the whole model again so that every job passes. Keep every rule that already works. Give every thing a start state.",
+     "replied": "{\"things\":{\"task\":[\"new\",\"urgent\",\"overdue\",\"done\"],\"snoozes\":[\"0\",\"1\",\"2\"]},\"events\":[\"snooze\",\"finish\",\"day passes\"],\"start\":{\"task\":\"new\",\"snoozes\":\"0\"},\"rules\":[{\"name\":\"first snooze\",\"when\":[\"snooze happens\",\"snoozes is 0\",\"task is not done\"],\"then\":\"snoozes is 1\"},{\"name\":\"second snooze\",\"when\":[\"snooze happens\",\"snoozes is 1\",\"task is not done\"],\"then\":\"snoozes is 2\"},{\"name\":\"urgent after two snoozes\",\"when\":[\"snoozes is 2\",\"task is new\"],\"then\":\"task is urgent\"},{\"name\":\"third snooze makes overdue\",\"when\":[\"snooze happens\",\"task is urgent\",\"snoozes is 0\"],\"then\":\"task is overdue\"},{\"name\":\"overdue after a day when urgent\",\"when\":[\"day passes happens\",\"task is urgent\"],\"then\":\"task is overdue\"},{\"name\":\"finishing\",\"when\":[\"finish happens\"],\"then\":\"task is done\"}]}",
+     "seconds": 13
+    },
+    {
+     "asked": "Task: I want a to-do app where things I keep putting off get more urgent, and done things go away.\n\nThings and states to use:\n  task: new, urgent, overdue, done\nEvents to use: snooze, finish, day passes\n\nThe checker will test your model on these jobs:\n- \"finish a new task\": events in order: finish; expected at the end: task is done.\n- \"put off twice\": events in order: snooze, then snooze; expected at the end: task is urgent.\n- \"nothing happens\": no events; expected at the end: task is new.\n- \"world answer 1\": events in order: snooze, then snooze, then snooze; expected at the end: snoozes is 2.\n- \"world answer 2\": events in order: finish, then snooze; expected at the end: snoozes is 0.\n- \"world answer 3\": events in order: snooze, then finish, then snooze; expected at the end: snoozes is 1.\n- \"world answer 4\": events in order: snooze, then snooze, then snooze; expected at the end: task is urgent.\n- \"world answer 5\": events in order: snooze; expected at the end: task is new and snoozes is 1.\n- \"world answer 6\": events in order: snooze, then snooze, then finish; expected at the end: task is done and snoozes is 2.\n- \"world answer 7\": events in order: snooze, then snooze, then day passes; expected at the end: task is overdue and snoozes is 2.\n- \"world answer 8\": events in order: snooze, then snooze, then day passes, then finish; expected at the end: task is done and snoozes is 2.\n- \"world answer 9\": start with snoozes is 2; events in order: finish; expected at the end: task is done and snoozes is 2.\n- \"world answer 10\": start with task is urgent; events in order: snooze, then snooze; expected at the end: task is urgent and snoozes is 2.\n- \"world answer 11\": start with task is overdue; events in order: snooze, then snooze; expected at the end: task is overdue and snoozes is 2.\n- \"world answer 12\": start with snoozes is 1; events in order: snooze, then snooze; expected at the end: task is urgent and snoozes is 2.\n\nThe current model:\n{\"things\":{\"task\":[\"new\",\"urgent\",\"overdue\",\"done\"],\"snoozes\":[\"0\",\"1\",\"2\"]},\"events\":[\"snooze\",\"finish\",\"day passes\"],\"start\":{\"task\":\"new\",\"snoozes\":\"0\"},\"rules\":[{\"name\":\"first snooze\",\"when\":[\"snooze happens\",\"snoozes is 0\",\"task is not done\"],\"then\":\"snoozes is 1\"},{\"name\":\"second snooze\",\"when\":[\"snooze happens\",\"snoozes is 1\",\"task is not done\"],\"then\":\"snoozes is 2\"},{\"name\":\"urgent after two snoozes\",\"when\":[\"snoozes is 2\",\"task is new\"],\"then\":\"task is urgent\"},{\"name\":\"third snooze makes overdue\",\"when\":[\"snooze happens\",\"task is urgent\",\"snoozes is 0\"],\"then\":\"task is overdue\"},{\"name\":\"overdue after a day when urgent\",\"when\":[\"day passes happens\",\"task is urgent\"],\"then\":\"task is overdue\"},{\"name\":\"finishing\",\"when\":[\"finish happens\"],\"then\":\"task is done\"}]}\n\nThe checker ran it.\n\nPASS: job \"finish a new task\"\nPASS: job \"put off twice\"\nPASS: job \"nothing happens\"\nPASS: job \"world answer 1\"\nPASS: job \"world answer 2\"\nPASS: job \"world answer 3\"\nPASS: job \"world answer 4\"\nPASS: job \"world answer 5\"\nPASS: job \"world answer 6\"\nPASS: job \"world answer 7\"\nPASS: job \"world answer 8\"\nPASS: job \"world answer 9\"\nFAIL: job \"world answer 10\"\n  - What happened: step 1: first snooze made snoozes 1; step 1: third snooze makes overdue made task overdue; step 2: second snooze made snoozes 2.\n  - Wanted task is urgent at the end; got task overdue.\n  - Rule \"urgent after two snoozes\" never fired: \"task is new\" was never true.\nPASS: job \"world answer 11\"\nPASS: job \"world answer 12\"\n14 of 15 jobs pass.\n\nSMALL FIX FOUND: in rule \"third snooze makes overdue\": condition \"snooze happens\" changed to \"finish happens\" repairs \"world answer 10\" and breaks nothing.\nSMALL FIX FOUND: in rule \"third snooze makes overdue\": condition \"snooze happens\" changed to \"day passes happens\" repairs \"world answer 10\" and breaks nothing.\nSMALL FIX FOUND: in rule \"third snooze makes overdue\": condition \"task is urgent\" changed to \"task is overdue\" repairs \"world answer 10\" and breaks nothing.\nSMALL FIX FOUND: in rule \"third snooze makes overdue\": condition \"task is urgent\" changed to \"task is done\" repairs \"world answer 10\" and breaks nothing.\nSMALL FIX FOUND: in rule \"third snooze makes overdue\": result \"task is overdue\" changed to \"task is new\" repairs \"world answer 10\" and breaks nothing.\nSMALL FIX FOUND: in rule \"third snooze makes overdue\": result \"task is overdue\" changed to \"task is urgent\" repairs \"world answer 10\" and breaks nothing.\n\nWrite the whole model again so that every job passes. Keep every rule that already works. Give every thing a start state.",
+     "replied": "{\"things\":{\"task\":[\"new\",\"urgent\",\"overdue\",\"done\"],\"snoozes\":[\"0\",\"1\",\"2\"]},\"events\":[\"snooze\",\"finish\",\"day passes\"],\"start\":{\"task\":\"new\",\"snoozes\":\"0\"},\"rules\":[{\"name\":\"first snooze\",\"when\":[\"snooze happens\",\"snoozes is 0\",\"task is not done\"],\"then\":\"snoozes is 1\"},{\"name\":\"second snooze\",\"when\":[\"snooze happens\",\"snoozes is 1\",\"task is not done\"],\"then\":\"snoozes is 2\"},{\"name\":\"urgent after two snoozes\",\"when\":[\"snoozes is 2\",\"task is new\"],\"then\":\"task is urgent\"},{\"name\":\"third snooze makes overdue\",\"when\":[\"snooze happens\",\"task is overdue\",\"snoozes is 0\"],\"then\":\"task is overdue\"},{\"name\":\"overdue after a day when urgent\",\"when\":[\"day passes happens\",\"task is urgent\"],\"then\":\"task is overdue\"},{\"name\":\"finishing\",\"when\":[\"finish happens\"],\"then\":\"task is done\"}]}",
+     "seconds": 20
+    }
+   ]
+  }
+ ]
+}

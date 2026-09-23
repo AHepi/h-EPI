@@ -1,0 +1,249 @@
+{
+ "world": "ball-and-wall",
+ "planted": {
+  "kind": "visible",
+  "how": "picked by the fixed shuffle",
+  "description": "in rule \"throwing\": condition \"ball is in hand\" changed to \"ball is back in hand\"",
+  "form": {
+   "things": {
+    "ball": [
+     "in hand",
+     "flying",
+     "stuck on wall",
+     "back in hand",
+     "beyond wall"
+    ],
+    "material": [
+     "rubber",
+     "clay"
+    ],
+    "wall": [
+     "solid",
+     "holed"
+    ]
+   },
+   "events": [
+    "throw"
+   ],
+   "start": {
+    "ball": "in hand",
+    "material": "rubber",
+    "wall": "solid"
+   },
+   "rules": [
+    {
+     "name": "throwing",
+     "when": [
+      "throw happens",
+      "ball is back in hand"
+     ],
+     "then": "ball is flying"
+    },
+    {
+     "name": "bouncing",
+     "when": [
+      "ball is flying",
+      "wall is solid",
+      "material is rubber"
+     ],
+     "then": "ball is back in hand"
+    },
+    {
+     "name": "sticking",
+     "when": [
+      "ball is flying",
+      "wall is solid",
+      "material is clay"
+     ],
+     "then": "ball is stuck on wall"
+    },
+    {
+     "name": "passing through",
+     "when": [
+      "ball is flying",
+      "wall is holed"
+     ],
+     "then": "ball is beyond wall"
+    }
+   ]
+  },
+  "before": {
+   "shown": "1/4",
+   "held_back": "1/3",
+   "nearby": {
+    "tried": 108,
+    "differ": 42,
+    "cannot_run": 0,
+    "examples": [
+     "the situation of job \"rubber ball at solid wall\": ball in hand, world says back in hand",
+     "the situation of job \"clay ball at solid wall\": ball in hand, world says stuck on wall",
+     "the situation of job \"rubber ball at holed wall\": ball in hand, world says beyond wall"
+    ]
+   }
+  }
+ },
+ "guesser": "deepseek-flash",
+ "counts": {
+  "requests": 3,
+  "replies": 3,
+  "cut_off": 0,
+  "plain_form": 0,
+  "refused": 0,
+  "thinking_characters": 49375,
+  "answer_characters": 2176,
+  "tokens_in": 4941,
+  "tokens_out": 12489
+ },
+ "results": [
+  {
+   "corrector": "review first",
+   "shown": "4/4",
+   "held_back": "3/3",
+   "held_back_asked": [
+    "clay ball at holed wall"
+   ],
+   "questions_to_world": 11,
+   "deepseek_asked": 3,
+   "nearby": {
+    "tried": 108,
+    "differ": 0,
+    "cannot_run": 0,
+    "examples": []
+   },
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "1/4",
+     "problems": 0
+    },
+    {
+     "step": "self review",
+     "verdict": "accepted",
+     "kept": true,
+     "lost": [],
+     "seen": "4/4"
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 3,
+     "seen": "7/7"
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 1,
+     "seen": "8/8"
+    },
+    {
+     "step": "look for surprises",
+     "added": 4,
+     "surprises": 1,
+     "seen": "11/12"
+    },
+    {
+     "step": "guesser rewrites first",
+     "verdict": "accepted",
+     "repaired": [
+      "world answer 8"
+     ],
+     "lost": [],
+     "seen": "12/12"
+    },
+    {
+     "step": "look for surprises",
+     "added": 3,
+     "surprises": 2,
+     "seen": "14/15"
+    },
+    {
+     "step": "guesser rewrites first",
+     "verdict": "accepted",
+     "repaired": [
+      "world answer 11"
+     ],
+     "lost": [],
+     "seen": "15/15"
+    }
+   ],
+   "model": {
+    "things": {
+     "ball": [
+      "in hand",
+      "flying",
+      "stuck on wall",
+      "back in hand",
+      "beyond wall"
+     ],
+     "material": [
+      "rubber",
+      "clay"
+     ],
+     "wall": [
+      "solid",
+      "holed"
+     ]
+    },
+    "events": [
+     "throw"
+    ],
+    "start": {
+     "ball": "in hand",
+     "material": "rubber",
+     "wall": "solid"
+    },
+    "rules": [
+     {
+      "name": "throw from hand",
+      "when": [
+       "throw happens",
+       "ball is in hand"
+      ],
+      "then": "ball is flying"
+     },
+     {
+      "name": "bouncing",
+      "when": [
+       "ball is flying",
+       "wall is solid",
+       "material is rubber"
+      ],
+      "then": "ball is back in hand"
+     },
+     {
+      "name": "sticking",
+      "when": [
+       "ball is flying",
+       "wall is solid",
+       "material is clay"
+      ],
+      "then": "ball is stuck on wall"
+     },
+     {
+      "name": "passing through",
+      "when": [
+       "ball is flying",
+       "wall is holed"
+      ],
+      "then": "ball is beyond wall"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "Task: A ball is thrown at a wall. What happens to it? A rubber ball bounces back to the thrower. A clay ball sticks to the wall. If there is a hole in the wall, the ball goes through.\n\nThings and states to use:\n  material: rubber, clay\n  wall: solid, holed\n  ball: in hand, flying, stuck on wall, back in hand, beyond wall\nEvents to use: throw\n\nThe checker will test your model on these jobs:\n- \"rubber ball at solid wall\": start with material is rubber, wall is solid; events in order: throw; expected at the end: ball is back in hand.\n- \"clay ball at solid wall\": start with material is clay, wall is solid; events in order: throw; expected at the end: ball is stuck on wall.\n- \"ball not thrown\": start with material is rubber, wall is solid; no events; expected at the end: ball is in hand.\n- \"rubber ball at holed wall\": start with material is rubber, wall is holed; events in order: throw; expected at the end: ball is beyond wall.\n\nHere is a model for this task. It may contain mistakes, including mistakes the jobs above do not catch.\n\n{\"things\":{\"ball\":[\"in hand\",\"flying\",\"stuck on wall\",\"back in hand\",\"beyond wall\"],\"material\":[\"rubber\",\"clay\"],\"wall\":[\"solid\",\"holed\"]},\"events\":[\"throw\"],\"start\":{\"ball\":\"in hand\",\"material\":\"rubber\",\"wall\":\"solid\"},\"rules\":[{\"name\":\"throwing\",\"when\":[\"throw happens\",\"ball is back in hand\"],\"then\":\"ball is flying\",\"made_by\":\"guesser first guess\"},{\"name\":\"bouncing\",\"when\":[\"ball is flying\",\"wall is solid\",\"material is rubber\"],\"then\":\"ball is back in hand\",\"made_by\":\"guesser first guess\"},{\"name\":\"sticking\",\"when\":[\"ball is flying\",\"wall is solid\",\"material is clay\"],\"then\":\"ball is stuck on wall\",\"made_by\":\"guesser first guess\"},{\"name\":\"passing through\",\"when\":[\"ball is flying\",\"wall is holed\"],\"then\":\"ball is beyond wall\",\"made_by\":\"guesser first guess\"}]}\n\nGo through the task sentence by sentence and check that every part of it is in the model, and that every rule does what the task says, in every situation the task describes, not only in the jobs. Correct every mistake you find. Write the whole corrected model. If you find no mistake, write it unchanged.",
+     "replied": "{\"things\":{\"ball\":[\"in hand\",\"flying\",\"stuck on wall\",\"back in hand\",\"beyond wall\"],\"material\":[\"rubber\",\"clay\"],\"wall\":[\"solid\",\"holed\"]},\"events\":[\"throw\"],\"start\":{\"ball\":\"in hand\",\"material\":\"rubber\",\"wall\":\"solid\"},\"rules\":[{\"name\":\"throw from hand\",\"when\":[\"throw happens\",\"ball is in hand\"],\"then\":\"ball is flying\"},{\"name\":\"throw from back in hand\",\"when\":[\"throw happens\",\"ball is back in hand\"],\"then\":\"ball is flying\"},{\"name\":\"bouncing\",\"when\":[\"ball is flying\",\"wall is solid\",\"material is rubber\"],\"then\":\"ball is back in hand\"},{\"name\":\"sticking\",\"when\":[\"ball is flying\",\"wall is solid\",\"material is clay\"],\"then\":\"ball is stuck on wall\"},{\"name\":\"passing through\",\"when\":[\"ball is flying\",\"wall is holed\"],\"then\":\"ball is beyond wall\"}]}",
+     "seconds": 21
+    },
+    {
+     "asked": "Task: A ball is thrown at a wall. What happens to it? A rubber ball bounces back to the thrower. A clay ball sticks to the wall. If there is a hole in the wall, the ball goes through.\n\nThings and states to use:\n  material: rubber, clay\n  wall: solid, holed\n  ball: in hand, flying, stuck on wall, back in hand, beyond wall\nEvents to use: throw\n\nThe checker will test your model on these jobs:\n- \"rubber ball at solid wall\": start with material is rubber, wall is solid; events in order: throw; expected at the end: ball is back in hand.\n- \"clay ball at solid wall\": start with material is clay, wall is solid; events in order: throw; expected at the end: ball is stuck on wall.\n- \"ball not thrown\": start with material is rubber, wall is solid; no events; expected at the end: ball is in hand.\n- \"rubber ball at holed wall\": start with material is rubber, wall is holed; events in order: throw; expected at the end: ball is beyond wall.\n- \"world answer 1\": start with material is rubber, wall is solid, ball is stuck on wall; events in order: throw; expected at the end: ball is stuck on wall.\n- \"world answer 2\": start with material is clay, wall is solid; no events; expected at the end: ball is in hand.\n- \"world answer 3\": start with material is rubber, wall is holed; no events; expected at the end: ball is in hand.\n- \"world answer 4\": start with material is clay, wall is holed; events in order: throw; expected at the end: ball is beyond wall.\n- \"world answer 5\": start with material is rubber, wall is solid, ball is flying; events in order: throw; expected at the end: ball is back in hand.\n- \"world answer 6\": start with material is rubber, wall is solid; events in order: throw, then throw; expected at the end: ball is back in hand.\n- \"world answer 7\": start with material is clay, wall is solid, ball is flying; events in order: throw; expected at the end: ball is stuck on wall.\n- \"world answer 8\": start with material is clay, wall is solid, ball is back in hand; events in order: throw; expected at the end: ball is back in hand.\n\nThe current model:\n{\"things\":{\"ball\":[\"in hand\",\"flying\",\"stuck on wall\",\"back in hand\",\"beyond wall\"],\"material\":[\"rubber\",\"clay\"],\"wall\":[\"solid\",\"holed\"]},\"events\":[\"throw\"],\"start\":{\"ball\":\"in hand\",\"material\":\"rubber\",\"wall\":\"solid\"},\"rules\":[{\"name\":\"throw from hand\",\"when\":[\"throw happens\",\"ball is in hand\"],\"then\":\"ball is flying\"},{\"name\":\"throw from back in hand\",\"when\":[\"throw happens\",\"ball is back in hand\"],\"then\":\"ball is flying\"},{\"name\":\"bouncing\",\"when\":[\"ball is flying\",\"wall is solid\",\"material is rubber\"],\"then\":\"ball is back in hand\"},{\"name\":\"sticking\",\"when\":[\"ball is flying\",\"wall is solid\",\"material is clay\"],\"then\":\"ball is stuck on wall\"},{\"name\":\"passing through\",\"when\":[\"ball is flying\",\"wall is holed\"],\"then\":\"ball is beyond wall\"}]}\n\nThe checker ran it.\n\nPASS: job \"rubber ball at solid wall\"\nPASS: job \"clay ball at solid wall\"\nPASS: job \"ball not thrown\"\nPASS: job \"rubber ball at holed wall\"\nPASS: job \"world answer 1\"\nPASS: job \"world answer 2\"\nPASS: job \"world answer 3\"\nPASS: job \"world answer 4\"\nPASS: job \"world answer 5\"\nPASS: job \"world answer 6\"\nPASS: job \"world answer 7\"\nFAIL: job \"world answer 8\"\n  - What happened: step 1: throw from back in hand made ball flying; step 2: sticking made ball stuck on wall.\n  - Wanted ball is back in hand at the end; got ball stuck on wall.\n  - Rule \"bouncing\" never fired: \"material is rubber\" was never true.\n11 of 12 jobs pass.\n\nSMALL FIX FOUND: in rule \"throw from back in hand\": condition \"material is rubber\" added repairs \"world answer 8\" and breaks nothing.\nSMALL FIX FOUND: in rule \"throw from back in hand\": condition \"wall is holed\" added repairs \"world answer 8\" and breaks nothing.\nSMALL FIX FOUND: in rule \"throw from back in hand\": condition \"ball is back in hand\" changed to \"ball is in hand\" repairs \"world answer 8\" and breaks nothing.\nSMALL FIX FOUND: in rule \"throw from back in hand\": condition \"ball is back in hand\" changed to \"ball is flying\" repairs \"world answer 8\" and breaks nothing.\nSMALL FIX FOUND: in rule \"throw from back in hand\": condition \"ball is back in hand\" changed to \"ball is beyond wall\" repairs \"world answer 8\" and breaks nothing.\nSMALL FIX FOUND: in rule \"throw from back in hand\": result \"ball is flying\" changed to \"ball is back in hand\" repairs \"world answer 8\" and breaks nothing.\n\nWrite the whole model again so that every job passes. Keep every rule that already works. Give every thing a start state.",
+     "replied": "{\"things\":{\"ball\":[\"in hand\",\"flying\",\"stuck on wall\",\"back in hand\",\"beyond wall\"],\"material\":[\"rubber\",\"clay\"],\"wall\":[\"solid\",\"holed\"]},\"events\":[\"throw\"],\"start\":{\"ball\":\"in hand\",\"material\":\"rubber\",\"wall\":\"solid\"},\"rules\":[{\"name\":\"throw from hand\",\"when\":[\"throw happens\",\"ball is in hand\"],\"then\":\"ball is flying\"},{\"name\":\"throw from back in hand\",\"when\":[\"throw happens\",\"ball is back in hand\",\"material is rubber\"],\"then\":\"ball is flying\"},{\"name\":\"bouncing\",\"when\":[\"ball is flying\",\"wall is solid\",\"material is rubber\"],\"then\":\"ball is back in hand\"},{\"name\":\"sticking\",\"when\":[\"ball is flying\",\"wall is solid\",\"material is clay\"],\"then\":\"ball is stuck on wall\"},{\"name\":\"passing through\",\"when\":[\"ball is flying\",\"wall is holed\"],\"then\":\"ball is beyond wall\"}]}",
+     "seconds": 10
+    },
+    {
+     "asked": "Task: A ball is thrown at a wall. What happens to it? A rubber ball bounces back to the thrower. A clay ball sticks to the wall. If there is a hole in the wall, the ball goes through.\n\nThings and states to use:\n  material: rubber, clay\n  wall: solid, holed\n  ball: in hand, flying, stuck on wall, back in hand, beyond wall\nEvents to use: throw\n\nThe checker will test your model on these jobs:\n- \"rubber ball at solid wall\": start with material is rubber, wall is solid; events in order: throw; expected at the end: ball is back in hand.\n- \"clay ball at solid wall\": start with material is clay, wall is solid; events in order: throw; expected at the end: ball is stuck on wall.\n- \"ball not thrown\": start with material is rubber, wall is solid; no events; expected at the end: ball is in hand.\n- \"rubber ball at holed wall\": start with material is rubber, wall is holed; events in order: throw; expected at the end: ball is beyond wall.\n- \"world answer 1\": start with material is rubber, wall is solid, ball is stuck on wall; events in order: throw; expected at the end: ball is stuck on wall.\n- \"world answer 2\": start with material is clay, wall is solid; no events; expected at the end: ball is in hand.\n- \"world answer 3\": start with material is rubber, wall is holed; no events; expected at the end: ball is in hand.\n- \"world answer 4\": start with material is clay, wall is holed; events in order: throw; expected at the end: ball is beyond wall.\n- \"world answer 5\": start with material is rubber, wall is solid, ball is flying; events in order: throw; expected at the end: ball is back in hand.\n- \"world answer 6\": start with material is rubber, wall is solid; events in order: throw, then throw; expected at the end: ball is back in hand.\n- \"world answer 7\": start with material is clay, wall is solid, ball is flying; events in order: throw; expected at the end: ball is stuck on wall.\n- \"world answer 8\": start with material is clay, wall is solid, ball is back in hand; events in order: throw; expected at the end: ball is back in hand.\n- \"world answer 9\": start with material is rubber, wall is solid, ball is flying; no events; expected at the end: ball is back in hand.\n- \"world answer 10\": start with material is rubber, wall is holed, ball is flying; events in order: throw; expected at the end: ball is beyond wall.\n- \"world answer 11\": start with material is rubber, wall is holed, ball is back in hand; events in order: throw; expected at the end: ball is back in hand.\n\nThe current model:\n{\"things\":{\"ball\":[\"in hand\",\"flying\",\"stuck on wall\",\"back in hand\",\"beyond wall\"],\"material\":[\"rubber\",\"clay\"],\"wall\":[\"solid\",\"holed\"]},\"events\":[\"throw\"],\"start\":{\"ball\":\"in hand\",\"material\":\"rubber\",\"wall\":\"solid\"},\"rules\":[{\"name\":\"throw from hand\",\"when\":[\"throw happens\",\"ball is in hand\"],\"then\":\"ball is flying\"},{\"name\":\"throw from back in hand\",\"when\":[\"throw happens\",\"ball is back in hand\",\"material is rubber\"],\"then\":\"ball is flying\"},{\"name\":\"bouncing\",\"when\":[\"ball is flying\",\"wall is solid\",\"material is rubber\"],\"then\":\"ball is back in hand\"},{\"name\":\"sticking\",\"when\":[\"ball is flying\",\"wall is solid\",\"material is clay\"],\"then\":\"ball is stuck on wall\"},{\"name\":\"passing through\",\"when\":[\"ball is flying\",\"wall is holed\"],\"then\":\"ball is beyond wall\"}]}\n\nThe checker ran it.\n\nPASS: job \"rubber ball at solid wall\"\nPASS: job \"clay ball at solid wall\"\nPASS: job \"ball not thrown\"\nPASS: job \"rubber ball at holed wall\"\nPASS: job \"world answer 1\"\nPASS: job \"world answer 2\"\nPASS: job \"world answer 3\"\nPASS: job \"world answer 4\"\nPASS: job \"world answer 5\"\nPASS: job \"world answer 6\"\nPASS: job \"world answer 7\"\nPASS: job \"world answer 8\"\nPASS: job \"world answer 9\"\nPASS: job \"world answer 10\"\nFAIL: job \"world answer 11\"\n  - What happened: step 1: throw from back in hand made ball flying; step 2: passing through made ball beyond wall.\n  - Wanted ball is back in hand at the end; got ball beyond wall.\n  - Rule \"bouncing\" never fired: \"wall is solid\" was never true.\n14 of 15 jobs pass.\n\nSMALL FIX FOUND: in rule \"throw from back in hand\": condition \"wall is solid\" added repairs \"world answer 11\" and breaks nothing.\nSMALL FIX FOUND: in rule \"throw from back in hand\": condition \"ball is back in hand\" changed to \"ball is in hand\" repairs \"world answer 11\" and breaks nothing.\nSMALL FIX FOUND: in rule \"throw from back in hand\": condition \"ball is back in hand\" changed to \"ball is flying\" repairs \"world answer 11\" and breaks nothing.\nSMALL FIX FOUND: in rule \"throw from back in hand\": condition \"ball is back in hand\" changed to \"ball is beyond wall\" repairs \"world answer 11\" and breaks nothing.\nSMALL FIX FOUND: in rule \"throw from back in hand\": result \"ball is flying\" changed to \"ball is back in hand\" repairs \"world answer 11\" and breaks nothing.\nSMALL FIX FOUND: in rule \"throw from back in hand\": rule \"throw from back in hand\" removed repairs \"world answer 11\" and breaks nothing.\n\nWrite the whole model again so that every job passes. Keep every rule that already works. Give every thing a start state.",
+     "replied": "{\"things\":{\"ball\":[\"in hand\",\"flying\",\"stuck on wall\",\"back in hand\",\"beyond wall\"],\"material\":[\"rubber\",\"clay\"],\"wall\":[\"solid\",\"holed\"]},\"events\":[\"throw\"],\"start\":{\"ball\":\"in hand\",\"material\":\"rubber\",\"wall\":\"solid\"},\"rules\":[{\"name\":\"throw from hand\",\"when\":[\"throw happens\",\"ball is in hand\"],\"then\":\"ball is flying\"},{\"name\":\"bouncing\",\"when\":[\"ball is flying\",\"wall is solid\",\"material is rubber\"],\"then\":\"ball is back in hand\"},{\"name\":\"sticking\",\"when\":[\"ball is flying\",\"wall is solid\",\"material is clay\"],\"then\":\"ball is stuck on wall\"},{\"name\":\"passing through\",\"when\":[\"ball is flying\",\"wall is holed\"],\"then\":\"ball is beyond wall\"}]}",
+     "seconds": 21
+    }
+   ]
+  }
+ ]
+}

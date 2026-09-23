@@ -1,0 +1,1981 @@
+<!DOCTYPE html>
+<!--
+  WHAT THIS FILE DOES, IN PLAIN WORDS
+  The template for the Sonnet page. The build script ("16 build the Sonnet page.js") copies the
+  project's code files into the marked place below and writes "16 Sonnet page.html".
+  Change the page here, then rebuild. Change the checker, worlds, loop or guesser in their own files.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Guess Check Fix: Sonnet as the guesser</title>
+<style>
+  :root {
+    --paper: #EEF2EF; --ink: #1D2622; --muted: #56655E; --line: #C3CEC8; --well: #E1E8E4;
+    --pass: #2D6A4F; --fail: #A63D2F; --accent: #2B4C7E; --accent-ink: #FFFFFF;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --paper: #141A17; --ink: #E3EAE6; --muted: #9AA9A1; --line: #33403A; --well: #1D2521;
+      --pass: #6FBF98; --fail: #E58473; --accent: #8EAAE2; --accent-ink: #0F1512; }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--paper); color: var(--ink);
+    font-family: Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
+    font-size: 17px; line-height: 1.55; font-variant-numeric: tabular-nums;
+    padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px); }
+  main { max-width: 46rem; margin: 0 auto; padding: 1.5rem 1.1rem 3rem; }
+  h1 { font-size: 1.7rem; line-height: 1.2; margin: 0 0 .6rem; font-weight: 600; letter-spacing: -.01em; }
+  h2 { font-size: 1.15rem; margin: 2.2rem 0 .5rem; font-weight: 600; }
+  p { margin: .5rem 0; max-width: 38rem; }
+  .quiet { color: var(--muted); font-size: .92rem; }
+  .controls { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin: 1.2rem 0 .8rem; }
+  select, button { font: inherit; font-size: 1rem; border-radius: 6px; }
+  select { padding: .5rem .6rem; background: var(--well); color: var(--ink); border: 1px solid var(--line); }
+  button { padding: .55rem 1.2rem; border: 0; background: var(--accent); color: var(--accent-ink); font-weight: 600; cursor: pointer; }
+  button.plain { background: transparent; color: var(--accent); border: 1px solid var(--accent); font-weight: 500; }
+  button:disabled { opacity: .45; cursor: default; }
+  button:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  #now { min-height: 3.2em; padding: .7rem .9rem; background: var(--well); border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; }
+  #now.stopped { border-left-color: var(--fail); }
+  #counts { margin-top: .4rem; }
+
+  /* The results grid: the one strong element on the page. */
+  .world { margin: 1.1rem 0 0; }
+  .world h3 { font-size: 1.05rem; margin: 0 0 .2rem; font-weight: 600; }
+  table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+  th, td { text-align: left; vertical-align: top; padding: .45rem .4rem .45rem 0; border-bottom: 1px solid var(--line); }
+  thead th { font-weight: 400; font-size: .78rem; color: var(--muted); padding-bottom: .25rem; }
+  thead th:first-child, tbody th { width: 40%; }
+  tbody th { font-weight: 600; font-size: .88rem; line-height: 1.3; }
+  td { font-size: .85rem; }
+  .measure { display: grid; grid-template-columns: 1fr auto; gap: .45rem; align-items: center; }
+  .bar { height: .55rem; background: var(--well); border: 1px solid var(--line); border-radius: 3px; overflow: hidden; }
+  .bar > span { display: block; height: 100%; background: var(--pass); }
+  .bar.short > span { background: var(--fail); }
+  .asked { display: block; color: var(--muted); font-size: .76rem; font-weight: 400; margin-top: .15rem; }
+  .waiting { color: var(--muted); }
+  .error { color: var(--fail); }
+
+  details { border-bottom: 1px solid var(--line); padding: .5rem 0; }
+  summary { cursor: pointer; font-weight: 600; }
+  ol.steps { margin: .4rem 0 .6rem; padding-left: 1.3rem; font-size: .88rem; }
+  textarea { width: 100%; min-height: 9rem; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .75rem;
+    background: var(--well); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: .6rem; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Sonnet tries the five test worlds</h1>
+  <p>Sonnet writes a first guess for each world. The checker then runs it four ways, from that same guess: the guess alone; Sonnet rewriting it from the checker's report; the checker's small fixes with Sonnet adding only missing parts; and that plus questions to the world.</p>
+  <p class="quiet">All five worlds take up to about 50 requests to Sonnet, out of your own Claude usage, and roughly 10 to 20 minutes. Keep this page open while it runs. Nothing is saved when it closes, so copy the results at the end.</p>
+
+  <div class="controls">
+    <select id="which" aria-label="Which worlds to run"></select>
+    <button id="run">Run</button>
+  </div>
+  <div id="now" role="status" aria-live="polite">Press Run to start.</div>
+  <div id="counts" class="quiet"></div>
+
+  <h2>Results</h2>
+  <p class="quiet">Shown jobs: the ones Sonnet saw. Held back: kept from Sonnet until the end, to catch guesses that only fit what they were shown. Asked again: requests to Sonnet after its first guess.</p>
+  <div id="grid"></div>
+
+  <h2>What happened, step by step</h2>
+  <div id="story"><p class="quiet">Fills in as each world finishes.</p></div>
+
+  <h2>Results to paste back into the chat</h2>
+  <p class="quiet">Copy this box and paste it into the chat. It holds each final model, each step, and Sonnet's replies.</p>
+  <textarea id="results" readonly placeholder="Appears when the run ends."></textarea>
+  <div class="controls"><button id="copy" class="plain" disabled>Copy results</button><span id="copied" class="quiet"></span></div>
+</main>
+
+<script>
+  // Lets the project's code files run in the page unchanged: each one is handed its own "module" and "require".
+  const page_files = {};
+  function page_require(name) {
+    const key = name.replace(/^\.\//, '');
+    if (key === 'fs') return null;
+    if (!(key in page_files)) throw new Error(`The page is missing the file ${name}`);
+    return page_files[key];
+  }
+</script>
+<script>
+/* ===== 03 checker.js ===== */
+(function () {
+  const module = { exports: {} };
+  const exports = module.exports;
+  const require = page_require;
+/*
+ * WHAT THIS FILE DOES, IN PLAIN WORDS
+ *
+ * This is the checker. A small AI writes a "model": a list of things (each can be in a few
+ * states) and rules ("when the ball is flying and the wall is standing, the ball becomes at wall").
+ * The owner writes "jobs": in this situation, this thing should end up this way.
+ *
+ * The checker never guesses. It only runs models and reports what happens:
+ *   check      - run every job, say which pass and fail, and why a failing one failed
+ *   vary       - the hard-to-vary tests: remove each rule, swap each rule for a near neighbour,
+ *                remove each event, look for a rule that just states the answer, look for jobs
+ *                that always expect the same thing
+ *   check_fix  - accept a fix only if it repairs a failing job and breaks no job that passed
+ *   tweaks     - try every small change to the existing rules; if none repairs a job, say that
+ *                something new is needed (a new rule or a new thing to keep track of)
+ *   decide     - given two models, find a situation where they give different answers
+ *
+ * Where the ideas come from: "Claude Fable Semantics - standalone theory", revision 1.
+ * Rules are the parts (components), things are the ports, a situation is one admitted change,
+ * the jobs are the question's contract. Part numbers are noted next to each section.
+ *
+ * Runs in Node (require) and in a browser (window.Checker). No outside libraries.
+ */
+(function (root, make) {
+  const api = make();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else root.Checker = api;
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  const STEP_LIMIT = 60;
+  const copy = value => JSON.parse(JSON.stringify(value));
+  const unique = list => [...new Set(list)];
+  const tidy = text => String(text == null ? '' : text).trim().replace(/\s+/g, ' ');
+  const lower = text => tidy(text).toLowerCase();
+
+  // ------------------------------------------------------------------
+  // Spelling help: find the closest known name, for "did you mean" hints
+  // ------------------------------------------------------------------
+  function letters_apart(a, b) {
+    const rows = a.length + 1, cols = b.length + 1;
+    const table = Array.from({ length: rows }, (_, i) => [i, ...Array(cols - 1).fill(0)]);
+    for (let j = 0; j < cols; j++) table[0][j] = j;
+    for (let i = 1; i < rows; i++) for (let j = 1; j < cols; j++) {
+      table[i][j] = Math.min(table[i - 1][j] + 1, table[i][j - 1] + 1, table[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    return table[a.length][b.length];
+  }
+  function closest_name(word, choices) {
+    const w = lower(word);
+    let best = null, best_distance = Infinity;
+    for (const choice of choices) {
+      const c = lower(choice);
+      let distance = letters_apart(w, c);
+      if (c.includes(w) || w.includes(c)) distance = Math.min(distance, Math.abs(c.length - w.length) * 0.5);
+      if (distance < best_distance) { best_distance = distance; best = choice; }
+    }
+    return best_distance <= Math.max(2, Math.floor(w.length / 3)) ? best : null;
+  }
+  function did_you_mean(word, choices) {
+    const guess = closest_name(word, choices);
+    return guess ? ` Did you mean "${guess}"?` : ` Known: ${choices.map(c => `"${c}"`).join(', ')}.`;
+  }
+
+  // ------------------------------------------------------------------
+  // Reading a model (Part II: an organization is ports, components and admitted edits)
+  // ------------------------------------------------------------------
+  function as_list(value) {
+    if (value == null) return [];
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') return value.split(/\s*,\s*|\s+and\s+/i).filter(Boolean);
+    return [value];
+  }
+  function read_things(raw_things, problems) {
+    const things = {};
+    if (!raw_things || typeof raw_things !== 'object') { problems.push('The model has no "things". List each thing and the states it can be in.'); return things; }
+    const entries = Array.isArray(raw_things)
+      ? raw_things.map(t => [t.name || t.thing, t.states])
+      : Object.entries(raw_things);
+    for (const [name, states] of entries) {
+      const thing = tidy(name);
+      const list = unique(as_list(states).map(tidy).filter(Boolean));
+      if (!thing) { problems.push('A thing has no name.'); continue; }
+      if (list.length < 2) problems.push(`Thing "${thing}" needs at least two states, so that a rule can change it.`);
+      things[thing] = list;
+    }
+    return things;
+  }
+  function find_thing(things, name) {
+    const wanted = lower(name);
+    return Object.keys(things).find(t => lower(t) === wanted) || null;
+  }
+  function find_state(things, thing, name) {
+    const wanted = lower(name);
+    return (things[thing] || []).find(s => lower(s) === wanted) || null;
+  }
+
+  // A condition is "THING is STATE", "THING is not STATE" or "EVENT happens".
+  function read_condition(text, model, where, problems) {
+    const words = tidy(text).replace(/[.]$/, '');
+    let match = words.match(/^(?:event\s+)?(.+?)\s+happens$/i) || words.match(/^event[:\s]+(.+)$/i);
+    if (match) {
+      const event = model.events.find(e => lower(e) === lower(match[1]));
+      if (event) return { kind: 'event', event };
+      problems.push(`${where}: "${match[1]}" is not a listed event.${did_you_mean(match[1], model.events)}`);
+      return null;
+    }
+    match = words.match(/^(.+?)\s+is\s+not\s+(.+)$/i);
+    let negated = true;
+    if (!match) { match = words.match(/^(.+?)\s+(?:is|are)\s+(.+)$/i); negated = false; }
+    if (!match) {
+      const event = model.events.find(e => lower(e) === lower(words));
+      if (event) return { kind: 'event', event };
+      problems.push(`${where}: "${words}" should look like "THING is STATE", "THING is not STATE" or "EVENT happens".`);
+      return null;
+    }
+    const thing = find_thing(model.things, match[1]);
+    if (!thing) { problems.push(`${where}: "${match[1]}" is not a listed thing.${did_you_mean(match[1], Object.keys(model.things))}`); return null; }
+    const state = find_state(model.things, thing, match[2]);
+    if (!state) { problems.push(`${where}: "${match[2]}" is not a state of "${thing}".${did_you_mean(match[2], model.things[thing])}`); return null; }
+    return { kind: 'state', thing, state, negated };
+  }
+  function read_setting(text, model, where, problems, notes) {
+    const condition = read_condition(text, model, where, problems);
+    if (!condition) return null;
+    if (condition.kind === 'event') { problems.push(`${where}: a rule's result must be "THING is STATE"; an event cannot be a result.`); return null; }
+    if (condition.negated) {
+      const others = model.things[condition.thing].filter(s => s !== condition.state);
+      if (others.length === 1) { notes.push(`${where}: read "${text}" as "${condition.thing} is ${others[0]}".`); return { thing: condition.thing, state: others[0] }; }
+      problems.push(`${where}: a result must name the state the thing becomes. "${text}" does not say which of ${others.map(s => `"${s}"`).join(', ')} it becomes.`);
+      return null;
+    }
+    return { thing: condition.thing, state: condition.state };
+  }
+  const condition_text = c => (c.kind === 'event' ? `${c.event} happens` : `${c.thing} is ${c.negated ? 'not ' : ''}${c.state}`);
+  const setting_text = s => `${s.thing} is ${s.state}`;
+  function rule_text(rule) {
+    const when = rule.when.length ? `when ${rule.when.map(condition_text).join(' and ')}` : 'always (no conditions)';
+    return `${when}, ${rule.then.map(setting_text).join(' and ')}${rule.strength === 'usually' ? ' (usually)' : ''}`;
+  }
+
+  function prepare_model(raw) {
+    const problems = [], notes = [];
+    if (typeof raw === 'string') { try { raw = JSON.parse(raw); } catch (e) { return { problems: [`The model is not readable JSON: ${e.message}`], notes, rules: [], things: {}, events: [], start: {} }; } }
+    const model = { things: read_things(raw.things, problems), events: unique(as_list(raw.events).map(tidy).filter(Boolean)), start: {}, rules: [], problems, notes };
+    const raw_start = raw.start || raw.starting || {};
+    for (const [name, state] of Object.entries(raw_start)) {
+      const thing = find_thing(model.things, name);
+      if (!thing) { problems.push(`Start: "${name}" is not a listed thing.${did_you_mean(name, Object.keys(model.things))}`); continue; }
+      const found = find_state(model.things, thing, state);
+      if (!found) { problems.push(`Start: "${state}" is not a state of "${thing}".${did_you_mean(state, model.things[thing])}`); continue; }
+      model.start[thing] = found;
+    }
+    for (const thing of Object.keys(model.things)) {
+      if (!model.start[thing] && model.things[thing].length) { model.start[thing] = model.things[thing][0]; notes.push(`Start: "${thing}" had no starting state; used its first state, "${model.things[thing][0]}".`); }
+    }
+    const names = new Set();
+    (raw.rules || []).forEach((r, index) => {
+      let name = tidy(r.name || r.id || `rule ${index + 1}`);
+      if (names.has(name)) { name = `${name} (${index + 1})`; notes.push(`Two rules shared a name; renamed one to "${name}".`); }
+      names.add(name);
+      const where = `Rule "${name}"`;
+      const when = as_list(r.when != null ? r.when : r.if).map(c => read_condition(c, model, where, problems)).filter(Boolean);
+      const then = as_list(r.then).map(s => read_setting(s, model, where, problems, notes)).filter(Boolean);
+      if (!then.length) { problems.push(`${where} has no result. Give it "then": "THING is STATE".`); return; }
+      const needs = {};
+      for (const c of when) if (c.kind === 'state' && !c.negated) (needs[c.thing] = needs[c.thing] || []).push(c.state);
+      for (const [thing, states] of Object.entries(needs)) {
+        if (unique(states).length > 1) problems.push(`${where} can never fire: it needs ${thing} to be ${unique(states).map(x => `"${x}"`).join(' and ')} at the same time. A thing is in one state at a time; use one rule for each state.`);
+      }
+      for (const c of when) if (c.kind === 'state' && c.negated && (needs[c.thing] || []).includes(c.state)) problems.push(`${where} can never fire: it needs ${c.thing} to be "${c.state}" and not "${c.state}".`);
+      const strength = lower(r.strength || r.how || '') === 'usually' || r.usually === true ? 'usually' : 'always';
+      model.rules.push({ name, when, then, strength, made_by: r.made_by || null, reason: r.reason || r.why || null });
+    });
+    return model;
+  }
+
+  // ------------------------------------------------------------------
+  // Reading jobs (Part III: a question is a target, a contract of admitted changes, and a query)
+  // ------------------------------------------------------------------
+  function read_events(raw_events) {
+    const by_step = {};
+    const add = (step, event) => { if (!event) return; (by_step[step] = by_step[step] || []).push(tidy(event)); };
+    if (!raw_events) return by_step;
+    if (Array.isArray(raw_events)) {
+      raw_events.forEach((entry, index) => {
+        if (entry && typeof entry === 'object' && !Array.isArray(entry)) add(Number(entry.step) || index + 1, entry.event);
+        else as_list(entry).forEach(e => add(index + 1, e));
+      });
+    } else if (typeof raw_events === 'object') {
+      for (const [step, list] of Object.entries(raw_events)) as_list(list).forEach(e => add(Number(step), e));
+    } else as_list(raw_events).forEach((e, i) => add(i + 1, e));
+    return by_step;
+  }
+  function prepare_jobs(raw) {
+    if (typeof raw === 'string') raw = JSON.parse(raw);
+    const list = Array.isArray(raw) ? raw : raw.jobs || [];
+    return {
+      question: raw.question || '',
+      jobs: list.map((j, index) => ({
+        name: tidy(j.name || j.job || `job ${index + 1}`),
+        situation: { start: j.start || {}, events: read_events(j.events), force: j.force || {}, remove: as_list(j.remove) },
+        expect: as_list(j.expect),
+        at: j.at == null ? 'end' : j.at,
+        from: j.from || 'given',
+        held_back: !!j.held_back,
+      })),
+    };
+  }
+  // Resolve a job's words against one model's vocabulary.
+  function resolve_situation(model, situation, problems, where) {
+    const out = { start: {}, events: {}, force: {}, remove: [] };
+    for (const [name, state] of Object.entries(situation.start || {})) {
+      const thing = find_thing(model.things, name);
+      const found = thing && find_state(model.things, thing, state);
+      if (!found) { problems.push(`${where}: the model cannot start "${name}" as "${state}".${thing ? did_you_mean(state, model.things[thing]) : did_you_mean(name, Object.keys(model.things))}`); continue; }
+      out.start[thing] = found;
+    }
+    for (const [name, state] of Object.entries(situation.force || {})) {
+      const thing = find_thing(model.things, name);
+      const found = thing && find_state(model.things, thing, state);
+      if (!found) { problems.push(`${where}: the model cannot hold "${name}" at "${state}".`); continue; }
+      out.force[thing] = found;
+    }
+    for (const [step, events] of Object.entries(situation.events || {})) {
+      for (const e of events) {
+        const event = model.events.find(x => lower(x) === lower(e));
+        if (!event) { problems.push(`${where}: the model has no event "${e}".${did_you_mean(e, model.events)}`); continue; }
+        (out.events[step] = out.events[step] || []).push(event);
+      }
+    }
+    out.remove = (situation.remove || []).map(n => model.rules.find(r => lower(r.name) === lower(n))).filter(Boolean).map(r => r.name);
+    return out;
+  }
+
+  // ------------------------------------------------------------------
+  // Running a model through one situation (Part II equation O, stepped through time)
+  // ------------------------------------------------------------------
+  function holds(condition, state, events_now) {
+    if (condition.kind === 'event') return events_now.includes(condition.event);
+    const is_in = state[condition.thing] === condition.state;
+    return condition.negated ? !is_in : is_in;
+  }
+  const same_state = (a, b) => Object.keys(a).every(k => a[k] === b[k]);
+  const conditions_key = rule => rule.when.map(condition_text).sort();
+  function more_specific(a, b) { // true when rule a's conditions include all of b's and more
+    const ka = conditions_key(a), kb = conditions_key(b);
+    return ka.length > kb.length && kb.every(k => ka.includes(k));
+  }
+
+  // Events happen in order. Before the first event, and after each event, the model runs on its own
+  // until nothing changes (it settles) or it keeps repeating (a cycle). Then the next event happens.
+  // Rules read the state before a step and change it all at once for the next step.
+  function one_step(rules, before, events_now, situation, step, changes, clashes) {
+    const proposals = {};
+    for (const rule of rules) {
+      if (!rule.when.every(c => holds(c, before, events_now))) continue;
+      for (const setting of rule.then) {
+        if (situation.force && situation.force[setting.thing] != null) continue; // a held thing ignores its rules
+        (proposals[setting.thing] = proposals[setting.thing] || []).push({ rule, state: setting.state });
+      }
+    }
+    const next = Object.assign({}, before);
+    for (const [thing, offered] of Object.entries(proposals)) {
+      let left = offered;
+      if (unique(left.map(p => p.state)).length > 1 && left.some(p => p.rule.strength === 'always')) left = left.filter(p => p.rule.strength === 'always');
+      if (unique(left.map(p => p.state)).length > 1) left = left.filter(p => !left.some(q => q.state !== p.state && more_specific(q.rule, p.rule)));
+      const states = unique(left.map(p => p.state));
+      if (states.length > 1) {
+        clashes.push({ step, thing, offers: left.map(p => ({ rule: p.rule.name, state: p.state, strength: p.rule.strength })), firm: left.every(p => p.rule.strength === 'always') });
+        continue; // unsettled: the thing keeps its state
+      }
+      if (states[0] !== before[thing]) {
+        next[thing] = states[0];
+        changes.push({ step, thing, from: before[thing], to: states[0], rules: unique(left.map(p => p.rule.name)) });
+      }
+    }
+    return next;
+  }
+
+  function run(model, situation) {
+    const removed = new Set(situation.remove || []);
+    const rules = model.rules.filter(r => !removed.has(r.name));
+    const first = Object.assign({}, model.start, situation.start || {}, situation.force || {});
+    const history = [first];
+    const events_at = {};
+    const changes = [], clashes = [], cycles = [];
+    const groups = Object.entries(situation.events || {})
+      .filter(([, list]) => list && list.length)
+      .sort((a, b) => Number(a[0]) - Number(b[0]))
+      .map(([, list]) => list);
+    let ending = 'settled', cycle_from = null;
+    const settle = () => {
+      const phase_start = history.length - 1;
+      for (let n = 0; n < STEP_LIMIT; n++) {
+        const step = history.length;
+        const before = history[step - 1];
+        const next = one_step(rules, before, [], situation, step, changes, clashes);
+        if (same_state(next, before)) return { ending: 'settled' };
+        history.push(next);
+        const earlier = history.findIndex((h, i) => i >= phase_start && i < history.length - 1 && same_state(h, next));
+        if (earlier >= 0) return { ending: 'cycle', from: earlier };
+      }
+      return { ending: 'limit' };
+    };
+    let outcome = settle();
+    for (const events_now of groups) {
+      if (outcome.ending === 'cycle') cycles.push(outcome.from);
+      const step = history.length;
+      events_at[step] = events_now.slice();
+      history.push(one_step(rules, history[step - 1], events_now, situation, step, changes, clashes));
+      outcome = settle();
+    }
+    ending = outcome.ending;
+    const end_step = history.length - 1;
+    if (ending === 'cycle') cycle_from = outcome.from;
+    const final_states = ending === 'cycle' ? history.slice(cycle_from, end_step + 1) : [history[end_step]];
+    return { history, changes, clashes, ending, end_step, final_states, events_at, cycles };
+  }
+
+  // What a thing ends as: one state, or several if the model keeps switching.
+  function ending_of(result, thing) { return unique(result.final_states.map(s => s[thing])); }
+
+  // ------------------------------------------------------------------
+  // Checking jobs (Part V condition A: the answer to the question asked, held fixed)
+  // ------------------------------------------------------------------
+  function read_expectations(model, job, problems) {
+    return job.expect.map(text => read_condition(text, model, `Job "${job.name}"`, problems)).filter(c => c && c.kind === 'state');
+  }
+  function expectation_met(result, condition, at) {
+    const is_in = s => s[condition.thing] === condition.state;
+    const test = s => (condition.negated ? !is_in(s) : is_in(s));
+    const all_states = result.history.slice(0, result.end_step + 1);
+    if (at === 'ever') return all_states.some(test);
+    if (at === 'never') return !all_states.some(test);
+    if (typeof at === 'number' || /^\d+$/.test(String(at))) {
+      const n = Number(at);
+      return n <= result.end_step ? test(result.history[n]) : result.final_states.every(test);
+    }
+    return result.final_states.every(test);
+  }
+
+  function check_job(model, job) {
+    const problems = [];
+    const situation = resolve_situation(model, job.situation, problems, `Job "${job.name}"`);
+    const expectations = read_expectations(model, job, problems);
+    if (problems.length) return { job: job.name, verdict: 'unreadable', problems, passed: false };
+    const result = run(model, situation);
+    const asked = unique(expectations.map(c => c.thing));
+    const touching_clashes = result.clashes.filter(c => asked.includes(c.thing));
+    const met = expectations.map(c => expectation_met(result, c, job.at));
+    let verdict = met.every(Boolean) ? 'pass' : 'fail';
+    if (touching_clashes.length) verdict = touching_clashes.some(c => c.firm) ? 'contradiction' : 'unsettled';
+    const got = asked.map(thing => ({ thing, states: ending_of(result, thing) }));
+    return { job: job.name, verdict, passed: verdict === 'pass', expectations, met, got, result, situation, clashes: touching_clashes, at: job.at, from: job.from, held_back: job.held_back };
+  }
+
+  function check(model, jobs_list) {
+    const results = jobs_list.map(job => check_job(model, job));
+    return { results, passed: results.filter(r => r.passed).map(r => r.job), failed: results.filter(r => !r.passed).map(r => r.job) };
+  }
+
+  // Why did a job fail? Look for the rules that could have produced the expected state
+  // and say what stopped them (Part IX: a criticism must bear on its target).
+  function explain_failure(model, check_result) {
+    const lines = [];
+    const r = check_result;
+    if (r.verdict === 'unreadable') return r.problems;
+    const route = r.result.changes.map(c => `step ${c.step}: ${c.rules.join(' + ')} made ${c.thing} ${c.to}`);
+    lines.push(route.length ? `What happened: ${route.join('; ')}.` : 'What happened: no rule changed anything.');
+    if (r.result.ending === 'cycle') lines.push(`The model never settles: it keeps switching (${r.got.map(g => `${g.thing}: ${g.states.join(' / ')}`).join('; ')}).`);
+    if (r.result.ending === 'limit') lines.push(`The model was still changing after ${STEP_LIMIT} steps.`);
+    for (const clash of r.clashes) {
+      lines.push(`At step ${clash.step} rules disagree about ${clash.thing}: ${clash.offers.map(o => `"${o.rule}" says ${o.state}`).join(', ')}. ${clash.firm ? 'Both are firm rules, so the model contradicts itself.' : 'Neither gives way, so it is unsettled.'} Add a condition to each of these rules that tells their situations apart.`);
+    }
+    r.expectations.forEach((c, i) => {
+      if (r.met[i]) return;
+      const ended = ending_of(r.result, c.thing).join(' / ');
+      const at_words = r.at === 'end' ? 'at the end' : r.at === 'ever' ? 'at some point' : r.at === 'never' ? 'never' : `at step ${r.at}`;
+      lines.push(`Wanted ${condition_text(c)} ${at_words}; got ${c.thing} ${ended}.`);
+      if (r.situation.force[c.thing]) { lines.push(`This job holds ${c.thing} fixed, so no rule can change it.`); return; }
+      if (c.negated) {
+        const culprits = r.result.changes.filter(x => x.thing === c.thing && x.to === c.state);
+        culprits.forEach(x => lines.push(`At step ${x.step}, rule "${x.rules.join('" + "')}" made ${c.thing} ${c.state}.`));
+        if (!culprits.length) lines.push(`${c.thing} was ${c.state} from the start and nothing changed it.`);
+        return;
+      }
+      const makers = model.rules.filter(rule => rule.then.some(s => s.thing === c.thing && s.state === c.state));
+      if (!makers.length) { lines.push(`No rule in the model can make ${c.thing} ${c.state}.`); return; }
+      for (const maker of makers) {
+        const made = r.result.changes.filter(x => x.rules.includes(maker.name) && x.thing === c.thing);
+        if (made.length) {
+          const later = r.result.changes.filter(x => x.thing === c.thing && x.step > made[made.length - 1].step);
+          if (later.length) lines.push(`Rule "${maker.name}" made ${c.thing} ${c.state} at step ${made[0].step}, then at step ${later[0].step} rule "${later[0].rules.join('" + "')}" changed it to ${later[0].to}.`);
+          continue;
+        }
+        if ((r.situation.remove || []).includes(maker.name)) { lines.push(`Rule "${maker.name}" is switched off in this job.`); continue; }
+        const clashed = r.result.clashes.filter(x => x.offers.some(o => o.rule === maker.name));
+        if (clashed.length) { lines.push(`Rule "${maker.name}" fired at step ${clashed[0].step} but was blocked by a disagreement (see above).`); continue; }
+        const steps = r.result.history.slice(0, r.result.end_step + 1);
+        const events_at = s => (r.result.events_at[s + 1] || []);
+        const never = maker.when.filter(cond => !steps.some((st, s) => holds(cond, st, events_at(s))));
+        if (never.length) lines.push(`Rule "${maker.name}" never fired: ${never.map(cond => `"${condition_text(cond)}" was never true`).join(', and ')}.`);
+        else if (maker.when.length) lines.push(`Rule "${maker.name}" never fired: each of its conditions was true at some step, but never all at the same step.`);
+      }
+    });
+    return lines;
+  }
+
+  // ------------------------------------------------------------------
+  // Near neighbours of a rule, for the swap test (hard-to-vary; Part VI "Hard-to-vary")
+  // ------------------------------------------------------------------
+  function with_rule(model, index, rule) { const m = Object.assign({}, model, { rules: model.rules.slice() }); m.rules[index] = rule; return m; }
+  function without_rules(model, names) { return Object.assign({}, model, { rules: model.rules.filter(r => !names.includes(r.name)) }); }
+
+  function neighbours(model, index) {
+    const rule = model.rules[index];
+    const out = [];
+    const add = (description, kind, changed) => out.push({ description, kind, rule_name: rule.name, rule: Object.assign({}, rule, changed), model: with_rule(model, index, Object.assign({}, rule, changed)) });
+    rule.then.forEach((setting, i) => {
+      for (const other of model.things[setting.thing]) {
+        if (other === setting.state) continue;
+        const then = rule.then.slice(); then[i] = { thing: setting.thing, state: other };
+        add(`result "${setting_text(setting)}" changed to "${setting.thing} is ${other}"`, 'result', { then });
+      }
+    });
+    const by_thing = {};
+    rule.when.forEach(c => { if (c.kind === 'state' && !c.negated) (by_thing[c.thing] = by_thing[c.thing] || []).push(c); });
+    for (const [thing, list] of Object.entries(by_thing)) {
+      if (list.length < 2) continue;
+      for (const keep of list) {
+        const when = rule.when.filter(c => !(c.kind === 'state' && !c.negated && c.thing === thing) || c === keep);
+        add(`only "${condition_text(keep)}" kept of the conditions on ${thing}`, 'unclash', { when });
+      }
+    }
+    rule.when.forEach((cond, i) => {
+      const when = rule.when.filter((_, j) => j !== i);
+      add(`condition "${condition_text(cond)}" left out`, 'drop', { when });
+      if (cond.kind === 'state') {
+        add(`condition "${condition_text(cond)}" turned into "${condition_text(Object.assign({}, cond, { negated: !cond.negated }))}"`, 'flip', { when: rule.when.map((c, j) => (j === i ? Object.assign({}, c, { negated: !c.negated }) : c)) });
+        for (const other of model.things[cond.thing]) {
+          if (other === cond.state) continue;
+          const changed = Object.assign({}, cond, { state: other });
+          add(`condition "${condition_text(cond)}" changed to "${condition_text(changed)}"`, 'condition', { when: rule.when.map((c, j) => (j === i ? changed : c)) });
+        }
+      } else {
+        for (const other of model.events) {
+          if (other === cond.event) continue;
+          add(`condition "${condition_text(cond)}" changed to "${other} happens"`, 'condition', { when: rule.when.map((c, j) => (j === i ? { kind: 'event', event: other } : c)) });
+        }
+      }
+      // Swap the condition for one on a different thing the rule does not look at yet (log 17:
+      // "Mara lights the lamp" had to become "the lamp is dark", which no other one-step change reaches).
+      const used = new Set(rule.when.filter(c => c.kind === 'state').map(c => c.thing));
+      for (const [thing, states] of Object.entries(model.things)) {
+        if (used.has(thing) || rule.then.some(s => s.thing === thing)) continue;
+        for (const state of states) {
+          const changed = { kind: 'state', thing, state, negated: false };
+          add(`condition "${condition_text(cond)}" replaced by "${condition_text(changed)}"`, 'replace', { when: rule.when.map((c, j) => (j === i ? changed : c)) });
+        }
+      }
+    });
+    return out;
+  }
+
+  // ------------------------------------------------------------------
+  // Situations worth trying when looking for a difference (the change list)
+  // Admitted changes are built from the jobs' own words: things the jobs mention, and all events.
+  // ------------------------------------------------------------------
+  const ordinal = n => (['first', 'second', 'third', 'fourth', 'fifth'][n - 1] || `${n}th`);
+  function jobs_inputs(jobs_list) {
+    const things = new Set();
+    for (const job of jobs_list) {
+      Object.keys(job.situation.start || {}).forEach(t => things.add(lower(t)));
+      Object.keys(job.situation.force || {}).forEach(t => things.add(lower(t)));
+    }
+    return [...things];
+  }
+  function jobs_vocabulary(jobs_list) {
+    const things = new Set();
+    for (const job of jobs_list) {
+      Object.keys(job.situation.start || {}).forEach(t => things.add(lower(t)));
+      Object.keys(job.situation.force || {}).forEach(t => things.add(lower(t)));
+      job.expect.forEach(text => { const m = tidy(text).match(/^(.+?)\s+is\s+(?:not\s+)?/i); if (m) things.add(lower(m[1])); });
+    }
+    return [...things];
+  }
+  function candidate_situations(model_a, model_b, jobs_list, limit, watch) {
+    const vocabulary = jobs_vocabulary(jobs_list);
+    const shared_things = Object.keys(model_a.things).filter(t => (watch === 'shared' || vocabulary.includes(lower(t))) && find_thing(model_b.things, t));
+    const shared_events = model_a.events.filter(e => model_b.events.some(x => lower(x) === lower(e)));
+    const bases = jobs_list.map(job => ({ from_job: job.name, situation: job.situation, steps: [] }));
+    const seen = new Set();
+    const out = [];
+    const push = (base, situation, steps) => {
+      const key = JSON.stringify(situation);
+      if (seen.has(key) || out.length >= limit) return;
+      seen.add(key); out.push({ from_job: base.from_job, situation, steps });
+    };
+    const inputs = jobs_inputs(jobs_list);
+    const variants_of = (base, which) => {
+      const list = [];
+      const s = base.situation;
+      const start_things = shared_things.filter(t => (which === 'inputs' ? inputs.includes(lower(t)) : !inputs.includes(lower(t))));
+      for (const thing of (which === 'events' ? [] : start_things)) {
+        const states_b = model_b.things[find_thing(model_b.things, thing)].map(lower);
+        for (const state of model_a.things[thing]) {
+          if (!states_b.includes(lower(state))) continue;
+          const current = (s.start || {})[thing] || model_a.start[thing];
+          if (lower(current) === lower(state)) continue;
+          list.push({ situation: Object.assign({}, s, { start: Object.assign({}, s.start, { [thing]: state }) }), step: `${thing} starts ${state}` });
+        }
+      }
+      if (which === 'outputs') return list;
+      const ordered = Object.keys(s.events || {}).sort((a, b) => Number(a) - Number(b));
+      const count_of = {};
+      ordered.forEach(step => (s.events[step] || []).forEach(e => { count_of[e] = (count_of[e] || 0) + 1; }));
+      const seen_so_far = {};
+      for (const step of ordered) {
+        const events = s.events[step] || [];
+        events.forEach((e, i) => {
+          seen_so_far[e] = (seen_so_far[e] || 0) + 1;
+          const events_copy = copy(s.events); events_copy[step] = events.filter((_, j) => j !== i); if (!events_copy[step].length) delete events_copy[step];
+          const which = count_of[e] > 1 ? `the ${ordinal(seen_so_far[e])} "${e}"` : `"${e}"`;
+          list.push({ situation: Object.assign({}, s, { events: events_copy }), step: `${which} does not happen` });
+        });
+      }
+      const order = Object.keys(s.events || {}).map(Number).sort((a, b) => a - b);
+      const slots = [0].concat(order);
+      for (const e of shared_events) slots.forEach((after, position) => {
+        const events_copy = copy(s.events || {}); events_copy[String(after + 0.5)] = [e];
+        const where = position === 0 ? 'first' : `after "${(s.events[String(after)] || []).join('" and "')}"`;
+        list.push({ situation: Object.assign({}, s, { events: events_copy }), step: `"${e}" also happens ${where}` });
+      });
+      return list;
+    };
+    // Order: the jobs as they are; one change to an input or an event; two such changes;
+    // then one change to the starting state of something the jobs only ask about.
+    for (const base of bases) push(base, base.situation, []);
+    for (const base of bases) for (const v of variants_of(base, 'inputs')) push(base, v.situation, [v.step]);
+    for (const base of bases) for (const v of variants_of(base, 'inputs')) for (const w of variants_of({ situation: v.situation }, 'inputs')) push(base, w.situation, [v.step, w.step]);
+    for (const base of bases) for (const v of variants_of(base, 'outputs')) push(base, v.situation, [v.step]);
+    for (const base of bases) for (const v of variants_of(base, 'outputs')) for (const w of variants_of({ situation: v.situation }, 'inputs')) push(base, w.situation, [v.step, w.step]);
+    return { list: out, observed: shared_things };
+  }
+
+  // Find situations where two models give different answers (Derivation 2: if none exists on the
+  // change list, the two are one explanation at this level).
+  function decide(model_a, model_b, jobs_list, options = {}) {
+    const { list, observed } = candidate_situations(model_a, model_b, jobs_list, options.limit || 3000, options.watch);
+    const timing_matters = jobs_list.some(j => j.at !== 'end');
+    const route_of = (result, thing) => result.history.slice(0, result.end_step + 1).map(h => h[thing]).filter((v, i, a) => i === 0 || v !== a[i - 1]).join(' > ');
+    const found = [];
+    for (const c of list) {
+      const pa = [], pb = [];
+      const sa = resolve_situation(model_a, c.situation, pa, 'decide');
+      const sb = resolve_situation(model_b, c.situation, pb, 'decide');
+      if (pa.length || pb.length) continue;
+      const ra = run(model_a, sa), rb = run(model_b, sb);
+      const differences = [];
+      for (const thing of observed) {
+        const thing_b = find_thing(model_b.things, thing);
+        const ea = ending_of(ra, thing), eb = ending_of(rb, thing_b);
+        const clash_a = ra.clashes.some(x => x.thing === thing), clash_b = rb.clashes.some(x => x.thing === thing_b);
+        if (ea.join('/').toLowerCase() !== eb.join('/').toLowerCase() || clash_a !== clash_b) differences.push({ thing, a: ea.join(' / ') + (clash_a ? ' (unsettled)' : ''), b: eb.join(' / ') + (clash_b ? ' (unsettled)' : '') });
+        else if (timing_matters) {
+          const ta = ra.history.slice(0, ra.end_step + 1).map(h => h[thing]).join('|').toLowerCase();
+          const tb = rb.history.slice(0, rb.end_step + 1).map(h => h[thing]).join('|').toLowerCase();
+          if (ta !== tb) differences.push({ thing, a: `${ea.join(' / ')}, by the steps ${ra.history.slice(0, ra.end_step + 1).map(h => h[thing]).join(', ')}`, b: `${eb.join(' / ')}, by the steps ${rb.history.slice(0, rb.end_step + 1).map(h => h[thing]).join(', ')}`, timing: true });
+        }
+      }
+      if (differences.length) {
+        found.push({ from_job: c.from_job, steps: c.steps, situation: c.situation, differences });
+        if (found.length >= (options.max_found || 3)) break;
+      }
+    }
+    return { found, tried: list.length, watched: observed };
+  }
+  function describe_situation(found) {
+    const base = `the situation of job "${found.from_job}"`;
+    return found.steps.length ? `${base}, but ${found.steps.join(' and ')}` : base;
+  }
+
+  // ------------------------------------------------------------------
+  // The hard-to-vary sweep (Part VI: support sets, critical blocks, redundant routes)
+  // ------------------------------------------------------------------
+  function passing_set(model, jobs_list) { return new Set(check(model, jobs_list).passed); }
+  function lost_jobs(model, jobs_list, baseline) { const now = passing_set(model, jobs_list); return [...baseline].filter(j => !now.has(j)); }
+
+  function vary(model, jobs_list, options = {}) {
+    const baseline_check = check(model, jobs_list);
+    const baseline = new Set(baseline_check.passed);
+    const report = { passing: [...baseline], failing: baseline_check.failed, rules: [], events: [], warnings: [], deciding_tests: [] };
+    const job_from = Object.fromEntries(jobs_list.map(j => [j.name, j.from]));
+
+    // Which rules ever do any work in any job? A rule that never changes anything is untested.
+    const worked = new Set();
+    for (const r of baseline_check.results) if (r.result) r.result.changes.forEach(c => c.rules.forEach(n => worked.add(n)));
+
+    // Remove each rule; then pairs and triples among the rules whose removal alone costs nothing.
+    const removal = {};
+    for (const rule of model.rules) removal[rule.name] = lost_jobs(without_rules(model, [rule.name]), jobs_list, baseline);
+    const free_alone = model.rules.filter(r => !removal[r.name].length && worked.has(r.name)).map(r => r.name);
+    const joint = {};
+    for (let i = 0; i < free_alone.length; i++) for (let j = i + 1; j < free_alone.length; j++) {
+      const lost = lost_jobs(without_rules(model, [free_alone[i], free_alone[j]]), jobs_list, baseline);
+      if (lost.length) { (joint[free_alone[i]] = joint[free_alone[i]] || []).push({ with: [free_alone[j]], lost }); (joint[free_alone[j]] = joint[free_alone[j]] || []).push({ with: [free_alone[i]], lost }); }
+    }
+    if (free_alone.length <= 8) {
+      for (let i = 0; i < free_alone.length; i++) for (let j = i + 1; j < free_alone.length; j++) for (let k = j + 1; k < free_alone.length; k++) {
+        const trio = [free_alone[i], free_alone[j], free_alone[k]];
+        if (trio.some(a => (joint[a] || []).some(p => trio.includes(p.with[0])))) continue;
+        const lost = lost_jobs(without_rules(model, trio), jobs_list, baseline);
+        if (lost.length) trio.forEach(a => (joint[a] = joint[a] || []).push({ with: trio.filter(b => b !== a), lost }));
+      }
+    }
+
+    // Swap each rule for its near neighbours.
+    model.rules.forEach((rule, index) => {
+      const survivors = neighbours(model, index).filter(n => {
+        const now = passing_set(n.model, jobs_list);
+        return [...baseline].every(j => now.has(j));
+      });
+      const entry = { rule: rule.name, text: rule_text(rule), removal_loses: removal[rule.name], joint: joint[rule.name] || [], survivors: survivors.map(s => ({ description: s.description, kind: s.kind, text: rule_text(s.rule), model: s.model })) };
+      const held_by = entry.removal_loses;
+      if (!worked.has(rule.name)) { entry.mark = 'unknown'; entry.why = 'it never changes anything in any job, so no job tests it'; entry.need = `a job in which ${rule.when.length ? rule.when.map(condition_text).join(' and ') : 'it can act'}`; }
+      else if (!held_by.length && !entry.joint.length) { entry.mark = 'idle'; entry.why = 'removing it, alone or with other free rules, breaks no job'; }
+      else if (!held_by.length) { entry.mark = 'two routes'; entry.why = entry.joint.map(p => `removing it together with "${p.with.join('" and "')}" breaks ${p.lost.map(j => `"${j}"`).join(', ')}`).join('; '); }
+      else if (survivors.length) { entry.mark = 'loose'; entry.why = `breaks ${held_by.map(j => `"${j}"`).join(', ')} if removed, but a near neighbour passes every job: ${survivors.slice(0, 3).map(s => s.description).join('; ')}`; }
+      else if (held_by.every(j => job_from[j] === 'added')) { entry.mark = 'held if'; entry.why = `held only by jobs someone added (${held_by.map(j => `"${j}"`).join(', ')}); held if those jobs are real`; }
+      else { entry.mark = 'held'; entry.why = `removing it breaks ${held_by.map(j => `"${j}"`).join(', ')}, and no near neighbour passes every job`; }
+      // What is really held, when only a condition is loose: the rule without that condition.
+      const dropped = survivors.filter(s => s.kind === 'drop');
+      if (dropped.length && entry.mark === 'loose') entry.really_held = dropped.map(s => rule_text(s.rule));
+      report.rules.push(entry);
+    });
+
+    // Deciding tests: for each loose rule, a situation where the rule and its surviving neighbour disagree.
+    if (options.decide !== false) {
+      for (const entry of report.rules.filter(e => e.mark === 'loose')) {
+        const asked = new Set();
+        for (const survivor of entry.survivors.slice(0, options.per_rule || 3)) {
+          const found = decide(model, survivor.model, jobs_list, { max_found: 1, limit: options.limit || 1500, watch: options.watch });
+          const key = found.found[0] ? JSON.stringify(found.found[0].situation) : 'none';
+          if (asked.has(key)) continue;
+          asked.add(key);
+          report.deciding_tests.push({ rule: entry.rule, variant: survivor.description, found: found.found[0] || null, tried: found.tried, watched: found.watched });
+        }
+      }
+    }
+
+    // Remove each event from each passing job: does the event (the scene) earn its place?
+    for (const job of jobs_list) {
+      if (!baseline.has(job.name)) continue;
+      for (const [step, events] of Object.entries(job.situation.events || {})) {
+        events.forEach((event, i) => {
+          const changed = copy(job); changed.situation.events[step] = events.filter((_, j) => j !== i);
+          const still = check_job(model, changed).passed;
+          report.events.push({ job: job.name, event, step: Number(step), does_work: !still });
+        });
+      }
+    }
+
+    // The answer already sitting in the start, or stated by a rule with no conditions.
+    const produced = {}, from_start = {};
+    for (const r of baseline_check.results) {
+      if (!r.passed || !r.expectations) continue;
+      for (const c of r.expectations) {
+        if (r.result.changes.some(x => x.thing === c.thing)) produced[c.thing] = true;
+        else (from_start[c.thing] = from_start[c.thing] || []).push(r.job);
+      }
+    }
+    for (const [thing, jobs_named] of Object.entries(from_start)) {
+      if (!produced[thing]) report.warnings.push(`In every passing job that asks about ${thing}, its answer is just its starting state (${jobs_named.map(j => `"${j}"`).join(', ')}). The model never produces an answer for ${thing}; add a job where ${thing} has to change.`);
+    }
+    for (const rule of model.rules) if (!rule.when.length) report.warnings.push(`Rule "${rule.name}" has no conditions: it just states "${rule.then.map(setting_text).join(' and ')}" in every situation. That puts the answer in as a starting point.`);
+
+    // Jobs that always expect the same answer cannot tell the model from one that always says it.
+    const asked = {};
+    for (const job of jobs_list) for (const text of job.expect) {
+      const m = tidy(text).match(/^(.+?)\s+is\s+(not\s+)?(.+)$/i);
+      if (m) (asked[lower(m[1])] = asked[lower(m[1])] || new Set()).add(`${m[2] ? 'not ' : ''}${lower(m[3])}`);
+    }
+    for (const [thing, answers] of Object.entries(asked)) {
+      if (answers.size === 1) report.warnings.push(`No job expects ${thing} to be anything but "${[...answers][0]}". A model that always said so would pass too. Add a job where ${thing} should come out differently.`);
+    }
+    return report;
+  }
+
+  // ------------------------------------------------------------------
+  // Checking a fix (Part XI, Repair: fix at least one failing job, keep every passing job)
+  // ------------------------------------------------------------------
+  function rule_signature(rule) { return `${conditions_key(rule).join(' & ')} => ${rule.then.map(setting_text).sort().join(' & ')} ${rule.strength}`; }
+  function check_fix(old_model, new_model, jobs_list, options = {}) {
+    const before = check(old_model, jobs_list), after = check(new_model, jobs_list);
+    const was = new Set(before.passed), now = new Set(after.passed);
+    const repaired = [...now].filter(j => !was.has(j));
+    const lost = [...was].filter(j => !now.has(j));
+    const old_sigs = new Map(old_model.rules.map(r => [rule_signature(r), r.name]));
+    const new_sigs = new Map(new_model.rules.map(r => [rule_signature(r), r.name]));
+    const added_rules = new_model.rules.filter(r => !old_sigs.has(rule_signature(r)));
+    const removed_rules = old_model.rules.filter(r => !new_sigs.has(rule_signature(r)));
+    const added_things = Object.keys(new_model.things).filter(t => !find_thing(old_model.things, t));
+    const added_states = [];
+    for (const t of Object.keys(new_model.things)) { const o = find_thing(old_model.things, t); if (o) new_model.things[t].forEach(s => { if (!find_state(old_model.things, o, s)) added_states.push(`${t}: ${s}`); }); }
+    let verdict;
+    if (!repaired.length && !lost.length) verdict = 'no change';
+    else if (!repaired.length) verdict = 'worse';
+    else if (lost.length) verdict = 'trade';
+    else verdict = 'accepted';
+    const kind = added_things.length || added_states.length ? 'new thing (construction)' : added_rules.length && !removed_rules.length ? 'new rule' : 'tweak of existing rules';
+    // Patch check: a new rule held only by the jobs this fix repaired. Offer a new prediction it makes.
+    const patches = [];
+    if (verdict === 'accepted' || verdict === 'trade') {
+      for (const rule of added_rules) {
+        const without = without_rules(new_model, [rule.name]);
+        const breaks = [...now].filter(j => !passing_set(without, jobs_list).has(j));
+        if (breaks.length && breaks.every(j => repaired.includes(j))) {
+          const prediction = options.decide === false ? null : decide(new_model, without, jobs_list, { max_found: 4 }).found.find(f => f.steps.length > 0) || null;
+          patches.push({ rule: rule.name, text: rule_text(rule), held_only_by: breaks, prediction });
+        }
+      }
+    }
+    return { verdict, repaired, lost, kind, added_rules: added_rules.map(r => r.name), removed_rules: removed_rules.map(r => r.name), added_things, added_states, patches, still_failing: after.failed };
+  }
+
+  // ------------------------------------------------------------------
+  // Tweak search: try every one-step change to the existing rules (a selection response, Part IV).
+  // If nothing repairs a failing job without breaking another, say that something new is needed
+  // (Derivation 10: the failure is structural, not a matter of tuning).
+  // ------------------------------------------------------------------
+  function tweaks(model, jobs_list, options = {}) {
+    const before = check(model, jobs_list);
+    const was = new Set(before.passed);
+    const failing = before.failed;
+    const helpful = [];
+    const candidates = [];
+    model.rules.forEach((_, index) => neighbours(model, index).forEach(n => candidates.push(n)));
+    model.rules.forEach(rule => candidates.push({ description: `rule "${rule.name}" removed`, kind: 'remove', rule_name: rule.name, model: without_rules(model, [rule.name]) }));
+    model.rules.forEach((rule, index) => {
+      const used = new Set(rule.when.filter(c => c.kind === 'state').map(c => c.thing));
+      for (const [thing, states] of Object.entries(model.things)) {
+        if (used.has(thing)) continue;
+        for (const state of states) {
+          const narrower = Object.assign({}, rule, { when: rule.when.concat({ kind: 'state', thing, state, negated: false }) });
+          candidates.push({ description: `condition "${thing} is ${state}" added`, kind: 'add', rule_name: rule.name, rule: narrower, model: with_rule(model, index, narrower) });
+        }
+      }
+    });
+    model.rules.forEach(rule => { if (rule.strength === 'always') candidates.push({ description: `rule "${rule.name}" marked "usually"`, kind: 'strength', rule_name: rule.name, model: with_rule(model, model.rules.indexOf(rule), Object.assign({}, rule, { strength: 'usually' })) }); });
+    for (const c of candidates) {
+      const now = passing_set(c.model, jobs_list);
+      const repaired = failing.filter(j => now.has(j));
+      const lost = [...was].filter(j => !now.has(j));
+      if (repaired.length && !lost.length) {
+        if (c.rule) c.model.rules = c.model.rules.map(r => (r.name === c.rule_name ? Object.assign({}, r, { made_by: 'checker small fix' }) : r));
+        helpful.push({ description: `in rule "${c.rule_name}": ${c.description}`, kind: c.kind, repaired, rule_text: c.rule ? rule_text(c.rule) : null, model: c.model });
+      }
+    }
+    const preference = ['unclash', 'add', 'condition', 'result', 'flip', 'drop', 'replace', 'remove', 'strength'];
+    helpful.sort((a, b) => b.repaired.length - a.repaired.length || preference.indexOf(a.kind) - preference.indexOf(b.kind));
+    const covered = new Set(helpful.flatMap(h => h.repaired));
+    return { failing, helpful: helpful.slice(0, options.max || 6), needs_something_new: failing.filter(j => !covered.has(j)) };
+  }
+
+  // Turn a checked model back into its fill-in form (for saving, and for showing the small AI).
+  function model_to_form(model) {
+    return {
+      things: copy(model.things), events: model.events.slice(), start: Object.assign({}, model.start),
+      rules: model.rules.map(r => Object.assign({ name: r.name, when: r.when.map(condition_text), then: r.then.length === 1 ? setting_text(r.then[0]) : r.then.map(setting_text) },
+        r.strength === 'usually' ? { strength: 'usually' } : {}, r.made_by ? { made_by: r.made_by } : {})),
+    };
+  }
+
+  // ------------------------------------------------------------------
+  // New rule search: try every single new rule with one or two conditions, over the things and
+  // events the model already has. Still a selection response: it cannot invent a new thing.
+  // Only rules that repair a failing job and break nothing are kept.
+  // ------------------------------------------------------------------
+  function new_rule_search(model, jobs_list, options = {}) {
+    const before = check(model, jobs_list);
+    const was = new Set(before.passed);
+    if (!before.failed.length) return { helpful: [], tried: 0 };
+    const conditions = [];
+    for (const [thing, states] of Object.entries(model.things)) for (const state of states) conditions.push({ kind: 'state', thing, state, negated: false });
+    for (const event of model.events) conditions.push({ kind: 'event', event });
+    // Results: first the states the failing jobs ask for, then every other state.
+    const wanted = [];
+    for (const r of before.results) if (!r.passed && r.expectations) r.expectations.forEach(c => { if (!c.negated) wanted.push({ thing: c.thing, state: c.state }); });
+    const results = wanted.concat(Object.entries(model.things).flatMap(([thing, states]) => states.map(state => ({ thing, state }))))
+      .filter((x, i, a) => a.findIndex(y => y.thing === x.thing && y.state === x.state) === i);
+    const limit = options.limit || 6000;
+    const helpful = [];
+    let tried = 0;
+    const consider = when => {
+      for (const then of results) {
+        if (tried >= limit) return;
+        if (when.some(c => c.kind === 'state' && c.thing === then.thing && c.state === then.state)) continue;
+        tried++;
+        const rule = { name: `checker rule ${model.rules.length + 1}`, when, then: [then], strength: 'always', made_by: 'checker new rule' };
+        const candidate = Object.assign({}, model, { rules: model.rules.concat(rule) });
+        const now = passing_set(candidate, jobs_list);
+        const repaired = before.failed.filter(j => now.has(j));
+        if (repaired.length && [...was].every(j => now.has(j))) helpful.push({ description: `new rule: ${rule_text(rule)}`, kind: 'new rule', repaired, model: candidate, conditions: when.length });
+      }
+    };
+    for (const a of conditions) consider([a]);
+    for (let i = 0; i < conditions.length && tried < limit; i++) for (let j = i + 1; j < conditions.length && tried < limit; j++) {
+      const a = conditions[i], b = conditions[j];
+      if (a.kind === 'state' && b.kind === 'state' && a.thing === b.thing) continue;
+      consider([a, b]);
+    }
+    helpful.sort((x, y) => y.repaired.length - x.repaired.length || x.conditions - y.conditions);
+    return { helpful: helpful.slice(0, options.max || 6), tried };
+  }
+
+  // Add the owner's word list to a model: things and states the jobs use that the model lacks.
+  // These are given by the owner, not invented, so adding them is not a guess.
+  function add_owner_words(model, owner_things) {
+    const form = model_to_form(model);
+    const added = [];
+    for (const [thing, states] of Object.entries(owner_things)) {
+      const existing = Object.keys(form.things).find(t => lower(t) === lower(thing));
+      if (!existing) { form.things[thing] = states.slice(); form.start[thing] = states[0]; added.push(thing); continue; }
+      for (const state of states) if (!form.things[existing].some(x => lower(x) === lower(state))) { form.things[existing].push(state); added.push(`${existing}: ${state}`); }
+    }
+    return { model: prepare_model(form), added };
+  }
+
+  // ------------------------------------------------------------------
+  // Plain-words reports
+  // ------------------------------------------------------------------
+  function report_check(model, jobs_list) {
+    const lines = [];
+    if (model.problems.length) { lines.push('PROBLEMS READING THE MODEL (fix these first):'); model.problems.forEach(p => lines.push(`- ${p}`)); }
+    const c = check(model, jobs_list);
+    for (const r of c.results) {
+      lines.push(`${r.passed ? 'PASS' : r.verdict.toUpperCase()}: job "${r.job}"`);
+      if (!r.passed) explain_failure(model, r).forEach(l => lines.push(`  - ${l}`));
+    }
+    lines.push(`${c.passed.length} of ${c.results.length} jobs pass.`);
+    return { text: lines.join('\n'), check: c };
+  }
+  function report_vary(model, jobs_list, options) {
+    const v = vary(model, jobs_list, options);
+    const lines = [];
+    if (v.failing.length) lines.push(`Note: ${v.failing.length} job(s) fail, so these tests use only the passing jobs.`);
+    for (const r of v.rules) {
+      lines.push(`${r.mark.toUpperCase()}: rule "${r.rule}" (${r.text}) - ${r.why}.`);
+      if (r.need) lines.push(`  To test it: ${r.need}.`);
+      if (r.really_held) lines.push(`  What is really held: ${r.really_held[0]}.`);
+    }
+    for (const d of v.deciding_tests) {
+      if (d.found) lines.push(`DECIDING TEST for rule "${d.rule}" (${d.variant}): in ${describe_situation(d.found)}, ${d.found.differences.map(x => `your model says ${x.thing} ends ${x.a}, the variant says ${x.b}`).join('; ')}. Which is right? That answer becomes a new job.`);
+      else lines.push(`NO DIFFERENCE FOUND for rule "${d.rule}" (${d.variant}): ${d.tried} situations tried, watching ${d.watched.join(', ')}. At this level the two may be one explanation. Telling them apart would take a new question, such as one that asks about something else.`);
+    }
+    const idle_events = v.events.filter(e => !e.does_work);
+    for (const e of idle_events) lines.push(`EVENT DOES NO WORK: in job "${e.job}", removing "${e.event}" (step ${e.step}) leaves the outcome the same.`);
+    for (const w of v.warnings) lines.push(`WARNING: ${w}`);
+    return { text: lines.join('\n'), vary: v };
+  }
+  function report_fix(old_model, new_model, jobs_list) {
+    const f = check_fix(old_model, new_model, jobs_list);
+    const lines = [];
+    const words = { accepted: 'ACCEPTED: it repairs jobs and breaks none.', trade: 'NOT ACCEPTED YET: it repairs some jobs but breaks others.', worse: 'NOT ACCEPTED: it breaks jobs and repairs none.', 'no change': 'NO CHANGE: no job changed result.' };
+    lines.push(words[f.verdict]);
+    if (f.repaired.length) lines.push(`Repaired: ${f.repaired.map(j => `"${j}"`).join(', ')}.`);
+    if (f.lost.length) lines.push(`Broken by this fix: ${f.lost.map(j => `"${j}"`).join(', ')}.`);
+    lines.push(`Kind of fix: ${f.kind}.`);
+    for (const p of f.patches) {
+      lines.push(`PATCH (for now): rule "${p.rule}" does only the job(s) that forced it (${p.held_only_by.map(j => `"${j}"`).join(', ')}).`);
+      if (p.prediction) lines.push(`  It also predicts: in ${describe_situation(p.prediction)}, ${p.prediction.differences.map(x => `${x.thing} ends ${x.a} (without the rule: ${x.b})`).join('; ')}. If that is right, the rule earns a second job.`);
+    }
+    if (f.still_failing.length) lines.push(`Still failing: ${f.still_failing.map(j => `"${j}"`).join(', ')}.`);
+    return { text: lines.join('\n'), fix: f };
+  }
+  function report_tweaks(model, jobs_list) {
+    const t = tweaks(model, jobs_list);
+    const lines = [];
+    if (!t.failing.length) return { text: 'Every job passes; no tweak needed.', tweaks: t };
+    for (const h of t.helpful) lines.push(`SMALL FIX FOUND: ${h.description} repairs ${h.repaired.map(j => `"${j}"`).join(', ')} and breaks nothing.`);
+    if (t.needs_something_new.length) lines.push(`NO SMALL CHANGE to the existing rules repairs ${t.needs_something_new.map(j => `"${j}"`).join(', ')}. Something new is needed: a new rule, or a new thing to keep track of.`);
+    return { text: lines.join('\n'), tweaks: t };
+  }
+
+  return {
+    prepare_model, prepare_jobs, run, check, check_job, explain_failure, vary, check_fix, tweaks, decide, model_to_form, rule_text_of: rule_text, new_rule_search, add_owner_words,
+    report_check, report_vary, report_fix, report_tweaks, describe_situation, rule_text, neighbours, resolve_situation, candidate_situations,
+  };
+});
+
+// Command line use: node checker.js check|vary|tweaks MODEL.json JOBS.json
+//                   node checker.js fix OLD.json NEW.json JOBS.json
+//                   node checker.js decide A.json B.json JOBS.json
+if (typeof require !== 'undefined' && typeof module !== 'undefined' && require.main === module) {
+  const fs = require('fs');
+  const C = module.exports;
+  const [command, ...paths] = process.argv.slice(2);
+  const read = p => JSON.parse(fs.readFileSync(p, 'utf8'));
+  const jobs = C.prepare_jobs(read(paths[paths.length - 1])).jobs;
+  if (command === 'check') console.log(C.report_check(C.prepare_model(read(paths[0])), jobs).text);
+  else if (command === 'vary') console.log(C.report_vary(C.prepare_model(read(paths[0])), jobs).text);
+  else if (command === 'tweaks') console.log(C.report_tweaks(C.prepare_model(read(paths[0])), jobs).text);
+  else if (command === 'fix') console.log(C.report_fix(C.prepare_model(read(paths[0])), C.prepare_model(read(paths[1])), jobs).text);
+  else if (command === 'decide') {
+    const d = C.decide(C.prepare_model(read(paths[0])), C.prepare_model(read(paths[1])), jobs);
+    console.log(d.found.length ? d.found.map(f => `In ${C.describe_situation(f)}: ${f.differences.map(x => `${x.thing}: first ${x.a}, second ${x.b}`).join('; ')}`).join('\n') : `No difference found in ${d.tried} situations.`);
+  } else console.log('Use: check | vary | tweaks MODEL JOBS, or fix OLD NEW JOBS, or decide A B JOBS');
+}
+
+  page_files["03 checker.js"] = module.exports;
+})();
+</script>
+<script>
+/* ===== 03 test worlds.js ===== */
+(function () {
+  const module = { exports: {} };
+  const exports = module.exports;
+  const require = page_require;
+/*
+ * WHAT THIS FILE DOES, IN PLAIN WORDS
+ *
+ * Five small test worlds, one per kind of task the tool is meant for:
+ *   ball and wall   - physical cause and effect
+ *   hidden ball     - something moves out of sight and comes back (needs a new thing to be tracked)
+ *   door game       - planning a video game's rules
+ *   lighthouse story- a story whose ending has to follow from its scenes
+ *   reminder app    - a vague request from a user, where the tool has to find what to ask
+ *
+ * Each world has:
+ *   request    - what a person would say, in plain words (this is all the guesser gets, plus the jobs)
+ *   world      - the hidden true model. It stands in for the real world (or the owner's intent).
+ *                It is used to answer deciding tests and to grade held-back jobs. The guesser never sees it.
+ *   jobs       - what the owner says must come out right. Jobs marked held_back are kept from the
+ *                guesser until the end, to catch guesses that only fit what they were shown.
+ */
+module.exports = [
+  {
+    id: 'ball-and-wall',
+    kind: 'physical cause and effect',
+    request: 'A ball is thrown at a wall. What happens to it? A rubber ball bounces back to the thrower. A clay ball sticks to the wall. If there is a hole in the wall, the ball goes through.',
+    world: {
+      things: { ball: ['in hand', 'flying', 'stuck on wall', 'back in hand', 'beyond wall'], material: ['rubber', 'clay'], wall: ['solid', 'holed'] },
+      events: ['throw'],
+      start: { ball: 'in hand', material: 'rubber', wall: 'solid' },
+      rules: [
+        { name: 'throwing', when: ['throw happens', 'ball is in hand'], then: 'ball is flying' },
+        { name: 'bouncing', when: ['ball is flying', 'wall is solid', 'material is rubber'], then: 'ball is back in hand' },
+        { name: 'sticking', when: ['ball is flying', 'wall is solid', 'material is clay'], then: 'ball is stuck on wall' },
+        { name: 'passing through', when: ['ball is flying', 'wall is holed'], then: 'ball is beyond wall' },
+      ],
+    },
+    jobs: [
+      { name: 'rubber ball at solid wall', start: { material: 'rubber', wall: 'solid' }, events: ['throw'], expect: 'ball is back in hand' },
+      { name: 'clay ball at solid wall', start: { material: 'clay', wall: 'solid' }, events: ['throw'], expect: 'ball is stuck on wall' },
+      { name: 'ball not thrown', start: { material: 'rubber', wall: 'solid' }, events: [], expect: 'ball is in hand' },
+      { name: 'rubber ball at holed wall', start: { material: 'rubber', wall: 'holed' }, events: ['throw'], expect: 'ball is beyond wall' },
+      { name: 'clay ball at holed wall', start: { material: 'clay', wall: 'holed' }, events: ['throw'], expect: 'ball is beyond wall', held_back: true },
+      { name: 'clay ball not thrown', start: { material: 'clay', wall: 'holed' }, events: [], expect: 'ball is in hand', held_back: true },
+      { name: 'rubber ball is ever flying', start: { material: 'rubber', wall: 'solid' }, events: ['throw'], expect: 'ball is flying', at: 'ever', held_back: true },
+    ],
+  },
+  {
+    id: 'hidden-ball',
+    kind: 'things out of sight keep existing',
+    request: 'A ball rolls from spot 1 to spot 4, one spot per step. A screen can hide spots 2 and 3. We only see where the ball is when it is not hidden. Predict what we see.',
+    world: {
+      things: { place: ['1', '2', '3', '4'], screen: ['down', 'up'], seen: ['at 1', 'at 2', 'at 3', 'at 4', 'nothing'] },
+      events: [],
+      start: { place: '1', screen: 'down', seen: 'at 1' },
+      rules: [
+        { name: 'roll 1 to 2', when: ['place is 1'], then: 'place is 2' },
+        { name: 'roll 2 to 3', when: ['place is 2'], then: 'place is 3' },
+        { name: 'roll 3 to 4', when: ['place is 3'], then: 'place is 4' },
+        { name: 'see 1', when: ['place is 1'], then: 'seen is at 1' },
+        { name: 'see 2', when: ['place is 2', 'screen is down'], then: 'seen is at 2' },
+        { name: 'see 3', when: ['place is 3', 'screen is down'], then: 'seen is at 3' },
+        { name: 'see 4', when: ['place is 4'], then: 'seen is at 4' },
+        { name: 'hidden at 2', when: ['place is 2', 'screen is up'], then: 'seen is nothing' },
+        { name: 'hidden at 3', when: ['place is 3', 'screen is up'], then: 'seen is nothing' },
+      ],
+    },
+    // The jobs only use what can be seen: the screen and what we see. "place" is the world's own business.
+    jobs: [
+      { name: 'no screen, ends at 4', start: { screen: 'down', seen: 'at 1' }, expect: 'seen is at 4' },
+      { name: 'no screen, seen at 3 on step 3', start: { screen: 'down', seen: 'at 1' }, expect: 'seen is at 3', at: 3 },
+      { name: 'screen up, ends at 4', start: { screen: 'up', seen: 'at 1' }, expect: 'seen is at 4' },
+      { name: 'screen up, nothing on step 2', start: { screen: 'up', seen: 'at 1' }, expect: 'seen is nothing', at: 2 },
+      { name: 'screen up, nothing on step 3', start: { screen: 'up', seen: 'at 1' }, expect: 'seen is nothing', at: 3 },
+      { name: 'screen up, back at 4 on step 4', start: { screen: 'up', seen: 'at 1' }, expect: 'seen is at 4', at: 4, held_back: true },
+      { name: 'no screen, never nothing', start: { screen: 'down', seen: 'at 1' }, expect: 'seen is nothing', at: 'never', held_back: true },
+      // Added after the first runs (log entry 13): the earlier held-back jobs could not catch a rule that jumps straight to "at 4".
+      { name: 'no screen, seen at 2 at some point', start: { screen: 'down', seen: 'at 1' }, expect: 'seen is at 2', at: 'ever', held_back: true, added_later: true },
+    ],
+  },
+  {
+    id: 'door-game',
+    kind: 'planning a video game',
+    request: 'A small game: the player can pick up a key, open a door with it, and walk through to win. Touching the ghost costs a life. With no lives left the game is over. Opening the door without the key does nothing.',
+    world: {
+      things: { key: ['on floor', 'carried'], door: ['locked', 'open'], lives: ['2', '1', '0'], game: ['playing', 'won', 'over'] },
+      events: ['pick up key', 'use door', 'walk through', 'touch ghost'],
+      start: { key: 'on floor', door: 'locked', lives: '2', game: 'playing' },
+      rules: [
+        { name: 'take key', when: ['pick up key happens', 'game is playing'], then: 'key is carried' },
+        { name: 'unlock', when: ['use door happens', 'key is carried', 'game is playing'], then: 'door is open' },
+        { name: 'win', when: ['walk through happens', 'door is open', 'game is playing'], then: 'game is won' },
+        { name: 'lose a life', when: ['touch ghost happens', 'lives is 2', 'game is playing'], then: 'lives is 1' },
+        { name: 'lose the last life', when: ['touch ghost happens', 'lives is 1', 'game is playing'], then: 'lives is 0' },
+        { name: 'game over', when: ['lives is 0'], then: 'game is over' },
+      ],
+    },
+    jobs: [
+      { name: 'key, door, walk: win', events: ['pick up key', 'use door', 'walk through'], expect: 'game is won' },
+      { name: 'door without key stays locked', events: ['use door', 'walk through'], expect: ['door is locked', 'game is playing'] },
+      { name: 'one ghost touch', events: ['touch ghost'], expect: ['lives is 1', 'game is playing'] },
+      { name: 'two ghost touches', events: ['touch ghost', 'touch ghost'], expect: 'game is over' },
+      { name: 'walk through a locked door', events: ['pick up key', 'walk through'], expect: 'game is playing', held_back: true },
+      { name: 'win then ghost', events: ['pick up key', 'use door', 'walk through', 'touch ghost'], expect: 'game is won', held_back: true },
+      { name: 'over, then key', events: ['touch ghost', 'touch ghost', 'pick up key'], expect: 'key is on floor', held_back: true },
+    ],
+  },
+  {
+    id: 'lighthouse-story',
+    kind: 'a story whose ending must follow',
+    request: 'A story: Mara keeps a lighthouse with her brother Tev. Tev hides a letter offering Mara a job in the city. A storm comes; Tev fails to light the lamp and a boat is nearly lost; Mara lights it. Mara finds the letter. Ending: Mara stays, because she has seen Tev cannot keep the light alone. If she had not seen the storm night, finding the letter would have made her leave.',
+    world: {
+      things: { letter: ['hidden', 'found'], mara_knows_tev_cannot_cope: ['no', 'yes'], lamp: ['dark', 'lit'], mara: ['at lighthouse', 'gone to city', 'staying for good'] },
+      events: ['storm', 'mara lights lamp', 'mara finds letter'],
+      start: { letter: 'hidden', mara_knows_tev_cannot_cope: 'no', lamp: 'dark', mara: 'at lighthouse' },
+      rules: [
+        { name: 'storm shows Tev failing', when: ['storm happens', 'lamp is dark'], then: 'mara_knows_tev_cannot_cope is yes' },
+        { name: 'Mara lights it', when: ['mara lights lamp happens'], then: 'lamp is lit' },
+        { name: 'letter found', when: ['mara finds letter happens'], then: 'letter is found' },
+        { name: 'leaves', when: ['letter is found', 'mara_knows_tev_cannot_cope is no', 'mara is at lighthouse'], then: 'mara is gone to city' },
+        { name: 'stays', when: ['letter is found', 'mara_knows_tev_cannot_cope is yes', 'mara is at lighthouse'], then: 'mara is staying for good' },
+      ],
+    },
+    jobs: [
+      { name: 'the story as told', events: ['storm', 'mara lights lamp', 'mara finds letter'], expect: 'mara is staying for good' },
+      { name: 'no storm night', events: ['mara finds letter'], expect: 'mara is gone to city' },
+      { name: 'letter never found', events: ['storm', 'mara lights lamp'], expect: 'mara is at lighthouse' },
+      { name: 'letter found before the storm', events: ['mara finds letter', 'storm', 'mara lights lamp'], expect: 'mara is gone to city', held_back: true },
+      { name: 'storm with the lamp already lit', start: { lamp: 'lit' }, events: ['storm', 'mara finds letter'], expect: 'mara is gone to city', held_back: true },
+    ],
+  },
+  {
+    id: 'reminder-app',
+    kind: 'a vague request from a user',
+    request: 'I want a to-do app where things I keep putting off get more urgent, and done things go away.',
+    world: {
+      things: { task: ['new', 'urgent', 'overdue', 'done'], snoozes: ['0', '1', '2'] },
+      events: ['snooze', 'finish', 'day passes'],
+      start: { task: 'new', snoozes: '0' },
+      rules: [
+        { name: 'first snooze', when: ['snooze happens', 'snoozes is 0', 'task is not done'], then: 'snoozes is 1' },
+        { name: 'second snooze', when: ['snooze happens', 'snoozes is 1', 'task is not done'], then: 'snoozes is 2' },
+        { name: 'urgent after two snoozes', when: ['snoozes is 2', 'task is new'], then: 'task is urgent' },
+        { name: 'overdue after a day when urgent', when: ['day passes happens', 'task is urgent'], then: 'task is overdue' },
+        { name: 'finishing', when: ['finish happens'], then: 'task is done' },
+      ],
+    },
+    jobs: [
+      { name: 'finish a new task', events: ['finish'], expect: 'task is done' },
+      { name: 'put off twice', events: ['snooze', 'snooze'], expect: 'task is urgent' },
+      { name: 'nothing happens', events: [], expect: 'task is new' },
+      { name: 'put off once', events: ['snooze'], expect: 'task is new', held_back: true },
+      { name: 'put off twice then a day', events: ['snooze', 'snooze', 'day passes'], expect: 'task is overdue', held_back: true },
+      { name: 'a day passes on a new task', events: ['day passes'], expect: 'task is new', held_back: true },
+      { name: 'finish an overdue task', events: ['snooze', 'snooze', 'day passes', 'finish'], expect: 'task is done', held_back: true },
+    ],
+  },
+];
+
+  page_files["03 test worlds.js"] = module.exports;
+})();
+</script>
+<script>
+/* ===== 09 loop.js ===== */
+(function () {
+  const module = { exports: {} };
+  const exports = module.exports;
+  const require = page_require;
+/*
+ * WHAT THIS FILE DOES, IN PLAIN WORDS
+ *
+ * The loop. It hands a task to a guesser (an AI that writes models) and runs this cycle:
+ *   1. GUESS  - the guesser writes a model (things, events, start, rules) as filled-in blanks.
+ *   2. CHECK  - the checker runs the model on the owner's jobs and says what failed and why.
+ *   3. FIX    - two kinds of fix, and the checker keeps a fix only if it repairs something and
+ *               breaks nothing that worked (no backsliding):
+ *               small fix: the checker tries every one-step change to the existing rules and applies
+ *                          one that works. When several work equally, in the full loop it asks the
+ *                          world a deciding question to choose between them.
+ *               new part:  when no small fix works, the guesser is asked for just the new rule(s),
+ *                          or a new thing to keep track of, that the failing job needs.
+ *               clearing out: a new part can make old rules wrong. When the new part's rules disagree
+ *                          with old rules, the checker also tries the model without those old rules.
+ *               last resort: when the guesser's tries are used up, the checker searches for one new
+ *                          rule itself, and marks it as fitted by the checker.
+ *               (An earlier version had the guesser rewrite the whole model from the checker's
+ *               advice. The 1.5B small AI could not apply advice it was given; see the project log.)
+ *   4. ASK    - once every job passes, the checker looks for rules that are loose and builds a
+ *               deciding test for each: a situation where the model and a near neighbour disagree.
+ *               The world (a hidden true model, standing in for reality or for the owner) answers.
+ *               Each answer becomes a new job, and the loop goes back to FIX.
+ *   5. END    - jobs held back from the start are run once, to see if the model fits things
+ *               it was never shown.
+ *
+ * Four ways of running, to compare, all starting from one shared first guess:
+ *   one guess      - step 1 only
+ *   rewrite        - the guesser rewrites its whole model from the checker's report (the earlier design)
+ *   guess and fix  - steps 1 to 3, with no questions to the world
+ *   full loop      - steps 1 to 5
+ *
+ * Who the guesser is: by default the small AI, run locally through llama.cpp's server (address in
+ * SMALL_AI_ADDRESS). Any other guesser can be passed in as options.guesser: a function that takes
+ * the messages and settings and returns the reply text. The Sonnet page does this.
+ * Every request and reply is saved, so a run can be read afterwards.
+ */
+const fs = require('fs');
+const C = require('./03 checker.js');
+
+const SMALL_AI_ADDRESS = (typeof process !== 'undefined' && process.env && process.env.SMALL_AI_ADDRESS) || 'http://127.0.0.1:8081/v1/chat/completions';
+
+// The shape the guesser must fill in. The small AI's server holds the reply to this shape, so it is always readable JSON.
+const MODEL_SHAPE = {
+  type: 'object',
+  properties: {
+    things: { type: 'object', additionalProperties: { type: 'array', items: { type: 'string' } } },
+    events: { type: 'array', items: { type: 'string' } },
+    start: { type: 'object', additionalProperties: { type: 'string' } },
+    rules: { type: 'array', items: { type: 'object', properties: { name: { type: 'string' }, when: { type: 'array', items: { type: 'string' } }, then: { type: 'string' } }, required: ['name', 'when', 'then'] } },
+  },
+  required: ['things', 'events', 'start', 'rules'],
+};
+
+// The shape for a new part: only what is being added.
+const NEW_PART_SHAPE = {
+  type: 'object',
+  properties: {
+    new_things: { type: 'object', additionalProperties: { type: 'array', items: { type: 'string' } } },
+    new_start: { type: 'object', additionalProperties: { type: 'string' } },
+    new_rules: MODEL_SHAPE.properties.rules,
+  },
+  required: ['new_things', 'new_start', 'new_rules'],
+};
+
+// Positive instructions only: say what to do.
+const GUIDE = `You build small models that a checker can run.
+
+A model has four parts:
+- "things": each thing, with the list of states it can be in.
+- "events": things that happen from outside.
+- "start": the state each thing is in before anything happens.
+- "rules": each rule says: when all these conditions are true, this thing becomes this state.
+
+Write each condition in one of three forms: "THING is STATE", "THING is not STATE", "EVENT happens".
+Write each result in one form: "THING is STATE".
+
+How the checker runs a model: before the first event, and after each event, every rule whose conditions are all true fires, and the checker repeats this until nothing changes. An event is true only at the moment it happens. When two rules want different states for the same thing, the rule with more conditions wins.
+
+Use exactly the thing names, state names and event names the task gives. Add a thing of your own whenever you need to keep track of something the task does not show directly.
+
+Example task: A lamp lights when its switch is on, but only if the fuse is whole. A power surge blows the fuse.
+Example model:
+{"things": {"switch": ["off", "on"], "fuse": ["whole", "blown"], "lamp": ["dark", "lit"]},
+ "events": ["flip switch", "surge"],
+ "start": {"switch": "off", "fuse": "whole", "lamp": "dark"},
+ "rules": [
+  {"name": "switch on", "when": ["flip switch happens", "switch is off"], "then": "switch is on"},
+  {"name": "switch off", "when": ["flip switch happens", "switch is on"], "then": "switch is off"},
+  {"name": "surge blows fuse", "when": ["surge happens"], "then": "fuse is blown"},
+  {"name": "lamp lights", "when": ["switch is on", "fuse is whole"], "then": "lamp is lit"},
+  {"name": "lamp goes dark", "when": ["switch is off"], "then": "lamp is dark"},
+  {"name": "no power", "when": ["fuse is blown"], "then": "lamp is dark"}]}
+
+Reply with the model as JSON only.`;
+
+function job_in_words(job) {
+  const parts = [];
+  const start = Object.entries(job.situation.start || {}).map(([t, s]) => `${t} is ${s}`);
+  if (start.length) parts.push(`start with ${start.join(', ')}`);
+  const events = Object.keys(job.situation.events || {}).sort((a, b) => Number(a) - Number(b)).flatMap(k => job.situation.events[k]);
+  parts.push(events.length ? `events in order: ${events.join(', then ')}` : 'no events');
+  const at = job.at === 'end' ? 'at the end' : job.at === 'ever' ? 'at some point' : job.at === 'never' ? 'never' : `at step ${job.at}`;
+  parts.push(`${job.at === 'never' ? 'must never have' : `expected ${at}:`} ${job.expect.join(' and ')}`);
+  return `- "${job.name}": ${parts.join('; ')}.`;
+}
+function vocabulary_in_words(world) {
+  const owner_things = new Set();
+  for (const job of world.jobs) {
+    Object.keys(job.start || {}).forEach(t => owner_things.add(t));
+    (Array.isArray(job.expect) ? job.expect : [job.expect]).forEach(e => owner_things.add(e.split(/ is /)[0]));
+  }
+  const lines = [...owner_things].map(t => `  ${t}: ${world.world.things[t].join(', ')}`);
+  return `Things and states to use:\n${lines.join('\n')}\nEvents to use: ${world.world.events.length ? world.world.events.join(', ') : '(none)'}`;
+}
+
+// The owner's word list: the things and states the shown jobs use. Given by the owner, not guessed.
+function owner_word_list(world) {
+  const list = {};
+  for (const job of world.jobs.filter(j => !j.held_back)) {
+    Object.keys(job.start || {}).forEach(t => { list[t] = world.world.things[t]; });
+    (Array.isArray(job.expect) ? job.expect : [job.expect]).forEach(e => { const t = e.split(/ is /)[0]; list[t] = world.world.things[t]; });
+  }
+  return list;
+}
+
+async function ask_guesser(messages, log, options = {}, shape = MODEL_SHAPE) {
+  const temperature = options.temperature == null ? 0.2 : options.temperature;
+  const started = Date.now();
+  let text;
+  if (options.guesser) {
+    // Another guesser (for example Sonnet, in the page) gets the same messages and settings.
+    text = await options.guesser(messages, { temperature, reply_shape: shape === NEW_PART_SHAPE ? 'new part' : 'model' });
+  } else {
+    // The small AI, through llama.cpp's server, with its reply held to the shape.
+    const body = { messages, temperature, max_tokens: 1400, seed: options.seed || 1,
+      response_format: { type: 'json_schema', json_schema: { name: 'reply', schema: shape } } };
+    let data = null;
+    for (let attempt = 1; attempt <= 3 && !data; attempt++) {
+      try {
+        const reply = await fetch(SMALL_AI_ADDRESS, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        data = await reply.json();
+      } catch (e) { if (attempt === 3) throw e; await new Promise(r => setTimeout(r, 20000)); }
+    }
+    text = data.choices ? data.choices[0].message.content : JSON.stringify(data);
+  }
+  log.push({ asked: messages[messages.length - 1].content, replied: text, seconds: Math.round((Date.now() - started) / 1000) });
+  return text;
+}
+function read_reply(text) {
+  if (typeof text !== 'string') return null;
+  try { return JSON.parse(text); } catch (e) {
+    const m = text.match(/\{[\s\S]*\}/); if (m) { try { return JSON.parse(m[0]); } catch (e2) { /* fall through */ } }
+    return null;
+  }
+}
+
+// The world answers a deciding test: run the situation on the hidden true model.
+function world_answers(world_model, found) {
+  const problems = [];
+  const situation = C.resolve_situation(world_model, found.situation, problems, 'world');
+  if (problems.length) return null;
+  const result = C.run(world_model, situation);
+  return found.differences.map(d => {
+    const thing = Object.keys(world_model.things).find(t => t.toLowerCase() === d.thing.toLowerCase());
+    if (!thing) return null;
+    const ends = [...new Set(result.final_states.map(s => s[thing]))];
+    return ends.length === 1 ? `${thing} is ${ends[0]}` : null;
+  }).filter(Boolean);
+}
+
+function summary_line(model, jobs) {
+  const c = C.check(model, jobs);
+  return `${c.passed.length}/${jobs.length}`;
+}
+
+function rules_in_words(model) {
+  return model.rules.map(r => `- "${r.name}": ${C.rule_text_of(r)}`).join('\n');
+}
+function things_in_words(model) {
+  return Object.entries(model.things).map(([t, states]) => `${t} (${states.join(', ')}; starts ${model.start[t]})`).join('; ');
+}
+// Add the guesser's new parts to the model: new things (or new states of old things), their start, new rules.
+function add_new_parts(model, reply) {
+  const form = C.model_to_form(model);
+  for (const [thing, states] of Object.entries(reply.new_things || {})) {
+    const existing = Object.keys(form.things).find(t => t.toLowerCase() === thing.toLowerCase());
+    if (existing) form.things[existing] = [...new Set(form.things[existing].concat(states))];
+    else form.things[thing] = states;
+  }
+  for (const [thing, state] of Object.entries(reply.new_start || {})) {
+    const existing = Object.keys(form.things).find(t => t.toLowerCase() === thing.toLowerCase());
+    if (existing && !Object.keys(model.things).includes(existing)) form.start[existing] = state;
+  }
+  const names = new Set(form.rules.map(r => r.name.toLowerCase()));
+  for (const rule of (Array.isArray(reply.new_rules) ? reply.new_rules : [])) {
+    let name = rule.name || 'new rule';
+    while (names.has(name.toLowerCase())) name = `${name} (new)`;
+    names.add(name.toLowerCase());
+    form.rules.push(Object.assign({}, rule, { name, made_by: 'guesser new part' }));
+  }
+  return C.prepare_model(form);
+}
+// After a new part is added: remove the old rules that disagree with the new part's rules in any job,
+// and repeat until none disagree. A selection step (removing is a variation); no guessing.
+function clear_out_clashing_rules(model, jobs) {
+  let current = model;
+  const removed = [];
+  for (let round = 0; round < 5; round++) {
+    const names = new Set();
+    for (const r of C.check(current, jobs).results) {
+      for (const clash of (r.result ? r.result.clashes : [])) {
+        const rules_in_clash = clash.offers.map(o => current.rules.find(x => x.name === o.rule)).filter(Boolean);
+        if (!rules_in_clash.some(x => x.made_by === 'guesser new part')) continue;
+        rules_in_clash.filter(x => x.made_by !== 'guesser new part').forEach(x => names.add(x.name));
+      }
+    }
+    if (!names.size) break;
+    removed.push(...names);
+    const form = C.model_to_form(current);
+    form.rules = form.rules.filter(r => !names.has(r.name));
+    current = C.prepare_model(form);
+  }
+  return { model: current, removed };
+}
+function add_job(jobs, new_job) {
+  const prepared = C.prepare_jobs({ jobs: [new_job] }).jobs[0];
+  if (jobs.some(j => JSON.stringify(j.situation) === JSON.stringify(prepared.situation) && JSON.stringify(j.expect) === JSON.stringify(prepared.expect))) return jobs;
+  return jobs.concat(prepared);
+}
+// Situations one change from the jobs where the model takes a route no job takes (log 17).
+// Chosen from the model and the jobs only; the world is not looked at until it is asked.
+function surprise_probes(model, jobs, how_many) {
+  const route_of = situation => {
+    const problems = [];
+    const resolved = C.resolve_situation(model, situation, problems, 'probe');
+    if (problems.length) return null;
+    const result = C.run(model, resolved);
+    return [...new Set(result.changes.flatMap(c => c.rules))].sort().join(' + ');
+  };
+  const asked_things = [...new Set(jobs.flatMap(j => j.expect.map(e => String(e).split(/ is /)[0].replace(/^not /, ''))))];
+  const known_routes = new Set(jobs.map(j => route_of(j.situation)));
+  const job_situations = new Set(jobs.map(j => JSON.stringify(j.situation)));
+  // Things no rule reads: by the model's own account their start cannot matter. One probe per round
+  // pokes one of them, the hard-to-vary skill's "change something that should not matter" test.
+  const read_things = new Set(model.rules.flatMap(r => r.when.filter(w => w.kind === 'state').map(w => w.thing.toLowerCase())));
+  let poked_unread = false;
+  const picked = [];
+  for (const c of C.candidate_situations(model, model, jobs, 1500, 'shared').list) {
+    if (picked.length >= how_many) break;
+    if (!c.steps.length || job_situations.has(JSON.stringify(c.situation))) continue;
+    const unread = c.steps.length === 1 && /^(.+) starts (.+)$/.exec(c.steps[0]);
+    if (!poked_unread && unread && !read_things.has(unread[1].toLowerCase()) && !asked_things.includes(unread[1])) {
+      poked_unread = true;
+      picked.push({ from_job: c.from_job, steps: c.steps, situation: c.situation, differences: asked_things.map(thing => ({ thing })) });
+      continue;
+    }
+    const route = route_of(c.situation);
+    if (route === null || known_routes.has(route)) continue;
+    known_routes.add(route);
+    picked.push({ from_job: c.from_job, steps: c.steps, situation: c.situation, differences: asked_things.map(thing => ({ thing })) });
+  }
+  return picked;
+}
+function job_from_deciding_test(world_model, found, number) {
+  const answers = world_answers(world_model, found);
+  if (!answers || !answers.length) return null;
+  const events = found.situation.events || {};
+  return { name: `world answer ${number}`, start: found.situation.start, events: Object.keys(events).sort((a, b) => Number(a) - Number(b)).flatMap(k => events[k]), expect: answers, from: 'given' };
+}
+
+async function first_guess(world, options = {}) {
+  const log = [];
+  const jobs = C.prepare_jobs({ jobs: world.jobs.filter(j => !j.held_back) }).jobs;
+  const messages = [{ role: 'system', content: GUIDE }, { role: 'user', content: `Task: ${world.request}\n\n${vocabulary_in_words(world)}\n\nThe checker will test your model on these jobs:\n${jobs.map(job_in_words).join('\n')}\n\nWrite the model.` }];
+  const text = await ask_guesser(messages, log, options);
+  return { raw: read_reply(text), log };
+}
+
+async function run_task(world, mode, options = {}, guess = null) {
+  const log = [];
+  const record = { world: world.id, mode, rounds: [], added_jobs: [], questions_to_world: 0, guesser_calls: 0 };
+  const world_model = C.prepare_model(world.world);
+  let jobs = C.prepare_jobs({ jobs: world.jobs.filter(j => !j.held_back) }).jobs;
+  const held_back = C.prepare_jobs({ jobs: world.jobs.filter(j => j.held_back) }).jobs;
+  const task_words = () => `Task: ${world.request}\n\n${vocabulary_in_words(world)}\n\nThe checker will test your model on these jobs:\n${jobs.map(job_in_words).join('\n')}`;
+  const messages = [{ role: 'system', content: GUIDE }, { role: 'user', content: `${task_words()}\n\nWrite the model.` }];
+  const save_progress = () => {
+    if (options.progress && fs) fs.writeFileSync(options.progress, JSON.stringify({ rounds: record.rounds }, null, 1));
+    if (options.on_progress) options.on_progress(record);
+  };
+
+  // 1. GUESS (shared between ways of running, when given)
+  if (!guess) { guess = await first_guess(world, options); record.guesser_calls++; }
+  log.push(...guess.log);
+  let best = guess.raw && typeof guess.raw === 'object'
+    ? C.prepare_model(Object.assign({}, guess.raw, { rules: (Array.isArray(guess.raw.rules) ? guess.raw.rules : []).map(r => Object.assign({}, r, { made_by: 'guesser first guess' })) }))
+    : C.prepare_model({ things: {}, rules: [] });
+  messages.push({ role: 'assistant', content: JSON.stringify(guess.raw) });
+  record.rounds.push({ step: 'guess', seen: summary_line(best, jobs), problems: best.problems.length });
+  save_progress();
+
+  // Log 18: the guesser checks the model against the task by itself, with no report from the checker.
+  // Kept only if it loses no shown job that passed (no backsliding); whether it caught a mistake the
+  // shown jobs cannot see is found out from the held-back jobs.
+  const self_review = async () => {
+    const ask = `Here is a model for this task. It may contain mistakes, including mistakes the jobs above do not catch.\n\n${JSON.stringify(C.model_to_form(best))}\n\nGo through the task sentence by sentence and check that every part of it is in the model, and that every rule does what the task says, in every situation the task describes, not only in the jobs. Correct every mistake you find. Write the whole corrected model. If you find no mistake, write it unchanged.`;
+    const reply = read_reply(await ask_guesser([{ role: 'system', content: GUIDE }, { role: 'user', content: `${task_words()}\n\n${ask}` }], log, options)); record.guesser_calls++;
+    const candidate = reply ? C.prepare_model(reply) : null;
+    const f = candidate ? C.check_fix(best, candidate, jobs, { decide: false }) : { verdict: 'unreadable', lost: [] };
+    const keep = candidate && !f.lost.length && candidate.problems.length <= best.problems.length;
+    if (keep) best = candidate;
+    record.rounds.push({ step: 'self review', verdict: f.verdict, kept: !!keep, lost: f.lost, seen: summary_line(best, jobs) });
+    save_progress();
+  };
+
+  if (mode === 'rewrite') {
+    // The earlier design: the guesser rewrites the whole model from the checker's report.
+    for (let round = 0; round < (options.fix_rounds || 3) && C.check(best, jobs).failed.length; round++) {
+      const ask = `The checker ran your model.\n\n${C.report_check(best, jobs).text}\n\n${C.report_tweaks(best, jobs).text}\n\nWrite the whole model again so that the failing jobs pass. Keep every rule that already works. Give every thing a start state.`;
+      messages.push({ role: 'user', content: ask });
+      const candidate_raw = read_reply(await ask_guesser(messages, log, options)); record.guesser_calls++;
+      const candidate = candidate_raw ? C.prepare_model(candidate_raw) : null;
+      const f = candidate ? C.check_fix(best, candidate, jobs, { decide: false }) : { verdict: 'unreadable' };
+      if (f.verdict === 'accepted') best = candidate;
+      record.rounds.push({ step: 'rewrite', verdict: f.verdict, repaired: f.repaired, lost: f.lost, seen: summary_line(best, jobs) });
+      messages.push({ role: 'assistant', content: JSON.stringify(C.model_to_form(best)) });
+      if (messages.length > 10) messages.splice(2, messages.length - 6);
+      save_progress();
+    }
+  } else if (mode === 'self review') {
+    await self_review();
+  } else if (mode !== 'one guess') {
+    // Log 18: "review first" is the guesser's self review, then "guesser fixes first".
+    if (mode === 'review first') await self_review();
+    const words = C.add_owner_words(best, owner_word_list(world));
+    if (words.added.length) {
+      const form = C.model_to_form(words.model);
+      form.events = [...new Set(form.events.concat(world.world.events))];
+      best = C.prepare_model(form);
+      record.rounds.push({ step: 'owner words added', added: words.added, seen: summary_line(best, jobs) });
+    }
+    const may_ask_world = ['full loop', 'guesser fixes first', 'review first'].includes(mode);
+    // Log 18: in "guesser fixes first" (the full loop otherwise), when jobs fail the guesser first rewrites the whole model from
+    // the checker's report (it now includes the world's answers); the checker's small fixes tidy what is left.
+    const guesser_first = ['guesser fixes first', 'review first'].includes(mode);
+    const rewrite_asked_for = new Set();
+    let guesser_rewrites = 0;
+    const question_budget = options.questions || 12;
+    let new_part_calls = 0, small_fixes = 0, ask_rounds = 0, surprise_rounds = 0, rule_searches = 0;
+    const tried_before = [];
+    // A FIX IS A GUESS TOO (log 17): before the full loop keeps a checker fix, it asks the world about one
+    // situation, not yet a job, where the model before and after the fix disagree. If the world sides with
+    // the old model, the fix now breaks a job and is dropped. Each fix is cross-checked once.
+    const cross_checked = new Set();
+    const cross_check_fix = async fix => {
+      if (cross_checked.has(fix.description) || record.questions_to_world >= question_budget) return false;
+      cross_checked.add(fix.description);
+      const job_situations = new Set(jobs.map(j => JSON.stringify(j.situation)));
+      const d = C.decide(best, fix.model, jobs, { max_found: 25, limit: 1500, watch: 'shared' });
+      for (const found of d.found) {
+        if (job_situations.has(JSON.stringify(found.situation))) continue;
+        const new_job = job_from_deciding_test(world_model, found, record.questions_to_world + 1);
+        if (!new_job) continue;
+        const before = jobs.length;
+        jobs = add_job(jobs, new_job);
+        if (jobs.length === before) continue;
+        const sides_with_fix = C.check(fix.model, jobs.slice(-1)).passed.length > 0;
+        const sides_with_old = C.check(best, jobs.slice(-1)).passed.length > 0;
+        record.questions_to_world++;
+        record.added_jobs.push({ job: new_job, why: `cross-check the fix: ${fix.description}`, sides_with_fix, sides_with_old });
+        record.rounds.push({ step: 'cross-check a fix with the world', what: fix.description, world_sides_with: sides_with_fix ? 'the fix' : sides_with_old ? 'the model before the fix' : 'neither', seen: summary_line(best, jobs) });
+        return true;
+      }
+      return false;
+    };
+    while (true) {
+      // 3a. SMALL FIX: the checker tries every one-step change and applies the best one.
+      const failing = C.check(best, jobs).failed;
+      if (failing.length && guesser_first && guesser_rewrites < 3 && !rewrite_asked_for.has(failing.slice().sort().join('|'))) {
+        rewrite_asked_for.add(failing.slice().sort().join('|'));
+        guesser_rewrites++;
+        const ask = `${task_words()}\n\nThe current model:\n${JSON.stringify(C.model_to_form(best))}\n\nThe checker ran it.\n\n${C.report_check(best, jobs).text}\n\n${C.report_tweaks(best, jobs).text}\n\nWrite the whole model again so that every job passes. Keep every rule that already works. Give every thing a start state.`;
+        const candidate_raw = read_reply(await ask_guesser([{ role: 'system', content: GUIDE }, { role: 'user', content: ask }], log, options)); record.guesser_calls++;
+        const candidate = candidate_raw ? C.prepare_model(candidate_raw) : null;
+        const f = candidate ? C.check_fix(best, candidate, jobs, { decide: false }) : { verdict: 'unreadable' };
+        if (f.verdict === 'accepted') best = candidate;
+        record.rounds.push({ step: 'guesser rewrites first', verdict: f.verdict, repaired: f.repaired, lost: f.lost, seen: summary_line(best, jobs) });
+        save_progress();
+        continue;
+      }
+      if (failing.length) {
+        const t = C.tweaks(best, jobs, { max: 12 });
+        if (t.helpful.length && small_fixes < 12) {
+          const top = t.helpful.filter(h => h.repaired.length === t.helpful[0].repaired.length);
+          // When several small fixes work equally, ask the world to choose (full loop only).
+          if (may_ask_world && top.length > 1 && record.questions_to_world < question_budget) {
+            let asked = false;
+            for (const other of top.slice(1, 12)) {
+              const d = C.decide(top[0].model, other.model, jobs, { max_found: 1, limit: 800, watch: 'shared' });
+              if (!d.found.length) continue;
+              const new_job = job_from_deciding_test(world_model, d.found[0], record.questions_to_world + 1);
+              if (!new_job) continue;
+              const before = jobs.length;
+              jobs = add_job(jobs, new_job);
+              if (jobs.length === before) continue;
+              record.questions_to_world++;
+              record.added_jobs.push({ job: new_job, why: `choose between small fixes: ${top[0].description} / ${other.description}` });
+              record.rounds.push({ step: 'ask world to choose', job: new_job.name, seen: summary_line(best, jobs) });
+              asked = true;
+              break;
+            }
+            if (asked) { save_progress(); continue; }
+          }
+          if (may_ask_world && await cross_check_fix(top[0])) { save_progress(); continue; }
+          best = top[0].model;
+          small_fixes++;
+          record.rounds.push({ step: 'small fix', what: top[0].description, repaired: top[0].repaired, seen: summary_line(best, jobs) });
+          save_progress();
+          continue;
+        }
+        // 3b. NEW PART: no small fix works, so ask the guesser for what is missing.
+        // 3c. When the guesser's tries are used up, the checker searches for one new rule (marked fitted).
+        if (new_part_calls >= (options.new_part_calls ?? 3)) {
+          const n = C.new_rule_search(best, jobs, { max: 6 });
+          if (!n.helpful.length || rule_searches >= 6) break;
+          const top = n.helpful.filter(h => h.repaired.length === n.helpful[0].repaired.length);
+          if (may_ask_world && top.length > 1 && record.questions_to_world < question_budget) {
+            let asked = false;
+            for (const other of top.slice(1, 12)) {
+              const d = C.decide(top[0].model, other.model, jobs, { max_found: 1, limit: 800, watch: 'shared' });
+              if (!d.found.length) continue;
+              const new_job = job_from_deciding_test(world_model, d.found[0], record.questions_to_world + 1);
+              if (!new_job) continue;
+              const before = jobs.length;
+              jobs = add_job(jobs, new_job);
+              if (jobs.length === before) continue;
+              record.questions_to_world++;
+              record.added_jobs.push({ job: new_job, why: `choose between new rules: ${top[0].description} / ${other.description}` });
+              record.rounds.push({ step: 'ask world to choose', job: new_job.name, seen: summary_line(best, jobs) });
+              asked = true;
+              break;
+            }
+            if (asked) { save_progress(); continue; }
+          }
+          if (may_ask_world && await cross_check_fix(top[0])) { save_progress(); continue; }
+          best = top[0].model;
+          rule_searches++;
+          record.rounds.push({ step: 'checker new rule', what: top[0].description, repaired: top[0].repaired, seen: summary_line(best, jobs) });
+          save_progress();
+          continue;
+        }
+        new_part_calls++;
+        const failed_results = C.check(best, jobs).results.filter(r => !r.passed);
+        const target = failed_results[0];
+        const why = C.explain_failure(best, target).map(l => `- ${l}`).join('\n');
+        const problems_now = best.problems.length ? `\nProblems the checker found in the model:\n${best.problems.map(p => `- ${p}`).join('\n')}\n` : '';
+        const earlier = tried_before.length ? `\nThese new parts were tried already and changed nothing, so write something different:\n${tried_before.map(t => `- ${t}`).join('\n')}\n` : '';
+        const ask = `${task_words()}\n\nThe current model has these things: ${things_in_words(best)}.\nIts rules:\n${rules_in_words(best)}\n${problems_now}\nThis job fails:\n${job_in_words(jobs.find(j => j.name === target.job))}\nWhat the checker saw:\n${why}\n${earlier}\nNo small change to the existing rules makes this job pass, so something is missing. Write only the new parts: new rules, and new things (with their states and start) whenever you need to keep track of something the task does not show directly.`;
+        const retry_options = Object.assign({}, options, { temperature: new_part_calls === 1 ? 0.2 : 0.8, seed: (options.seed || 1) * 100 + new_part_calls });
+        const reply = read_reply(await ask_guesser([{ role: 'system', content: GUIDE }, { role: 'user', content: ask }], log, retry_options, NEW_PART_SHAPE));
+        if (reply) tried_before.push((Array.isArray(reply.new_rules) ? reply.new_rules : []).map(r => `"${[].concat(r.when || []).join(' and ')}" -> "${r.then}"`).join('; ').slice(0, 300) || '(no rules)');
+        record.guesser_calls++;
+        if (!reply) { record.rounds.push({ step: 'new part', verdict: 'unreadable' }); continue; }
+        let candidate = add_new_parts(best, reply);
+        let f = C.check_fix(best, candidate, jobs, { decide: false });
+        let cleared_out = [];
+        if (f.verdict !== 'accepted') {
+          const cleared = clear_out_clashing_rules(candidate, jobs);
+          if (cleared.removed.length) {
+            const g = C.check_fix(best, cleared.model, jobs, { decide: false });
+            if (g.verdict === 'accepted' || g.lost.length < f.lost.length) { candidate = cleared.model; f = g; cleared_out = cleared.removed; }
+          }
+        }
+        let tuned = 0;
+        // The new part may be nearly right: let the checker tune it with small fixes, keeping the no-backsliding rule.
+        while (f.verdict !== 'accepted' && tuned < 3) {
+          const t = C.tweaks(candidate, jobs, { max: 1 });
+          if (!t.helpful.length) break;
+          candidate = t.helpful[0].model; tuned++;
+          f = C.check_fix(best, candidate, jobs, { decide: false });
+        }
+        // A new thing that repairs nothing yet but breaks nothing is kept, so later fixes can use it.
+        const keep = f.verdict === 'accepted' || (f.verdict === 'no change' && (f.added_things.length || f.added_states.length) && candidate.problems.length <= best.problems.length);
+        record.rounds.push({ step: 'new part', verdict: f.verdict, kept: keep, kind: f.kind, added_rules: f.added_rules, added_things: f.added_things, repaired: f.repaired, lost: f.lost, tuned_by_checker: tuned, old_rules_cleared_out: cleared_out, seen: summary_line(keep ? candidate : best, jobs) });
+        if (keep) best = candidate;
+        save_progress();
+        continue;
+      }
+      // 4. ASK: every job passes; look for loose rules and let the world answer deciding tests.
+      if (!may_ask_world || record.questions_to_world >= question_budget) break;
+      let added = 0;
+      if (ask_rounds < (options.ask_rounds || 2)) {
+      ask_rounds++;
+      const v = C.vary(best, jobs, { per_rule: 2, limit: 800, watch: 'shared' });
+      for (const d of v.deciding_tests) {
+        if (!d.found || added >= 3 || record.questions_to_world >= question_budget) continue;
+        const new_job = job_from_deciding_test(world_model, d.found, record.questions_to_world + 1);
+        if (!new_job) continue;
+        const before = jobs.length;
+        jobs = add_job(jobs, new_job);
+        if (jobs.length === before) continue;
+        record.questions_to_world++;
+        record.added_jobs.push({ job: new_job, why: `loose rule "${d.rule}": ${d.variant}` });
+        added++;
+      }
+      record.rounds.push({ step: 'ask world about loose rules', added, seen: summary_line(best, jobs) });
+      save_progress();
+      if (added) continue;
+      }
+      // 4b. LOOK FOR SURPRISES (log 17): no rival rule is in sight, but the model still makes predictions
+      // no job has tested. Ask the world about situations one change from the jobs in which the model
+      // takes a route (a set of rules that fire) that no job takes. A wrong prediction there is a surprise.
+      if (options.look_for_surprises === false || surprise_rounds >= (options.surprise_rounds || 2)) break;
+      surprise_rounds++;
+      for (const probe of surprise_probes(best, jobs, options.surprises_per_round || 4)) {
+        if (record.questions_to_world >= question_budget) break;
+        const new_job = job_from_deciding_test(world_model, probe, record.questions_to_world + 1);
+        if (!new_job) continue;
+        const before = jobs.length;
+        jobs = add_job(jobs, new_job);
+        if (jobs.length === before) continue;
+        const surprise = !C.check(best, jobs.slice(-1)).passed.length;
+        record.questions_to_world++;
+        record.added_jobs.push({ job: new_job, why: `look for surprises: ${C.describe_situation(probe)}`, surprise });
+        added++;
+      }
+      record.rounds.push({ step: 'look for surprises', added, surprises: record.added_jobs.filter(a => a.surprise).length, seen: summary_line(best, jobs) });
+      save_progress();
+      if (!added) break;
+    }
+  }
+
+  // 5. END: jobs held back from the start
+  const final_seen = C.check(best, jobs);
+  const final_held = C.check(best, held_back);
+  const original_seen = C.prepare_jobs({ jobs: world.jobs.filter(j => !j.held_back) }).jobs;
+  record.final = { original_seen_passed: C.check(best, original_seen).passed.length, original_seen_total: original_seen.length,
+    all_seen_passed: final_seen.passed.length, all_seen_total: jobs.length,
+    held_back_passed: final_held.passed.length, held_back_total: held_back.length, held_back_failed: final_held.failed, problems: best.problems,
+    // Held-back jobs whose situation the loop asked the world about: these were no longer unseen at the end.
+    held_back_asked: held_back.filter(h => jobs.some(j => /^world answer/.test(j.name) && JSON.stringify(j.situation) === JSON.stringify(h.situation))).map(h => h.name) };
+  record.model = C.model_to_form(best);
+  record.log = log;
+  return record;
+}
+
+const WAYS_OF_RUNNING = ['one guess', 'rewrite', 'guess and fix', 'full loop'];
+
+module.exports = { run_task, first_guess, GUIDE, job_in_words, vocabulary_in_words, world_answers, add_new_parts, clear_out_clashing_rules, owner_word_list, read_reply, WAYS_OF_RUNNING };
+
+if (require.main === module) {
+  // node "09 loop.js" WORLD SEED OUTFILE : one shared guess from the small AI, then the four ways of running
+  const worlds = require('./03 test worlds.js');
+  const [which, seed, out] = process.argv.slice(2);
+  const world = worlds.find(w => w.id === which);
+  const options = { seed: Number(seed) || 1, progress: out + '.progress' };
+  (async () => {
+    const guess = await first_guess(world, options);
+    const results = {};
+    for (const mode of (process.env.MODES || WAYS_OF_RUNNING.join(',')).split(',')) {
+      results[mode] = await run_task(world, mode, options, guess);
+      fs.writeFileSync(out, JSON.stringify({ world: which, seed: options.seed, results }, null, 1));
+      const f = results[mode].final;
+      console.log(`${which} seed ${options.seed} | ${mode.padEnd(13)} | shown jobs ${f.original_seen_passed}/${f.original_seen_total} | held-back ${f.held_back_passed}/${f.held_back_total} | questions ${results[mode].questions_to_world} | guesser asked ${results[mode].guesser_calls}`);
+    }
+  })();
+}
+
+  page_files["09 loop.js"] = module.exports;
+})();
+</script>
+<script>
+/* ===== 16 Sonnet guesser.js ===== */
+(function () {
+  const module = { exports: {} };
+  const exports = module.exports;
+  const require = page_require;
+/*
+ * WHAT THIS FILE DOES, IN PLAIN WORDS
+ *
+ * Lets Claude Sonnet 4.6 play the guesser. The loop hands it the same messages it would hand
+ * the small AI; this file sends them to Sonnet and gives back Sonnet's reply text.
+ *
+ * Two differences from the small AI, both forced by how Sonnet is reached from the page:
+ *   - The small AI's server held every reply to a fixed shape. Sonnet can't be held that way,
+ *     so this file adds one sentence to the last request, naming the shape to reply in.
+ *   - Sonnet's replies are capped at 1000 tokens (about 700 words) by the page's connection.
+ *     A reply cut off at the cap is counted, so a cut-off failure is not mistaken for a bad guess.
+ *
+ * If Sonnet refuses a request, it is tried again in a plainer form: the guide joined onto the
+ * first request, and no randomness setting. Both forms are counted.
+ *
+ * make_sonnet_guesser(send) takes one function, send(body), that delivers a request and returns
+ * the reply. The page passes one that uses its connection to Sonnet; the tests pass a stand-in.
+ * Runs in Node (require) and in a browser (window.SonnetGuesser).
+ */
+(function (root, make) {
+  const api = make();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else root.SonnetGuesser = api;
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  const MODEL_NAME = 'claude-sonnet-4-6';
+  const REPLY_LIMIT = 1000;
+  const SHAPE_SENTENCES = {
+    'model': 'Reply with the whole model as JSON only, in this shape: {"things": {"THING": ["STATE", "STATE"]}, "events": ["EVENT"], "start": {"THING": "STATE"}, "rules": [{"name": "NAME", "when": ["CONDITION"], "then": "THING is STATE"}]}.',
+    'new part': 'Reply with the new parts as JSON only, in this shape: {"new_things": {"THING": ["STATE", "STATE"]}, "new_start": {"THING": "STATE"}, "new_rules": [{"name": "NAME", "when": ["CONDITION"], "then": "THING is STATE"}]}. Give {} or [] for a part with nothing new.',
+  };
+  const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+  function make_sonnet_guesser(send) {
+    const counts = { requests: 0, replies: 0, cut_off: 0, plain_form: 0, refused: 0 };
+
+    function full_form(messages, settings) {
+      const system = messages.filter(m => m.role === 'system').map(m => m.content).join('\n\n');
+      const rest = messages.filter(m => m.role !== 'system').map(m => ({ role: m.role, content: String(m.content) }));
+      rest[rest.length - 1].content += `\n\n${SHAPE_SENTENCES[settings.reply_shape] || SHAPE_SENTENCES.model}`;
+      const body = { model: MODEL_NAME, max_tokens: REPLY_LIMIT, messages: rest };
+      if (system) body.system = system;
+      if (typeof settings.temperature === 'number') body.temperature = settings.temperature;
+      return body;
+    }
+    function plain_form(messages, settings) {
+      const body = full_form(messages, settings);
+      if (body.system) { body.messages[0].content = `${body.system}\n\n${body.messages[0].content}`; delete body.system; }
+      delete body.temperature;
+      return body;
+    }
+
+    async function guesser(messages, settings = {}) {
+      let last_problem = null;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        const body = attempt === 1 ? full_form(messages, settings) : plain_form(messages, settings);
+        if (attempt > 1) counts.plain_form++;
+        counts.requests++;
+        try {
+          const data = await send(body);
+          if (!data || data.error || !Array.isArray(data.content)) throw new Error(data && data.error ? (data.error.message || JSON.stringify(data.error)) : 'the reply had no text in it');
+          counts.replies++;
+          if (data.stop_reason === 'max_tokens') counts.cut_off++;
+          return data.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
+        } catch (problem) {
+          counts.refused++;
+          last_problem = problem;
+          await wait(attempt * 2000);
+        }
+      }
+      throw new Error(`Sonnet could not be reached after 3 tries: ${last_problem && last_problem.message}`);
+    }
+    guesser.counts = counts;
+    return guesser;
+  }
+
+  return { make_sonnet_guesser, MODEL_NAME, REPLY_LIMIT, SHAPE_SENTENCES };
+});
+
+  page_files["16 Sonnet guesser.js"] = module.exports;
+})();
+</script>
+<script>
+  const C = page_files['03 checker.js'];
+  const WORLDS = page_files['03 test worlds.js'];
+  const L = page_files['09 loop.js'];
+  const S = page_files['16 Sonnet guesser.js'];
+
+  const WORLD_NAMES = { 'ball-and-wall': 'Ball and wall', 'hidden-ball': 'Hidden ball', 'door-game': 'Door game', 'lighthouse-story': 'Lighthouse story', 'reminder-app': 'To-do app' };
+  const WAY_NAMES = { 'one guess': 'Guess alone', 'rewrite': 'Rewrite from report', 'guess and fix': 'Guess and fix', 'full loop': 'Full loop' };
+  const STEP_WORDS = { 'guess': 'first guess', 'rewrite': 'Sonnet rewrote the model', 'owner words added': 'owner’s word list added', 'small fix': 'checker small fix', 'new part': 'Sonnet asked for a new part',
+    'checker new rule': 'checker searched for one new rule', 'ask world to choose': 'world asked to choose between fixes', 'ask world about loose rules': 'world asked about loose rules' };
+  const $ = id => document.getElementById(id);
+  const pause = () => new Promise(resolve => setTimeout(resolve, 30));
+
+  async function send_to_sonnet(body) {
+    const response = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    let data = null;
+    try { data = await response.json(); } catch (e) { data = null; }
+    if (!response.ok) throw new Error(`Sonnet refused the request (code ${response.status})${data && data.error ? `: ${data.error.message}` : ''}`);
+    return data;
+  }
+  const guesser = S.make_sonnet_guesser(send_to_sonnet);
+
+  // Controls
+  $('which').innerHTML = `<option value="all">All five worlds</option>` + WORLDS.map(w => `<option value="${w.id}">${WORLD_NAMES[w.id]} only</option>`).join('');
+
+  // One small table per world: a row for each way of running, with shown jobs and held-back jobs side by side.
+  const row_id = (id, mode) => `row-${id}-${mode.replace(/ /g, '-')}`;
+  function draw_grid(ids) {
+    $('grid').innerHTML = ids.map(id => `<section class="world"><h3>${WORLD_NAMES[id]}</h3><table aria-label="${WORLD_NAMES[id]}">
+      <thead><tr><th>Way of running</th><th>Shown jobs</th><th>Held back</th></tr></thead><tbody>
+      ${L.WAYS_OF_RUNNING.map(m => `<tr id="${row_id(id, m)}"><th scope="row">${WAY_NAMES[m]}<span class="asked"></span></th><td colspan="2" class="waiting">waiting</td></tr>`).join('')}
+      </tbody></table></section>`).join('');
+  }
+  function measure(passed, total) {
+    const share = total ? Math.round(100 * passed / total) : 0;
+    return `<td><div class="measure"><div class="bar${passed < total ? ' short' : ''}"><span style="width:${share}%"></span></div><span>${passed}/${total}</span></div></td>`;
+  }
+  function fill_cell(id, mode, r) {
+    const f = r.final;
+    const row = $(row_id(id, mode));
+    row.querySelectorAll('td').forEach(td => td.remove());
+    row.querySelector('.asked').textContent = `asked again: ${r.guesser_calls}${r.questions_to_world ? `, world asked: ${r.questions_to_world}` : ''}`;
+    row.insertAdjacentHTML('beforeend', measure(f.original_seen_passed, f.original_seen_total) + measure(f.held_back_passed, f.held_back_total));
+  }
+  function mark_cells(id, text) {
+    for (const m of L.WAYS_OF_RUNNING) { const cell = $(row_id(id, m)).querySelector('td.waiting'); if (cell) { cell.classList.remove('waiting'); cell.innerHTML = `<span class="error">${text}</span>`; } }
+  }
+  function show_counts() {
+    const k = guesser.counts;
+    $('counts').textContent = `Requests to Sonnet: ${k.requests}. Replies cut off at the length cap: ${k.cut_off}. Requests retried in the plainer form: ${k.plain_form}.`;
+  }
+  function tell(text, stopped) { $('now').textContent = text; $('now').classList.toggle('stopped', !!stopped); }
+
+  function step_line(x) {
+    const words = STEP_WORDS[x.step] || x.step;
+    const detail = x.what ? `: ${x.what}` : x.verdict ? ` (${x.verdict}${x.kept ? ', kept' : ''})` : x.added && Array.isArray(x.added) ? `: ${x.added.join(', ')}` : '';
+    return `<li>${words}${detail}. Shown jobs passing: ${x.seen || 'n/a'}.</li>`;
+  }
+  function add_story(id, world_result) {
+    if (!$('story').dataset.started) { $('story').innerHTML = ''; $('story').dataset.started = 'yes'; }
+    const parts = world_result.error ? `<p class="error">${world_result.error}</p>`
+      : L.WAYS_OF_RUNNING.filter(m => world_result.ways[m]).map(m => `<p><b>${WAY_NAMES[m]}</b></p><ol class="steps">${world_result.ways[m].rounds.map(step_line).join('')}</ol>`).join('');
+    const d = document.createElement('details');
+    d.innerHTML = `<summary>${WORLD_NAMES[id]}</summary>${world_result.first_guess_readable === false ? '<p class="error">Sonnet’s first guess could not be read as a model.</p>' : ''}${parts}`;
+    $('story').appendChild(d);
+  }
+
+  async function run() {
+    $('run').disabled = true; $('which').disabled = true; $('copy').disabled = true; $('results').value = ''; $('copied').textContent = '';
+    $('story').innerHTML = '<p class="quiet">Fills in as each world finishes.</p>'; delete $('story').dataset.started;
+    const choice = $('which').value;
+    const worlds = choice === 'all' ? WORLDS : WORLDS.filter(w => w.id === choice);
+    draw_grid(worlds.map(w => w.id));
+    const results = { made: new Date().toISOString(), guesser: S.MODEL_NAME, reply_limit: S.REPLY_LIMIT, summary: [], worlds: [], counts: null };
+    let stop = false;
+    for (let i = 0; i < worlds.length && !stop; i++) {
+      const world = worlds[i];
+      const where = `World ${i + 1} of ${worlds.length}, ${WORLD_NAMES[world.id].toLowerCase()}`;
+      const world_result = { world: world.id, ways: {} };
+      try {
+        tell(`${where}: asking Sonnet for a first guess.`); await pause();
+        const guess = await L.first_guess(world, { guesser });
+        world_result.first_guess_readable = !!guess.raw;
+        world_result.first_guess_reply = (guess.log[0] && guess.log[0].replied || '').slice(0, 4000);
+        show_counts();
+        for (const mode of L.WAYS_OF_RUNNING) {
+          tell(`${where}: ${WAY_NAMES[mode].toLowerCase()}.`); await pause();
+          const r = await L.run_task(world, mode, { guesser, on_progress: rec => { const last = rec.rounds[rec.rounds.length - 1]; tell(`${where}: ${WAY_NAMES[mode].toLowerCase()}, ${STEP_WORDS[last.step] || last.step}. Shown jobs passing: ${last.seen || 'n/a'}.`); show_counts(); } }, guess);
+          world_result.ways[mode] = { final: r.final, rounds: r.rounds, added_jobs: r.added_jobs, questions_to_world: r.questions_to_world, asked_again: r.guesser_calls, model: r.model,
+            replies: r.log.slice(1).map(e => String(e.replied).slice(0, 1500)) };
+          results.summary.push(`${world.id} | ${mode} | shown ${r.final.original_seen_passed}/${r.final.original_seen_total} | held back ${r.final.held_back_passed}/${r.final.held_back_total} | asked again ${r.guesser_calls} | world asked ${r.questions_to_world}`);
+          fill_cell(world.id, mode, r); show_counts(); await pause();
+        }
+      } catch (problem) {
+        world_result.error = problem.message;
+        results.summary.push(`${world.id} | stopped: ${problem.message}`);
+        mark_cells(world.id, 'stopped');
+        if (/could not be reached/.test(problem.message) && !Object.keys(world_result.ways).length) {
+          stop = true;
+          tell(`Stopped: ${problem.message}. The page could not get an answer from Sonnet, so the other worlds were not run.`, true);
+        }
+      }
+      results.worlds.push(world_result);
+      add_story(world.id, world_result);
+    }
+    results.counts = guesser.counts;
+    $('results').value = JSON.stringify(results, null, 1);
+    $('copy').disabled = false; $('run').disabled = false; $('which').disabled = false;
+    if (!stop) tell(`Finished ${worlds.length === 1 ? 'the world' : `all ${worlds.length} worlds`}. Copy the results below and paste them into the chat.`);
+  }
+
+  async function copy_results() {
+    const box = $('results');
+    try { await navigator.clipboard.writeText(box.value); $('copied').textContent = 'Copied.'; }
+    catch (e) {
+      box.focus(); box.select();
+      let ok = false; try { ok = document.execCommand('copy'); } catch (e2) { ok = false; }
+      $('copied').textContent = ok ? 'Copied.' : 'Selected. Use your device’s Copy.';
+    }
+  }
+  $('run').addEventListener('click', run);
+  $('copy').addEventListener('click', copy_results);
+  draw_grid(WORLDS.map(w => w.id));
+</script>
+</body>
+</html>

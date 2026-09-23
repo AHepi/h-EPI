@@ -1,0 +1,1114 @@
+{
+ "world": "ghost-lantern",
+ "kind": "exploring creatively: a new idea that must not break the old design",
+ "repeat": 2,
+ "guesser": "deepseek-flash",
+ "started": "2026-09-23T22:15:58.230Z",
+ "finished": "2026-09-23T22:19:15.747Z",
+ "first_guess": {
+  "raw": {
+   "things": {
+    "game": [
+     "playing",
+     "won",
+     "over"
+    ],
+    "door": [
+     "locked",
+     "open"
+    ],
+    "lives": [
+     "2",
+     "1",
+     "0"
+    ],
+    "lantern": [
+     "dark",
+     "lit"
+    ],
+    "ghost": [
+     "present",
+     "away"
+    ],
+    "key": [
+     "not held",
+     "held"
+    ],
+    "keymagic": [
+     "whole",
+     "burnt"
+    ]
+   },
+   "events": [
+    "pick up key",
+    "use door",
+    "walk through",
+    "touch ghost",
+    "light lantern"
+   ],
+   "start": {
+    "game": "playing",
+    "door": "locked",
+    "lives": "2",
+    "lantern": "dark",
+    "ghost": "present",
+    "key": "not held",
+    "keymagic": "whole"
+   },
+   "rules": [
+    {
+     "name": "pick up key",
+     "when": [
+      "pick up key happens",
+      "key is not held"
+     ],
+     "then": "key is held"
+    },
+    {
+     "name": "use door opens with key",
+     "when": [
+      "use door happens",
+      "door is locked",
+      "key is held",
+      "keymagic is whole"
+     ],
+     "then": "door is open"
+    },
+    {
+     "name": "walk through wins",
+     "when": [
+      "walk through happens",
+      "door is open",
+      "game is playing"
+     ],
+     "then": "game is won"
+    },
+    {
+     "name": "ghost touch takes life 2",
+     "when": [
+      "touch ghost happens",
+      "ghost is present",
+      "lives is 2"
+     ],
+     "then": "lives is 1"
+    },
+    {
+     "name": "ghost touch takes life 1",
+     "when": [
+      "touch ghost happens",
+      "ghost is present",
+      "lives is 1"
+     ],
+     "then": "lives is 0"
+    },
+    {
+     "name": "no lives left",
+     "when": [
+      "lives is 0",
+      "game is playing"
+     ],
+     "then": "game is over"
+    },
+    {
+     "name": "light lantern",
+     "when": [
+      "light lantern happens",
+      "lantern is dark"
+     ],
+     "then": "lantern is lit"
+    },
+    {
+     "name": "lantern scares ghost",
+     "when": [
+      "light lantern happens",
+      "lantern is dark"
+     ],
+     "then": "ghost is away"
+    },
+    {
+     "name": "lantern burns key magic",
+     "when": [
+      "light lantern happens",
+      "lantern is dark"
+     ],
+     "then": "keymagic is burnt"
+    }
+   ]
+  },
+  "log": [
+   {
+    "asked": "Task: Take this small game: the player can pick up a key, open a door with it, and walk through to win. Touching the ghost costs a life, and with no lives left the game is over. Opening the door without the key does nothing. Add one new idea: the player can light a lantern that drives the ghost away for good, but lighting it burns up the key's magic, so the key will no longer open the door. Keep everything else as it was.\n\nThings and states to use:\n  game: playing, won, over\n  door: locked, open\n  lives: 2, 1, 0\n  lantern: dark, lit\nEvents to use: pick up key, use door, walk through, touch ghost, light lantern\n\nThe checker will test your model on these jobs:\n- \"key, door, walk: win\": events in order: pick up key, then use door, then walk through; expected at the end: game is won.\n- \"two ghost touches\": events in order: touch ghost, then touch ghost; expected at the end: game is over.\n- \"door without key stays locked\": events in order: use door, then walk through; expected at the end: door is locked and game is playing.\n- \"the lantern drives the ghost away\": events in order: pick up key, then light lantern, then touch ghost, then touch ghost; expected at the end: lives is 2 and game is playing.\n- \"the burnt key will not open the door\": events in order: pick up key, then light lantern, then use door, then walk through; expected at the end: door is locked and game is playing.\n\nWrite the model.",
+    "replied": "{\"things\":{\"game\":[\"playing\",\"won\",\"over\"],\"door\":[\"locked\",\"open\"],\"lives\":[\"2\",\"1\",\"0\"],\"lantern\":[\"dark\",\"lit\"],\"ghost\":[\"present\",\"away\"],\"key\":[\"not held\",\"held\"],\"keymagic\":[\"whole\",\"burnt\"]},\"events\":[\"pick up key\",\"use door\",\"walk through\",\"touch ghost\",\"light lantern\"],\"start\":{\"game\":\"playing\",\"door\":\"locked\",\"lives\":\"2\",\"lantern\":\"dark\",\"ghost\":\"present\",\"key\":\"not held\",\"keymagic\":\"whole\"},\"rules\":[{\"name\":\"pick up key\",\"when\":[\"pick up key happens\",\"key is not held\"],\"then\":\"key is held\"},{\"name\":\"use door opens with key\",\"when\":[\"use door happens\",\"door is locked\",\"key is held\",\"keymagic is whole\"],\"then\":\"door is open\"},{\"name\":\"walk through wins\",\"when\":[\"walk through happens\",\"door is open\",\"game is playing\"],\"then\":\"game is won\"},{\"name\":\"ghost touch takes life 2\",\"when\":[\"touch ghost happens\",\"ghost is present\",\"lives is 2\"],\"then\":\"lives is 1\"},{\"name\":\"ghost touch takes life 1\",\"when\":[\"touch ghost happens\",\"ghost is present\",\"lives is 1\"],\"then\":\"lives is 0\"},{\"name\":\"no lives left\",\"when\":[\"lives is 0\",\"game is playing\"],\"then\":\"game is over\"},{\"name\":\"light lantern\",\"when\":[\"light lantern happens\",\"lantern is dark\"],\"then\":\"lantern is lit\"},{\"name\":\"lantern scares ghost\",\"when\":[\"light lantern happens\",\"lantern is dark\"],\"then\":\"ghost is away\"},{\"name\":\"lantern burns key magic\",\"when\":[\"light lantern happens\",\"lantern is dark\"],\"then\":\"keymagic is burnt\"}]}",
+    "seconds": 36
+   }
+  ]
+ },
+ "counts": {
+  "requests": 4,
+  "replies": 4,
+  "cut_off": 0,
+  "plain_form": 0,
+  "refused": 0,
+  "thinking_characters": 190255,
+  "answer_characters": 2263,
+  "tokens_in": 6047,
+  "tokens_out": 47656
+ },
+ "results": {
+  "one guess": {
+   "world": "ghost-lantern",
+   "mode": "one guess",
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "5/5",
+     "problems": 0
+    }
+   ],
+   "added_jobs": [],
+   "questions_to_world": 0,
+   "guesser_calls": 0,
+   "final": {
+    "original_seen_passed": 5,
+    "original_seen_total": 5,
+    "all_seen_passed": 5,
+    "all_seen_total": 5,
+    "held_back_passed": 3,
+    "held_back_total": 4,
+    "held_back_failed": [
+     "no key, no light"
+    ],
+    "problems": [],
+    "held_back_asked": []
+   },
+   "model": {
+    "things": {
+     "game": [
+      "playing",
+      "won",
+      "over"
+     ],
+     "door": [
+      "locked",
+      "open"
+     ],
+     "lives": [
+      "2",
+      "1",
+      "0"
+     ],
+     "lantern": [
+      "dark",
+      "lit"
+     ],
+     "ghost": [
+      "present",
+      "away"
+     ],
+     "key": [
+      "not held",
+      "held"
+     ],
+     "keymagic": [
+      "whole",
+      "burnt"
+     ]
+    },
+    "events": [
+     "pick up key",
+     "use door",
+     "walk through",
+     "touch ghost",
+     "light lantern"
+    ],
+    "start": {
+     "game": "playing",
+     "door": "locked",
+     "lives": "2",
+     "lantern": "dark",
+     "ghost": "present",
+     "key": "not held",
+     "keymagic": "whole"
+    },
+    "rules": [
+     {
+      "name": "pick up key",
+      "when": [
+       "pick up key happens",
+       "key is not held"
+      ],
+      "then": "key is held",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "use door opens with key",
+      "when": [
+       "use door happens",
+       "door is locked",
+       "key is held",
+       "keymagic is whole"
+      ],
+      "then": "door is open",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "walk through wins",
+      "when": [
+       "walk through happens",
+       "door is open",
+       "game is playing"
+      ],
+      "then": "game is won",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "ghost touch takes life 2",
+      "when": [
+       "touch ghost happens",
+       "ghost is present",
+       "lives is 2"
+      ],
+      "then": "lives is 1",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "ghost touch takes life 1",
+      "when": [
+       "touch ghost happens",
+       "ghost is present",
+       "lives is 1"
+      ],
+      "then": "lives is 0",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "no lives left",
+      "when": [
+       "lives is 0",
+       "game is playing"
+      ],
+      "then": "game is over",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "light lantern",
+      "when": [
+       "light lantern happens",
+       "lantern is dark"
+      ],
+      "then": "lantern is lit",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "lantern scares ghost",
+      "when": [
+       "light lantern happens",
+       "lantern is dark"
+      ],
+      "then": "ghost is away",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "lantern burns key magic",
+      "when": [
+       "light lantern happens",
+       "lantern is dark"
+      ],
+      "then": "keymagic is burnt",
+      "made_by": "guesser first guess"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "Task: Take this small game: the player can pick up a key, open a door with it, and walk through to win. Touching the ghost costs a life, and with no lives left the game is over. Opening the door without the key does nothing. Add one new idea: the player can light a lantern that drives the ghost away for good, but lighting it burns up the key's magic, so the key will no longer open the door. Keep everything else as it was.\n\nThings and states to use:\n  game: playing, won, over\n  door: locked, open\n  lives: 2, 1, 0\n  lantern: dark, lit\nEvents to use: pick up key, use door, walk through, touch ghost, light lantern\n\nThe checker will test your model on these jobs:\n- \"key, door, walk: win\": events in order: pick up key, then use door, then walk through; expected at the end: game is won.\n- \"two ghost touches\": events in order: touch ghost, then touch ghost; expected at the end: game is over.\n- \"door without key stays locked\": events in order: use door, then walk through; expected at the end: door is locked and game is playing.\n- \"the lantern drives the ghost away\": events in order: pick up key, then light lantern, then touch ghost, then touch ghost; expected at the end: lives is 2 and game is playing.\n- \"the burnt key will not open the door\": events in order: pick up key, then light lantern, then use door, then walk through; expected at the end: door is locked and game is playing.\n\nWrite the model.",
+     "replied": "{\"things\":{\"game\":[\"playing\",\"won\",\"over\"],\"door\":[\"locked\",\"open\"],\"lives\":[\"2\",\"1\",\"0\"],\"lantern\":[\"dark\",\"lit\"],\"ghost\":[\"present\",\"away\"],\"key\":[\"not held\",\"held\"],\"keymagic\":[\"whole\",\"burnt\"]},\"events\":[\"pick up key\",\"use door\",\"walk through\",\"touch ghost\",\"light lantern\"],\"start\":{\"game\":\"playing\",\"door\":\"locked\",\"lives\":\"2\",\"lantern\":\"dark\",\"ghost\":\"present\",\"key\":\"not held\",\"keymagic\":\"whole\"},\"rules\":[{\"name\":\"pick up key\",\"when\":[\"pick up key happens\",\"key is not held\"],\"then\":\"key is held\"},{\"name\":\"use door opens with key\",\"when\":[\"use door happens\",\"door is locked\",\"key is held\",\"keymagic is whole\"],\"then\":\"door is open\"},{\"name\":\"walk through wins\",\"when\":[\"walk through happens\",\"door is open\",\"game is playing\"],\"then\":\"game is won\"},{\"name\":\"ghost touch takes life 2\",\"when\":[\"touch ghost happens\",\"ghost is present\",\"lives is 2\"],\"then\":\"lives is 1\"},{\"name\":\"ghost touch takes life 1\",\"when\":[\"touch ghost happens\",\"ghost is present\",\"lives is 1\"],\"then\":\"lives is 0\"},{\"name\":\"no lives left\",\"when\":[\"lives is 0\",\"game is playing\"],\"then\":\"game is over\"},{\"name\":\"light lantern\",\"when\":[\"light lantern happens\",\"lantern is dark\"],\"then\":\"lantern is lit\"},{\"name\":\"lantern scares ghost\",\"when\":[\"light lantern happens\",\"lantern is dark\"],\"then\":\"ghost is away\"},{\"name\":\"lantern burns key magic\",\"when\":[\"light lantern happens\",\"lantern is dark\"],\"then\":\"keymagic is burnt\"}]}",
+     "seconds": 36
+    }
+   ]
+  },
+  "rewrite": {
+   "world": "ghost-lantern",
+   "mode": "rewrite",
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "5/5",
+     "problems": 0
+    }
+   ],
+   "added_jobs": [],
+   "questions_to_world": 0,
+   "guesser_calls": 0,
+   "final": {
+    "original_seen_passed": 5,
+    "original_seen_total": 5,
+    "all_seen_passed": 5,
+    "all_seen_total": 5,
+    "held_back_passed": 3,
+    "held_back_total": 4,
+    "held_back_failed": [
+     "no key, no light"
+    ],
+    "problems": [],
+    "held_back_asked": []
+   },
+   "model": {
+    "things": {
+     "game": [
+      "playing",
+      "won",
+      "over"
+     ],
+     "door": [
+      "locked",
+      "open"
+     ],
+     "lives": [
+      "2",
+      "1",
+      "0"
+     ],
+     "lantern": [
+      "dark",
+      "lit"
+     ],
+     "ghost": [
+      "present",
+      "away"
+     ],
+     "key": [
+      "not held",
+      "held"
+     ],
+     "keymagic": [
+      "whole",
+      "burnt"
+     ]
+    },
+    "events": [
+     "pick up key",
+     "use door",
+     "walk through",
+     "touch ghost",
+     "light lantern"
+    ],
+    "start": {
+     "game": "playing",
+     "door": "locked",
+     "lives": "2",
+     "lantern": "dark",
+     "ghost": "present",
+     "key": "not held",
+     "keymagic": "whole"
+    },
+    "rules": [
+     {
+      "name": "pick up key",
+      "when": [
+       "pick up key happens",
+       "key is not held"
+      ],
+      "then": "key is held",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "use door opens with key",
+      "when": [
+       "use door happens",
+       "door is locked",
+       "key is held",
+       "keymagic is whole"
+      ],
+      "then": "door is open",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "walk through wins",
+      "when": [
+       "walk through happens",
+       "door is open",
+       "game is playing"
+      ],
+      "then": "game is won",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "ghost touch takes life 2",
+      "when": [
+       "touch ghost happens",
+       "ghost is present",
+       "lives is 2"
+      ],
+      "then": "lives is 1",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "ghost touch takes life 1",
+      "when": [
+       "touch ghost happens",
+       "ghost is present",
+       "lives is 1"
+      ],
+      "then": "lives is 0",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "no lives left",
+      "when": [
+       "lives is 0",
+       "game is playing"
+      ],
+      "then": "game is over",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "light lantern",
+      "when": [
+       "light lantern happens",
+       "lantern is dark"
+      ],
+      "then": "lantern is lit",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "lantern scares ghost",
+      "when": [
+       "light lantern happens",
+       "lantern is dark"
+      ],
+      "then": "ghost is away",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "lantern burns key magic",
+      "when": [
+       "light lantern happens",
+       "lantern is dark"
+      ],
+      "then": "keymagic is burnt",
+      "made_by": "guesser first guess"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "Task: Take this small game: the player can pick up a key, open a door with it, and walk through to win. Touching the ghost costs a life, and with no lives left the game is over. Opening the door without the key does nothing. Add one new idea: the player can light a lantern that drives the ghost away for good, but lighting it burns up the key's magic, so the key will no longer open the door. Keep everything else as it was.\n\nThings and states to use:\n  game: playing, won, over\n  door: locked, open\n  lives: 2, 1, 0\n  lantern: dark, lit\nEvents to use: pick up key, use door, walk through, touch ghost, light lantern\n\nThe checker will test your model on these jobs:\n- \"key, door, walk: win\": events in order: pick up key, then use door, then walk through; expected at the end: game is won.\n- \"two ghost touches\": events in order: touch ghost, then touch ghost; expected at the end: game is over.\n- \"door without key stays locked\": events in order: use door, then walk through; expected at the end: door is locked and game is playing.\n- \"the lantern drives the ghost away\": events in order: pick up key, then light lantern, then touch ghost, then touch ghost; expected at the end: lives is 2 and game is playing.\n- \"the burnt key will not open the door\": events in order: pick up key, then light lantern, then use door, then walk through; expected at the end: door is locked and game is playing.\n\nWrite the model.",
+     "replied": "{\"things\":{\"game\":[\"playing\",\"won\",\"over\"],\"door\":[\"locked\",\"open\"],\"lives\":[\"2\",\"1\",\"0\"],\"lantern\":[\"dark\",\"lit\"],\"ghost\":[\"present\",\"away\"],\"key\":[\"not held\",\"held\"],\"keymagic\":[\"whole\",\"burnt\"]},\"events\":[\"pick up key\",\"use door\",\"walk through\",\"touch ghost\",\"light lantern\"],\"start\":{\"game\":\"playing\",\"door\":\"locked\",\"lives\":\"2\",\"lantern\":\"dark\",\"ghost\":\"present\",\"key\":\"not held\",\"keymagic\":\"whole\"},\"rules\":[{\"name\":\"pick up key\",\"when\":[\"pick up key happens\",\"key is not held\"],\"then\":\"key is held\"},{\"name\":\"use door opens with key\",\"when\":[\"use door happens\",\"door is locked\",\"key is held\",\"keymagic is whole\"],\"then\":\"door is open\"},{\"name\":\"walk through wins\",\"when\":[\"walk through happens\",\"door is open\",\"game is playing\"],\"then\":\"game is won\"},{\"name\":\"ghost touch takes life 2\",\"when\":[\"touch ghost happens\",\"ghost is present\",\"lives is 2\"],\"then\":\"lives is 1\"},{\"name\":\"ghost touch takes life 1\",\"when\":[\"touch ghost happens\",\"ghost is present\",\"lives is 1\"],\"then\":\"lives is 0\"},{\"name\":\"no lives left\",\"when\":[\"lives is 0\",\"game is playing\"],\"then\":\"game is over\"},{\"name\":\"light lantern\",\"when\":[\"light lantern happens\",\"lantern is dark\"],\"then\":\"lantern is lit\"},{\"name\":\"lantern scares ghost\",\"when\":[\"light lantern happens\",\"lantern is dark\"],\"then\":\"ghost is away\"},{\"name\":\"lantern burns key magic\",\"when\":[\"light lantern happens\",\"lantern is dark\"],\"then\":\"keymagic is burnt\"}]}",
+     "seconds": 36
+    }
+   ]
+  },
+  "guess and fix": {
+   "world": "ghost-lantern",
+   "mode": "guess and fix",
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "5/5",
+     "problems": 0
+    }
+   ],
+   "added_jobs": [],
+   "questions_to_world": 0,
+   "guesser_calls": 0,
+   "final": {
+    "original_seen_passed": 5,
+    "original_seen_total": 5,
+    "all_seen_passed": 5,
+    "all_seen_total": 5,
+    "held_back_passed": 3,
+    "held_back_total": 4,
+    "held_back_failed": [
+     "no key, no light"
+    ],
+    "problems": [],
+    "held_back_asked": []
+   },
+   "model": {
+    "things": {
+     "game": [
+      "playing",
+      "won",
+      "over"
+     ],
+     "door": [
+      "locked",
+      "open"
+     ],
+     "lives": [
+      "2",
+      "1",
+      "0"
+     ],
+     "lantern": [
+      "dark",
+      "lit"
+     ],
+     "ghost": [
+      "present",
+      "away"
+     ],
+     "key": [
+      "not held",
+      "held"
+     ],
+     "keymagic": [
+      "whole",
+      "burnt"
+     ]
+    },
+    "events": [
+     "pick up key",
+     "use door",
+     "walk through",
+     "touch ghost",
+     "light lantern"
+    ],
+    "start": {
+     "game": "playing",
+     "door": "locked",
+     "lives": "2",
+     "lantern": "dark",
+     "ghost": "present",
+     "key": "not held",
+     "keymagic": "whole"
+    },
+    "rules": [
+     {
+      "name": "pick up key",
+      "when": [
+       "pick up key happens",
+       "key is not held"
+      ],
+      "then": "key is held",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "use door opens with key",
+      "when": [
+       "use door happens",
+       "door is locked",
+       "key is held",
+       "keymagic is whole"
+      ],
+      "then": "door is open",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "walk through wins",
+      "when": [
+       "walk through happens",
+       "door is open",
+       "game is playing"
+      ],
+      "then": "game is won",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "ghost touch takes life 2",
+      "when": [
+       "touch ghost happens",
+       "ghost is present",
+       "lives is 2"
+      ],
+      "then": "lives is 1",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "ghost touch takes life 1",
+      "when": [
+       "touch ghost happens",
+       "ghost is present",
+       "lives is 1"
+      ],
+      "then": "lives is 0",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "no lives left",
+      "when": [
+       "lives is 0",
+       "game is playing"
+      ],
+      "then": "game is over",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "light lantern",
+      "when": [
+       "light lantern happens",
+       "lantern is dark"
+      ],
+      "then": "lantern is lit",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "lantern scares ghost",
+      "when": [
+       "light lantern happens",
+       "lantern is dark"
+      ],
+      "then": "ghost is away",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "lantern burns key magic",
+      "when": [
+       "light lantern happens",
+       "lantern is dark"
+      ],
+      "then": "keymagic is burnt",
+      "made_by": "guesser first guess"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "Task: Take this small game: the player can pick up a key, open a door with it, and walk through to win. Touching the ghost costs a life, and with no lives left the game is over. Opening the door without the key does nothing. Add one new idea: the player can light a lantern that drives the ghost away for good, but lighting it burns up the key's magic, so the key will no longer open the door. Keep everything else as it was.\n\nThings and states to use:\n  game: playing, won, over\n  door: locked, open\n  lives: 2, 1, 0\n  lantern: dark, lit\nEvents to use: pick up key, use door, walk through, touch ghost, light lantern\n\nThe checker will test your model on these jobs:\n- \"key, door, walk: win\": events in order: pick up key, then use door, then walk through; expected at the end: game is won.\n- \"two ghost touches\": events in order: touch ghost, then touch ghost; expected at the end: game is over.\n- \"door without key stays locked\": events in order: use door, then walk through; expected at the end: door is locked and game is playing.\n- \"the lantern drives the ghost away\": events in order: pick up key, then light lantern, then touch ghost, then touch ghost; expected at the end: lives is 2 and game is playing.\n- \"the burnt key will not open the door\": events in order: pick up key, then light lantern, then use door, then walk through; expected at the end: door is locked and game is playing.\n\nWrite the model.",
+     "replied": "{\"things\":{\"game\":[\"playing\",\"won\",\"over\"],\"door\":[\"locked\",\"open\"],\"lives\":[\"2\",\"1\",\"0\"],\"lantern\":[\"dark\",\"lit\"],\"ghost\":[\"present\",\"away\"],\"key\":[\"not held\",\"held\"],\"keymagic\":[\"whole\",\"burnt\"]},\"events\":[\"pick up key\",\"use door\",\"walk through\",\"touch ghost\",\"light lantern\"],\"start\":{\"game\":\"playing\",\"door\":\"locked\",\"lives\":\"2\",\"lantern\":\"dark\",\"ghost\":\"present\",\"key\":\"not held\",\"keymagic\":\"whole\"},\"rules\":[{\"name\":\"pick up key\",\"when\":[\"pick up key happens\",\"key is not held\"],\"then\":\"key is held\"},{\"name\":\"use door opens with key\",\"when\":[\"use door happens\",\"door is locked\",\"key is held\",\"keymagic is whole\"],\"then\":\"door is open\"},{\"name\":\"walk through wins\",\"when\":[\"walk through happens\",\"door is open\",\"game is playing\"],\"then\":\"game is won\"},{\"name\":\"ghost touch takes life 2\",\"when\":[\"touch ghost happens\",\"ghost is present\",\"lives is 2\"],\"then\":\"lives is 1\"},{\"name\":\"ghost touch takes life 1\",\"when\":[\"touch ghost happens\",\"ghost is present\",\"lives is 1\"],\"then\":\"lives is 0\"},{\"name\":\"no lives left\",\"when\":[\"lives is 0\",\"game is playing\"],\"then\":\"game is over\"},{\"name\":\"light lantern\",\"when\":[\"light lantern happens\",\"lantern is dark\"],\"then\":\"lantern is lit\"},{\"name\":\"lantern scares ghost\",\"when\":[\"light lantern happens\",\"lantern is dark\"],\"then\":\"ghost is away\"},{\"name\":\"lantern burns key magic\",\"when\":[\"light lantern happens\",\"lantern is dark\"],\"then\":\"keymagic is burnt\"}]}",
+     "seconds": 36
+    }
+   ]
+  },
+  "full loop": {
+   "world": "ghost-lantern",
+   "mode": "full loop",
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "5/5",
+     "problems": 0
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 3,
+     "seen": "6/8"
+    },
+    {
+     "step": "cross-check a fix with the world",
+     "what": "in rule \"pick up key\": condition \"lives is 2\" added",
+     "world_sides_with_fix": false,
+     "seen": "6/9"
+    },
+    {
+     "step": "small fix",
+     "what": "in rule \"pick up key\": condition \"lives is 2\" added",
+     "repaired": [
+      "world answer 2"
+     ],
+     "seen": "7/9"
+    },
+    {
+     "step": "new part",
+     "verdict": "accepted",
+     "kept": true,
+     "kind": "new thing (construction)",
+     "added_rules": [
+      "pick up key with one life",
+      "game over drops key"
+     ],
+     "added_things": [],
+     "repaired": [
+      "world answer 1"
+     ],
+     "lost": [],
+     "tuned_by_checker": 0,
+     "old_rules_cleared_out": [],
+     "seen": "8/9"
+    },
+    {
+     "step": "new part",
+     "verdict": "accepted",
+     "kept": true,
+     "kind": "new thing (construction)",
+     "added_rules": [
+      "key carried after winning"
+     ],
+     "added_things": [],
+     "repaired": [
+      "world answer 4"
+     ],
+     "lost": [],
+     "tuned_by_checker": 0,
+     "old_rules_cleared_out": [],
+     "seen": "9/9"
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 3,
+     "seen": "10/12"
+    },
+    {
+     "step": "new part",
+     "verdict": "accepted",
+     "kept": true,
+     "kind": "new rule",
+     "added_rules": [
+      "game over keeps held key carried",
+      "game over keeps carried key carried"
+     ],
+     "added_things": [],
+     "repaired": [
+      "world answer 5"
+     ],
+     "lost": [],
+     "tuned_by_checker": 0,
+     "old_rules_cleared_out": [],
+     "seen": "11/12"
+    }
+   ],
+   "added_jobs": [
+    {
+     "job": {
+      "name": "world answer 1",
+      "start": {},
+      "events": [
+       "touch ghost",
+       "touch ghost",
+       "pick up key"
+      ],
+      "expect": [
+       "key is on floor"
+      ],
+      "from": "given"
+     },
+     "why": "loose rule \"pick up key\": condition \"key is not held\" replaced by \"game is playing\""
+    },
+    {
+     "job": {
+      "name": "world answer 2",
+      "start": {},
+      "events": [
+       "touch ghost",
+       "pick up key",
+       "touch ghost",
+       "use door",
+       "walk through"
+      ],
+      "expect": [
+       "door is locked"
+      ],
+      "from": "given"
+     },
+     "why": "loose rule \"use door opens with key\": condition \"door is locked\" replaced by \"game is playing\""
+    },
+    {
+     "job": {
+      "name": "world answer 3",
+      "start": {},
+      "events": [
+       "pick up key",
+       "use door"
+      ],
+      "expect": [
+       "game is playing"
+      ],
+      "from": "given"
+     },
+     "why": "loose rule \"walk through wins\": condition \"walk through happens\" left out"
+    },
+    {
+     "job": {
+      "name": "world answer 4",
+      "start": {},
+      "events": [
+       "touch ghost",
+       "pick up key",
+       "use door",
+       "walk through"
+      ],
+      "expect": [
+       "game is won",
+       "door is open",
+       "key is carried"
+      ],
+      "from": "given"
+     },
+     "why": "cross-check the fix: in rule \"pick up key\": condition \"lives is 2\" added",
+     "sides_with_fix": false
+    },
+    {
+     "job": {
+      "name": "world answer 5",
+      "start": {},
+      "events": [
+       "touch ghost",
+       "pick up key",
+       "use door",
+       "touch ghost",
+       "use door",
+       "walk through"
+      ],
+      "expect": [
+       "game is over",
+       "key is carried"
+      ],
+      "from": "given"
+     },
+     "why": "loose rule \"walk through wins\": condition \"game is playing\" left out"
+    },
+    {
+     "job": {
+      "name": "world answer 6",
+      "start": {},
+      "events": [
+       "pick up key",
+       "use door",
+       "light lantern",
+       "walk through"
+      ],
+      "expect": [
+       "game is won",
+       "key is burnt out"
+      ],
+      "from": "given"
+     },
+     "why": "loose rule \"walk through wins\": condition \"game is playing\" replaced by \"lantern is dark\""
+    },
+    {
+     "job": {
+      "name": "world answer 7",
+      "start": {},
+      "events": [
+       "pick up key",
+       "touch ghost",
+       "use door",
+       "walk through"
+      ],
+      "expect": [
+       "lives is 1"
+      ],
+      "from": "given"
+     },
+     "why": "loose rule \"ghost touch takes life 2\": condition \"ghost is present\" replaced by \"key is not held\""
+    }
+   ],
+   "questions_to_world": 7,
+   "guesser_calls": 3,
+   "final": {
+    "original_seen_passed": 5,
+    "original_seen_total": 5,
+    "all_seen_passed": 11,
+    "all_seen_total": 12,
+    "held_back_passed": 3,
+    "held_back_total": 4,
+    "held_back_failed": [
+     "no key, no light"
+    ],
+    "problems": [],
+    "held_back_asked": [
+     "open the door first, then light the lantern",
+     "the old game still works with a ghost touch"
+    ]
+   },
+   "model": {
+    "things": {
+     "game": [
+      "playing",
+      "won",
+      "over"
+     ],
+     "door": [
+      "locked",
+      "open"
+     ],
+     "lives": [
+      "2",
+      "1",
+      "0"
+     ],
+     "lantern": [
+      "dark",
+      "lit"
+     ],
+     "ghost": [
+      "present",
+      "away"
+     ],
+     "key": [
+      "not held",
+      "held",
+      "on floor",
+      "carried"
+     ],
+     "keymagic": [
+      "whole",
+      "burnt"
+     ]
+    },
+    "events": [
+     "pick up key",
+     "use door",
+     "walk through",
+     "touch ghost",
+     "light lantern"
+    ],
+    "start": {
+     "game": "playing",
+     "door": "locked",
+     "lives": "2",
+     "lantern": "dark",
+     "ghost": "present",
+     "key": "not held",
+     "keymagic": "whole"
+    },
+    "rules": [
+     {
+      "name": "pick up key",
+      "when": [
+       "pick up key happens",
+       "key is not held",
+       "lives is 2"
+      ],
+      "then": "key is held",
+      "made_by": "checker small fix"
+     },
+     {
+      "name": "use door opens with key",
+      "when": [
+       "use door happens",
+       "door is locked",
+       "key is held",
+       "keymagic is whole"
+      ],
+      "then": "door is open",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "walk through wins",
+      "when": [
+       "walk through happens",
+       "door is open",
+       "game is playing"
+      ],
+      "then": "game is won",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "ghost touch takes life 2",
+      "when": [
+       "touch ghost happens",
+       "ghost is present",
+       "lives is 2"
+      ],
+      "then": "lives is 1",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "ghost touch takes life 1",
+      "when": [
+       "touch ghost happens",
+       "ghost is present",
+       "lives is 1"
+      ],
+      "then": "lives is 0",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "no lives left",
+      "when": [
+       "lives is 0",
+       "game is playing"
+      ],
+      "then": "game is over",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "light lantern",
+      "when": [
+       "light lantern happens",
+       "lantern is dark"
+      ],
+      "then": "lantern is lit",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "lantern scares ghost",
+      "when": [
+       "light lantern happens",
+       "lantern is dark"
+      ],
+      "then": "ghost is away",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "lantern burns key magic",
+      "when": [
+       "light lantern happens",
+       "lantern is dark"
+      ],
+      "then": "keymagic is burnt",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "pick up key with one life",
+      "when": [
+       "pick up key happens",
+       "key is not held",
+       "lives is 1"
+      ],
+      "then": "key is held",
+      "made_by": "guesser new part"
+     },
+     {
+      "name": "game over drops key",
+      "when": [
+       "game is over"
+      ],
+      "then": "key is on floor",
+      "made_by": "guesser new part"
+     },
+     {
+      "name": "key carried after winning",
+      "when": [
+       "game is won"
+      ],
+      "then": "key is carried",
+      "made_by": "guesser new part"
+     },
+     {
+      "name": "game over keeps held key carried",
+      "when": [
+       "game is over",
+       "key is held"
+      ],
+      "then": "key is carried",
+      "made_by": "guesser new part"
+     },
+     {
+      "name": "game over keeps carried key carried",
+      "when": [
+       "game is over",
+       "key is carried"
+      ],
+      "then": "key is carried",
+      "made_by": "guesser new part"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "Task: Take this small game: the player can pick up a key, open a door with it, and walk through to win. Touching the ghost costs a life, and with no lives left the game is over. Opening the door without the key does nothing. Add one new idea: the player can light a lantern that drives the ghost away for good, but lighting it burns up the key's magic, so the key will no longer open the door. Keep everything else as it was.\n\nThings and states to use:\n  game: playing, won, over\n  door: locked, open\n  lives: 2, 1, 0\n  lantern: dark, lit\nEvents to use: pick up key, use door, walk through, touch ghost, light lantern\n\nThe checker will test your model on these jobs:\n- \"key, door, walk: win\": events in order: pick up key, then use door, then walk through; expected at the end: game is won.\n- \"two ghost touches\": events in order: touch ghost, then touch ghost; expected at the end: game is over.\n- \"door without key stays locked\": events in order: use door, then walk through; expected at the end: door is locked and game is playing.\n- \"the lantern drives the ghost away\": events in order: pick up key, then light lantern, then touch ghost, then touch ghost; expected at the end: lives is 2 and game is playing.\n- \"the burnt key will not open the door\": events in order: pick up key, then light lantern, then use door, then walk through; expected at the end: door is locked and game is playing.\n\nWrite the model.",
+     "replied": "{\"things\":{\"game\":[\"playing\",\"won\",\"over\"],\"door\":[\"locked\",\"open\"],\"lives\":[\"2\",\"1\",\"0\"],\"lantern\":[\"dark\",\"lit\"],\"ghost\":[\"present\",\"away\"],\"key\":[\"not held\",\"held\"],\"keymagic\":[\"whole\",\"burnt\"]},\"events\":[\"pick up key\",\"use door\",\"walk through\",\"touch ghost\",\"light lantern\"],\"start\":{\"game\":\"playing\",\"door\":\"locked\",\"lives\":\"2\",\"lantern\":\"dark\",\"ghost\":\"present\",\"key\":\"not held\",\"keymagic\":\"whole\"},\"rules\":[{\"name\":\"pick up key\",\"when\":[\"pick up key happens\",\"key is not held\"],\"then\":\"key is held\"},{\"name\":\"use door opens with key\",\"when\":[\"use door happens\",\"door is locked\",\"key is held\",\"keymagic is whole\"],\"then\":\"door is open\"},{\"name\":\"walk through wins\",\"when\":[\"walk through happens\",\"door is open\",\"game is playing\"],\"then\":\"game is won\"},{\"name\":\"ghost touch takes life 2\",\"when\":[\"touch ghost happens\",\"ghost is present\",\"lives is 2\"],\"then\":\"lives is 1\"},{\"name\":\"ghost touch takes life 1\",\"when\":[\"touch ghost happens\",\"ghost is present\",\"lives is 1\"],\"then\":\"lives is 0\"},{\"name\":\"no lives left\",\"when\":[\"lives is 0\",\"game is playing\"],\"then\":\"game is over\"},{\"name\":\"light lantern\",\"when\":[\"light lantern happens\",\"lantern is dark\"],\"then\":\"lantern is lit\"},{\"name\":\"lantern scares ghost\",\"when\":[\"light lantern happens\",\"lantern is dark\"],\"then\":\"ghost is away\"},{\"name\":\"lantern burns key magic\",\"when\":[\"light lantern happens\",\"lantern is dark\"],\"then\":\"keymagic is burnt\"}]}",
+     "seconds": 36
+    },
+    {
+     "asked": "Task: Take this small game: the player can pick up a key, open a door with it, and walk through to win. Touching the ghost costs a life, and with no lives left the game is over. Opening the door without the key does nothing. Add one new idea: the player can light a lantern that drives the ghost away for good, but lighting it burns up the key's magic, so the key will no longer open the door. Keep everything else as it was.\n\nThings and states to use:\n  game: playing, won, over\n  door: locked, open\n  lives: 2, 1, 0\n  lantern: dark, lit\nEvents to use: pick up key, use door, walk through, touch ghost, light lantern\n\nThe checker will test your model on these jobs:\n- \"key, door, walk: win\": events in order: pick up key, then use door, then walk through; expected at the end: game is won.\n- \"two ghost touches\": events in order: touch ghost, then touch ghost; expected at the end: game is over.\n- \"door without key stays locked\": events in order: use door, then walk through; expected at the end: door is locked and game is playing.\n- \"the lantern drives the ghost away\": events in order: pick up key, then light lantern, then touch ghost, then touch ghost; expected at the end: lives is 2 and game is playing.\n- \"the burnt key will not open the door\": events in order: pick up key, then light lantern, then use door, then walk through; expected at the end: door is locked and game is playing.\n- \"world answer 1\": events in order: touch ghost, then touch ghost, then pick up key; expected at the end: key is on floor.\n- \"world answer 2\": events in order: touch ghost, then pick up key, then touch ghost, then use door, then walk through; expected at the end: door is locked.\n- \"world answer 3\": events in order: pick up key, then use door; expected at the end: game is playing.\n- \"world answer 4\": events in order: touch ghost, then pick up key, then use door, then walk through; expected at the end: game is won and door is open and key is carried.\n\nThe current model has these things: game (playing, won, over; starts playing); door (locked, open; starts locked); lives (2, 1, 0; starts 2); lantern (dark, lit; starts dark); ghost (present, away; starts present); key (not held, held; starts not held); keymagic (whole, burnt; starts whole).\nIts rules:\n- \"pick up key\": when pick up key happens and key is not held and lives is 2, key is held\n- \"use door opens with key\": when use door happens and door is locked and key is held and keymagic is whole, door is open\n- \"walk through wins\": when walk through happens and door is open and game is playing, game is won\n- \"ghost touch takes life 2\": when touch ghost happens and ghost is present and lives is 2, lives is 1\n- \"ghost touch takes life 1\": when touch ghost happens and ghost is present and lives is 1, lives is 0\n- \"no lives left\": when lives is 0 and game is playing, game is over\n- \"light lantern\": when light lantern happens and lantern is dark, lantern is lit\n- \"lantern scares ghost\": when light lantern happens and lantern is dark, ghost is away\n- \"lantern burns key magic\": when light lantern happens and lantern is dark, keymagic is burnt\n\nThis job fails:\n- \"world answer 1\": events in order: touch ghost, then touch ghost, then pick up key; expected at the end: key is on floor.\nWhat the checker saw:\n- Job \"world answer 1\": \"on floor\" is not a state of \"key\". Known: \"not held\", \"held\".\n\nNo small change to the existing rules makes this job pass, so something is missing. Write only the new parts: new rules, and new things (with their states and start) whenever you need to keep track of something the task does not show directly.",
+     "replied": "{\n  \"new_things\": {\n    \"key\": [\"not held\", \"held\", \"on floor\"]\n  },\n  \"new_start\": {\n    \"key\": \"on floor\"\n  },\n  \"new_rules\": [\n    {\n      \"name\": \"pick up key with one life\",\n      \"when\": [\"pick up key happens\", \"key is not held\", \"lives is 1\"],\n      \"then\": \"key is held\"\n    },\n    {\n      \"name\": \"game over drops key\",\n      \"when\": [\"game is over\"],\n      \"then\": \"key is on floor\"\n    }\n  ]\n}",
+     "seconds": 54
+    },
+    {
+     "asked": "Task: Take this small game: the player can pick up a key, open a door with it, and walk through to win. Touching the ghost costs a life, and with no lives left the game is over. Opening the door without the key does nothing. Add one new idea: the player can light a lantern that drives the ghost away for good, but lighting it burns up the key's magic, so the key will no longer open the door. Keep everything else as it was.\n\nThings and states to use:\n  game: playing, won, over\n  door: locked, open\n  lives: 2, 1, 0\n  lantern: dark, lit\nEvents to use: pick up key, use door, walk through, touch ghost, light lantern\n\nThe checker will test your model on these jobs:\n- \"key, door, walk: win\": events in order: pick up key, then use door, then walk through; expected at the end: game is won.\n- \"two ghost touches\": events in order: touch ghost, then touch ghost; expected at the end: game is over.\n- \"door without key stays locked\": events in order: use door, then walk through; expected at the end: door is locked and game is playing.\n- \"the lantern drives the ghost away\": events in order: pick up key, then light lantern, then touch ghost, then touch ghost; expected at the end: lives is 2 and game is playing.\n- \"the burnt key will not open the door\": events in order: pick up key, then light lantern, then use door, then walk through; expected at the end: door is locked and game is playing.\n- \"world answer 1\": events in order: touch ghost, then touch ghost, then pick up key; expected at the end: key is on floor.\n- \"world answer 2\": events in order: touch ghost, then pick up key, then touch ghost, then use door, then walk through; expected at the end: door is locked.\n- \"world answer 3\": events in order: pick up key, then use door; expected at the end: game is playing.\n- \"world answer 4\": events in order: touch ghost, then pick up key, then use door, then walk through; expected at the end: game is won and door is open and key is carried.\n\nThe current model has these things: game (playing, won, over; starts playing); door (locked, open; starts locked); lives (2, 1, 0; starts 2); lantern (dark, lit; starts dark); ghost (present, away; starts present); key (not held, held, on floor; starts not held); keymagic (whole, burnt; starts whole).\nIts rules:\n- \"pick up key\": when pick up key happens and key is not held and lives is 2, key is held\n- \"use door opens with key\": when use door happens and door is locked and key is held and keymagic is whole, door is open\n- \"walk through wins\": when walk through happens and door is open and game is playing, game is won\n- \"ghost touch takes life 2\": when touch ghost happens and ghost is present and lives is 2, lives is 1\n- \"ghost touch takes life 1\": when touch ghost happens and ghost is present and lives is 1, lives is 0\n- \"no lives left\": when lives is 0 and game is playing, game is over\n- \"light lantern\": when light lantern happens and lantern is dark, lantern is lit\n- \"lantern scares ghost\": when light lantern happens and lantern is dark, ghost is away\n- \"lantern burns key magic\": when light lantern happens and lantern is dark, keymagic is burnt\n- \"pick up key with one life\": when pick up key happens and key is not held and lives is 1, key is held\n- \"game over drops key\": when game is over, key is on floor\n\nThis job fails:\n- \"world answer 4\": events in order: touch ghost, then pick up key, then use door, then walk through; expected at the end: game is won and door is open and key is carried.\nWhat the checker saw:\n- Job \"world answer 4\": \"carried\" is not a state of \"key\". Known: \"not held\", \"held\", \"on floor\".\n\nThese new parts were tried already and changed nothing, so write something different:\n- \"pick up key happens and key is not held and lives is 1\" -> \"key is held\"; \"game is over\" -> \"key is on floor\"\n\nNo small change to the existing rules makes this job pass, so something is missing. Write only the new parts: new rules, and new things (with their states and start) whenever you need to keep track of something the task does not show directly.",
+     "replied": "{\n  \"new_things\": {\"key\": [\"carried\"]},\n  \"new_start\": {},\n  \"new_rules\": [\n    {\"name\": \"key carried after winning\", \"when\": [\"game is won\"], \"then\": \"key is carried\"}\n  ]\n}",
+     "seconds": 48
+    },
+    {
+     "asked": "Task: Take this small game: the player can pick up a key, open a door with it, and walk through to win. Touching the ghost costs a life, and with no lives left the game is over. Opening the door without the key does nothing. Add one new idea: the player can light a lantern that drives the ghost away for good, but lighting it burns up the key's magic, so the key will no longer open the door. Keep everything else as it was.\n\nThings and states to use:\n  game: playing, won, over\n  door: locked, open\n  lives: 2, 1, 0\n  lantern: dark, lit\nEvents to use: pick up key, use door, walk through, touch ghost, light lantern\n\nThe checker will test your model on these jobs:\n- \"key, door, walk: win\": events in order: pick up key, then use door, then walk through; expected at the end: game is won.\n- \"two ghost touches\": events in order: touch ghost, then touch ghost; expected at the end: game is over.\n- \"door without key stays locked\": events in order: use door, then walk through; expected at the end: door is locked and game is playing.\n- \"the lantern drives the ghost away\": events in order: pick up key, then light lantern, then touch ghost, then touch ghost; expected at the end: lives is 2 and game is playing.\n- \"the burnt key will not open the door\": events in order: pick up key, then light lantern, then use door, then walk through; expected at the end: door is locked and game is playing.\n- \"world answer 1\": events in order: touch ghost, then touch ghost, then pick up key; expected at the end: key is on floor.\n- \"world answer 2\": events in order: touch ghost, then pick up key, then touch ghost, then use door, then walk through; expected at the end: door is locked.\n- \"world answer 3\": events in order: pick up key, then use door; expected at the end: game is playing.\n- \"world answer 4\": events in order: touch ghost, then pick up key, then use door, then walk through; expected at the end: game is won and door is open and key is carried.\n- \"world answer 5\": events in order: touch ghost, then pick up key, then use door, then touch ghost, then use door, then walk through; expected at the end: game is over and key is carried.\n- \"world answer 6\": events in order: pick up key, then use door, then light lantern, then walk through; expected at the end: game is won and key is burnt out.\n- \"world answer 7\": events in order: pick up key, then touch ghost, then use door, then walk through; expected at the end: lives is 1.\n\nThe current model has these things: game (playing, won, over; starts playing); door (locked, open; starts locked); lives (2, 1, 0; starts 2); lantern (dark, lit; starts dark); ghost (present, away; starts present); key (not held, held, on floor, carried; starts not held); keymagic (whole, burnt; starts whole).\nIts rules:\n- \"pick up key\": when pick up key happens and key is not held and lives is 2, key is held\n- \"use door opens with key\": when use door happens and door is locked and key is held and keymagic is whole, door is open\n- \"walk through wins\": when walk through happens and door is open and game is playing, game is won\n- \"ghost touch takes life 2\": when touch ghost happens and ghost is present and lives is 2, lives is 1\n- \"ghost touch takes life 1\": when touch ghost happens and ghost is present and lives is 1, lives is 0\n- \"no lives left\": when lives is 0 and game is playing, game is over\n- \"light lantern\": when light lantern happens and lantern is dark, lantern is lit\n- \"lantern scares ghost\": when light lantern happens and lantern is dark, ghost is away\n- \"lantern burns key magic\": when light lantern happens and lantern is dark, keymagic is burnt\n- \"pick up key with one life\": when pick up key happens and key is not held and lives is 1, key is held\n- \"game over drops key\": when game is over, key is on floor\n- \"key carried after winning\": when game is won, key is carried\n\nThis job fails:\n- \"world answer 5\": events in order: touch ghost, then pick up key, then use door, then touch ghost, then use door, then walk through; expected at the end: game is over and key is carried.\nWhat the checker saw:\n- What happened: step 1: ghost touch takes life 2 made lives 1; step 2: pick up key with one life made key held; step 3: use door opens with key made door open; step 4: ghost touch takes life 1 made lives 0; step 5: no lives left made game over; step 6: game over drops key made key on floor.\n- Wanted key is carried at the end; got key on floor.\n- Rule \"key carried after winning\" never fired: \"game is won\" was never true.\n\nThese new parts were tried already and changed nothing, so write something different:\n- \"pick up key happens and key is not held and lives is 1\" -> \"key is held\"; \"game is over\" -> \"key is on floor\"\n- \"game is won\" -> \"key is carried\"\n\nNo small change to the existing rules makes this job pass, so something is missing. Write only the new parts: new rules, and new things (with their states and start) whenever you need to keep track of something the task does not show directly.",
+     "replied": "{\"new_things\": {}, \"new_start\": {}, \"new_rules\": [{\"name\": \"game over keeps held key carried\", \"when\": [\"game is over\", \"key is held\"], \"then\": \"key is carried\"}, {\"name\": \"game over keeps carried key carried\", \"when\": [\"game is over\", \"key is carried\"], \"then\": \"key is carried\"}]}",
+     "seconds": 56
+    }
+   ]
+  }
+ }
+}

@@ -1,0 +1,171 @@
+# Guess Check Fix - project story
+
+## The goal
+
+Let AIs plan, reason and carry things out, beyond code: write stories that work, understand vague requests, plan a video game, solve problems, explore ideas creatively, reason about cause and effect. The tool should guess, explore, and above all correct its own errors. It combines the owner's two earlier tools, the hard-to-vary skill and the Strata kit, following "Claude Fable Semantics – standalone theory", revision 1.
+
+The idea in one line: an AI guesses, an ordinary program checks, and the fixing is split so each side does only what it can do.
+
+## Where things stand
+
+- **DeepSeek is now the guesser, and every result in log 17 and 18 comes from real DeepSeek runs** (DeepSeek V4.1 Flash, reached directly from this computer). Sonnet was never run; the Sonnet page still works with stand-ins.
+- **Ten test worlds**: the first five, and five new ones for planning, problem solving, vague prose, a second story, and adding a new idea to a game without breaking it (log 18).
+- **An error-correction test with planted mistakes**: 32 known mistakes, each handed to seven correctors (log 18).
+- **The main finding**: DeepSeek's first guesses usually pass every shown job; its mistakes are in what it was not shown. Checking the shown jobs can never find those. Asking the world about nearby situations finds some; DeepSeek rereading its own model finds others. Whole rewrites fix the broken part but re-guess the rest. The full write-up is "18 What DeepSeek showed about error correction.md".
+- **Best way of running so far: "guesser fixes first"**: 15 of 20 ten-world runs ended with every job passing, and it repaired all 10 visible and 11 of 20 hidden planted mistakes.
+- **All tests pass**: 20 checker tests, 13 Sonnet-guesser tests, 26 error-correction tests, 12 browser tests.
+- **The project now lives in the owner's h-EPI repository**, in the folder `guess-check-fix`, so it cannot be lost the way log 15 describes.
+
+## How the pieces fit
+
+**An example first.** Take the lighthouse story. The loop gives DeepSeek the request and the shown jobs. DeepSeek writes a model in which Mara realises Tev can't cope "when she lights the lamp during the storm". Every shown job passes. In the full loop, the checker then looks for surprises: it notices no rule reads the lamp, so it asks the world, "if the lamp was already lit when the storm came, what happens?" The world says Mara leaves; the model says she stays. A job fails. In "guesser fixes first", DeepSeek is shown the checker's report, now including the world's answer, and rewrites the model; the checker keeps the rewrite only if it repairs the failing job and breaks none that passed. Any fix the checker makes itself is first cross-checked with one more question to the world. At the end, the held-back jobs DeepSeek never saw are run.
+
+**The parts, what each does, and what it hands on:**
+
+| Part | What it does | What it hands on |
+|---|---|---|
+| `03 test worlds.js` | Five worlds: ball and wall, hidden ball, door game, lighthouse story, to-do app. Each has a request, jobs (some held back), and a hidden true model. | The request and shown jobs go to the guesser through the loop. The hidden true model answers the world's questions and grades held-back jobs. |
+| `18 more test worlds.js` | Five more worlds, same layout: moving day (planning), river crossing (problem solving), plant watering (vague prose), borrowed lantern (a story), ghost lantern (a new idea added to the door game). | The same as above. |
+| `03 checker.js` | Runs a model through each job, explains failures, finds small fixes, checks fixes (no backsliding), finds deciding tests, searches for one new rule. Never guesses. Since log 17 a small fix can swap a condition for one about a different thing. | Pass or fail with reasons, small fixes, fix verdicts, deciding tests, to the loop. |
+| `09 loop.js` | Drives the cycle: guess, check, fix, ask the world, then the held-back jobs. Seven ways of running. Since log 17 the full loop cross-checks each checker fix with the world and looks for surprises. | Requests to the guesser; models to the checker; a record of each run. |
+| `17 DeepSeek guesser.js` | Sends the loop's messages to DeepSeek V4.1 Flash and returns its reply. Reads the account key from the DEEPSEEK_API_KEY setting at each call and never writes it anywhere. Counts thinking, cut-off replies and failures. | DeepSeek's reply text, back to the loop. |
+| `17 run with DeepSeek.js` | Runs worlds with DeepSeek: one shared first guess per world and repeat, then each way of running. Can reuse the first guesses of an earlier run. | A record per world and repeat, and `results.md`, in a folder under `runs/`. |
+| `18 planted mistakes.js` | Plants known mistakes in the true models, hands each to the correctors, and grades the result on shown jobs, held-back jobs and 400 nearby situations. | A record per planted mistake, under `runs/`. |
+| `18 summarise planted mistakes.js` | Counts, per corrector, how many planted mistakes ended repaired, better, unchanged or worse, and lists every one. | `results.md` in the run's folder. |
+| `16 Sonnet guesser.js`, `16 Sonnet page template.html`, `16 build the Sonnet page.js`, `16 Sonnet page.html` | The Sonnet page from log 16, rebuilt from the changed code. | A results table on screen, for when Sonnet is run. |
+| `11 checker tests.js`, `16 Sonnet guesser tests.js`, `17 error correction tests.js`, `16 page test in a browser.py` | The tests. `17 error correction tests.js` replays DeepSeek's real guesses from the records, and tests the DeepSeek guesser with a stand-in. | ok or FAIL for each. |
+| `15 Guide for the guesser.md` and `15 make the guide for the guesser.js` | The exact text the guesser is given. | Something to hand to any other model. |
+| `15 How to work on this project.md` | How to read, change, run and document the project. | |
+| `18 What DeepSeek showed about error correction.md` | The findings of log 17 and 18 in plain words. | |
+| `runs/` | Every DeepSeek run: every request, every reply, every step, every final model. | The evidence for every number in the log. |
+
+## Word list
+
+| Word | Plain meaning |
+|---|---|
+| model | What the guesser writes: things, events, a start, and rules. The checker can run it. |
+| thing | Something that can be in one of a few states, like the ball (in hand, flying, stuck on wall). |
+| state | One of the ways a thing can be. |
+| event | Something that happens from outside, like a throw. |
+| rule | "When these conditions are true, this thing becomes this state." |
+| start | The state of each thing before anything happens. |
+| job | A test from the owner: in this situation, this should come out. |
+| shown job | A job the guesser sees. |
+| held-back job | A job kept from the guesser until the end, to catch guesses that only fit what they were shown. |
+| world | The hidden true model in each test world. It stands in for reality, or for the owner. |
+| guesser | Whichever AI writes the models: the small AI, Sonnet, or DeepSeek. |
+| small AI | Qwen 2.5, 1.5 billion size, run on the earlier computer. |
+| Sonnet | Claude Sonnet 4.6, reached from the page inside the chat. Never run for real. |
+| DeepSeek | DeepSeek V4.1 Flash, reached directly from this computer. Its own name for itself is "deepseek-flash". It thinks before it answers. |
+| account key | The password-like code that lets this computer use DeepSeek. Read from a setting at each call, never written into any file. |
+| checker | The ordinary program that runs models and reports. It never guesses. |
+| loop | The program that passes work between the guesser and the checker. |
+| small fix | A one-step change to an existing rule, found and applied by the checker. |
+| new part | A new rule or a new thing, asked of the guesser when no small fix works. |
+| clearing out | After a new part, the checker tries the model without the old rules that now disagree with it. |
+| new rule search | The checker's last resort: try every single new rule itself. Its rules are marked as fitted. |
+| fix check | A fix is kept only if it repairs a failing job and breaks none that passed (no backsliding). |
+| deciding test | A situation where two candidate models give different answers, so the world can choose. |
+| question to the world | A deciding test, a cross-check or a surprise probe put to the world. Its answer becomes a new job. |
+| cross-check | Before the full loop keeps a checker fix, one question to the world about a situation where the model before and after the fix disagree. |
+| look for surprises | When no rival rule is in sight, questions to the world about situations one change from the jobs where the model takes a route no job has tested. |
+| route | The set of rules that change something in a situation. |
+| poke | One surprise question per round that changes the start of a thing no rule reads, to test the model's claim that it cannot matter. |
+| surprise | A question to the world whose answer the model got wrong. |
+| owner's word list | The things and states the shown jobs use. Given by the owner, so adding them is not guessing. |
+| ways of running | One guess, rewrite, guess and fix, full loop, guesser fixes first, self review, review first. |
+| one guess | The first guess, nothing more. |
+| rewrite | The guesser rewrites its whole model from the checker's report. |
+| guess and fix | Small fixes by the checker, new parts from the guesser, clearing out, last-resort search. No questions to the world. |
+| full loop | Guess and fix, plus questions to the world. |
+| guesser fixes first | The full loop, but when jobs fail the guesser first rewrites the model from the checker's report; the checker's small fixes tidy what is left. |
+| self review | The guesser rereads the model against the request, with no report from the checker, and corrects what it finds. |
+| review first | Self review, then guesser fixes first. |
+| planted mistake | A known mistake put into a world's true model on purpose, to test error correction. |
+| visible mistake | A planted mistake that makes a shown job fail. |
+| hidden mistake | A planted mistake that passes every shown job and fails a held-back job. |
+| corrector | Any way of running, used to repair a planted mistake. "Checker alone" is guess and fix with no new parts from the guesser. |
+| nearby situations | Up to 400 situations one or two changes from the jobs, run on a model and on the world to see where they end differently. |
+| repaired | Every shown and held-back job passes and no nearby situation differs from the world. |
+| repeat | A fresh first guess for the same world, to see how much the guesser's guesses differ. |
+| stand-in | A fake guesser used in tests, so everything but the real connection can be tested. |
+| reply cap | Sonnet's replies are cut off at 1000 tokens by the page's connection. DeepSeek's limit is 32,000 tokens, thinking included. |
+
+## Log
+
+Entries 01 to 14 happened in the earlier chat, "Small LLMs planning and reasoning with error correction", and are written here from its record. Entries 01, 04, 08 and 13 keep the numbers that chat gave them; the others are numbered in order.
+
+**01. Strata and cause and effect.** Strata refused "The shadow is long because the pole is tall" and "If the pole is tall then the shadow is long". Its instructions tell a translator to drop causes. Decided on a new small language of things and rules (Decisions C1).
+
+**02. A small AI on the earlier computer.** Qwen 2.5, 1.5 billion size, through llama.cpp. Its server kept stopping between steps; fixed by starting it in the same step as the work.
+
+**03. The checker and the five test worlds were written** (files 03).
+
+**04. Time was wrong.** Checking each hidden true world against its own jobs: in two worlds, a state like "game over" arrived one step late. Changed how time works: after each event, everything settles before the next event.
+
+**05. The hard-to-vary sweep on the true worlds.** Found that the scene where Mara lights the lamp changes nothing about the ending, and that for the to-do app the deciding test is the question "If you put a task off once, is it urgent yet?". Several report messages were noisy or unclear and were fixed.
+
+**06. Better searching.** Deciding tests now try changes to the jobs' inputs first. The small-fix search can add one condition to a rule.
+
+**07. Error correction on hand-written flawed models.** Ball and wall: the small-fix search found the missing condition. Hidden ball: no small change could work; adding a hidden thing, "where the ball really is", was accepted and passed held-back jobs it had never seen.
+
+**08. The small AI could not use advice.** Its first guess on ball and wall passed 2 of 4 jobs. With the checker's report, still 2 of 4 after four rounds, even when told the exact fix. A wrong explanation line in the checker was fixed along the way. Decided: the checker applies small fixes, and the small AI is asked only for new parts (C6).
+
+**09. The new loop was written** (file 09). A dry run on the small AI's earlier ball guess: one small fix took it from 2 to 4 of 4 jobs.
+
+**10. A start-up failure.** The small AI's server was still loading when the loop started. The loop now waits until the server is ready, and retries.
+
+**11. One pass with the small AI.** Four ways each; long runs had to go into the background because steps over five minutes are cut off. 17 checker tests written (file 11), all passing. Results, shown jobs then held-back jobs:
+
+| World | Guess alone | Rewrite from report | Checker's small fixes |
+|---|---|---|---|
+| Ball and wall | 2/4, 2/3 | 2/4, 2/3 | 4/4, 3/3 |
+| Door game | 2/4, 2/3 | 2/4, 2/3 | 3/4, 2/3 |
+| Hidden ball | 0/5, 0/3 | 0/5, 0/3 | 0/5, 0/3 |
+| Lighthouse story | 1/3, 0/2 | not finished | not finished |
+| To-do app | not reached | | |
+
+In the full loop, questions to the world changed nothing: ball and wall was already at 4/4 and 3/3, and in the door game the checker's fitted fix ("the ghost only hurts you when the key is on the floor") survived.
+
+**12. The small AI never once supplied a working new part.** In the hidden-ball world it left out the screen and what is seen. It wrote rules that could never fire, like "when the ball is at 1 and at 2". It gave the identical reply each time it was asked again.
+
+**13. Improvements, in a separate copy.** Rules that can never fire are reported, with a small fix for them; the owner's word list is added before fixing; a repeated request shows what already failed; the checker searches for one new rule as a last resort. That search found a shortcut in the hidden-ball world ("when the ball is at 1, what is seen is at 4") that the held-back jobs could not catch, so one held-back job was added, labelled as added later. 20 checker tests passed. Not run with the small AI. Nothing was delivered as a download.
+
+**14. Bigger models.** Asked whether this would work on a 300B model, and whether Claude could call Haiku. Answer: probably much better, but untested. This computer has no account key and too little memory for a 300B model. The one Claude model reachable is Sonnet 4.6, through a page inside the chat.
+
+**15. Rebuilt from the record.** New chat. The earlier computer had been reset, and nothing had been downloaded. Rebuilt from the earlier chat's record: the checker's original text, then its 32 recorded changes in order, each checked to find its exact old text before replacing it; the worlds; the tests; the loop. All 20 checker tests pass, the same as in entry 13. The loop can now take a different guesser, and its names say "guesser" rather than "small AI". Not rebuilt: the small AI's setup, the batch scripts, the results summariser, the raw run files. Also written: how to read, change and document the project, with the authority documents and a glossary; and the exact words the guesser is given, as a file of their own (files 15).
+
+**16. The Sonnet page.** Built the page and its pieces (files 16). Tested with stand-ins for Sonnet, not with Sonnet: 13 tests with the loop, 12 in a browser at phone size, all passing. Two failures found and fixed:
+- **The loop refused the right new part.** Given exactly the right missing piece for the hidden ball, the loop turned it down: the new rules disagreed with the old wrong rules, and the loop could only add. Now, after a new part, the checker also tries the model without the old rules that disagree with it. With that, the hidden ball goes to 5 of 5 shown jobs and 3 of 3 held back (Decisions C19).
+- **The results hid two of the four ways on a phone.** Reshaped into one small table per world.
+
+**17. DeepSeek, and three holes in error correction.** New chat. The owner uploaded the project, the theory, the hard-to-vary skill and the Strata kit, and asked to finish the project on DeepSeek V4.1 Flash, with error correction foremost (Decisions O5). The project was put into the owner's h-EPI repository, folder `guess-check-fix`. The DeepSeek guesser and a run script were written (files 17). First real run, five worlds, two repeats, four ways (`runs/17 first DeepSeek run`):
+- DeepSeek's first guesses passed every shown job in 8 of 10 runs. In the hidden ball it invented "where the ball really is" on its own, which the small AI never did (log 12), with its timing one step off; given the checker's report it rewrote the model correctly in one round. DeepSeek can use criticism; the small AI could not (log 08).
+- **The full loop made the lighthouse story worse** (2 of 2 held-back jobs, down to 1). DeepSeek's model tied Mara's realisation to her lighting the lamp. A question to the world exposed that; the checker repaired it by deleting the lamp condition, which fit every job and was still wrong. Cause: the checker could only swap a condition for another about the same thing, so "the lamp is dark" was out of its reach, and it had no reason to ask the world to choose.
+- **The to-do app kept "one put-off makes it urgent"** in every way of running. The loop's questions were all about finishing tasks; it never asked what one put-off does, because it only asks where it can see a rival rule.
+Fixed, each with tests: the checker can swap a condition for one about a different thing (C22); a checker fix is cross-checked with the world before it is kept (C23); the full loop looks for surprises, including a poke at a thing no rule reads (C24); held-back jobs the world was asked about are listed in every result (C25). Replaying DeepSeek's real guesses offline, the lighthouse story now passes both held-back jobs without the world being asked about either. A failed attempt along the way: the surprise questions first went unused because the loose-rule questions used up their rounds; they got rounds of their own. 19 new tests (file 17), all passing.
+
+**18. Ten worlds, planted mistakes, and who should do the correcting.** Five new worlds (file 18): moving day, river crossing, plant watering, borrowed lantern, ghost lantern. Each world's true model passes all its own jobs; one of my river-crossing jobs was wrong at first (it expected the grain to survive when the farmer rows off alone, but the puzzle eats both at once) and was corrected before any run. Runs, all with DeepSeek, all records in `runs/`:
+- **Ten worlds, two repeats, four ways** (`runs/18 ten worlds after the fixes`). 18 of 20 first guesses passed every shown job; 11 of 64 held-back jobs failed after the first guess. Every run with everything passing: one guess 9 of 20, rewrite 11, guess and fix 11, full loop 13.
+- **The full loop broke a right answer in the river puzzle**, in both repeats: DeepSeek's reading of the puzzle differs from the world's in two places the request leaves open; the questions exposed that, and the checker patched it with seven one-step fixes that passed all 16 jobs and broke "the other solution". So a fifth way was added: **guesser fixes first** (C26). Run on the same first guesses (`runs/18 ten worlds, guesser fixes first`): 15 of 20 runs with everything passing; the river puzzle 3 of 3 in both repeats. A failed first attempt: the way was first named "full loop, guesser first", and the run script split that name at its comma, so the first run of it was void and deleted; renamed. The planted-mistakes records below were made before the rename and still carry the old name.
+- **Planted mistakes** (`runs/18 planted mistakes`, file 18, C27): 32 mistakes (10 visible, 20 hidden, 2 needing a new thing), picked by a fixed shuffle, each given to the correctors. Repaired: rewrite 10 visible, 0 hidden; checker alone 6 visible, 0 hidden, and once it made a model more wrong while making every shown job pass; **self review** (a new way, C28) 6 visible, 9 hidden, 3 made worse; full loop and guesser fixes first 10 visible, 11 hidden. Self review and the full loop repaired different hidden mistakes: 16 of 20 by one or the other, 4 by both.
+- **Review first** (self review, then guesser fixes first; C29) to combine them (`runs/18 planted mistakes, review first`, `runs/18 ten worlds, review first`): 12 of 20 hidden repaired, but only 6 of 10 visible; ten worlds 15 of 20, the same as guesser fixes first. In each visible case it missed, the review fixed the planted mistake and re-guessed other rules in DeepSeek's own reading of the request. A whole rewrite is a new guess at every part.
+- **Tried and dropped:** a second poke that adds an event the model says does nothing, aimed at the borrowed lantern (DeepSeek reads "the stranger goes out searching" as one moment, the world as ongoing). Replayed on all 20 first guesses it changed nothing overall (54 held-back jobs passed without it, 53 with it) and did not reach the lantern case. Removed.
+- **Still wrong:** the borrowed lantern's search (above); the ghost lantern lights without the key, and no question can catch it because no shown job asks about the lantern; the to-do app without a put-off count got worse in the full loop (44 nearby situations wrong, then 52).
+- The Sonnet page was rebuilt from the changed code; the browser test now takes the browser's location from a setting, because this computer's browser is a different version from the one Playwright expects. All four test files pass: 20, 13, 26 and 12 tests.
+- Cost of everything in this entry: $1.41 of DeepSeek credit (balance $21.52 before the second run, $20.11 after the last). 272 DeepSeek replies over both entries, 2 cut off at the reply limit.
+The findings are written up in "18 What DeepSeek showed about error correction.md".
+
+## Next step
+
+Make DeepSeek's repairs targeted: ask it to return only the rules it changes, not the whole model, so a repair cannot re-guess parts that were right. Then run the planted mistakes and the ten worlds again with that way (about a dollar of DeepSeek credit).
+
+## Traps
+
+- **Reading the log 01 to 14 as first-hand.** Those entries are written from the earlier chat's record, not from files. Its raw run files are gone.
+- **Reading stand-in results as a real model's.** Every result in entry 16 comes from a stand-in, and so do the offline replays in entry 17 and 18 where a stand-in played the guesser. The live results are only those whose records are in `runs/`.
+- **Comparing DeepSeek with the small AI directly.** The loop changed in entries 13, 16, 17 and 18 after the small AI's only runs.
+- **Reading "repaired" as "right".** It means matching this world's reading of the request. The river puzzle and the lantern story can be read another way.
+- **Reading full-loop held-back scores as unseen tests.** The world is sometimes asked about a held-back situation; every results table says how many.
+- **The fifth way's two names.** "full loop, guesser first" in the first planted-mistakes records is "guesser fixes first".
+- **Putting the account key in a file.** It is read from the DEEPSEEK_API_KEY setting only. It was pasted into the chat that made log 17 and 18, so it should be replaced with a new one.

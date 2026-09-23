@@ -1,0 +1,899 @@
+{
+ "world": "reminder-app",
+ "kind": "a vague request from a user",
+ "repeat": 1,
+ "guesser": "deepseek-flash",
+ "started": "2026-09-23T22:15:58.225Z",
+ "finished": "2026-09-23T22:16:48.211Z",
+ "first_guess": {
+  "raw": {
+   "things": {
+    "task": [
+     "new",
+     "urgent",
+     "overdue",
+     "done"
+    ],
+    "snooze_count": [
+     "zero",
+     "one",
+     "two",
+     "three"
+    ]
+   },
+   "events": [
+    "snooze",
+    "finish",
+    "day passes"
+   ],
+   "start": {
+    "task": "new",
+    "snooze_count": "zero"
+   },
+   "rules": [
+    {
+     "name": "snooze first",
+     "when": [
+      "snooze happens",
+      "snooze_count is zero"
+     ],
+     "then": "snooze_count is one"
+    },
+    {
+     "name": "snooze second",
+     "when": [
+      "snooze happens",
+      "snooze_count is one"
+     ],
+     "then": "snooze_count is two"
+    },
+    {
+     "name": "snooze third",
+     "when": [
+      "snooze happens",
+      "snooze_count is two"
+     ],
+     "then": "snooze_count is three"
+    },
+    {
+     "name": "two snoozes make urgent",
+     "when": [
+      "snooze_count is two",
+      "task is new"
+     ],
+     "then": "task is urgent"
+    },
+    {
+     "name": "three snoozes make overdue",
+     "when": [
+      "snooze_count is three",
+      "task is not done"
+     ],
+     "then": "task is overdue"
+    },
+    {
+     "name": "finish task",
+     "when": [
+      "finish happens"
+     ],
+     "then": "task is done"
+    },
+    {
+     "name": "day passes makes new urgent",
+     "when": [
+      "day passes happens",
+      "task is new"
+     ],
+     "then": "task is urgent"
+    },
+    {
+     "name": "day passes makes urgent overdue",
+     "when": [
+      "day passes happens",
+      "task is urgent"
+     ],
+     "then": "task is overdue"
+    }
+   ]
+  },
+  "log": [
+   {
+    "asked": "Task: I want a to-do app where things I keep putting off get more urgent, and done things go away.\n\nThings and states to use:\n  task: new, urgent, overdue, done\nEvents to use: snooze, finish, day passes\n\nThe checker will test your model on these jobs:\n- \"finish a new task\": events in order: finish; expected at the end: task is done.\n- \"put off twice\": events in order: snooze, then snooze; expected at the end: task is urgent.\n- \"nothing happens\": no events; expected at the end: task is new.\n\nWrite the model.",
+    "replied": "{\"things\": {\"task\": [\"new\", \"urgent\", \"overdue\", \"done\"], \"snooze_count\": [\"zero\", \"one\", \"two\", \"three\"]}, \"events\": [\"snooze\", \"finish\", \"day passes\"], \"start\": {\"task\": \"new\", \"snooze_count\": \"zero\"}, \"rules\": [{\"name\": \"snooze first\", \"when\": [\"snooze happens\", \"snooze_count is zero\"], \"then\": \"snooze_count is one\"}, {\"name\": \"snooze second\", \"when\": [\"snooze happens\", \"snooze_count is one\"], \"then\": \"snooze_count is two\"}, {\"name\": \"snooze third\", \"when\": [\"snooze happens\", \"snooze_count is two\"], \"then\": \"snooze_count is three\"}, {\"name\": \"two snoozes make urgent\", \"when\": [\"snooze_count is two\", \"task is new\"], \"then\": \"task is urgent\"}, {\"name\": \"three snoozes make overdue\", \"when\": [\"snooze_count is three\", \"task is not done\"], \"then\": \"task is overdue\"}, {\"name\": \"finish task\", \"when\": [\"finish happens\"], \"then\": \"task is done\"}, {\"name\": \"day passes makes new urgent\", \"when\": [\"day passes happens\", \"task is new\"], \"then\": \"task is urgent\"}, {\"name\": \"day passes makes urgent overdue\", \"when\": [\"day passes happens\", \"task is urgent\"], \"then\": \"task is overdue\"}]}",
+    "seconds": 50
+   }
+  ]
+ },
+ "counts": {
+  "requests": 1,
+  "replies": 1,
+  "cut_off": 0,
+  "plain_form": 0,
+  "refused": 0,
+  "thinking_characters": 49493,
+  "answer_characters": 1088,
+  "tokens_in": 739,
+  "tokens_out": 12647
+ },
+ "results": {
+  "one guess": {
+   "world": "reminder-app",
+   "mode": "one guess",
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "3/3",
+     "problems": 0
+    }
+   ],
+   "added_jobs": [],
+   "questions_to_world": 0,
+   "guesser_calls": 0,
+   "final": {
+    "original_seen_passed": 3,
+    "original_seen_total": 3,
+    "all_seen_passed": 3,
+    "all_seen_total": 3,
+    "held_back_passed": 3,
+    "held_back_total": 4,
+    "held_back_failed": [
+     "a day passes on a new task"
+    ],
+    "problems": [],
+    "held_back_asked": []
+   },
+   "model": {
+    "things": {
+     "task": [
+      "new",
+      "urgent",
+      "overdue",
+      "done"
+     ],
+     "snooze_count": [
+      "zero",
+      "one",
+      "two",
+      "three"
+     ]
+    },
+    "events": [
+     "snooze",
+     "finish",
+     "day passes"
+    ],
+    "start": {
+     "task": "new",
+     "snooze_count": "zero"
+    },
+    "rules": [
+     {
+      "name": "snooze first",
+      "when": [
+       "snooze happens",
+       "snooze_count is zero"
+      ],
+      "then": "snooze_count is one",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "snooze second",
+      "when": [
+       "snooze happens",
+       "snooze_count is one"
+      ],
+      "then": "snooze_count is two",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "snooze third",
+      "when": [
+       "snooze happens",
+       "snooze_count is two"
+      ],
+      "then": "snooze_count is three",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "two snoozes make urgent",
+      "when": [
+       "snooze_count is two",
+       "task is new"
+      ],
+      "then": "task is urgent",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "three snoozes make overdue",
+      "when": [
+       "snooze_count is three",
+       "task is not done"
+      ],
+      "then": "task is overdue",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "finish task",
+      "when": [
+       "finish happens"
+      ],
+      "then": "task is done",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "day passes makes new urgent",
+      "when": [
+       "day passes happens",
+       "task is new"
+      ],
+      "then": "task is urgent",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "day passes makes urgent overdue",
+      "when": [
+       "day passes happens",
+       "task is urgent"
+      ],
+      "then": "task is overdue",
+      "made_by": "guesser first guess"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "Task: I want a to-do app where things I keep putting off get more urgent, and done things go away.\n\nThings and states to use:\n  task: new, urgent, overdue, done\nEvents to use: snooze, finish, day passes\n\nThe checker will test your model on these jobs:\n- \"finish a new task\": events in order: finish; expected at the end: task is done.\n- \"put off twice\": events in order: snooze, then snooze; expected at the end: task is urgent.\n- \"nothing happens\": no events; expected at the end: task is new.\n\nWrite the model.",
+     "replied": "{\"things\": {\"task\": [\"new\", \"urgent\", \"overdue\", \"done\"], \"snooze_count\": [\"zero\", \"one\", \"two\", \"three\"]}, \"events\": [\"snooze\", \"finish\", \"day passes\"], \"start\": {\"task\": \"new\", \"snooze_count\": \"zero\"}, \"rules\": [{\"name\": \"snooze first\", \"when\": [\"snooze happens\", \"snooze_count is zero\"], \"then\": \"snooze_count is one\"}, {\"name\": \"snooze second\", \"when\": [\"snooze happens\", \"snooze_count is one\"], \"then\": \"snooze_count is two\"}, {\"name\": \"snooze third\", \"when\": [\"snooze happens\", \"snooze_count is two\"], \"then\": \"snooze_count is three\"}, {\"name\": \"two snoozes make urgent\", \"when\": [\"snooze_count is two\", \"task is new\"], \"then\": \"task is urgent\"}, {\"name\": \"three snoozes make overdue\", \"when\": [\"snooze_count is three\", \"task is not done\"], \"then\": \"task is overdue\"}, {\"name\": \"finish task\", \"when\": [\"finish happens\"], \"then\": \"task is done\"}, {\"name\": \"day passes makes new urgent\", \"when\": [\"day passes happens\", \"task is new\"], \"then\": \"task is urgent\"}, {\"name\": \"day passes makes urgent overdue\", \"when\": [\"day passes happens\", \"task is urgent\"], \"then\": \"task is overdue\"}]}",
+     "seconds": 50
+    }
+   ]
+  },
+  "rewrite": {
+   "world": "reminder-app",
+   "mode": "rewrite",
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "3/3",
+     "problems": 0
+    }
+   ],
+   "added_jobs": [],
+   "questions_to_world": 0,
+   "guesser_calls": 0,
+   "final": {
+    "original_seen_passed": 3,
+    "original_seen_total": 3,
+    "all_seen_passed": 3,
+    "all_seen_total": 3,
+    "held_back_passed": 3,
+    "held_back_total": 4,
+    "held_back_failed": [
+     "a day passes on a new task"
+    ],
+    "problems": [],
+    "held_back_asked": []
+   },
+   "model": {
+    "things": {
+     "task": [
+      "new",
+      "urgent",
+      "overdue",
+      "done"
+     ],
+     "snooze_count": [
+      "zero",
+      "one",
+      "two",
+      "three"
+     ]
+    },
+    "events": [
+     "snooze",
+     "finish",
+     "day passes"
+    ],
+    "start": {
+     "task": "new",
+     "snooze_count": "zero"
+    },
+    "rules": [
+     {
+      "name": "snooze first",
+      "when": [
+       "snooze happens",
+       "snooze_count is zero"
+      ],
+      "then": "snooze_count is one",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "snooze second",
+      "when": [
+       "snooze happens",
+       "snooze_count is one"
+      ],
+      "then": "snooze_count is two",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "snooze third",
+      "when": [
+       "snooze happens",
+       "snooze_count is two"
+      ],
+      "then": "snooze_count is three",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "two snoozes make urgent",
+      "when": [
+       "snooze_count is two",
+       "task is new"
+      ],
+      "then": "task is urgent",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "three snoozes make overdue",
+      "when": [
+       "snooze_count is three",
+       "task is not done"
+      ],
+      "then": "task is overdue",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "finish task",
+      "when": [
+       "finish happens"
+      ],
+      "then": "task is done",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "day passes makes new urgent",
+      "when": [
+       "day passes happens",
+       "task is new"
+      ],
+      "then": "task is urgent",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "day passes makes urgent overdue",
+      "when": [
+       "day passes happens",
+       "task is urgent"
+      ],
+      "then": "task is overdue",
+      "made_by": "guesser first guess"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "Task: I want a to-do app where things I keep putting off get more urgent, and done things go away.\n\nThings and states to use:\n  task: new, urgent, overdue, done\nEvents to use: snooze, finish, day passes\n\nThe checker will test your model on these jobs:\n- \"finish a new task\": events in order: finish; expected at the end: task is done.\n- \"put off twice\": events in order: snooze, then snooze; expected at the end: task is urgent.\n- \"nothing happens\": no events; expected at the end: task is new.\n\nWrite the model.",
+     "replied": "{\"things\": {\"task\": [\"new\", \"urgent\", \"overdue\", \"done\"], \"snooze_count\": [\"zero\", \"one\", \"two\", \"three\"]}, \"events\": [\"snooze\", \"finish\", \"day passes\"], \"start\": {\"task\": \"new\", \"snooze_count\": \"zero\"}, \"rules\": [{\"name\": \"snooze first\", \"when\": [\"snooze happens\", \"snooze_count is zero\"], \"then\": \"snooze_count is one\"}, {\"name\": \"snooze second\", \"when\": [\"snooze happens\", \"snooze_count is one\"], \"then\": \"snooze_count is two\"}, {\"name\": \"snooze third\", \"when\": [\"snooze happens\", \"snooze_count is two\"], \"then\": \"snooze_count is three\"}, {\"name\": \"two snoozes make urgent\", \"when\": [\"snooze_count is two\", \"task is new\"], \"then\": \"task is urgent\"}, {\"name\": \"three snoozes make overdue\", \"when\": [\"snooze_count is three\", \"task is not done\"], \"then\": \"task is overdue\"}, {\"name\": \"finish task\", \"when\": [\"finish happens\"], \"then\": \"task is done\"}, {\"name\": \"day passes makes new urgent\", \"when\": [\"day passes happens\", \"task is new\"], \"then\": \"task is urgent\"}, {\"name\": \"day passes makes urgent overdue\", \"when\": [\"day passes happens\", \"task is urgent\"], \"then\": \"task is overdue\"}]}",
+     "seconds": 50
+    }
+   ]
+  },
+  "guess and fix": {
+   "world": "reminder-app",
+   "mode": "guess and fix",
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "3/3",
+     "problems": 0
+    }
+   ],
+   "added_jobs": [],
+   "questions_to_world": 0,
+   "guesser_calls": 0,
+   "final": {
+    "original_seen_passed": 3,
+    "original_seen_total": 3,
+    "all_seen_passed": 3,
+    "all_seen_total": 3,
+    "held_back_passed": 3,
+    "held_back_total": 4,
+    "held_back_failed": [
+     "a day passes on a new task"
+    ],
+    "problems": [],
+    "held_back_asked": []
+   },
+   "model": {
+    "things": {
+     "task": [
+      "new",
+      "urgent",
+      "overdue",
+      "done"
+     ],
+     "snooze_count": [
+      "zero",
+      "one",
+      "two",
+      "three"
+     ]
+    },
+    "events": [
+     "snooze",
+     "finish",
+     "day passes"
+    ],
+    "start": {
+     "task": "new",
+     "snooze_count": "zero"
+    },
+    "rules": [
+     {
+      "name": "snooze first",
+      "when": [
+       "snooze happens",
+       "snooze_count is zero"
+      ],
+      "then": "snooze_count is one",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "snooze second",
+      "when": [
+       "snooze happens",
+       "snooze_count is one"
+      ],
+      "then": "snooze_count is two",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "snooze third",
+      "when": [
+       "snooze happens",
+       "snooze_count is two"
+      ],
+      "then": "snooze_count is three",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "two snoozes make urgent",
+      "when": [
+       "snooze_count is two",
+       "task is new"
+      ],
+      "then": "task is urgent",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "three snoozes make overdue",
+      "when": [
+       "snooze_count is three",
+       "task is not done"
+      ],
+      "then": "task is overdue",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "finish task",
+      "when": [
+       "finish happens"
+      ],
+      "then": "task is done",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "day passes makes new urgent",
+      "when": [
+       "day passes happens",
+       "task is new"
+      ],
+      "then": "task is urgent",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "day passes makes urgent overdue",
+      "when": [
+       "day passes happens",
+       "task is urgent"
+      ],
+      "then": "task is overdue",
+      "made_by": "guesser first guess"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "Task: I want a to-do app where things I keep putting off get more urgent, and done things go away.\n\nThings and states to use:\n  task: new, urgent, overdue, done\nEvents to use: snooze, finish, day passes\n\nThe checker will test your model on these jobs:\n- \"finish a new task\": events in order: finish; expected at the end: task is done.\n- \"put off twice\": events in order: snooze, then snooze; expected at the end: task is urgent.\n- \"nothing happens\": no events; expected at the end: task is new.\n\nWrite the model.",
+     "replied": "{\"things\": {\"task\": [\"new\", \"urgent\", \"overdue\", \"done\"], \"snooze_count\": [\"zero\", \"one\", \"two\", \"three\"]}, \"events\": [\"snooze\", \"finish\", \"day passes\"], \"start\": {\"task\": \"new\", \"snooze_count\": \"zero\"}, \"rules\": [{\"name\": \"snooze first\", \"when\": [\"snooze happens\", \"snooze_count is zero\"], \"then\": \"snooze_count is one\"}, {\"name\": \"snooze second\", \"when\": [\"snooze happens\", \"snooze_count is one\"], \"then\": \"snooze_count is two\"}, {\"name\": \"snooze third\", \"when\": [\"snooze happens\", \"snooze_count is two\"], \"then\": \"snooze_count is three\"}, {\"name\": \"two snoozes make urgent\", \"when\": [\"snooze_count is two\", \"task is new\"], \"then\": \"task is urgent\"}, {\"name\": \"three snoozes make overdue\", \"when\": [\"snooze_count is three\", \"task is not done\"], \"then\": \"task is overdue\"}, {\"name\": \"finish task\", \"when\": [\"finish happens\"], \"then\": \"task is done\"}, {\"name\": \"day passes makes new urgent\", \"when\": [\"day passes happens\", \"task is new\"], \"then\": \"task is urgent\"}, {\"name\": \"day passes makes urgent overdue\", \"when\": [\"day passes happens\", \"task is urgent\"], \"then\": \"task is overdue\"}]}",
+     "seconds": 50
+    }
+   ]
+  },
+  "full loop": {
+   "world": "reminder-app",
+   "mode": "full loop",
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "3/3",
+     "problems": 0
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 2,
+     "seen": "5/5"
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 0,
+     "seen": "5/5"
+    },
+    {
+     "step": "look for surprises",
+     "added": 4,
+     "surprises": 1,
+     "seen": "8/9"
+    },
+    {
+     "step": "cross-check a fix with the world",
+     "what": "in rule \"snooze third\": condition \"task is new\" added",
+     "world_sides_with_fix": true,
+     "seen": "8/10"
+    },
+    {
+     "step": "small fix",
+     "what": "in rule \"snooze third\": condition \"task is new\" added",
+     "repaired": [
+      "world answer 5",
+      "world answer 7"
+     ],
+     "seen": "10/10"
+    },
+    {
+     "step": "look for surprises",
+     "added": 4,
+     "surprises": 3,
+     "seen": "12/14"
+    },
+    {
+     "step": "ask world to choose",
+     "job": "world answer 12",
+     "seen": "12/15"
+    },
+    {
+     "step": "small fix",
+     "what": "in rule \"day passes makes new urgent\": condition \"snooze_count is two\" added",
+     "repaired": [
+      "world answer 10",
+      "world answer 11",
+      "world answer 12"
+     ],
+     "seen": "15/15"
+    }
+   ],
+   "added_jobs": [
+    {
+     "job": {
+      "name": "world answer 1",
+      "start": {},
+      "events": [
+       "snooze"
+      ],
+      "expect": [
+       "task is new"
+      ],
+      "from": "given"
+     },
+     "why": "loose rule \"two snoozes make urgent\": condition \"snooze_count is two\" changed to \"snooze_count is one\""
+    },
+    {
+     "job": {
+      "name": "world answer 2",
+      "start": {},
+      "events": [
+       "finish",
+       "snooze",
+       "snooze"
+      ],
+      "expect": [
+       "task is done"
+      ],
+      "from": "given"
+     },
+     "why": "loose rule \"two snoozes make urgent\": condition \"task is new\" left out"
+    },
+    {
+     "job": {
+      "name": "world answer 3",
+      "start": {},
+      "events": [
+       "snooze",
+       "finish"
+      ],
+      "expect": [
+       "task is done"
+      ],
+      "from": "given"
+     },
+     "why": "look for surprises: the situation of job \"finish a new task\", but \"snooze\" also happens first",
+     "surprise": false
+    },
+    {
+     "job": {
+      "name": "world answer 4",
+      "start": {},
+      "events": [
+       "day passes",
+       "finish"
+      ],
+      "expect": [
+       "task is done"
+      ],
+      "from": "given"
+     },
+     "why": "look for surprises: the situation of job \"finish a new task\", but \"day passes\" also happens first",
+     "surprise": false
+    },
+    {
+     "job": {
+      "name": "world answer 5",
+      "start": {},
+      "events": [
+       "snooze",
+       "snooze",
+       "snooze"
+      ],
+      "expect": [
+       "task is urgent"
+      ],
+      "from": "given"
+     },
+     "why": "look for surprises: the situation of job \"put off twice\", but \"snooze\" also happens first",
+     "surprise": true
+    },
+    {
+     "job": {
+      "name": "world answer 6",
+      "start": {},
+      "events": [
+       "snooze",
+       "snooze",
+       "finish"
+      ],
+      "expect": [
+       "task is done"
+      ],
+      "from": "given"
+     },
+     "why": "look for surprises: the situation of job \"put off twice\", but \"finish\" also happens after \"snooze\"",
+     "surprise": false
+    },
+    {
+     "job": {
+      "name": "world answer 7",
+      "start": {},
+      "events": [
+       "snooze",
+       "snooze",
+       "snooze",
+       "snooze"
+      ],
+      "expect": [
+       "task is urgent"
+      ],
+      "from": "given"
+     },
+     "why": "cross-check the fix: in rule \"snooze third\": condition \"task is new\" added",
+     "sides_with_fix": true
+    },
+    {
+     "job": {
+      "name": "world answer 8",
+      "start": {},
+      "events": [
+       "day passes",
+       "snooze",
+       "snooze"
+      ],
+      "expect": [
+       "task is urgent"
+      ],
+      "from": "given"
+     },
+     "why": "look for surprises: the situation of job \"put off twice\", but \"day passes\" also happens first",
+     "surprise": false
+    },
+    {
+     "job": {
+      "name": "world answer 9",
+      "start": {},
+      "events": [
+       "snooze",
+       "snooze",
+       "day passes"
+      ],
+      "expect": [
+       "task is overdue"
+      ],
+      "from": "given"
+     },
+     "why": "look for surprises: the situation of job \"put off twice\", but \"day passes\" also happens after \"snooze\"",
+     "surprise": false
+    },
+    {
+     "job": {
+      "name": "world answer 10",
+      "start": {},
+      "events": [
+       "day passes"
+      ],
+      "expect": [
+       "task is new"
+      ],
+      "from": "given"
+     },
+     "why": "look for surprises: the situation of job \"nothing happens\", but \"day passes\" also happens first",
+     "surprise": true
+    },
+    {
+     "job": {
+      "name": "world answer 11",
+      "start": {},
+      "events": [
+       "day passes",
+       "snooze"
+      ],
+      "expect": [
+       "task is new"
+      ],
+      "from": "given"
+     },
+     "why": "look for surprises: the situation of job \"world answer 1\", but \"day passes\" also happens first",
+     "surprise": true
+    },
+    {
+     "job": {
+      "name": "world answer 12",
+      "start": {},
+      "events": [
+       "snooze",
+       "day passes"
+      ],
+      "expect": [
+       "task is new"
+      ],
+      "from": "given"
+     },
+     "why": "choose between small fixes: in rule \"day passes makes new urgent\": condition \"snooze_count is one\" added / in rule \"day passes makes new urgent\": condition \"snooze_count is two\" added"
+    }
+   ],
+   "questions_to_world": 12,
+   "guesser_calls": 0,
+   "final": {
+    "original_seen_passed": 3,
+    "original_seen_total": 3,
+    "all_seen_passed": 15,
+    "all_seen_total": 15,
+    "held_back_passed": 4,
+    "held_back_total": 4,
+    "held_back_failed": [],
+    "problems": [],
+    "held_back_asked": [
+     "put off once",
+     "put off twice then a day",
+     "a day passes on a new task"
+    ]
+   },
+   "model": {
+    "things": {
+     "task": [
+      "new",
+      "urgent",
+      "overdue",
+      "done"
+     ],
+     "snooze_count": [
+      "zero",
+      "one",
+      "two",
+      "three"
+     ]
+    },
+    "events": [
+     "snooze",
+     "finish",
+     "day passes"
+    ],
+    "start": {
+     "task": "new",
+     "snooze_count": "zero"
+    },
+    "rules": [
+     {
+      "name": "snooze first",
+      "when": [
+       "snooze happens",
+       "snooze_count is zero"
+      ],
+      "then": "snooze_count is one",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "snooze second",
+      "when": [
+       "snooze happens",
+       "snooze_count is one"
+      ],
+      "then": "snooze_count is two",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "snooze third",
+      "when": [
+       "snooze happens",
+       "snooze_count is two",
+       "task is new"
+      ],
+      "then": "snooze_count is three",
+      "made_by": "checker small fix"
+     },
+     {
+      "name": "two snoozes make urgent",
+      "when": [
+       "snooze_count is two",
+       "task is new"
+      ],
+      "then": "task is urgent",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "three snoozes make overdue",
+      "when": [
+       "snooze_count is three",
+       "task is not done"
+      ],
+      "then": "task is overdue",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "finish task",
+      "when": [
+       "finish happens"
+      ],
+      "then": "task is done",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "day passes makes new urgent",
+      "when": [
+       "day passes happens",
+       "task is new",
+       "snooze_count is two"
+      ],
+      "then": "task is urgent",
+      "made_by": "checker small fix"
+     },
+     {
+      "name": "day passes makes urgent overdue",
+      "when": [
+       "day passes happens",
+       "task is urgent"
+      ],
+      "then": "task is overdue",
+      "made_by": "guesser first guess"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "Task: I want a to-do app where things I keep putting off get more urgent, and done things go away.\n\nThings and states to use:\n  task: new, urgent, overdue, done\nEvents to use: snooze, finish, day passes\n\nThe checker will test your model on these jobs:\n- \"finish a new task\": events in order: finish; expected at the end: task is done.\n- \"put off twice\": events in order: snooze, then snooze; expected at the end: task is urgent.\n- \"nothing happens\": no events; expected at the end: task is new.\n\nWrite the model.",
+     "replied": "{\"things\": {\"task\": [\"new\", \"urgent\", \"overdue\", \"done\"], \"snooze_count\": [\"zero\", \"one\", \"two\", \"three\"]}, \"events\": [\"snooze\", \"finish\", \"day passes\"], \"start\": {\"task\": \"new\", \"snooze_count\": \"zero\"}, \"rules\": [{\"name\": \"snooze first\", \"when\": [\"snooze happens\", \"snooze_count is zero\"], \"then\": \"snooze_count is one\"}, {\"name\": \"snooze second\", \"when\": [\"snooze happens\", \"snooze_count is one\"], \"then\": \"snooze_count is two\"}, {\"name\": \"snooze third\", \"when\": [\"snooze happens\", \"snooze_count is two\"], \"then\": \"snooze_count is three\"}, {\"name\": \"two snoozes make urgent\", \"when\": [\"snooze_count is two\", \"task is new\"], \"then\": \"task is urgent\"}, {\"name\": \"three snoozes make overdue\", \"when\": [\"snooze_count is three\", \"task is not done\"], \"then\": \"task is overdue\"}, {\"name\": \"finish task\", \"when\": [\"finish happens\"], \"then\": \"task is done\"}, {\"name\": \"day passes makes new urgent\", \"when\": [\"day passes happens\", \"task is new\"], \"then\": \"task is urgent\"}, {\"name\": \"day passes makes urgent overdue\", \"when\": [\"day passes happens\", \"task is urgent\"], \"then\": \"task is overdue\"}]}",
+     "seconds": 50
+    }
+   ]
+  }
+ }
+}
