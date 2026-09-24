@@ -30,7 +30,8 @@ const P = require('./20 who picks the questions.js');
 const T = require('./21 long texts.js');
 
 const WORLDS = require('./03 test worlds.js').concat(require('./18 more test worlds.js'));
-const QUESTIONS = 20;
+const TWENTY = 20;
+const QUESTIONS = TWENTY;
 const lower = t => String(t).trim().toLowerCase();
 
 // How many starting states differ from the world's usual start (writing out a default is not a change).
@@ -57,9 +58,13 @@ function extends_owners_question(key, embedded_key) {
 }
 
 // options.refuse (log 23): the owner will not answer their own buried question; asking it uses up a question.
+// options.system_top (log 30): text put at the very top of the standing instructions, before log 21's.
+// options.questions (log 30): how many questions, instead of 20. Without either, the messages are as in log 22.
 async function must_ask(D, world, text, embedded, test_keys, options = {}) {
+  const QUESTIONS = options.questions || TWENTY;
   const g = D.make_deepseek_guesser();
-  const messages = [{ role: 'system', content: T.SYSTEM }, { role: 'user', content: `${T.opening(world, text, [])}\n\nBefore you answer, you must ask the owner exactly ${QUESTIONS} questions, one at a time. Each question is a situation; the owner tells you how it ends. Ask whatever will help you most. With each question, say how you expect it to end.\n\nEach turn, reply with JSON only: {"ask": {"start": {"THING": "STATE"}, "events": ["EVENT", "EVENT"]}, "i_expect": {"THING": "STATE"}}. After the owner answers your ${QUESTIONS}th question you will be asked for your answer.` }];
+  const system = options.system_top ? `${options.system_top}\n\n${T.SYSTEM}` : T.SYSTEM;
+  const messages = [{ role: 'system', content: system }, { role: 'user', content: `${T.opening(world, text, [])}\n\nBefore you answer, you must ask the owner exactly ${QUESTIONS} questions, one at a time. Each question is a situation; the owner tells you how it ends. Ask whatever will help you most. With each question, say how you expect it to end.\n\nEach turn, reply with JSON only: {"ask": {"start": {"THING": "STATE"}, "events": ["EVENT", "EVENT"]}, "i_expect": {"THING": "STATE"}}. After the owner answers your ${QUESTIONS}th question you will be asked for your answer.` }];
   const asked = [];
   const answers = [];
   const seen = new Set();
