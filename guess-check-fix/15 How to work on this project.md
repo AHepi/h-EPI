@@ -10,7 +10,7 @@ Read in this order. Each file says what to read next.
 2. **"Status.md"**: what the project is waiting on today, and the open questions.
 3. **"Decisions.md"**: why things are the way they are. The owner's decisions are quoted exactly.
 4. **"Lessons.md"**: what broke while building and testing, and how it was fixed.
-5. **"18 What DeepSeek showed about error correction.md"**, **"19 Baseline and more thinking.md"**, **"20 Who picks the questions.md"** and **"21 Long texts.md"**: the findings of the DeepSeek runs. Each later one qualifies the one before.
+5. **"18 What DeepSeek showed about error correction.md"**, **"19 Baseline and more thinking.md"**, **"20 Who picks the questions.md"**, **"21 Long texts.md"** and **"22 Twenty questions.md"**: the findings of the DeepSeek runs. Each later one qualifies the one before.
 6. **The code files**, only when a change is planned. Each starts with a plain note saying what it does. Read them in the order the parts table gives: worlds, checker, loop, DeepSeek guesser, run scripts, Sonnet page.
 
 An example: to find out why the checker applies small fixes itself instead of asking the guesser, the project story's log points to entry 08, and "Decisions.md" has C6, which says log 08 forced it.
@@ -27,6 +27,7 @@ An example: to find out why the checker applies small fixes itself instead of as
    - `node "19 baseline tests.js"` (11 tests)
    - `node "20 who picks tests.js"` (13 tests)
    - `node "21 long text tests.js"` (16 tests)
+   - `node "22 twenty questions tests.js"` (11 tests)
    - `python3 "16 page test in a browser.py"` (12 tests; needs Playwright and Chromium. If Playwright wants a different browser version than the one installed, point it at the installed one: `BROWSER_PATH=/opt/pw-browsers/chromium`)
 5. **If the change touched the words the guesser is given** (in "09 loop.js" or "16 Sonnet guesser.js"), remake the guide file: `node "15 make the guide for the guesser.js"`.
 6. **When a test fails and the failure is fixed**, add a line to "Lessons.md", and a test that would catch it again.
@@ -44,6 +45,7 @@ Every live run costs DeepSeek credit and writes records that belong in `runs/`. 
 - **Baseline and more thinking:** `DEEPSEEK_API_KEY=... NODE_USE_ENV_PROXY=1 node "19 baseline and more thinking.js" "runs/NN what it is" 2`; `ONLY_UNLIMITED=1` runs only DeepSeek alone at the highest setting with a 200,000-token limit; `node "19 baseline and more thinking.js" --questions` shows the questions without calling DeepSeek; `node "19 summarise baseline.js" "runs/FIRST" "runs/MORE"` writes `summary.md`.
 - **Who picks the questions:** `DEEPSEEK_API_KEY=... NODE_USE_ENV_PROXY=1 node "20 who picks the questions.js" "runs/NN what it is" 3`; `node "20 who picks the questions.js" --summarise "runs/..."` rewrites its tables from the records.
 - **Long texts:** `DEEPSEEK_API_KEY=... NODE_USE_ENV_PROXY=1 node "21 long texts.js" "runs/NN what it is" 2`; `node "21 long texts.js" --show WORLD` prints the short and long messages; `--summarise "runs/..."` rewrites the tables.
+- **Twenty questions:** `DEEPSEEK_API_KEY=... NODE_USE_ENV_PROXY=1 node "22 twenty questions.js" "runs/NN what it is" 2`; `--summarise "runs/..."` rewrites the tables.
 - **Planted-mistakes correctors from log 19** (names hold commas, so the list is split at semicolons): `ONLY="self review, max thinking, reply limit 200,000;guesser fixes first"`.
 - `NODE_USE_ENV_PROXY=1` is needed only where the internet is reached through a proxy, as on the computer that made log 17 and 18.
 - The DeepSeek balance can be read before and after a run (`https://api.deepseek.com/user/balance`) to say what it cost.

@@ -197,7 +197,7 @@ function summarise(records) {
 }
 const results_text = (records, failed) => `# Long texts: results\n\nDeepSeek V4.1 Flash, default thinking. ${records.length} world-and-repeat runs; every number comes from the records in this folder. "Guesser fixes first" is not asked to name the owner's question; its model is run on it.\n\n${summarise(records)}\n${failed.length ? `\nRuns that failed:\n${failed.join('\n')}\n` : ''}`;
 
-module.exports = { embedded_question, question_in_prose, message, canonical, read_situation, grade_final, ask_or_stop, answer_straight, run_world, summarise };
+module.exports = { embedded_question, question_in_prose, message, canonical, read_situation, grade_final, ask_or_stop, answer_straight, run_world, summarise, opening, FINAL_SHAPE, SYSTEM };
 
 if (require.main === module) {
   const [first, second, third] = process.argv.slice(2);

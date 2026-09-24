@@ -28,6 +28,9 @@ Every decision that shapes the project. The owner's decisions are quoted exactly
 **O8. Test long texts, a buried question, and the option to exit.** (Log 21.)
 > "Can you verify that this translates to long texts? When you give it an embedded question, and it has to find it when give the option to exit a loop. If not, test that next."
 
+**O9. Make it ask 20 questions first, and watch.** (Log 22.)
+> "No. That's not smart enough. Get it to ask 20 questions first. See what it does"
+
 ## Claude's routine choices
 
 **C1. A new small language of things and rules, rather than extending Strata.** Strata refused cause-and-effect sentences (log 01), its instructions drop causes, and its checker answers "does this follow?" while the hard-to-vary tests need "what happens when something is changed?".
@@ -118,7 +121,11 @@ Every decision that shapes the project. The owner's decisions are quoted exactly
 
 **C44. Six random questions for log 21's random arm**, fewer than log 20's nine or so, to leave room for the scarce-questions step.
 
+**C45. The 20 questions are asked one at a time, each answer seen before the next, with DeepSeek's expectation stated each time** (log 22), so what it does can be watched: where it probes, and whether the answers surprise it.
+
+**C46. Compared with 20 random questions and with answering straight away, on log 21's long messages** (log 22), and scored on the fair count, since DeepSeek may ask about test situations.
+
 ## Traps
 
-- **Treating a routine choice as settled.** C1 to C44 are Claude's choices; any can be overturned. The ones forced by a failure say which log entry forced them.
+- **Treating a routine choice as settled.** C1 to C46 are Claude's choices; any can be overturned. The ones forced by a failure say which log entry forced them.
 - **Losing the owner's exact words.** Paraphrasing a decision changes it. Quote it.

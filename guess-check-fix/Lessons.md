@@ -35,8 +35,10 @@ Failures in building and testing, and how each was fixed. Only cases where somet
 | 21 | A one-sentence request landed in the same paragraph as the buried question, making it easy to find. | Request sentences skip the question's paragraph; a test checks. |
 | 21 | Filler paragraphs used words that are names in the worlds (a stone wall, lamps, letters, a goose, "place", "seen", "forecast"). | Replaced before any run; a test checks the filler names nothing from any world. |
 | 21 | The buried question's wording ("start the usual way") clashed with a job name in the river world, and DeepSeek read it as that job. | Not fixed in this run; recorded in the findings as a fault of the test. |
+| 22 | The stand-in in my tests looked for words the real instruction does not use, so its first turn counted as a try to stop. | The stand-in looks for the instruction's real words. |
+| 22 | "Questions that changed a starting state" counted every question, because DeepSeek writes out default starts. | It now counts only states that differ from the usual start. |
 
 ## Traps
 
 - **Filing a finding as a lesson.** A result about how well a guesser did belongs in the log. This file is for things that broke and were fixed.
-- **Fixing without a test.** Each fix above has a test in "11 checker tests.js", "16 Sonnet guesser tests.js", "17 error correction tests.js", "19 baseline tests.js", "20 who picks tests.js", "21 long text tests.js" or "16 page test in a browser.py", except the small AI's, which need the small AI to test, and the run-script and browser-path fixes, which were checked by running them.
+- **Fixing without a test.** Each fix above has a test in "11 checker tests.js", "16 Sonnet guesser tests.js", "17 error correction tests.js", "19 baseline tests.js", "20 who picks tests.js", "21 long text tests.js", "22 twenty questions tests.js" or "16 page test in a browser.py", except the small AI's, which need the small AI to test, and the run-script and browser-path fixes, which were checked by running them.
