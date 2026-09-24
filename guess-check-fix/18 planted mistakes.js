@@ -32,7 +32,9 @@
  * Run with:
  *   DEEPSEEK_API_KEY=... NODE_USE_ENV_PROXY=1 node "18 planted mistakes.js" OUTFOLDER [WORLD,WORLD]
  *   node "18 planted mistakes.js" --list      (show the planted mistakes, no DeepSeek)
- * ONLY=a,b runs only those correctors (a corrector added later runs on the same planted mistakes).
+ * ONLY=a;b runs only those correctors, separated by semicolons because some names hold commas (a corrector added later runs on the same planted mistakes).
+ * Log 19 correctors, run with ONLY: "self review, max thinking", "self review, three rounds",
+ * "guesser fixes first, max thinking", and "self review, max thinking, reply limit 200,000".
  */
 const fs = require('fs');
 const path = require('path');
@@ -104,14 +106,22 @@ function plant(world) {
   }));
 }
 
-async function correct(world, planted, corrector, guesser) {
+// Log 19: correctors that spend more tokens. ", max thinking" runs DeepSeek at its highest thinking setting;
+// "self review, three rounds" reviews three times in a row.
+async function correct(world, planted, corrector, guesser, make_guesser) {
   const refuse = async () => { throw new Error('the checker-alone corrector must not ask the guesser'); };
-  const options = corrector === 'checker alone' ? { guesser: refuse, new_part_calls: 0 } : { guesser };
-  const mode = corrector === 'checker alone' ? 'guess and fix' : corrector;
+  const max = /, max thinking/.test(corrector);
+  const long_limit = /, reply limit 200,000$/.test(corrector);
+  const base = corrector.replace(/, reply limit 200,000$/, '').replace(/, max thinking$/, '').replace(/, three rounds$/, '');
+  const settings = Object.assign(max ? { effort: 'max' } : {}, long_limit ? { reply_limit: 200000 } : {});
+  const options = corrector === 'checker alone' ? { guesser: refuse, new_part_calls: 0 }
+    : { guesser: Object.keys(settings).length && make_guesser ? make_guesser(settings) : guesser, review_rounds: /, three rounds$/.test(corrector) ? 3 : 1 };
+  const mode = corrector === 'checker alone' ? 'guess and fix' : base;
   const r = await L.run_task(world, mode, options, { raw: planted.form, log: [] });
   const model = C.prepare_model(r.model);
   return { corrector, shown: `${r.final.original_seen_passed}/${r.final.original_seen_total}`, held_back: `${r.final.held_back_passed}/${r.final.held_back_total}`,
     held_back_asked: r.final.held_back_asked, questions_to_world: r.questions_to_world, deepseek_asked: r.guesser_calls,
+    tokens_out: r.log.reduce((sum, e) => sum + (e.tokens_out || 0), 0),
     nearby: nearby_differences(model, world), rounds: r.rounds, model: r.model, log: r.log };
 }
 
@@ -136,8 +146,8 @@ if (require.main === module) {
         const { w, p, i } = tasks[next++];
         const guesser = D.make_deepseek_guesser();
         const results = [];
-        for (const corrector of (process.env.ONLY ? process.env.ONLY.split(',') : CORRECTORS)) {
-          try { results.push(await correct(w, p, corrector, guesser)); } catch (e) { results.push({ corrector, failed: String(e.message || e) }); }
+        for (const corrector of (process.env.ONLY ? process.env.ONLY.split(';') : CORRECTORS)) {
+          try { results.push(await correct(w, p, corrector, guesser, settings => D.make_deepseek_guesser(undefined, settings))); } catch (e) { results.push({ corrector, failed: String(e.message || e) }); }
           const x = results[results.length - 1];
           const line = x.failed ? `${w.id} mistake ${i} | ${corrector} | failed: ${x.failed}` : `${w.id} mistake ${i} (${p.kind}) | ${corrector.padEnd(13)} | shown ${x.shown} | held-back ${x.held_back} | nearby wrong ${x.nearby.differ}/${x.nearby.tried} (was ${p.before.nearby.differ}) | questions ${x.questions_to_world} | DeepSeek asked ${x.deepseek_asked}`;
           console.log(line); lines.push(line);

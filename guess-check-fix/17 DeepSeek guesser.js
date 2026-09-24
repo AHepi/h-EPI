@@ -14,8 +14,11 @@
  * Like the Sonnet guesser, it adds one sentence to the last request naming the shape to reply in,
  * counts cut-off replies, and tries a plainer form of the request if a request fails.
  *
- * make_deepseek_guesser(send) takes one function, send(body), that delivers a request and returns
- * the reply. send_to_deepseek is the real one; the tests pass a stand-in.
+ * make_deepseek_guesser(send, settings) takes one function, send(body), that delivers a request and returns
+ * the reply. send_to_deepseek is the real one; the tests pass a stand-in. settings.effort sets how much
+ * DeepSeek thinks: 'low', 'high' (DeepSeek's default) or 'max' (log 19); settings.reply_limit
+ * raises the reply limit for one guesser. After each reply the guesser's
+ * last_usage says how many tokens that one call took, so the loop can write it into the run's log.
  */
 const SHAPES = require('./16 Sonnet guesser.js').SHAPE_SENTENCES;
 
@@ -37,13 +40,15 @@ async function send_to_deepseek(body) {
   try { return JSON.parse(text); } catch (e) { return { error: { message: `reply ${reply.status} was not JSON` } }; }
 }
 
-function make_deepseek_guesser(send = send_to_deepseek) {
+function make_deepseek_guesser(send = send_to_deepseek, guesser_settings = {}) {
   const counts = { requests: 0, replies: 0, cut_off: 0, plain_form: 0, refused: 0, thinking_characters: 0, answer_characters: 0, tokens_in: 0, tokens_out: 0 };
 
   function full_form(messages, settings) {
     const rest = messages.map(m => ({ role: m.role, content: String(m.content) }));
-    rest[rest.length - 1].content += `\n\n${SHAPES[settings.reply_shape] || SHAPES.model}`;
-    const body = { model: MODEL_NAME, max_tokens: REPLY_LIMIT, messages: rest };
+    // A reply shape of 'none' (log 19: direct answers) adds no sentence about the model's shape.
+    if (settings.reply_shape !== 'none') rest[rest.length - 1].content += `\n\n${SHAPES[settings.reply_shape] || SHAPES.model}`;
+    const body = { model: MODEL_NAME, max_tokens: guesser_settings.reply_limit || REPLY_LIMIT, messages: rest };
+    if (guesser_settings.effort) body.reasoning_effort = guesser_settings.effort;
     if (typeof settings.temperature === 'number') body.temperature = settings.temperature;
     return body;
   }
@@ -71,6 +76,7 @@ function make_deepseek_guesser(send = send_to_deepseek) {
         counts.thinking_characters += (choice.message.reasoning_content || '').length;
         counts.answer_characters += (choice.message.content || '').length;
         if (data.usage) { counts.tokens_in += data.usage.prompt_tokens || 0; counts.tokens_out += data.usage.completion_tokens || 0; }
+        guesser.last_usage = { tokens_in: (data.usage && data.usage.prompt_tokens) || 0, tokens_out: (data.usage && data.usage.completion_tokens) || 0 };
         return choice.message.content || '';
       } catch (problem) {
         counts.refused++;
@@ -83,6 +89,7 @@ function make_deepseek_guesser(send = send_to_deepseek) {
     throw new Error(`DeepSeek could not be reached after 3 tries: ${last_problem}`);
   }
   guesser.counts = counts;
+  guesser.effort = guesser_settings.effort || 'high';
   return guesser;
 }
 

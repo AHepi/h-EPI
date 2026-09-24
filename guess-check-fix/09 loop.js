@@ -144,7 +144,10 @@ async function ask_guesser(messages, log, options = {}, shape = MODEL_SHAPE) {
     }
     text = data.choices ? data.choices[0].message.content : JSON.stringify(data);
   }
-  log.push({ asked: messages[messages.length - 1].content, replied: text, seconds: Math.round((Date.now() - started) / 1000) });
+  const entry = { asked: messages[messages.length - 1].content, replied: text, seconds: Math.round((Date.now() - started) / 1000) };
+  // Log 19: a guesser that reports its token use gets it written beside each reply.
+  if (options.guesser && options.guesser.last_usage) { entry.tokens_in = options.guesser.last_usage.tokens_in; entry.tokens_out = options.guesser.last_usage.tokens_out; options.guesser.last_usage = null; }
+  log.push(entry);
   return text;
 }
 function read_reply(text) {
@@ -329,7 +332,8 @@ async function run_task(world, mode, options = {}, guess = null) {
       save_progress();
     }
   } else if (mode === 'self review') {
-    await self_review();
+    // Log 19: options.review_rounds asks for several reviews in a row, to test whether more tries repair more.
+    for (let round = 0; round < (options.review_rounds || 1); round++) await self_review();
   } else if (mode !== 'one guess') {
     // Log 18: "review first" is the guesser's self review, then "guesser fixes first".
     if (mode === 'review first') await self_review();

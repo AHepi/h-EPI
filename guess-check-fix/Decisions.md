@@ -19,6 +19,9 @@ Every decision that shapes the project. The owner's decisions are quoted exactly
 **O5. Finish the project on DeepSeek, error correction first.** (Log 17 and 18.)
 > "Can you finish this project. Use Deepseek V4.1 Flash though. It needs to test for error correction foremost. The ability to supplement planning, problem solving, interpretating vague prose, creating stories, exploring creatively and so on. Hard to vary mixed with strata have mixed results. Can you take over."
 
+**O6. Test against a baseline, and rule out more tokens.** (Log 19.)
+> "Great! Test against baseline as well. And rule out the possibility that spending more tokens solves the problems."
+
 ## Claude's routine choices
 
 **C1. A new small language of things and rules, rather than extending Strata.** Strata refused cause-and-effect sentences (log 01), its instructions drop causes, and its checker answers "does this follow?" while the hard-to-vary tests need "what happens when something is changed?".
@@ -85,7 +88,17 @@ Every decision that shapes the project. The owner's decisions are quoted exactly
 
 **C32. Same first guesses for a way added later** (log 18). The run script can reuse an earlier run's first guesses, so a way added later is compared on the same guesses (C11).
 
+**C33. The baseline is DeepSeek alone, with the same information as the loop's first guess** (log 19): the request, the owner's word list and the shown jobs with their answers, answering the questions directly. Anything less would make the loop look better than it is.
+
+**C34. One fixed set of questions for every arm** (log 19): the held-back jobs, and 20 nearby situations per world by a fixed shuffle. Held-back jobs about a particular step are left out for every arm, because "step" is the checker's own idea.
+
+**C35. "More tokens" is tested three ways** (log 19): DeepSeek's thinking setting (lowest, default, highest), asking five times with a majority vote, and reviewing three times. Tokens are counted per call, so arms are compared at their real cost.
+
+**C36. A cut-off reply is rerun with a higher limit, not counted against thinking harder** (log 19). The limit is this project's, not DeepSeek's.
+
+**C37. Every comparison is also made leaving out the situations the loop asked the world about** (log 19), since the loop's answers there are information, not reasoning.
+
 ## Traps
 
-- **Treating a routine choice as settled.** C1 to C32 are Claude's choices; any can be overturned. The ones forced by a failure say which log entry forced them.
+- **Treating a routine choice as settled.** C1 to C37 are Claude's choices; any can be overturned. The ones forced by a failure say which log entry forced them.
 - **Losing the owner's exact words.** Paraphrasing a decision changes it. Quote it.

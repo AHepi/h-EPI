@@ -4,6 +4,8 @@ Log entries 17 and 18. Every number here comes from the run records in `runs/`, 
 
 ## The short answer
 
+*Log 19 tested this against DeepSeek on its own and against spending more tokens; see "19 Baseline and more thinking.md". It qualifies the last point below: the loop's lead comes from the questions it finds.*
+
 - **DeepSeek's first guesses are usually right on what it is shown.** 18 of 20 first guesses passed every shown job. What it gets wrong is what it was *not* shown: 11 of 64 held-back jobs failed after the first guess alone.
 - **Those mistakes cannot be found by checking the shown jobs, however hard you check.** The checker's small fixes and DeepSeek's rewrites from the checker's report repaired **none** of the 20 hidden mistakes planted on purpose, because nothing was failing.
 - **Two things do find them, and they find different ones:** asking the world (the owner, or a real test) about situations near the jobs, and DeepSeek rereading its model against the request. The full loop repaired 11 of 20 hidden mistakes, DeepSeek's self review 9 of 20; only 4 were repaired by both, and 16 of 20 by one or the other.

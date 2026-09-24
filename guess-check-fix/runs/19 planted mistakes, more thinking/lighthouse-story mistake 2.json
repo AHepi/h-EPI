@@ -1,0 +1,748 @@
+{
+ "world": "lighthouse-story",
+ "planted": {
+  "kind": "hidden",
+  "how": "picked by the fixed shuffle",
+  "description": "in rule \"leaves\": condition \"mara is at lighthouse\" replaced by \"lamp is dark\"",
+  "form": {
+   "things": {
+    "letter": [
+     "hidden",
+     "found"
+    ],
+    "mara_knows_tev_cannot_cope": [
+     "no",
+     "yes"
+    ],
+    "lamp": [
+     "dark",
+     "lit"
+    ],
+    "mara": [
+     "at lighthouse",
+     "gone to city",
+     "staying for good"
+    ]
+   },
+   "events": [
+    "storm",
+    "mara lights lamp",
+    "mara finds letter"
+   ],
+   "start": {
+    "letter": "hidden",
+    "mara_knows_tev_cannot_cope": "no",
+    "lamp": "dark",
+    "mara": "at lighthouse"
+   },
+   "rules": [
+    {
+     "name": "storm shows Tev failing",
+     "when": [
+      "storm happens",
+      "lamp is dark"
+     ],
+     "then": "mara_knows_tev_cannot_cope is yes"
+    },
+    {
+     "name": "Mara lights it",
+     "when": [
+      "mara lights lamp happens"
+     ],
+     "then": "lamp is lit"
+    },
+    {
+     "name": "letter found",
+     "when": [
+      "mara finds letter happens"
+     ],
+     "then": "letter is found"
+    },
+    {
+     "name": "leaves",
+     "when": [
+      "letter is found",
+      "mara_knows_tev_cannot_cope is no",
+      "lamp is dark"
+     ],
+     "then": "mara is gone to city"
+    },
+    {
+     "name": "stays",
+     "when": [
+      "letter is found",
+      "mara_knows_tev_cannot_cope is yes",
+      "mara is at lighthouse"
+     ],
+     "then": "mara is staying for good"
+    }
+   ]
+  },
+  "before": {
+   "shown": "3/3",
+   "held_back": "1/2",
+   "nearby": {
+    "tried": 400,
+    "differ": 95,
+    "cannot_run": 0,
+    "examples": [
+     "the situation of job \"storm with the lamp already lit\": mara at lighthouse, world says gone to city",
+     "the situation of job \"the story as told\", but lamp starts lit: mara at lighthouse, world says gone to city",
+     "the situation of job \"the story as told\", but \"storm\" does not happen: mara at lighthouse, world says gone to city"
+    ]
+   }
+  }
+ },
+ "guesser": "deepseek-flash",
+ "counts": {
+  "requests": 5,
+  "replies": 5,
+  "cut_off": 0,
+  "plain_form": 0,
+  "refused": 0,
+  "thinking_characters": 288473,
+  "answer_characters": 4481,
+  "tokens_in": 6668,
+  "tokens_out": 71043
+ },
+ "results": [
+  {
+   "corrector": "self review",
+   "shown": "3/3",
+   "held_back": "2/2",
+   "held_back_asked": [],
+   "questions_to_world": 0,
+   "deepseek_asked": 1,
+   "tokens_out": 21273,
+   "nearby": {
+    "tried": 400,
+    "differ": 0,
+    "cannot_run": 0,
+    "examples": []
+   },
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "3/3",
+     "problems": 0
+    },
+    {
+     "step": "self review",
+     "verdict": "no change",
+     "kept": true,
+     "lost": [],
+     "seen": "3/3"
+    }
+   ],
+   "model": {
+    "things": {
+     "mara": [
+      "at lighthouse",
+      "gone to city",
+      "staying for good"
+     ],
+     "lamp": [
+      "dark",
+      "lit"
+     ],
+     "letter": [
+      "hidden",
+      "found"
+     ],
+     "mara_knows_tev_cannot_cope": [
+      "no",
+      "yes"
+     ]
+    },
+    "events": [
+     "storm",
+     "mara lights lamp",
+     "mara finds letter"
+    ],
+    "start": {
+     "mara": "at lighthouse",
+     "lamp": "dark",
+     "letter": "hidden",
+     "mara_knows_tev_cannot_cope": "no"
+    },
+    "rules": [
+     {
+      "name": "storm shows Tev failing",
+      "when": [
+       "storm happens",
+       "lamp is dark",
+       "mara is not gone to city"
+      ],
+      "then": "mara_knows_tev_cannot_cope is yes"
+     },
+     {
+      "name": "Mara lights it",
+      "when": [
+       "mara lights lamp happens",
+       "mara is not gone to city"
+      ],
+      "then": "lamp is lit"
+     },
+     {
+      "name": "letter found",
+      "when": [
+       "mara finds letter happens",
+       "mara is not gone to city"
+      ],
+      "then": "letter is found"
+     },
+     {
+      "name": "leaves",
+      "when": [
+       "letter is found",
+       "mara_knows_tev_cannot_cope is no"
+      ],
+      "then": "mara is gone to city"
+     },
+     {
+      "name": "stays",
+      "when": [
+       "letter is found",
+       "mara_knows_tev_cannot_cope is yes",
+       "mara is not gone to city"
+      ],
+      "then": "mara is staying for good"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "Task: A story: Mara keeps a lighthouse with her brother Tev. Tev hides a letter offering Mara a job in the city. A storm comes; Tev fails to light the lamp and a boat is nearly lost; Mara lights it. Mara finds the letter. Ending: Mara stays, because she has seen Tev cannot keep the light alone. If she had not seen the storm night, finding the letter would have made her leave.\n\nThings and states to use:\n  mara: at lighthouse, gone to city, staying for good\n  lamp: dark, lit\nEvents to use: storm, mara lights lamp, mara finds letter\n\nThe checker will test your model on these jobs:\n- \"the story as told\": events in order: storm, then mara lights lamp, then mara finds letter; expected at the end: mara is staying for good.\n- \"no storm night\": events in order: mara finds letter; expected at the end: mara is gone to city.\n- \"letter never found\": events in order: storm, then mara lights lamp; expected at the end: mara is at lighthouse.\n\nHere is a model for this task. It may contain mistakes, including mistakes the jobs above do not catch.\n\n{\"things\":{\"letter\":[\"hidden\",\"found\"],\"mara_knows_tev_cannot_cope\":[\"no\",\"yes\"],\"lamp\":[\"dark\",\"lit\"],\"mara\":[\"at lighthouse\",\"gone to city\",\"staying for good\"]},\"events\":[\"storm\",\"mara lights lamp\",\"mara finds letter\"],\"start\":{\"letter\":\"hidden\",\"mara_knows_tev_cannot_cope\":\"no\",\"lamp\":\"dark\",\"mara\":\"at lighthouse\"},\"rules\":[{\"name\":\"storm shows Tev failing\",\"when\":[\"storm happens\",\"lamp is dark\"],\"then\":\"mara_knows_tev_cannot_cope is yes\",\"made_by\":\"guesser first guess\"},{\"name\":\"Mara lights it\",\"when\":[\"mara lights lamp happens\"],\"then\":\"lamp is lit\",\"made_by\":\"guesser first guess\"},{\"name\":\"letter found\",\"when\":[\"mara finds letter happens\"],\"then\":\"letter is found\",\"made_by\":\"guesser first guess\"},{\"name\":\"leaves\",\"when\":[\"letter is found\",\"mara_knows_tev_cannot_cope is no\",\"lamp is dark\"],\"then\":\"mara is gone to city\",\"made_by\":\"guesser first guess\"},{\"name\":\"stays\",\"when\":[\"letter is found\",\"mara_knows_tev_cannot_cope is yes\",\"mara is at lighthouse\"],\"then\":\"mara is staying for good\",\"made_by\":\"guesser first guess\"}]}\n\nGo through the task sentence by sentence and check that every part of it is in the model, and that every rule does what the task says, in every situation the task describes, not only in the jobs. Correct every mistake you find. Write the whole corrected model. If you find no mistake, write it unchanged.",
+     "replied": "{\"things\":{\"mara\":[\"at lighthouse\",\"gone to city\",\"staying for good\"],\"lamp\":[\"dark\",\"lit\"],\"letter\":[\"hidden\",\"found\"],\"mara_knows_tev_cannot_cope\":[\"no\",\"yes\"]},\"events\":[\"storm\",\"mara lights lamp\",\"mara finds letter\"],\"start\":{\"mara\":\"at lighthouse\",\"lamp\":\"dark\",\"letter\":\"hidden\",\"mara_knows_tev_cannot_cope\":\"no\"},\"rules\":[{\"name\":\"storm shows Tev failing\",\"when\":[\"storm happens\",\"lamp is dark\",\"mara is not gone to city\"],\"then\":\"mara_knows_tev_cannot_cope is yes\"},{\"name\":\"Mara lights it\",\"when\":[\"mara lights lamp happens\",\"mara is not gone to city\"],\"then\":\"lamp is lit\"},{\"name\":\"letter found\",\"when\":[\"mara finds letter happens\",\"mara is not gone to city\"],\"then\":\"letter is found\"},{\"name\":\"leaves\",\"when\":[\"letter is found\",\"mara_knows_tev_cannot_cope is no\"],\"then\":\"mara is gone to city\"},{\"name\":\"stays\",\"when\":[\"letter is found\",\"mara_knows_tev_cannot_cope is yes\",\"mara is not gone to city\"],\"then\":\"mara is staying for good\"}]}",
+     "seconds": 92,
+     "tokens_in": 1246,
+     "tokens_out": 21273
+    }
+   ]
+  },
+  {
+   "corrector": "guesser fixes first",
+   "shown": "3/3",
+   "held_back": "2/2",
+   "held_back_asked": [],
+   "questions_to_world": 12,
+   "deepseek_asked": 1,
+   "tokens_out": 2668,
+   "nearby": {
+    "tried": 400,
+    "differ": 0,
+    "cannot_run": 0,
+    "examples": []
+   },
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "3/3",
+     "problems": 0
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 3,
+     "seen": "4/6"
+    },
+    {
+     "step": "guesser rewrites first",
+     "verdict": "accepted",
+     "repaired": [
+      "world answer 1",
+      "world answer 2"
+     ],
+     "lost": [],
+     "seen": "6/6"
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 1,
+     "seen": "7/7"
+    },
+    {
+     "step": "look for surprises",
+     "added": 4,
+     "surprises": 0,
+     "seen": "11/11"
+    },
+    {
+     "step": "look for surprises",
+     "added": 4,
+     "surprises": 0,
+     "seen": "15/15"
+    }
+   ],
+   "model": {
+    "things": {
+     "letter": [
+      "hidden",
+      "found"
+     ],
+     "mara_knows_tev_cannot_cope": [
+      "no",
+      "yes"
+     ],
+     "lamp": [
+      "dark",
+      "lit"
+     ],
+     "mara": [
+      "at lighthouse",
+      "gone to city",
+      "staying for good"
+     ]
+    },
+    "events": [
+     "storm",
+     "mara lights lamp",
+     "mara finds letter"
+    ],
+    "start": {
+     "letter": "hidden",
+     "mara_knows_tev_cannot_cope": "no",
+     "lamp": "dark",
+     "mara": "at lighthouse"
+    },
+    "rules": [
+     {
+      "name": "storm shows Tev failing",
+      "when": [
+       "storm happens",
+       "lamp is dark"
+      ],
+      "then": "mara_knows_tev_cannot_cope is yes"
+     },
+     {
+      "name": "Mara lights it",
+      "when": [
+       "mara lights lamp happens"
+      ],
+      "then": "lamp is lit"
+     },
+     {
+      "name": "letter found",
+      "when": [
+       "mara finds letter happens"
+      ],
+      "then": "letter is found"
+     },
+     {
+      "name": "leaves",
+      "when": [
+       "letter is found",
+       "mara_knows_tev_cannot_cope is no"
+      ],
+      "then": "mara is gone to city"
+     },
+     {
+      "name": "stays",
+      "when": [
+       "letter is found",
+       "mara_knows_tev_cannot_cope is yes",
+       "mara is at lighthouse"
+      ],
+      "then": "mara is staying for good"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "Task: A story: Mara keeps a lighthouse with her brother Tev. Tev hides a letter offering Mara a job in the city. A storm comes; Tev fails to light the lamp and a boat is nearly lost; Mara lights it. Mara finds the letter. Ending: Mara stays, because she has seen Tev cannot keep the light alone. If she had not seen the storm night, finding the letter would have made her leave.\n\nThings and states to use:\n  mara: at lighthouse, gone to city, staying for good\n  lamp: dark, lit\nEvents to use: storm, mara lights lamp, mara finds letter\n\nThe checker will test your model on these jobs:\n- \"the story as told\": events in order: storm, then mara lights lamp, then mara finds letter; expected at the end: mara is staying for good.\n- \"no storm night\": events in order: mara finds letter; expected at the end: mara is gone to city.\n- \"letter never found\": events in order: storm, then mara lights lamp; expected at the end: mara is at lighthouse.\n- \"world answer 1\": events in order: mara lights lamp, then mara finds letter; expected at the end: mara_knows_tev_cannot_cope is no and mara is gone to city.\n- \"world answer 2\": events in order: mara lights lamp, then storm, then mara lights lamp, then mara finds letter; expected at the end: mara_knows_tev_cannot_cope is no and mara is gone to city.\n- \"world answer 3\": events in order: storm, then mara finds letter; expected at the end: mara is staying for good.\n\nThe current model:\n{\"things\":{\"letter\":[\"hidden\",\"found\"],\"mara_knows_tev_cannot_cope\":[\"no\",\"yes\"],\"lamp\":[\"dark\",\"lit\"],\"mara\":[\"at lighthouse\",\"gone to city\",\"staying for good\"]},\"events\":[\"storm\",\"mara lights lamp\",\"mara finds letter\"],\"start\":{\"letter\":\"hidden\",\"mara_knows_tev_cannot_cope\":\"no\",\"lamp\":\"dark\",\"mara\":\"at lighthouse\"},\"rules\":[{\"name\":\"storm shows Tev failing\",\"when\":[\"storm happens\",\"lamp is dark\"],\"then\":\"mara_knows_tev_cannot_cope is yes\",\"made_by\":\"guesser first guess\"},{\"name\":\"Mara lights it\",\"when\":[\"mara lights lamp happens\"],\"then\":\"lamp is lit\",\"made_by\":\"guesser first guess\"},{\"name\":\"letter found\",\"when\":[\"mara finds letter happens\"],\"then\":\"letter is found\",\"made_by\":\"guesser first guess\"},{\"name\":\"leaves\",\"when\":[\"letter is found\",\"mara_knows_tev_cannot_cope is no\",\"lamp is dark\"],\"then\":\"mara is gone to city\",\"made_by\":\"guesser first guess\"},{\"name\":\"stays\",\"when\":[\"letter is found\",\"mara_knows_tev_cannot_cope is yes\",\"mara is at lighthouse\"],\"then\":\"mara is staying for good\",\"made_by\":\"guesser first guess\"}]}\n\nThe checker ran it.\n\nPASS: job \"the story as told\"\nPASS: job \"no storm night\"\nPASS: job \"letter never found\"\nFAIL: job \"world answer 1\"\n  - What happened: step 1: Mara lights it made lamp lit; step 2: letter found made letter found.\n  - Wanted mara is gone to city at the end; got mara at lighthouse.\n  - Rule \"leaves\" never fired: each of its conditions was true at some step, but never all at the same step.\nFAIL: job \"world answer 2\"\n  - What happened: step 1: Mara lights it made lamp lit; step 4: letter found made letter found.\n  - Wanted mara is gone to city at the end; got mara at lighthouse.\n  - Rule \"leaves\" never fired: each of its conditions was true at some step, but never all at the same step.\nPASS: job \"world answer 3\"\n4 of 6 jobs pass.\n\nSMALL FIX FOUND: in rule \"leaves\": condition \"lamp is dark\" left out repairs \"world answer 1\", \"world answer 2\" and breaks nothing.\nSMALL FIX FOUND: in rule \"Mara lights it\": condition \"letter is found\" added repairs \"world answer 1\" and breaks nothing.\nSMALL FIX FOUND: in rule \"Mara lights it\": condition \"mara_knows_tev_cannot_cope is yes\" added repairs \"world answer 1\" and breaks nothing.\nSMALL FIX FOUND: in rule \"Mara lights it\": condition \"lamp is lit\" added repairs \"world answer 1\" and breaks nothing.\nSMALL FIX FOUND: in rule \"Mara lights it\": condition \"mara is gone to city\" added repairs \"world answer 1\" and breaks nothing.\nSMALL FIX FOUND: in rule \"Mara lights it\": condition \"mara is staying for good\" added repairs \"world answer 1\" and breaks nothing.\n\nWrite the whole model again so that every job passes. Keep every rule that already works. Give every thing a start state.",
+     "replied": "{\"things\":{\"letter\":[\"hidden\",\"found\"],\"mara_knows_tev_cannot_cope\":[\"no\",\"yes\"],\"lamp\":[\"dark\",\"lit\"],\"mara\":[\"at lighthouse\",\"gone to city\",\"staying for good\"]},\"events\":[\"storm\",\"mara lights lamp\",\"mara finds letter\"],\"start\":{\"letter\":\"hidden\",\"mara_knows_tev_cannot_cope\":\"no\",\"lamp\":\"dark\",\"mara\":\"at lighthouse\"},\"rules\":[{\"name\":\"storm shows Tev failing\",\"when\":[\"storm happens\",\"lamp is dark\"],\"then\":\"mara_knows_tev_cannot_cope is yes\"},{\"name\":\"Mara lights it\",\"when\":[\"mara lights lamp happens\"],\"then\":\"lamp is lit\"},{\"name\":\"letter found\",\"when\":[\"mara finds letter happens\"],\"then\":\"letter is found\"},{\"name\":\"leaves\",\"when\":[\"letter is found\",\"mara_knows_tev_cannot_cope is no\"],\"then\":\"mara is gone to city\"},{\"name\":\"stays\",\"when\":[\"letter is found\",\"mara_knows_tev_cannot_cope is yes\",\"mara is at lighthouse\"],\"then\":\"mara is staying for good\"}]}",
+     "seconds": 13,
+     "tokens_in": 1762,
+     "tokens_out": 2668
+    }
+   ]
+  },
+  {
+   "corrector": "self review, max thinking",
+   "shown": "3/3",
+   "held_back": "2/2",
+   "held_back_asked": [],
+   "questions_to_world": 0,
+   "deepseek_asked": 1,
+   "tokens_out": 12224,
+   "nearby": {
+    "tried": 400,
+    "differ": 0,
+    "cannot_run": 0,
+    "examples": []
+   },
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "3/3",
+     "problems": 0
+    },
+    {
+     "step": "self review",
+     "verdict": "no change",
+     "kept": true,
+     "lost": [],
+     "seen": "3/3"
+    }
+   ],
+   "model": {
+    "things": {
+     "letter": [
+      "hidden",
+      "found"
+     ],
+     "mara_knows_tev_cannot_cope": [
+      "no",
+      "yes"
+     ],
+     "lamp": [
+      "dark",
+      "lit"
+     ],
+     "mara": [
+      "at lighthouse",
+      "gone to city",
+      "staying for good"
+     ]
+    },
+    "events": [
+     "storm",
+     "mara lights lamp",
+     "mara finds letter"
+    ],
+    "start": {
+     "letter": "hidden",
+     "mara_knows_tev_cannot_cope": "no",
+     "lamp": "dark",
+     "mara": "at lighthouse"
+    },
+    "rules": [
+     {
+      "name": "storm shows Tev failing",
+      "when": [
+       "storm happens",
+       "lamp is dark"
+      ],
+      "then": "mara_knows_tev_cannot_cope is yes"
+     },
+     {
+      "name": "Mara lights it",
+      "when": [
+       "mara lights lamp happens"
+      ],
+      "then": "lamp is lit"
+     },
+     {
+      "name": "letter found",
+      "when": [
+       "mara finds letter happens"
+      ],
+      "then": "letter is found"
+     },
+     {
+      "name": "leaves",
+      "when": [
+       "letter is found",
+       "mara_knows_tev_cannot_cope is no",
+       "mara is at lighthouse"
+      ],
+      "then": "mara is gone to city"
+     },
+     {
+      "name": "stays",
+      "when": [
+       "letter is found",
+       "mara_knows_tev_cannot_cope is yes",
+       "mara is at lighthouse"
+      ],
+      "then": "mara is staying for good"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "Task: A story: Mara keeps a lighthouse with her brother Tev. Tev hides a letter offering Mara a job in the city. A storm comes; Tev fails to light the lamp and a boat is nearly lost; Mara lights it. Mara finds the letter. Ending: Mara stays, because she has seen Tev cannot keep the light alone. If she had not seen the storm night, finding the letter would have made her leave.\n\nThings and states to use:\n  mara: at lighthouse, gone to city, staying for good\n  lamp: dark, lit\nEvents to use: storm, mara lights lamp, mara finds letter\n\nThe checker will test your model on these jobs:\n- \"the story as told\": events in order: storm, then mara lights lamp, then mara finds letter; expected at the end: mara is staying for good.\n- \"no storm night\": events in order: mara finds letter; expected at the end: mara is gone to city.\n- \"letter never found\": events in order: storm, then mara lights lamp; expected at the end: mara is at lighthouse.\n\nHere is a model for this task. It may contain mistakes, including mistakes the jobs above do not catch.\n\n{\"things\":{\"letter\":[\"hidden\",\"found\"],\"mara_knows_tev_cannot_cope\":[\"no\",\"yes\"],\"lamp\":[\"dark\",\"lit\"],\"mara\":[\"at lighthouse\",\"gone to city\",\"staying for good\"]},\"events\":[\"storm\",\"mara lights lamp\",\"mara finds letter\"],\"start\":{\"letter\":\"hidden\",\"mara_knows_tev_cannot_cope\":\"no\",\"lamp\":\"dark\",\"mara\":\"at lighthouse\"},\"rules\":[{\"name\":\"storm shows Tev failing\",\"when\":[\"storm happens\",\"lamp is dark\"],\"then\":\"mara_knows_tev_cannot_cope is yes\",\"made_by\":\"guesser first guess\"},{\"name\":\"Mara lights it\",\"when\":[\"mara lights lamp happens\"],\"then\":\"lamp is lit\",\"made_by\":\"guesser first guess\"},{\"name\":\"letter found\",\"when\":[\"mara finds letter happens\"],\"then\":\"letter is found\",\"made_by\":\"guesser first guess\"},{\"name\":\"leaves\",\"when\":[\"letter is found\",\"mara_knows_tev_cannot_cope is no\",\"lamp is dark\"],\"then\":\"mara is gone to city\",\"made_by\":\"guesser first guess\"},{\"name\":\"stays\",\"when\":[\"letter is found\",\"mara_knows_tev_cannot_cope is yes\",\"mara is at lighthouse\"],\"then\":\"mara is staying for good\",\"made_by\":\"guesser first guess\"}]}\n\nGo through the task sentence by sentence and check that every part of it is in the model, and that every rule does what the task says, in every situation the task describes, not only in the jobs. Correct every mistake you find. Write the whole corrected model. If you find no mistake, write it unchanged.",
+     "replied": "{\"things\":{\"letter\":[\"hidden\",\"found\"],\"mara_knows_tev_cannot_cope\":[\"no\",\"yes\"],\"lamp\":[\"dark\",\"lit\"],\"mara\":[\"at lighthouse\",\"gone to city\",\"staying for good\"]},\"events\":[\"storm\",\"mara lights lamp\",\"mara finds letter\"],\"start\":{\"letter\":\"hidden\",\"mara_knows_tev_cannot_cope\":\"no\",\"lamp\":\"dark\",\"mara\":\"at lighthouse\"},\"rules\":[{\"name\":\"storm shows Tev failing\",\"when\":[\"storm happens\",\"lamp is dark\"],\"then\":\"mara_knows_tev_cannot_cope is yes\"},{\"name\":\"Mara lights it\",\"when\":[\"mara lights lamp happens\"],\"then\":\"lamp is lit\"},{\"name\":\"letter found\",\"when\":[\"mara finds letter happens\"],\"then\":\"letter is found\"},{\"name\":\"leaves\",\"when\":[\"letter is found\",\"mara_knows_tev_cannot_cope is no\",\"mara is at lighthouse\"],\"then\":\"mara is gone to city\"},{\"name\":\"stays\",\"when\":[\"letter is found\",\"mara_knows_tev_cannot_cope is yes\",\"mara is at lighthouse\"],\"then\":\"mara is staying for good\"}]}",
+     "seconds": 61,
+     "tokens_in": 1246,
+     "tokens_out": 12224
+    }
+   ]
+  },
+  {
+   "corrector": "self review, three rounds",
+   "shown": "3/3",
+   "held_back": "2/2",
+   "held_back_asked": [],
+   "questions_to_world": 0,
+   "deepseek_asked": 3,
+   "tokens_out": 47102,
+   "nearby": {
+    "tried": 400,
+    "differ": 0,
+    "cannot_run": 0,
+    "examples": []
+   },
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "3/3",
+     "problems": 0
+    },
+    {
+     "step": "self review",
+     "verdict": "no change",
+     "kept": true,
+     "lost": [],
+     "seen": "3/3"
+    },
+    {
+     "step": "self review",
+     "verdict": "no change",
+     "kept": true,
+     "lost": [],
+     "seen": "3/3"
+    },
+    {
+     "step": "self review",
+     "verdict": "no change",
+     "kept": true,
+     "lost": [],
+     "seen": "3/3"
+    }
+   ],
+   "model": {
+    "things": {
+     "letter": [
+      "hidden",
+      "found"
+     ],
+     "mara_knows_tev_cannot_cope": [
+      "no",
+      "yes"
+     ],
+     "lamp": [
+      "dark",
+      "lit"
+     ],
+     "mara": [
+      "at lighthouse",
+      "gone to city",
+      "staying for good"
+     ]
+    },
+    "events": [
+     "storm",
+     "mara lights lamp",
+     "mara finds letter"
+    ],
+    "start": {
+     "letter": "hidden",
+     "mara_knows_tev_cannot_cope": "no",
+     "lamp": "dark",
+     "mara": "at lighthouse"
+    },
+    "rules": [
+     {
+      "name": "storm shows Tev failing",
+      "when": [
+       "storm happens",
+       "lamp is dark"
+      ],
+      "then": "mara_knows_tev_cannot_cope is yes"
+     },
+     {
+      "name": "Mara lights it",
+      "when": [
+       "mara lights lamp happens"
+      ],
+      "then": "lamp is lit"
+     },
+     {
+      "name": "letter found",
+      "when": [
+       "mara finds letter happens"
+      ],
+      "then": "letter is found"
+     },
+     {
+      "name": "leaves",
+      "when": [
+       "letter is found",
+       "mara_knows_tev_cannot_cope is no",
+       "mara is at lighthouse"
+      ],
+      "then": "mara is gone to city"
+     },
+     {
+      "name": "stays",
+      "when": [
+       "letter is found",
+       "mara_knows_tev_cannot_cope is yes",
+       "mara is at lighthouse"
+      ],
+      "then": "mara is staying for good"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "Task: A story: Mara keeps a lighthouse with her brother Tev. Tev hides a letter offering Mara a job in the city. A storm comes; Tev fails to light the lamp and a boat is nearly lost; Mara lights it. Mara finds the letter. Ending: Mara stays, because she has seen Tev cannot keep the light alone. If she had not seen the storm night, finding the letter would have made her leave.\n\nThings and states to use:\n  mara: at lighthouse, gone to city, staying for good\n  lamp: dark, lit\nEvents to use: storm, mara lights lamp, mara finds letter\n\nThe checker will test your model on these jobs:\n- \"the story as told\": events in order: storm, then mara lights lamp, then mara finds letter; expected at the end: mara is staying for good.\n- \"no storm night\": events in order: mara finds letter; expected at the end: mara is gone to city.\n- \"letter never found\": events in order: storm, then mara lights lamp; expected at the end: mara is at lighthouse.\n\nHere is a model for this task. It may contain mistakes, including mistakes the jobs above do not catch.\n\n{\"things\":{\"letter\":[\"hidden\",\"found\"],\"mara_knows_tev_cannot_cope\":[\"no\",\"yes\"],\"lamp\":[\"dark\",\"lit\"],\"mara\":[\"at lighthouse\",\"gone to city\",\"staying for good\"]},\"events\":[\"storm\",\"mara lights lamp\",\"mara finds letter\"],\"start\":{\"letter\":\"hidden\",\"mara_knows_tev_cannot_cope\":\"no\",\"lamp\":\"dark\",\"mara\":\"at lighthouse\"},\"rules\":[{\"name\":\"storm shows Tev failing\",\"when\":[\"storm happens\",\"lamp is dark\"],\"then\":\"mara_knows_tev_cannot_cope is yes\",\"made_by\":\"guesser first guess\"},{\"name\":\"Mara lights it\",\"when\":[\"mara lights lamp happens\"],\"then\":\"lamp is lit\",\"made_by\":\"guesser first guess\"},{\"name\":\"letter found\",\"when\":[\"mara finds letter happens\"],\"then\":\"letter is found\",\"made_by\":\"guesser first guess\"},{\"name\":\"leaves\",\"when\":[\"letter is found\",\"mara_knows_tev_cannot_cope is no\",\"lamp is dark\"],\"then\":\"mara is gone to city\",\"made_by\":\"guesser first guess\"},{\"name\":\"stays\",\"when\":[\"letter is found\",\"mara_knows_tev_cannot_cope is yes\",\"mara is at lighthouse\"],\"then\":\"mara is staying for good\",\"made_by\":\"guesser first guess\"}]}\n\nGo through the task sentence by sentence and check that every part of it is in the model, and that every rule does what the task says, in every situation the task describes, not only in the jobs. Correct every mistake you find. Write the whole corrected model. If you find no mistake, write it unchanged.",
+     "replied": "{\"things\":{\"letter\":[\"hidden\",\"found\"],\"mara_knows_tev_cannot_cope\":[\"no\",\"yes\"],\"lamp\":[\"dark\",\"lit\"],\"mara\":[\"at lighthouse\",\"gone to city\",\"staying for good\"]},\"events\":[\"storm\",\"mara lights lamp\",\"mara finds letter\"],\"start\":{\"letter\":\"hidden\",\"mara_knows_tev_cannot_cope\":\"no\",\"lamp\":\"dark\",\"mara\":\"at lighthouse\"},\"rules\":[{\"name\":\"storm shows Tev failing\",\"when\":[\"storm happens\",\"lamp is dark\"],\"then\":\"mara_knows_tev_cannot_cope is yes\"},{\"name\":\"Mara lights it\",\"when\":[\"mara lights lamp happens\"],\"then\":\"lamp is lit\"},{\"name\":\"letter found\",\"when\":[\"mara finds letter happens\"],\"then\":\"letter is found\"},{\"name\":\"leaves\",\"when\":[\"letter is found\",\"mara_knows_tev_cannot_cope is no\",\"mara is at lighthouse\"],\"then\":\"mara is gone to city\"},{\"name\":\"stays\",\"when\":[\"letter is found\",\"mara_knows_tev_cannot_cope is yes\",\"mara is at lighthouse\"],\"then\":\"mara is staying for good\"}]}",
+     "seconds": 35,
+     "tokens_in": 1246,
+     "tokens_out": 7572
+    },
+    {
+     "asked": "Task: A story: Mara keeps a lighthouse with her brother Tev. Tev hides a letter offering Mara a job in the city. A storm comes; Tev fails to light the lamp and a boat is nearly lost; Mara lights it. Mara finds the letter. Ending: Mara stays, because she has seen Tev cannot keep the light alone. If she had not seen the storm night, finding the letter would have made her leave.\n\nThings and states to use:\n  mara: at lighthouse, gone to city, staying for good\n  lamp: dark, lit\nEvents to use: storm, mara lights lamp, mara finds letter\n\nThe checker will test your model on these jobs:\n- \"the story as told\": events in order: storm, then mara lights lamp, then mara finds letter; expected at the end: mara is staying for good.\n- \"no storm night\": events in order: mara finds letter; expected at the end: mara is gone to city.\n- \"letter never found\": events in order: storm, then mara lights lamp; expected at the end: mara is at lighthouse.\n\nHere is a model for this task. It may contain mistakes, including mistakes the jobs above do not catch.\n\n{\"things\":{\"letter\":[\"hidden\",\"found\"],\"mara_knows_tev_cannot_cope\":[\"no\",\"yes\"],\"lamp\":[\"dark\",\"lit\"],\"mara\":[\"at lighthouse\",\"gone to city\",\"staying for good\"]},\"events\":[\"storm\",\"mara lights lamp\",\"mara finds letter\"],\"start\":{\"letter\":\"hidden\",\"mara_knows_tev_cannot_cope\":\"no\",\"lamp\":\"dark\",\"mara\":\"at lighthouse\"},\"rules\":[{\"name\":\"storm shows Tev failing\",\"when\":[\"storm happens\",\"lamp is dark\"],\"then\":\"mara_knows_tev_cannot_cope is yes\"},{\"name\":\"Mara lights it\",\"when\":[\"mara lights lamp happens\"],\"then\":\"lamp is lit\"},{\"name\":\"letter found\",\"when\":[\"mara finds letter happens\"],\"then\":\"letter is found\"},{\"name\":\"leaves\",\"when\":[\"letter is found\",\"mara_knows_tev_cannot_cope is no\",\"mara is at lighthouse\"],\"then\":\"mara is gone to city\"},{\"name\":\"stays\",\"when\":[\"letter is found\",\"mara_knows_tev_cannot_cope is yes\",\"mara is at lighthouse\"],\"then\":\"mara is staying for good\"}]}\n\nGo through the task sentence by sentence and check that every part of it is in the model, and that every rule does what the task says, in every situation the task describes, not only in the jobs. Correct every mistake you find. Write the whole corrected model. If you find no mistake, write it unchanged.",
+     "replied": "{\"things\":{\"letter\":[\"hidden\",\"found\"],\"mara_knows_tev_cannot_cope\":[\"no\",\"yes\"],\"lamp\":[\"dark\",\"lit\"],\"mara\":[\"at lighthouse\",\"gone to city\",\"staying for good\"]},\"events\":[\"storm\",\"mara lights lamp\",\"mara finds letter\"],\"start\":{\"letter\":\"hidden\",\"mara_knows_tev_cannot_cope\":\"no\",\"lamp\":\"dark\",\"mara\":\"at lighthouse\"},\"rules\":[{\"name\":\"storm shows Tev failing\",\"when\":[\"storm happens\",\"lamp is dark\"],\"then\":\"mara_knows_tev_cannot_cope is yes\"},{\"name\":\"Mara lights it\",\"when\":[\"mara lights lamp happens\"],\"then\":\"lamp is lit\"},{\"name\":\"letter found\",\"when\":[\"mara finds letter happens\"],\"then\":\"letter is found\"},{\"name\":\"leaves\",\"when\":[\"letter is found\",\"mara_knows_tev_cannot_cope is no\",\"mara is at lighthouse\"],\"then\":\"mara is gone to city\"},{\"name\":\"stays\",\"when\":[\"letter is found\",\"mara_knows_tev_cannot_cope is yes\",\"mara is at lighthouse\"],\"then\":\"mara is staying for good\"}]}",
+     "seconds": 89,
+     "tokens_in": 1207,
+     "tokens_out": 20063
+    },
+    {
+     "asked": "Task: A story: Mara keeps a lighthouse with her brother Tev. Tev hides a letter offering Mara a job in the city. A storm comes; Tev fails to light the lamp and a boat is nearly lost; Mara lights it. Mara finds the letter. Ending: Mara stays, because she has seen Tev cannot keep the light alone. If she had not seen the storm night, finding the letter would have made her leave.\n\nThings and states to use:\n  mara: at lighthouse, gone to city, staying for good\n  lamp: dark, lit\nEvents to use: storm, mara lights lamp, mara finds letter\n\nThe checker will test your model on these jobs:\n- \"the story as told\": events in order: storm, then mara lights lamp, then mara finds letter; expected at the end: mara is staying for good.\n- \"no storm night\": events in order: mara finds letter; expected at the end: mara is gone to city.\n- \"letter never found\": events in order: storm, then mara lights lamp; expected at the end: mara is at lighthouse.\n\nHere is a model for this task. It may contain mistakes, including mistakes the jobs above do not catch.\n\n{\"things\":{\"letter\":[\"hidden\",\"found\"],\"mara_knows_tev_cannot_cope\":[\"no\",\"yes\"],\"lamp\":[\"dark\",\"lit\"],\"mara\":[\"at lighthouse\",\"gone to city\",\"staying for good\"]},\"events\":[\"storm\",\"mara lights lamp\",\"mara finds letter\"],\"start\":{\"letter\":\"hidden\",\"mara_knows_tev_cannot_cope\":\"no\",\"lamp\":\"dark\",\"mara\":\"at lighthouse\"},\"rules\":[{\"name\":\"storm shows Tev failing\",\"when\":[\"storm happens\",\"lamp is dark\"],\"then\":\"mara_knows_tev_cannot_cope is yes\"},{\"name\":\"Mara lights it\",\"when\":[\"mara lights lamp happens\"],\"then\":\"lamp is lit\"},{\"name\":\"letter found\",\"when\":[\"mara finds letter happens\"],\"then\":\"letter is found\"},{\"name\":\"leaves\",\"when\":[\"letter is found\",\"mara_knows_tev_cannot_cope is no\",\"mara is at lighthouse\"],\"then\":\"mara is gone to city\"},{\"name\":\"stays\",\"when\":[\"letter is found\",\"mara_knows_tev_cannot_cope is yes\",\"mara is at lighthouse\"],\"then\":\"mara is staying for good\"}]}\n\nGo through the task sentence by sentence and check that every part of it is in the model, and that every rule does what the task says, in every situation the task describes, not only in the jobs. Correct every mistake you find. Write the whole corrected model. If you find no mistake, write it unchanged.",
+     "replied": "{\"things\":{\"letter\":[\"hidden\",\"found\"],\"mara_knows_tev_cannot_cope\":[\"no\",\"yes\"],\"lamp\":[\"dark\",\"lit\"],\"mara\":[\"at lighthouse\",\"gone to city\",\"staying for good\"]},\"events\":[\"storm\",\"mara lights lamp\",\"mara finds letter\"],\"start\":{\"letter\":\"hidden\",\"mara_knows_tev_cannot_cope\":\"no\",\"lamp\":\"dark\",\"mara\":\"at lighthouse\"},\"rules\":[{\"name\":\"storm shows Tev failing\",\"when\":[\"storm happens\",\"lamp is dark\"],\"then\":\"mara_knows_tev_cannot_cope is yes\"},{\"name\":\"Mara lights it\",\"when\":[\"mara lights lamp happens\"],\"then\":\"lamp is lit\"},{\"name\":\"letter found\",\"when\":[\"mara finds letter happens\"],\"then\":\"letter is found\"},{\"name\":\"leaves\",\"when\":[\"letter is found\",\"mara_knows_tev_cannot_cope is no\",\"mara is at lighthouse\"],\"then\":\"mara is gone to city\"},{\"name\":\"stays\",\"when\":[\"letter is found\",\"mara_knows_tev_cannot_cope is yes\",\"mara is at lighthouse\"],\"then\":\"mara is staying for good\"}]}",
+     "seconds": 89,
+     "tokens_in": 1207,
+     "tokens_out": 19467
+    }
+   ]
+  },
+  {
+   "corrector": "guesser fixes first, max thinking",
+   "shown": "3/3",
+   "held_back": "2/2",
+   "held_back_asked": [],
+   "questions_to_world": 12,
+   "deepseek_asked": 1,
+   "tokens_out": 3188,
+   "nearby": {
+    "tried": 400,
+    "differ": 0,
+    "cannot_run": 0,
+    "examples": []
+   },
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "3/3",
+     "problems": 0
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 3,
+     "seen": "4/6"
+    },
+    {
+     "step": "guesser rewrites first",
+     "verdict": "accepted",
+     "repaired": [
+      "world answer 1",
+      "world answer 2"
+     ],
+     "lost": [],
+     "seen": "6/6"
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 1,
+     "seen": "7/7"
+    },
+    {
+     "step": "look for surprises",
+     "added": 4,
+     "surprises": 0,
+     "seen": "11/11"
+    },
+    {
+     "step": "look for surprises",
+     "added": 4,
+     "surprises": 0,
+     "seen": "15/15"
+    }
+   ],
+   "model": {
+    "things": {
+     "letter": [
+      "hidden",
+      "found"
+     ],
+     "mara_knows_tev_cannot_cope": [
+      "no",
+      "yes"
+     ],
+     "lamp": [
+      "dark",
+      "lit"
+     ],
+     "mara": [
+      "at lighthouse",
+      "gone to city",
+      "staying for good"
+     ]
+    },
+    "events": [
+     "storm",
+     "mara lights lamp",
+     "mara finds letter"
+    ],
+    "start": {
+     "letter": "hidden",
+     "mara_knows_tev_cannot_cope": "no",
+     "lamp": "dark",
+     "mara": "at lighthouse"
+    },
+    "rules": [
+     {
+      "name": "storm shows Tev failing",
+      "when": [
+       "storm happens",
+       "lamp is dark"
+      ],
+      "then": "mara_knows_tev_cannot_cope is yes"
+     },
+     {
+      "name": "Mara lights it",
+      "when": [
+       "mara lights lamp happens"
+      ],
+      "then": "lamp is lit"
+     },
+     {
+      "name": "letter found",
+      "when": [
+       "mara finds letter happens"
+      ],
+      "then": "letter is found"
+     },
+     {
+      "name": "leaves",
+      "when": [
+       "letter is found",
+       "mara_knows_tev_cannot_cope is no"
+      ],
+      "then": "mara is gone to city"
+     },
+     {
+      "name": "stays",
+      "when": [
+       "letter is found",
+       "mara_knows_tev_cannot_cope is yes",
+       "mara is at lighthouse"
+      ],
+      "then": "mara is staying for good"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "Task: A story: Mara keeps a lighthouse with her brother Tev. Tev hides a letter offering Mara a job in the city. A storm comes; Tev fails to light the lamp and a boat is nearly lost; Mara lights it. Mara finds the letter. Ending: Mara stays, because she has seen Tev cannot keep the light alone. If she had not seen the storm night, finding the letter would have made her leave.\n\nThings and states to use:\n  mara: at lighthouse, gone to city, staying for good\n  lamp: dark, lit\nEvents to use: storm, mara lights lamp, mara finds letter\n\nThe checker will test your model on these jobs:\n- \"the story as told\": events in order: storm, then mara lights lamp, then mara finds letter; expected at the end: mara is staying for good.\n- \"no storm night\": events in order: mara finds letter; expected at the end: mara is gone to city.\n- \"letter never found\": events in order: storm, then mara lights lamp; expected at the end: mara is at lighthouse.\n- \"world answer 1\": events in order: mara lights lamp, then mara finds letter; expected at the end: mara_knows_tev_cannot_cope is no and mara is gone to city.\n- \"world answer 2\": events in order: mara lights lamp, then storm, then mara lights lamp, then mara finds letter; expected at the end: mara_knows_tev_cannot_cope is no and mara is gone to city.\n- \"world answer 3\": events in order: storm, then mara finds letter; expected at the end: mara is staying for good.\n\nThe current model:\n{\"things\":{\"letter\":[\"hidden\",\"found\"],\"mara_knows_tev_cannot_cope\":[\"no\",\"yes\"],\"lamp\":[\"dark\",\"lit\"],\"mara\":[\"at lighthouse\",\"gone to city\",\"staying for good\"]},\"events\":[\"storm\",\"mara lights lamp\",\"mara finds letter\"],\"start\":{\"letter\":\"hidden\",\"mara_knows_tev_cannot_cope\":\"no\",\"lamp\":\"dark\",\"mara\":\"at lighthouse\"},\"rules\":[{\"name\":\"storm shows Tev failing\",\"when\":[\"storm happens\",\"lamp is dark\"],\"then\":\"mara_knows_tev_cannot_cope is yes\",\"made_by\":\"guesser first guess\"},{\"name\":\"Mara lights it\",\"when\":[\"mara lights lamp happens\"],\"then\":\"lamp is lit\",\"made_by\":\"guesser first guess\"},{\"name\":\"letter found\",\"when\":[\"mara finds letter happens\"],\"then\":\"letter is found\",\"made_by\":\"guesser first guess\"},{\"name\":\"leaves\",\"when\":[\"letter is found\",\"mara_knows_tev_cannot_cope is no\",\"lamp is dark\"],\"then\":\"mara is gone to city\",\"made_by\":\"guesser first guess\"},{\"name\":\"stays\",\"when\":[\"letter is found\",\"mara_knows_tev_cannot_cope is yes\",\"mara is at lighthouse\"],\"then\":\"mara is staying for good\",\"made_by\":\"guesser first guess\"}]}\n\nThe checker ran it.\n\nPASS: job \"the story as told\"\nPASS: job \"no storm night\"\nPASS: job \"letter never found\"\nFAIL: job \"world answer 1\"\n  - What happened: step 1: Mara lights it made lamp lit; step 2: letter found made letter found.\n  - Wanted mara is gone to city at the end; got mara at lighthouse.\n  - Rule \"leaves\" never fired: each of its conditions was true at some step, but never all at the same step.\nFAIL: job \"world answer 2\"\n  - What happened: step 1: Mara lights it made lamp lit; step 4: letter found made letter found.\n  - Wanted mara is gone to city at the end; got mara at lighthouse.\n  - Rule \"leaves\" never fired: each of its conditions was true at some step, but never all at the same step.\nPASS: job \"world answer 3\"\n4 of 6 jobs pass.\n\nSMALL FIX FOUND: in rule \"leaves\": condition \"lamp is dark\" left out repairs \"world answer 1\", \"world answer 2\" and breaks nothing.\nSMALL FIX FOUND: in rule \"Mara lights it\": condition \"letter is found\" added repairs \"world answer 1\" and breaks nothing.\nSMALL FIX FOUND: in rule \"Mara lights it\": condition \"mara_knows_tev_cannot_cope is yes\" added repairs \"world answer 1\" and breaks nothing.\nSMALL FIX FOUND: in rule \"Mara lights it\": condition \"lamp is lit\" added repairs \"world answer 1\" and breaks nothing.\nSMALL FIX FOUND: in rule \"Mara lights it\": condition \"mara is gone to city\" added repairs \"world answer 1\" and breaks nothing.\nSMALL FIX FOUND: in rule \"Mara lights it\": condition \"mara is staying for good\" added repairs \"world answer 1\" and breaks nothing.\n\nWrite the whole model again so that every job passes. Keep every rule that already works. Give every thing a start state.",
+     "replied": "{\"things\":{\"letter\":[\"hidden\",\"found\"],\"mara_knows_tev_cannot_cope\":[\"no\",\"yes\"],\"lamp\":[\"dark\",\"lit\"],\"mara\":[\"at lighthouse\",\"gone to city\",\"staying for good\"]},\"events\":[\"storm\",\"mara lights lamp\",\"mara finds letter\"],\"start\":{\"letter\":\"hidden\",\"mara_knows_tev_cannot_cope\":\"no\",\"lamp\":\"dark\",\"mara\":\"at lighthouse\"},\"rules\":[{\"name\":\"storm shows Tev failing\",\"when\":[\"storm happens\",\"lamp is dark\"],\"then\":\"mara_knows_tev_cannot_cope is yes\"},{\"name\":\"Mara lights it\",\"when\":[\"mara lights lamp happens\"],\"then\":\"lamp is lit\"},{\"name\":\"letter found\",\"when\":[\"mara finds letter happens\"],\"then\":\"letter is found\"},{\"name\":\"leaves\",\"when\":[\"letter is found\",\"mara_knows_tev_cannot_cope is no\"],\"then\":\"mara is gone to city\"},{\"name\":\"stays\",\"when\":[\"letter is found\",\"mara_knows_tev_cannot_cope is yes\",\"mara is at lighthouse\"],\"then\":\"mara is staying for good\"}]}",
+     "seconds": 15,
+     "tokens_in": 1762,
+     "tokens_out": 3188
+    }
+   ]
+  }
+ ]
+}

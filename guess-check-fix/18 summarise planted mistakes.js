@@ -41,17 +41,18 @@ const outcomes = ['repaired', 'better', 'unchanged', 'worse', 'failed to run'];
 const lines = [`# Planted mistakes: results`, '', `${records.length} planted mistakes, guesser ${records[0] ? records[0].guesser : '?'}. Every number below comes from the records in this folder.`, ''];
 for (const kind of kinds) {
   const of_kind = records.filter(rec => rec.planted.kind === kind);
-  lines.push(`## ${kind} mistakes (${of_kind.length})`, '', `| Corrector | ${outcomes.join(' | ')} | DeepSeek asked, in total | Questions to the world, in total |`, `|---|${outcomes.map(() => '---').join('|')}|---|---|`);
+  lines.push(`## ${kind} mistakes (${of_kind.length})`, '', `| Corrector | ${outcomes.join(' | ')} | DeepSeek asked, in total | Questions to the world, in total | DeepSeek output tokens, in total |`, `|---|${outcomes.map(() => '---').join('|')}|---|---|---|`);
   for (const c of correctors) {
     const counts = Object.fromEntries(outcomes.map(o => [o, 0]));
-    let asked = 0, questions = 0;
+    let asked = 0, questions = 0, tokens = 0, tokens_known = true;
     for (const rec of of_kind) {
       const r = rec.results.find(x => x.corrector === c);
       if (!r) continue;
       counts[outcome(rec.planted, r)]++;
       asked += r.deepseek_asked || 0; questions += r.questions_to_world || 0;
+      if (typeof r.tokens_out === 'number') tokens += r.tokens_out; else if (r.deepseek_asked) tokens_known = false;
     }
-    lines.push(`| ${c} | ${outcomes.map(o => counts[o]).join(' | ')} | ${asked} | ${questions} |`);
+    lines.push(`| ${c} | ${outcomes.map(o => counts[o]).join(' | ')} | ${asked} | ${questions} | ${tokens_known ? tokens : 'not recorded (before log 19)'} |`);
   }
   lines.push('');
 }
