@@ -2,6 +2,7 @@
 
 **Where the project is today.**
 
+- A system prompt does not steer DeepSeek's questions (log 30): the same text twice differs as much as two different texts; instructions naming a measure were mostly ignored; any text raised how often an answer surprised it.
 - Cause and effect are in the checker (log 28): "what if", seeing and making, and "why". On 150 questions from a corpus other people wrote and answered, it gave people's answer on 101, a direct answer 128; the gap is almost all things the models leave out. What it presupposes about cause is in "28 What the causal checker presupposes.md". Claude played every role; DeepSeek was not used.
 - DeepSeek V4.1 Flash is the guesser. Every live result comes from DeepSeek, and every run's record is in `runs/`.
 - Ten test worlds, seven ways of running, and a test with 32 planted mistakes.
@@ -13,11 +14,11 @@
 - Twenty questions (log 22): made to ask 20 questions one at a time, DeepSeek asks well (at least as good as random questions) but first asks the owner their own question back, and costs six and a half times as much.
 - Long texts (log 21): DeepSeek finds a question buried in about 2,300 words, and answers from the world help as much as with short requests; but when it may stop whenever it likes, it almost never asks.
 - Who picks the questions (log 20): random questions helped as much as the loop's; DeepSeek's own choice helped least; the loop's rule model was about level with DeepSeek alone. More answers from the world is what reliably helps.
-- All tests pass: `11 checker tests.js` (20), `16 Sonnet guesser tests.js` (13), `17 error correction tests.js` (26), `19 baseline tests.js` (11), `20 who picks tests.js` (13), `21 long text tests.js` (16), `22 twenty questions tests.js` (11), `23 owner will not say tests.js` (9), `25 construction test tests.js` (39), `26 attack surface tests.js` (14), `28 causal checker tests.js` (30), `16 page test in a browser.py` (12).
-- DeepSeek balance after log 25: $1.93.
+- All tests pass: `11 checker tests.js` (20), `16 Sonnet guesser tests.js` (13), `17 error correction tests.js` (26), `19 baseline tests.js` (11), `20 who picks tests.js` (13), `21 long text tests.js` (16), `22 twenty questions tests.js` (11), `23 owner will not say tests.js` (9), `25 construction test tests.js` (39), `26 attack surface tests.js` (14), `28 causal checker tests.js` (30), `30 system prompt tests.js` (10), `16 page test in a browser.py` (12).
+- DeepSeek balance after log 30: $18.01.
 - The project lives in the h-EPI repository, folder `guess-check-fix`, on the branch `claude/deepseek-v4-project-j9k1ap`, waiting for the owner to merge it.
 
-**Waiting on:** the owner, to top up the DeepSeek account ($1.93 left). Then log 26 runs as planned.
+**Waiting on:** nothing. Next: log 26 runs as planned.
 
 **Open questions:**
 - Can the checker's "not in the model" answers be turned into criticism of the model, so the translator adds what a question needs (weather, space) rather than the checker saying "no effect"?

@@ -8,6 +8,7 @@ The idea in one line: an AI guesses, an ordinary program checks, and the fixing 
 
 ## Where things stand
 
+- **A system prompt does not steer DeepSeek's questions** (logs 30 and 31). Two runs with the same text at the top differ as much as runs with different texts; direct instructions were mostly ignored; any text, even a meaningless one, made more of the answers surprise it. See "30 System prompt and questions.md".
 - **Cause and effect are in the checker** (log 28). It answers "what if" by holding a thing and running the model, tells seeing from making (a dark room tells you the lamp is off; darkening the room does not switch it off), and answers "why" by "but for" tests. On 150 questions from a corpus other people wrote and answered (WIQA), with Claude translating the paragraphs into models, it gave people's answer on 101; a direct answer from the same kind of AI gave 128. The gap is almost all things the models leave out: where the model held both ends of a question, 53 of 70 against 58. What the checker takes for granted about cause is listed in "28 What the causal checker presupposes.md"; the results are in "28 Causal checker.md". DeepSeek was not used.
 - **DeepSeek is now the guesser, and every result in log 17 and 18 comes from real DeepSeek runs** (DeepSeek V4.1 Flash, reached directly from this computer). Sonnet was never run; the Sonnet page still works with stand-ins.
 - **Ten test worlds**: the first five, and five new ones for planning, problem solving, vague prose, a second story, and adding a new idea to a game without breaking it (log 18).
@@ -327,12 +328,21 @@ Written up in "28 Causal checker.md" and "28 What the causal checker presupposes
 
 **30. Does a system prompt change DeepSeek's questions? Planned, not run.** The owner topped up $20 and asked for a mini experiment: does text put at the very top of DeepSeek's standing instructions change the range and quality of the questions it asks, trying different texts and looking for patterns (Decisions O15). Built on log 22's task, shortened to 10 questions (files 30): seven arms differing only in the text at the top (nothing; nothing, run again as a control for run-to-run variation; filler; doubt; spread; explain; a detective character), on the ten worlds. The plan and six conjectures were committed before any run ("30 Plan - system prompt and questions.md"). Along the way two of my new tests failed: they expected 4 different situations and 6 repeats from the stand-in's script, which in fact asks 3 different situations and repeats 7 times; my count was wrong, not the code, so the test was corrected. The second plain arm was added before any run, once I saw that without it a prompt's effect could not be told from DeepSeek varying on its own. Not run: my attempt to call DeepSeek with the key typed into the command was refused by this session's safety check, which treats a key in a command as a leak. The key needs to be stored in the environment's settings instead. 10 new tests (file 30), all passing; log 22's and 23's tests still pass. No DeepSeek credit used.
 
+**31. Log 30 run: the system prompt did not steer the questions.** The owner uploaded the key as a file and asked me to use it. The first call failed ("Authentication Fails"): the file begins with an invisible marker some editors put at the start of a text file, and it was sent as part of the key. With the marker removed, the call worked; the key is read from the uploaded file at each run and written nowhere. Round 1 ran as planned (70 runs, `runs/30 system prompt/round 1`). Reading it, every text at the top, filler included, seemed to move the questions away from the plain run's, and to make them shorter. Round 2 was written to test that (the same texts twice, a meaningless text, and two instructions naming a measure), committed, then run (50 runs, `round 2`). Written up in "30 System prompt and questions.md":
+- **No steering of which questions were asked.** The same text twice shared 47 to 50 situations; different texts 40 to 55; the two plain runs' 59 was the high end of chance, so round 1's apparent effect went away.
+- **Instructions were mostly ignored.** "At least four events": 21 of 100 questions (average 2.4, against about 2.1). "Never ask the owner their own question": asked back 11 times in 9 of 10 worlds (plain: 17 and 15).
+- **One steady effect: any text at the top, even "Reference number 4471-B.", raised how often an answer surprised DeepSeek:** 18 to 29 of 100 for all ten texts, against 15 and 15 plain. Not explained.
+- **Quality:** every arm answered the pretend owner's question right in all 10 worlds; nearby questions 149 to 180 of about 183, with the two plain runs 11 apart, so no text clearly helped or hurt.
+- **Conjectures:** of twelve, 1, 4 and 7 (doubt) not refuted; the rest refuted. 1 and 2 turned out to rest on one lucky pair of plain runs.
+- Cost: $3.84 ($21.85 to $18.01).
+
 ## Next step
 
-Store a new DeepSeek key as DEEPSEEK_API_KEY in the environment's settings, then run log 30's round 1 (about $4 to $6).
+Run the attack-surface test (log 26) as planned, now that there is credit: three repeats on the four devices, about $1 to $1.50.
 
 ## Traps
 
+- **Reading log 30's round 1 alone.** Its apparent steering came from one lucky pair of plain runs; round 2 removed it.
 - **Reading log 28's 101 against 128 as the checker reasoning worse.** Most of the gap is what the models leave out; where a model held both ends of the question, 53 against 58.
 - **Reading log 28 as a result about DeepSeek.** Claude played every role; DeepSeek was not used.
 - **Reading log 28's causes of disagreement as measured.** They are my reading, made after seeing people's answers.

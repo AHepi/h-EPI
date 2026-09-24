@@ -48,6 +48,8 @@ Failures in building and testing, and how each was fixed. Only cases where somet
 | 28 | An event list was read letter by letter. | Lists go through the checker's own reader. |
 | 30 | My test expected 4 different situations from a script that asks 3; I counted two identical questions as different. | The test's numbers corrected; the code was right. |
 | 30 | Calling DeepSeek with the key typed into the command was refused by the session's safety check. | The key is to be stored in the environment's settings, never in a command or file. |
+| 31 | The owner's key file began with an invisible marker some editors add, and it was sent as part of the key, so DeepSeek refused it. | The marker is removed when the key is read from the file. |
+| 31 | Round 1's comparison used one pair of plain runs as the measure of chance; that pair happened to overlap more than any other. | Round 2 repeated two texts word for word, which showed it. |
 
 ## Traps
 
