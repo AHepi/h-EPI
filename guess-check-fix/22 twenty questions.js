@@ -49,7 +49,15 @@ function surprised(expect, answer_job) {
   return compared.some(([k, v]) => world_says[lower(k)] !== lower(v));
 }
 
-async function must_ask(D, world, text, embedded, test_keys) {
+// Log 23: does a situation start like the owner's question and carry on past it (the owner's question plus more)?
+function extends_owners_question(key, embedded_key) {
+  if (!key || !embedded_key || key === embedded_key) return false;
+  const a = JSON.parse(key), b = JSON.parse(embedded_key);
+  return JSON.stringify(a.start) === JSON.stringify(b.start) && a.events.length > b.events.length && b.events.every((e, i) => a.events[i] === e);
+}
+
+// options.refuse (log 23): the owner will not answer their own buried question; asking it uses up a question.
+async function must_ask(D, world, text, embedded, test_keys, options = {}) {
   const g = D.make_deepseek_guesser();
   const messages = [{ role: 'system', content: T.SYSTEM }, { role: 'user', content: `${T.opening(world, text, [])}\n\nBefore you answer, you must ask the owner exactly ${QUESTIONS} questions, one at a time. Each question is a situation; the owner tells you how it ends. Ask whatever will help you most. With each question, say how you expect it to end.\n\nEach turn, reply with JSON only: {"ask": {"start": {"THING": "STATE"}, "events": ["EVENT", "EVENT"]}, "i_expect": {"THING": "STATE"}}. After the owner answers your ${QUESTIONS}th question you will be asked for your answer.` }];
   const asked = [];
@@ -68,14 +76,17 @@ async function must_ask(D, world, text, embedded, test_keys) {
     }
     const situation = T.read_situation(r.ask);
     const key = T.canonical(world, situation);
-    const a = P.world_answer(world, situation, answers.length + 1);
+    const refused = !!options.refuse && !!key && key === embedded_key;
+    const a = refused ? null : P.world_answer(world, situation, answers.length + 1);
     const events = Object.values(situation.events).flat().length;
     const entry = { number: asked.length + 1, ask: r.ask, i_expect: r.i_expect || null, usable: !!a, events, starts_changed: starts_changed(world, situation),
       repeat_of_earlier: !!key && seen.has(key), is_the_owners_question: !!key && key === embedded_key, is_a_test_question: !!a && test_keys.has(JSON.stringify(a.situation)),
+      extends_owners_question: extends_owners_question(key, embedded_key), refused, usable_by_owner: refused || !!a,
       world_says: a ? a.expect : null, surprised: a ? surprised(r.i_expect, a) : null };
     if (key) seen.add(key);
     asked.push(entry);
-    if (a) { answers.push(a); messages.push({ role: 'user', content: `The owner says: ${L.job_in_words(a).replace(/^- "owner answer \d+": /, '')} (${asked.length} of ${QUESTIONS} asked)` }); } else messages.push({ role: 'user', content: `The owner could not follow that situation; use only the names listed. (${asked.length} of ${QUESTIONS} asked)` });
+    if (refused) messages.push({ role: 'user', content: `The owner says: I can't tell you that one; that's what I'm asking you. (${asked.length} of ${QUESTIONS} asked)` });
+    else if (a) { answers.push(a); messages.push({ role: 'user', content: `The owner says: ${L.job_in_words(a).replace(/^- "owner answer \d+": /, '')} (${asked.length} of ${QUESTIONS} asked)` }); } else messages.push({ role: 'user', content: `The owner could not follow that situation; use only the names listed. (${asked.length} of ${QUESTIONS} asked)` });
   }
   messages.push({ role: 'user', content: `That was your last question. Now answer the question the owner is asking you in their message. Reply with JSON only, in this shape: ${T.FINAL_SHAPE}` });
   const reply = await g(messages, { reply_shape: 'none' });
@@ -154,7 +165,7 @@ function summarise(records) {
 }
 const results_text = (records, failed) => `# Twenty questions: results\n\nDeepSeek V4.1 Flash, default thinking, log 21's long messages. ${records.length} world-and-repeat runs; every number comes from the records in this folder. "Fair" leaves out every test question whose situation either arm asked the owner about.\n\n${summarise(records)}\n${failed.length ? `\nRuns that failed:\n${failed.join('\n')}\n` : ''}`;
 
-module.exports = { must_ask, run_world, summarise, surprised, starts_changed };
+module.exports = { must_ask, run_world, summarise, surprised, starts_changed, extends_owners_question };
 
 if (require.main === module) {
   const [first, second, third] = process.argv.slice(2);
