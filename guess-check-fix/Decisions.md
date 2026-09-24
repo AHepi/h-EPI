@@ -34,6 +34,9 @@ Every decision that shapes the project. The owner's decisions are quoted exactly
 **O10. Run the refusal test if the budget allows.** (Log 23.)
 > "Is there enough budget? If so, do it."
 
+**O11. Test error correction as the semantics means it.** (Log 25.)
+> "My actual goal is error correction. This is a good start, but the semantics I gave you is about creativity, not spotting little semantic tricks. At the heart of creativity is error correction. Maybe go over the semantics to see what I'm actually testing. Then run a test that meets the standards. If anything, we know Deepseek has a limited knowledge base. But can we get it to solve a problem a bare run can't? Even with repeated loops. You have a small budget left. See what you can do."
+
 ## Claude's routine choices
 
 **C1. A new small language of things and rules, rather than extending Strata.** Strata refused cause-and-effect sentences (log 01), its instructions drop causes, and its checker answers "does this follow?" while the hard-to-vary tests need "what happens when something is changed?".
@@ -130,7 +133,15 @@ Every decision that shapes the project. The owner's decisions are quoted exactly
 
 **C47. A refused question still uses up one of the 20, and a near copy is counted, not refused** (log 23), so DeepSeek's behaviour shows in the record rather than being shaped by extra rules.
 
+**C48. The construction test gives every arm the same evidence and no way to ask for more** (log 25), so any difference comes from error correction, not information (the confound found in logs 19 and 20).
+
+**C49. The devices are made up and each needs a hidden thing, checked offline before any run** (log 25): the observations refute the obvious explanation, and contain the same visible state and action leading to different outcomes, so no explanation using only what can be seen fits them. Test cases: 8 the obvious explanation gets wrong, 4 it gets right, picked by a fixed shuffle.
+
+**C50. The plan and its conjectures are committed before the runs they are tested on** (log 25), including the sixth arm, which was designed after repeat 1 and is tested on repeats 2 and 3 only.
+
+**C51. The hard-to-vary arm aims for the fewest parts the observations do not hold in place, not none** (log 25), because the true explanations themselves have up to two parts the observations happen not to test.
+
 ## Traps
 
-- **Treating a routine choice as settled.** C1 to C47 are Claude's choices; any can be overturned. The ones forced by a failure say which log entry forced them.
+- **Treating a routine choice as settled.** C1 to C51 are Claude's choices; any can be overturned. The ones forced by a failure say which log entry forced them.
 - **Losing the owner's exact words.** Paraphrasing a decision changes it. Quote it.

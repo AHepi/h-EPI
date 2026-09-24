@@ -38,8 +38,11 @@ Failures in building and testing, and how each was fixed. Only cases where somet
 | 22 | The stand-in in my tests looked for words the real instruction does not use, so its first turn counted as a try to stop. | The stand-in looks for the instruction's real words. |
 | 22 | "Questions that changed a starting state" counted every question, because DeepSeek writes out default starts. | It now counts only states that differ from the usual start. |
 | 24 | My summary to the owner said "your question" for the made-up letter-writer's question, and "owner" meant two different people in the documents. | Word list: "owner" is the real owner, "pretend owner" the made-up one; the reports for logs 21 to 23 say which is meant. |
+| 25 | A test check reported a test answer as leaked when the test's actions merely matched the end of a longer observation. | The check matches whole observation lines. |
+| 25 | My plan and tests assumed 120 sequences of up to four actions for every device; the gate has two actions, so 30. | Corrected before any run, and the correction noted in the plan. |
+| 25 | The first hard-to-vary arm demanded that every part do work; the true magnet-ball explanation has a part the observations never test, so it could never finish, and could push DeepSeek to delete a right rule. Found by a test before any run. | The arm aims for the fewest such parts and stops when a round no longer reduces them. |
 
 ## Traps
 
 - **Filing a finding as a lesson.** A result about how well a guesser did belongs in the log. This file is for things that broke and were fixed.
-- **Fixing without a test.** Each fix above has a test in "11 checker tests.js", "16 Sonnet guesser tests.js", "17 error correction tests.js", "19 baseline tests.js", "20 who picks tests.js", "21 long text tests.js", "22 twenty questions tests.js", "23 owner will not say tests.js" or "16 page test in a browser.py", except the small AI's, which need the small AI to test, and the run-script and browser-path fixes, which were checked by running them.
+- **Fixing without a test.** Each fix above has a test in "11 checker tests.js", "16 Sonnet guesser tests.js", "17 error correction tests.js", "19 baseline tests.js", "20 who picks tests.js", "21 long text tests.js", "22 twenty questions tests.js", "23 owner will not say tests.js", "25 construction test tests.js" or "16 page test in a browser.py", except the small AI's, which need the small AI to test, and the run-script and browser-path fixes, which were checked by running them.
