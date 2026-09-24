@@ -59,7 +59,26 @@ That makes ten worlds, seven arms, one run each: 70 runs.
 
 ## Round 2
 
-Written after reading round 1: new texts at the top, chosen to test a pattern seen in round 1, with their own conjectures, committed before running.
+Written after reading round 1, committed before round 2 runs. Round 1 (see "30 System prompt and questions.md") showed:
+- The two plain runs shared 59 situations. Every pair of arms involving any text at the top shared only 40 to 53, and filler moved the questions as much as any instruction did.
+- Every text at the top made questions shorter: 1.7 to 1.9 events per question, against 2.1 and 2.2 for the plain runs.
+
+My guess: DeepSeek answers identical input in a similar way, and any change to the input, whatever it means, breaks that. So round 2 asks whether the meaning matters, and whether an instruction that names a measure can move it. Five arms, same ten worlds, one run each:
+- **doubt, again** and **filler, again:** round 1's texts word for word;
+- **meaningless:** "Reference number 4471-B.";
+- **long questions:** "Make every question a long situation: at least four events, one after another.";
+- **never ask it back:** "Never ask the owner the question they are asking you in their message; they want you to work that out yourself."
+
+Conjectures for round 2:
+
+7. **The same text twice overlaps like the plain pair.** Doubt with doubt, again, and filler with filler, again, each share at least 50 situations. (The plain pair shared 59.)
+8. **Meaning is not what moves the questions.** "Meaningless" shares no more than 50 situations with either plain run.
+9. **An instruction that names a measure moves it.** "Long questions" averages more than 3 events per question.
+10. **Likewise:** "never ask it back" asks the pretend owner's question back fewer than 5 times, against 17 and 15.
+11. **Filler's high surprise rate was chance.** Filler, again is surprised within 5 of the plain runs' 15, not near filler's 27.
+12. **Neither instruction costs quality.** "Long questions" and "never ask it back" each get a count of nearby test questions right within 5% of the plain runs' average.
+
+Cost: about $1.50.
 
 ## Cost
 

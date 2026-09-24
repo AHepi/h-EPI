@@ -46,8 +46,16 @@ const ROUND_ONE = {
   'explain': 'Before each question, work out the rules you think lie behind what the owner describes, including anything hidden that cannot be seen directly. Then ask the question that would best tell apart two different sets of rules that could both be true.',
   'detective': 'You are a patient detective. You never assume; you check.',
 };
-// Round 2: written after reading round 1, before running it. Empty until then.
-const ROUND_TWO = {};
+// Round 2: written after reading round 1, before running it. Round 1 showed every text at the top, filler
+// included, moving the questions away from the plain run's by about the same amount. Is that the words'
+// meaning, or only that the input differs? And can plain instructions move a measure they name?
+const ROUND_TWO = {
+  'doubt, again': ROUND_ONE.doubt,
+  'filler, again': ROUND_ONE.filler,
+  'meaningless': 'Reference number 4471-B.',
+  'long questions': 'Make every question a long situation: at least four events, one after another.',
+  'never ask it back': 'Never ask the owner the question they are asking you in their message; they want you to work that out yourself.',
+};
 const ROUNDS = { 1: ROUND_ONE, 2: ROUND_TWO };
 
 // The range of one run's questions.

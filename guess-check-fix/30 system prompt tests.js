@@ -9,6 +9,7 @@
  *   - the range counts: different situations, repeats, things started differently, events used
  *   - the summary has a row per arm and counts overlap with "nothing at the top"
  *   - the round-one arms are fixed: seven arms, "nothing at the top" twice among them
+ *   - round two repeats two round-one texts word for word
  * Run with:  node "30 system prompt tests.js"
  */
 const T = require('./21 long texts.js');
@@ -51,6 +52,8 @@ function stand_in() {
 
 (async () => {
   expect_that('round one has seven arms, fixed, including "nothing at the top" twice', Object.keys(S.ROUND_ONE).length === 7 && S.ROUND_ONE['nothing at the top'] === null && S.ROUND_ONE['nothing at the top, again'] === null);
+
+  expect_that('round two repeats doubt and filler word for word', S.ROUND_TWO['doubt, again'] === S.ROUND_ONE.doubt && S.ROUND_TWO['filler, again'] === S.ROUND_ONE.filler && Object.keys(S.ROUND_TWO).length === 5);
 
   const s1 = stand_in();
   const doubt = await S.run_arm(world, 'doubt', S.ROUND_ONE.doubt, s1);
