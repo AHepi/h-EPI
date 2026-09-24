@@ -8,7 +8,7 @@ The idea in one line: an AI guesses, an ordinary program checks, and the fixing 
 
 ## Where things stand
 
-- **A system prompt does not steer DeepSeek's questions** (logs 30 and 31). Two runs with the same text at the top differ as much as runs with different texts; direct instructions were mostly ignored; any text, even a meaningless one, made more of the answers surprise it. See "30 System prompt and questions.md".
+- **A system prompt, or a character to play, does not steer DeepSeek's questions** (logs 30 to 32). Two runs with the same text at the top differ as much as runs with different texts; direct instructions were mostly ignored; any text, even a meaningless one, made more of the answers surprise it. See "30 System prompt and questions.md".
 - **Cause and effect are in the checker** (log 28). It answers "what if" by holding a thing and running the model, tells seeing from making (a dark room tells you the lamp is off; darkening the room does not switch it off), and answers "why" by "but for" tests. On 150 questions from a corpus other people wrote and answered (WIQA), with Claude translating the paragraphs into models, it gave people's answer on 101; a direct answer from the same kind of AI gave 128. The gap is almost all things the models leave out: where the model held both ends of a question, 53 of 70 against 58. What the checker takes for granted about cause is listed in "28 What the causal checker presupposes.md"; the results are in "28 Causal checker.md". DeepSeek was not used.
 - **DeepSeek is now the guesser, and every result in log 17 and 18 comes from real DeepSeek runs** (DeepSeek V4.1 Flash, reached directly from this computer). Sonnet was never run; the Sonnet page still works with stand-ins.
 - **Ten test worlds**: the first five, and five new ones for planning, problem solving, vague prose, a second story, and adding a new idea to a game without breaking it (log 18).
@@ -335,6 +335,15 @@ Written up in "28 Causal checker.md" and "28 What the causal checker presupposes
 - **Quality:** every arm answered the pretend owner's question right in all 10 worlds; nearby questions 149 to 180 of about 183, with the two plain runs 11 apart, so no text clearly helped or hurt.
 - **Conjectures:** of twelve, 1, 4 and 7 (doubt) not refuted; the rest refuted. 1 and 2 turned out to rest on one lucky pair of plain runs.
 - Cost: $3.84 ($21.85 to $18.01).
+
+**32. Role-play did not change DeepSeek's questions either.** The owner asked: "What about role playing? Does that work?" (Decisions O16). Round 1's one-line detective had done nothing filler did not, so round 3 of log 30's experiment gave DeepSeek three fuller characters, each told to stay in character: a scientist who designs the experiment most likely to prove her wrong, a curious seven-year-old, and a barrister cross-examining the pretend owner as a witness. Each ran twice on the ten worlds, since round 2 showed two runs of the same text differ about as much as two different texts. Five conjectures were committed first (`runs/30 system prompt/round 3`, 60 runs):
+- **No steering:** each character's two runs shared 47 to 57 situations, about what it shared with the plain runs (42 to 54) and with the other characters (46 to 48).
+- **No character did what its role was built around:** the scientist was surprised no more than filler (26 and 24 of 100); the child's questions were no shorter (2.0 and 1.9 events); the cross-examiner still asked the pretend owner's question back (15 and 11 times).
+- **Surprise rose as with every text** (22 to 34 of 100, against 15 plain).
+- **Quality:** the cross-examiner's second run was the best of any run (179 of 182 nearby, 20 of 20 held-back), its first 168; the child's first run was the first of any arm to miss the pretend owner's question, twice (river crossing and plant watering), and its second got all 10. One run each; not told apart from chance.
+- **Conjectures:** 13 (no steering) not refuted; 14 to 17 refuted.
+- Cost: $2.25 ($18.01 to $15.76).
+Added to "30 System prompt and questions.md".
 
 ## Next step
 

@@ -1,6 +1,6 @@
 # System prompt and questions
 
-Log entries 30 and 31. The owner asked whether text put at the very top of DeepSeek's standing instructions (its "system prompt") changes the range and quality of the questions it asks, and to try different texts and look for patterns. The plan, round 1's six conjectures, and later round 2's six conjectures were each committed before their run ("30 Plan - system prompt and questions.md"). Every number here comes from the records in `runs/30 system prompt/`, made with DeepSeek V4.1 Flash at its default thinking setting on 24 September 2026. The task was log 22's, shortened to 10 questions: ten worlds, one run of each arm on each world.
+Log entries 30, 31 and 32 (role-play, at the end). The owner asked whether text put at the very top of DeepSeek's standing instructions (its "system prompt") changes the range and quality of the questions it asks, and to try different texts and look for patterns. The plan, round 1's six conjectures, and later round 2's six conjectures were each committed before their run ("30 Plan - system prompt and questions.md"). Every number here comes from the records in `runs/30 system prompt/`, made with DeepSeek V4.1 Flash at its default thinking setting on 24 September 2026. The task was log 22's, shortened to 10 questions: ten worlds, one run of each arm on each world.
 
 "Pretend owner" means the made-up letter-writer whose question is buried in the long message, not the real owner.
 
@@ -89,3 +89,52 @@ $3.84 of DeepSeek credit: round 1 $2.21 ($21.85 to $19.64), round 2 $1.63 (to $1
 - **Reading the round-2 quality scores as an effect of the texts.** The new texts scored high, the repeated texts did not, all in the same round; one run each.
 - **Reading "surprised" as "asked better questions".** Surprise rose with a meaningless text too.
 - **The hidden ball has no events,** so "long questions" could not be followed there; it asked only 2 different situations in that world.
+
+## Round 3: role-play (log 32)
+
+The owner asked: "What about role playing? Does that work?" Round 1's one-line detective had done nothing that filler text did not. So round 3 gave DeepSeek three fuller characters, each with a name, a history and a way of working, and told it to stay in character. Each character ran twice on the ten worlds, 60 runs, with five conjectures committed before running. The characters in brief:
+- **scientist:** Dr. Ada Reyes, who designs the experiment most likely to prove her idea wrong;
+- **child:** Mia, seven, who asks "but what if...?";
+- **cross-examiner:** a barrister who treats the pretend owner as a witness whose account may break, and never asks what they could already answer.
+
+The full texts are in `30 system prompt questions.js`.
+
+### The short answer
+
+No. Role-play did what every other text did, and no more.
+- **A character did not steer which questions were asked.** Each character's two runs shared 47 (scientist), 57 (child) and 51 (cross-examiner) situations. Each character shared 42 to 54 with the plain runs, and two different characters shared 46 to 48. The two plain runs had shared 59.
+- **Each character failed to do the one thing its role was built around.**
+  - The scientist was surprised 26 and 24 times in 100, no more than filler (27 and 24).
+  - The child's questions were no shorter: 2.0 and 1.9 events each.
+  - The cross-examiner asked the pretend owner's own question back 15 and 11 times; plain runs did it 17 and 15.
+- **Surprise rose, as with every other text:** 22 to 34 in 100, against 15 and 15 plain.
+- **Quality:** the cross-examiner's second run got 179 of 182 nearby questions and all 20 held-back ones right, the best of any run, but its first run got 168. The child's first run was the first arm of any round to miss the pretend owner's question. In the river crossing it restated the question wrongly, and in the plant watering it found the question but answered wrong. The child's second run got all 10. One run each, so I cannot tell this from chance.
+
+### Everything
+
+| Arm | Different situations | Repeats | Events per question | Surprised | Pretend owner's question asked back | Also asked by plain | Pretend owner's question right | Nearby right, fair | Output tokens |
+|---|---|---|---|---|---|---|---|---|---|
+| scientist | 88 | 11 | 2.1 | 26 of 99 | 18 | 42 | 10/10 | 166/187 | 506,332 |
+| scientist, again | 93 | 7 | 2.0 | 24 of 98 | 14 | 53 | 10/10 | 158/184 | 532,402 |
+| child | 93 | 7 | 2.0 | 34 of 99 | 14 | 54 | 8/10 | 147/186 | 561,430 |
+| child, again | 91 | 9 | 1.9 | 26 of 100 | 17 | 46 | 10/10 | 149/182 | 431,818 |
+| cross-examiner | 93 | 7 | 2.0 | 24 of 100 | 15 | 43 | 10/10 | 168/185 | 758,830 |
+| cross-examiner, again | 96 | 4 | 1.8 | 22 of 100 | 11 | 45 | 10/10 | 179/182 | 811,717 |
+
+For comparison, the plain runs: 93 and 95 different situations, 2.2 and 2.1 events per question, 15 surprised each, 17 and 15 asked back, 153 and 164 nearby right. All three rounds in one table: `runs/30 system prompt/all three rounds.md`.
+
+### The conjectures
+
+13. **A role does not steer which situations are asked** (each character's two runs share no more than it shares with either plain run, give or take 5). *Not refuted:* 47 against 42 to 53; 57 against 46 to 54; 51 against 43 to 49.
+14. **The scientist is surprised more than 29 in 100, in both runs.** *Refuted* (26, 24).
+15. **The child asks below 1.6 events per question, in both runs.** *Refuted* (2.0, 1.9).
+16. **The cross-examiner asks the pretend owner's question back fewer than 11 times, in both runs.** *Refuted* (15, 11).
+17. **Every run's nearby count is between 149 and 180.** *Refuted*, by the child's first run (147).
+
+### What this means for the idea
+
+A role changes the words DeepSeek uses. It does not change what it asks, or how it asks, beyond what any text at the top does. The cross-examiner was the most expensive character: about 50% more output tokens than plain, spent on staying in role. A character built around refutation (the scientist) did not seek refutation any more than polite filler did. This is the same finding as rounds 1 and 2, now for role-play: the questioning comes from the task and DeepSeek's habits, not from who it is told to be.
+
+### What it cost
+
+$2.25 ($18.01 to $15.76). All three rounds together: $6.09.

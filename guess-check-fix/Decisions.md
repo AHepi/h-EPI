@@ -49,6 +49,9 @@ Every decision that shapes the project. The owner's decisions are quoted exactly
 **O15. A mini experiment on the system prompt and DeepSeek's questions; $20 topped up.** (Log 30.)
 > "Can you do a mini experiment first then after remind me what we are talking about now. See if a system prompt injected into the top of context has any affect on the range and quality of questions ds asks. Play around with the system prompt, see if you notice patterns. $20 top up last night."
 
+**O16. Try role-play.** (Log 32.)
+> "What about role playing? Does that work?"
+
 ## Claude's routine choices
 
 **C1. A new small language of things and rules, rather than extending Strata.** Strata refused cause-and-effect sentences (log 01), its instructions drop causes, and its checker answers "does this follow?" while the hard-to-vary tests need "what happens when something is changed?".
