@@ -42,8 +42,12 @@ Failures in building and testing, and how each was fixed. Only cases where somet
 | 25 | My plan and tests assumed 120 sequences of up to four actions for every device; the gate has two actions, so 30. | Corrected before any run, and the correction noted in the plan. |
 | 25 | The first hard-to-vary arm demanded that every part do work; the true magnet-ball explanation has a part the observations never test, so it could never finish, and could push DeepSeek to delete a right rule. Found by a test before any run. | The arm aims for the fewest such parts and stops when a round no longer reduces them. |
 | 26 | My first test's stand-in committed to a situation that is one of the grudge's test cases, so the world rightly refused it and the test failed. | The test picks an unseen situation that is not a test case, by rule. |
+| 28 | The route came out empty: it followed changes within one run, but an effect is a difference between two runs. | Traced through what holds the thing at the end; a change of meaning, reported in log 29. |
+| 28 | That new tracing ran past a held thing and round a loop. | It stops at held things; a test with a loop. |
+| 28 | Two opposite pushes gave "changed", because the nearer one arrived first. | Any clash on or upstream of the thing asked about reads "unsettled"; my judgement, made after the test failed, reported in log 29. |
+| 28 | An event list was read letter by letter. | Lists go through the checker's own reader. |
 
 ## Traps
 
 - **Filing a finding as a lesson.** A result about how well a guesser did belongs in the log. This file is for things that broke and were fixed.
-- **Fixing without a test.** Each fix above has a test in "11 checker tests.js", "16 Sonnet guesser tests.js", "17 error correction tests.js", "19 baseline tests.js", "20 who picks tests.js", "21 long text tests.js", "22 twenty questions tests.js", "23 owner will not say tests.js", "25 construction test tests.js", "26 attack surface tests.js" or "16 page test in a browser.py", except the small AI's, which need the small AI to test, and the run-script and browser-path fixes, which were checked by running them.
+- **Fixing without a test.** Each fix above has a test in "11 checker tests.js", "16 Sonnet guesser tests.js", "17 error correction tests.js", "19 baseline tests.js", "20 who picks tests.js", "21 long text tests.js", "22 twenty questions tests.js", "23 owner will not say tests.js", "25 construction test tests.js", "26 attack surface tests.js", "28 causal checker tests.js" or "16 page test in a browser.py", except the small AI's, which need the small AI to test, and the run-script and browser-path fixes, which were checked by running them.

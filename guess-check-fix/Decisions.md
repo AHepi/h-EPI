@@ -43,6 +43,9 @@ Every decision that shapes the project. The owner's decisions are quoted exactly
 **O13. Add the discussion to the story; fit causal relations into the checker, with a corpus; say what it presupposes.** (Logs 27 and 28.)
 > "Yes please. Do that. And also see if you can fit causal relations into the checker. For this you will need a corpus of text. I'm not sure how you will select it though. Once you have a working checker, I'll be interested to know what it presupposes about causality."
 
+**O14. Report a failure and why before changing it; say what worked and what may be overlooked.** (Log 29.)
+> "Ok. But don't just randomly change a failure. Can you report what failed, and why you think it failed. If it works, can you tell me what worked and what may have been overlooked?"
+
 ## Claude's routine choices
 
 **C1. A new small language of things and rules, rather than extending Strata.** Strata refused cause-and-effect sentences (log 01), its instructions drop causes, and its checker answers "does this follow?" while the hard-to-vary tests need "what happens when something is changed?".
