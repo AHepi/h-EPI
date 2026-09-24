@@ -40,6 +40,9 @@ Every decision that shapes the project. The owner's decisions are quoted exactly
 **O12. Try an attack surface first; wait for a top-up before running.** (Log 26.)
 > "Ok. Don't start yet until I top up. What about a series of commitments DeepSeek (ds) has to fill in that asks "what would it take to prove this conjecture is wrong". Error correction comes from spotting holes, sure. But it also comes from exposing your guesses to attack. A conjecture is worthless without an attack surface. So try that first. Try getting ds to imagine what it would take to refute a conjecturer. Or, actually, what it would take to cast doubt. You can't feed the conjecture and possible refutation back to Deepseek because it'll just "disagree", reject the attack and default to its first answer. Any thoughts? Go back to the semantics, see what it suggests given the type of generators LLMs actually are. Because that determines where it sits in this scheme. I'm now testing the semantics here."
 
+**O13. Add the discussion to the story; fit causal relations into the checker, with a corpus; say what it presupposes.** (Logs 27 and 28.)
+> "Yes please. Do that. And also see if you can fit causal relations into the checker. For this you will need a corpus of text. I'm not sure how you will select it though. Once you have a working checker, I'll be interested to know what it presupposes about causality."
+
 ## Claude's routine choices
 
 **C1. A new small language of things and rules, rather than extending Strata.** Strata refused cause-and-effect sentences (log 01), its instructions drop causes, and its checker answers "does this follow?" while the hard-to-vary tests need "what happens when something is changed?".
@@ -148,7 +151,15 @@ Every decision that shapes the project. The owner's decisions are quoted exactly
 
 **C53. The attack-surface test gives every arm at most 6 answers from the world, and random answers as a control** (log 26), so a win for the attack surface is not just more information (the lesson of log 20).
 
+**C54. Cause is asked by holding a thing, built on the checker's existing hold** (log 28), not by a new kind of rule, so the causal part only draws consequences the same way the checker always has.
+
+**C55. The corpus is WIQA, picked by a fixed scramble, and not stored in the repository** (log 28): written and answered by other people before this project, with exactly "what if" questions; its licence is not stated where it is published, so only the picked ids, and what was made from them, are kept.
+
+**C56. Claude plays translator, reader and direct answerer in separate conversations** (log 28), because DeepSeek waits on the top-up; the reader sees the model but not the paragraph, and none sees people's answers.
+
+**C57. Any clash on or upstream of the thing asked about reads "unsettled"** (log 28): without sizes, the checker cannot weigh opposite pushes, and a run should not let the nearer push win by arriving first.
+
 ## Traps
 
-- **Treating a routine choice as settled.** C1 to C53 are Claude's choices; any can be overturned. The ones forced by a failure say which log entry forced them.
+- **Treating a routine choice as settled.** C1 to C57 are Claude's choices; any can be overturned. The ones forced by a failure say which log entry forced them.
 - **Losing the owner's exact words.** Paraphrasing a decision changes it. Quote it.

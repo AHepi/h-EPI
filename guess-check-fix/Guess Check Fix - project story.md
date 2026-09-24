@@ -8,6 +8,7 @@ The idea in one line: an AI guesses, an ordinary program checks, and the fixing 
 
 ## Where things stand
 
+- **Cause and effect are in the checker** (log 28). It answers "what if" by holding a thing and running the model, tells seeing from making (a dark room tells you the lamp is off; darkening the room does not switch it off), and answers "why" by "but for" tests. On 150 questions from a corpus other people wrote and answered (WIQA), with Claude translating the paragraphs into models, it gave people's answer on 101; a direct answer from the same kind of AI gave 128. The gap is almost all things the models leave out: where the model held both ends of a question, 53 of 70 against 58. What the checker takes for granted about cause is listed in "28 What the causal checker presupposes.md"; the results are in "28 Causal checker.md". DeepSeek was not used.
 - **DeepSeek is now the guesser, and every result in log 17 and 18 comes from real DeepSeek runs** (DeepSeek V4.1 Flash, reached directly from this computer). Sonnet was never run; the Sonnet page still works with stand-ins.
 - **Ten test worlds**: the first five, and five new ones for planning, problem solving, vague prose, a second story, and adding a new idea to a game without breaking it (log 18).
 - **An error-correction test with planted mistakes**: 32 known mistakes, each handed to seven correctors (log 18).
@@ -52,7 +53,7 @@ The idea in one line: an AI guesses, an ordinary program checks, and the fixing 
 | `26 attack surface.js` | DeepSeek commits to predictions that would cast doubt on its rule; the world answers the riskiest; a fresh DeepSeek rebuilds from facts, or the same conversation is told the result ("defend"); compared with bare and random answers. Not run yet. | A record per device and repeat, and `results.md`, under `runs/`. |
 | `19 summarise baseline.js` | The log-19 tables, including the counts that leave out situations the loop asked the world about (found by replaying the loop from its recorded replies). | `summary.md` in the run's folder. |
 | `16 Sonnet guesser.js`, `16 Sonnet page template.html`, `16 build the Sonnet page.js`, `16 Sonnet page.html` | The Sonnet page from log 16, rebuilt from the changed code. | A results table on screen, for when Sonnet is run. |
-| `11 checker tests.js`, `16 Sonnet guesser tests.js`, `17 error correction tests.js`, `19 baseline tests.js`, `20 who picks tests.js`, `21 long text tests.js`, `22 twenty questions tests.js`, `23 owner will not say tests.js`, `25 construction test tests.js`, `26 attack surface tests.js`, `16 page test in a browser.py` | The tests. `17 error correction tests.js` replays DeepSeek's real guesses from the records, and tests the DeepSeek guesser with a stand-in. | ok or FAIL for each. |
+| `11 checker tests.js`, `16 Sonnet guesser tests.js`, `17 error correction tests.js`, `19 baseline tests.js`, `20 who picks tests.js`, `21 long text tests.js`, `22 twenty questions tests.js`, `23 owner will not say tests.js`, `25 construction test tests.js`, `26 attack surface tests.js`, `28 causal checker tests.js`, `16 page test in a browser.py` | The tests. `17 error correction tests.js` replays DeepSeek's real guesses from the records, and tests the DeepSeek guesser with a stand-in. | ok or FAIL for each. |
 | `15 Guide for the guesser.md` and `15 make the guide for the guesser.js` | The exact text the guesser is given. | Something to hand to any other model. |
 | `15 How to work on this project.md` | How to read, change, run and document the project. | |
 | `18 What DeepSeek showed about error correction.md` | The findings of log 17 and 18 in plain words. | |
@@ -64,6 +65,11 @@ The idea in one line: an AI guesses, an ordinary program checks, and the fixing 
 | `25 Plan - construction test.md` | The plan and conjectures of log 25, committed before its runs. | |
 | `25 Construction test.md` | The findings of log 25 in plain words. | |
 | `26 Plan - attack surface.md` | Where an LLM sits in the semantics, and the plan and conjectures of log 26, committed before its runs. | |
+| `28 causal checker.js` | Cause and effect on top of the checker: what if (hold a thing, compare with the usual run, and give the route), seeing and making, why (but-for tests), and answers to corpus questions. Also the "influences" shorthand for quantities. | Answers and routes, to file 28's grading. |
+| `28 causal corpus.js` | Picks the WIQA paragraphs and questions by a fixed rule, downloading the corpus to a folder outside the repository, and grades the checker's and the direct answers against people's. | `sample.json` and `results.json` in `runs/28 causal checker/`. |
+| `28 Plan - causal checker.md` | The plan, the rule for choosing the corpus, and the conjectures of log 28, committed before any translation. | |
+| `28 Causal checker.md` | The findings of log 28 in plain words. | |
+| `28 What the causal checker presupposes.md` | What the checker takes for granted about cause, point by point, and which points the corpus run bore on. | |
 | `runs/` | Every DeepSeek run: every request, every reply, every step, every final model. | The evidence for every number in the log. |
 
 ## Word list
@@ -153,6 +159,14 @@ The idea in one line: an AI guesses, an ordinary program checks, and the fixing 
 | risky | A commitment the obvious explanation disagrees with. |
 | rebuild fresh | After the world answers its commitments, a new DeepSeek conversation gets only the facts, never the old rule or any verdict. |
 | defend | The same conversation is told "you predicted X; the world says Y" and carries on. |
+| holding | Keeping one thing at one state whatever its rules say, then running the model. How the checker asks "what if". |
+| usual run | The model run from its own start with nothing held. A "what if" answer compares the held run with it. |
+| influence | A shorthand in a model: "more rain makes more runoff" (same) or "more plant cover makes less erosion" (opposite). Each thing in an influence has three levels: usual, more, less. |
+| route | The chain of rules that carried a held change to the thing asked about. |
+| seeing and making | Seeing: in the runs where a thing ends some way, what else is true. Making: hold the thing that way and look again. They differ when the thing is an effect, not a cause. |
+| but for | "Why did this happen?" answered by taking away each difference from the usual start in turn and seeing whether the outcome changes. |
+| corpus | A collection of texts. In log 28, WIQA: paragraphs on how things work, with "what if" questions people answered. |
+| translator, reader, direct answerer | Log 28's three roles, each a separate Claude conversation: the translator turns a paragraph into a model; the reader says which model things a question's words refer to, without working out the answer; the direct answerer answers from the paragraph with no model. |
 | stand-in | A fake guesser used in tests, so everything but the real connection can be tested. |
 | reply cap | Sonnet's replies are cut off at 1000 tokens by the page's connection. DeepSeek's limit is 32,000 tokens, thinking included, raised to 200,000 for two arms in log 19. |
 
@@ -291,12 +305,25 @@ Written up in "25 Construction test.md".
 - **Guesses in prose.** The owner: words only stand in for something, like written numbers. My view: every representation does; the trouble with prose is that the rules for drawing consequences live in the reader, not the text, so a prose guess is easy to vary by reading, and so hard to refute. Prose is to explanations what Roman numerals are to arithmetic.
 - **The picture we ended with:** the language model guesses; guesses are translated into a form where consequences follow by fixed rules and checked against the problem and the world; the form, the problem and the methods stay open to correction, and for now only a person does that.
 
+**28. Cause and effect in the checker.** The owner asked me to add this discussion to the story (log 27), to fit causal relations into the checker with a corpus of text ("I'm not sure how you will select it though"), and then to say what the checker presupposes about cause (Decisions O13). Built on the checker's existing way of holding a thing (files 28): "what if" with its route, seeing and making, "why" by but-for tests, and an "influences" shorthand for quantities. The corpus is WIQA (Allen Institute for AI, 2019), chosen because other people wrote and answered it, before this project, with exactly "what if" questions about how things work. Five paragraphs and 150 questions were picked by a fixed scramble; three of the five paragraphs are about frogs, and that was kept. The plan and five conjectures were committed before any translation. DeepSeek was not used (waiting on the top-up): Claude played translator, reader and direct answerer in separate conversations that saw neither each other's work nor people's answers (`runs/28 causal checker`).
+- **Checker 101 of 150 same as people; direct answer 128.** Unrelated questions: 48 against 47. In paragraph: 28 against 42. From outside: 25 against 39.
+- **Where the model held both ends of the question: 53 of 70 against 58.** Where it did not: 48 of 80 against 70, since the checker can then only say "no effect".
+- **Of 49 disagreements (my reading, after seeing the answers):** 32 were words that matched nothing in the model (weather, space, polliwogs), 4 a wrong match or a link that should not have been made, 2 the model lacking a route, 0 unsettled, and 11 where both AIs disagreed with people the same way (such as "more eggs laid, more frogs?", answered "fewer").
+- **Conjectures:** 2 refuted (in paragraph, 28 against at least 35); 1, 3, 4 and 5 not refuted.
+- **What the checker presupposes**, in short: a cause is a difference made by holding something, against a usual run; holding disturbs nothing else; the things, and the direction of each rule, are given by whoever wrote the model; what is not in the model has no effect; time is steps and everything settles; no sizes, no chance, one direction for each influence; "why" means "but for", and background conditions are never causes; the checker only draws consequences. The run bore hardest on "what is not in the model has no effect"; it did not test sizes, timing, chance or "why".
+- Along the way: three tests failed on the first try and were fixed before any corpus run: an event list was read letter by letter; a route came out empty when the held change kept a thing where it already was, so a route is now traced through the rules that hold each thing at the end; and two opposite pushes read as "changed" because the nearer one arrived first, so any clash on or upstream of the asked thing now reads "unsettled". After the run, the route the checker prints was found to run past the held thing and round a frog loop; fixed, with a test, and no answer changed. The corpus is not stored in the repository, because its licence is not stated where it is published.
+- 30 tests (file 28), all passing. No DeepSeek credit used.
+Written up in "28 Causal checker.md" and "28 What the causal checker presupposes.md".
+
 ## Next step
 
-When the DeepSeek account is topped up, run the attack-surface test as planned, three repeats on the four devices (about $1 to $1.50). on the grudge and the vial, let the hard-to-vary sweep choose a few questions to the world where the explanation's unchecked parts would decide the answer, and compare with bare runs given answers to the same number of random questions (about a dollar of DeepSeek credit; $1.93 is left). the owner writes a long message with their own question in it, DeepSeek asks up to 20 questions one at a time, and the owner answers them in the chat. A few cents of DeepSeek credit; it needs the owner's time rather than money.
+When the DeepSeek account is topped up, run the attack-surface test (log 26) as planned: three repeats on the four devices, about $1 to $1.50.
 
 ## Traps
 
+- **Reading log 28's 101 against 128 as the checker reasoning worse.** Most of the gap is what the models leave out; where a model held both ends of the question, 53 against 58.
+- **Reading log 28 as a result about DeepSeek.** Claude played every role; DeepSeek was not used.
+- **Reading log 28's causes of disagreement as measured.** They are my reading, made after seeing people's answers.
 - **Reading the log 01 to 14 as first-hand.** Those entries are written from the earlier chat's record, not from files. Its raw run files are gone.
 - **Reading stand-in results as a real model's.** Every result in entry 16 comes from a stand-in, and so do the offline replays in entry 17 and 18 where a stand-in played the guesser. The live results are only those whose records are in `runs/`.
 - **Comparing DeepSeek with the small AI directly.** The loop changed in entries 13, 16, 17 and 18 after the small AI's only runs.

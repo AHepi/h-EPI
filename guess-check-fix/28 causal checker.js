@@ -104,9 +104,10 @@ function ending(result, thing) {
 
 // The chain of rules that holds a thing where it ended, traced backwards. At the end of a settled run,
 // the rules that fire and give the thing its final state are its support; then the support of the things
-// those rules read, and so on back to what was held or started. A state set by an event (which is over
-// by the end) is traced through the change the event made.
-function route_to(result, thing, rules) {
+// those rules read, and so on back to what was held or started; a held thing ends the trace, since no
+// rule sets it. A state set by an event (which is over by the end) is traced through the change the
+// event made.
+function route_to(result, thing, rules, held = []) {
   const final = result.history[result.end_step];
   const fires_on = (rule, state) => rule.when.every(c => c.kind === 'state' && (c.negated ? state[c.thing] !== c.state : state[c.thing] === c.state));
   const route = [];
@@ -114,7 +115,7 @@ function route_to(result, thing, rules) {
   const queue = [thing];
   while (queue.length) {
     const name = queue.shift();
-    if (visited.has(name)) continue;
+    if (visited.has(name) || held.includes(name)) continue;
     visited.add(name);
     let support = rules.filter(r => fires_on(r, final) && r.then.some(s => s.thing === name && s.state === final[name]));
     let step = null;
@@ -166,7 +167,7 @@ function what_if(model, change, target, base = {}) {
   const verdict = after == null || before == null ? 'keeps switching'
     : clashes.length ? 'unsettled'
     : after === before ? 'no change' : 'changed';
-  return { verdict, thing: target_thing, before, after, route: verdict === 'changed' ? route_to(held.result, target_thing, model.rules) : [], clashes };
+  return { verdict, thing: target_thing, before, after, route: verdict === 'changed' ? route_to(held.result, target_thing, model.rules, Object.keys(held.resolved.force)) : [], clashes };
 }
 
 // ------------------------------------------------------------------
@@ -246,7 +247,7 @@ function why(model, situation, target) {
   }
   return {
     thing, outcome, differences, but_for, each_enough: pairs,
-    route: route_to(base.result, thing, model.rules),
+    route: route_to(base.result, thing, model.rules, Object.keys(base.resolved.force)),
     verdict: but_for.length ? 'but-for causes found' : pairs.length ? 'two causes, each enough' : 'no difference made it happen',
   };
 }

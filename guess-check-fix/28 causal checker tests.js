@@ -5,7 +5,7 @@
  *   - the lamp and the curtains: seeing a dark room tells you the lamp is off; making the room dark
  *     (holding it dark) does not switch the lamp off
  *   - what if: holding a thing changes what is downstream of it, not what is upstream, and the route
- *     names the rules that carried the change
+ *     names the rules that carried the change, stopping at the held thing even in a loop
  *   - two pushes the opposite way on one thing leave it unsettled, not changed
  *   - the "influences" shorthand: "same" and "opposite", levels added, a thing without the three
  *     levels refused
@@ -60,6 +60,9 @@ const more_cover = K.what_if(hill, { 'plant cover': 'more' }, 'erosion');
 expect_that('more plant cover: less erosion ("opposite")', more_cover.after === 'less', JSON.stringify(more_cover));
 const upstream = K.what_if(hill, { erosion: 'more' }, 'rain');
 expect_that('holding erosion high does not change the rain', upstream.verdict === 'no change', JSON.stringify(upstream));
+const loop = K.prepare({ influences: [{ from: 'eggs', to: 'tadpoles', sign: 'same' }, { from: 'tadpoles', to: 'frogs', sign: 'same' }, { from: 'frogs', to: 'eggs', sign: 'same' }] });
+const looped = K.what_if(loop, { eggs: 'less' }, 'frogs');
+expect_that('in a loop, the route stops at the held thing', looped.after === 'less' && looped.route.map(r => r.thing).join() === 'tadpoles,frogs', JSON.stringify(looped.route));
 const both = K.what_if(hill, { rain: 'more', 'plant cover': 'more' }, 'erosion');
 expect_that('more rain and more plant cover together: erosion is unsettled, not changed', both.verdict === 'unsettled', JSON.stringify(both));
 const bad = K.prepare({ things: { rain: ['wet', 'dry'] }, influences: [{ from: 'rain', to: 'runoff', sign: 'same' }] });

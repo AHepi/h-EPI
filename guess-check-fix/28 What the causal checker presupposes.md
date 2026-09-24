@@ -4,9 +4,9 @@ Log entry 28. The owner asked: "Once you have a working checker, I'll be interes
 
 ## An example first
 
-The checker is handed a model of how frogs grow: more eggs laid, more tadpoles hatch, more frogs. The question is "suppose fewer eggs are laid, how will it affect the frogs?".
+The checker is handed the translator's model of paragraph 515, how frogs grow: more eggs laid, more tadpoles developing, more eggs that hatch, more tadpoles, more frogs formed. The question is "suppose fewer eggs are laid, how will it affect the frogs?".
 
-The checker holds "eggs laid" at "less", leaves every other rule alone, runs the model until nothing changes, and compares the frogs with a run where nothing was held. The frogs come out "less", so the answer is that fewer frogs appear.
+The checker holds "eggs laid" at "less", leaves every other rule alone, runs the model until nothing changes, and compares "frogs formed" with a run where nothing was held. It comes out "less", so the answer is that fewer frogs form.
 
 Every step of that took something for granted.
 
@@ -40,4 +40,8 @@ Every step of that took something for granted.
 
 ## Which of these the corpus run bore on
 
-(Filled in from the records after the run; see "28 Causal checker.md".)
+- **Bore on it hardest: 5, what is not in the model has no effect.** In 32 of the 49 questions where the checker and people differed, the question's words matched nothing in the model (weather, space, polliwogs), and the checker could only say "no effect". The direct answerer, knowing about the weather, did not have that problem. The reader's 19 links from the world's words to the model's things were the only way outside knowledge got in, and the one link that should not have been made ("a rain forest has more rain") gave the checker an effect on a question people call unrelated.
+- **Bore on it: 4, the things are given.** The translator named "tadpoles" but not "polliwogs", "plants" but not "crops" or "space". Which things exist was decided before the checker ran, and it decided much of the score.
+- **Bore on it: 6, direction is written in.** The frog model for paragraph 517 has no way from frogs back to eggs, so "more frogs" reaches no tadpoles; paragraph 515's model has that loop.
+- **Bore on it: 13, the checker only draws consequences.** On 11 questions, the checker and the direct answerer agreed with each other against people's answers. Agreement with people is a rough stand-in for the world.
+- **Not tested by the run: 3, 7, 8, 9, 10, 11 and 12.** The corpus asks about one push at a time, with no timing, no sizes, no chance and no "why". The checker never said "unsettled". 1 and 2 are the shape of every corpus question, so the run could not have shown them wrong.
