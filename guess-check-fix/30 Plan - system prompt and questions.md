@@ -89,3 +89,24 @@ Log 22 cost $2.81 for 20 runs of 20 questions plus two other arms. At 10 questio
 - **Reading one run per world as settled.** Seven arms, one run each on ten worlds: a difference of one or two is noise (log 18 and log 19 differed by two on the same inputs).
 - **Reading "surprised" as "good".** A surprise shows it asked where it was wrong, not that the question was useful.
 - **Reading this as a result about system prompts in general.** It is one task, one model, these seven texts.
+
+## Round 3: role-play (log 32)
+
+Written after rounds 1 and 2, committed before round 3 runs. The owner asked: "What about role playing? Does that work?"
+
+Round 1's detective was a one-line character and did nothing the filler text did not. Round 3 gives DeepSeek fuller characters, with a name, a history and a way of working, and asks it to stay in character. It runs each character twice, because round 2 showed that two runs of the same text differ about as much as two different texts. The texts are in full in `30 system prompt questions.js`:
+- **scientist:** Dr. Ada Reyes, who designs the experiment most likely to prove her idea wrong, and values a surprising answer;
+- **child:** Mia, seven, who asks "but what if...?" and loves trying odd things;
+- **cross-examiner:** a barrister who treats the pretend owner as a witness whose account may break somewhere, and who never asks a question they could already answer.
+
+That is three characters, twice each, on the ten worlds: 60 runs, about $2.
+
+Conjectures for round 3:
+
+13. **A role does not steer which situations are asked.** Each character's two runs share no more situations than the character shares with either plain run, give or take 5.
+14. **The scientist is surprised more often than any earlier text:** more than 29 of 100 in each of its two runs.
+15. **The child asks shorter questions than any earlier text:** below 1.6 events per question in each of its two runs.
+16. **The cross-examiner asks the pretend owner's question back less often than any earlier text:** fewer than 11 times in each of its two runs, since that is a question it "could already answer" once asked.
+17. **Quality stays within the earlier spread:** each run's nearby count is between 149 and 180.
+
+What would count against "role-play does nothing beyond other text": a character's two runs agreeing with each other clearly more than with other runs, or conjectures 14 to 16 holding in both runs.

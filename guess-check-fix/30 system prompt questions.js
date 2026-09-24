@@ -23,7 +23,8 @@
  * Run with:
  *   DEEPSEEK_API_KEY=... NODE_USE_ENV_PROXY=1 node "30 system prompt questions.js" OUTFOLDER ROUND [WORLD,WORLD]
  *   node "30 system prompt questions.js" --summarise FOLDER
- * ROUND is "1" (the arms fixed before any run) or "2" (arms written after reading round 1).
+ * ROUND is "1" (the arms fixed before any run), "2" (arms written after reading round 1) or "3"
+ * (role-play, log 32, written after rounds 1 and 2).
  */
 const fs = require('fs');
 const path = require('path');
@@ -56,7 +57,18 @@ const ROUND_TWO = {
   'long questions': 'Make every question a long situation: at least four events, one after another.',
   'never ask it back': 'Never ask the owner the question they are asking you in their message; they want you to work that out yourself.',
 };
-const ROUNDS = { 1: ROUND_ONE, 2: ROUND_TWO };
+// Round 3 (log 32): role-play. Written after rounds 1 and 2, before running it. Round 1's one-line
+// detective did nothing a filler text did not; these are fuller characters, each run twice, since round 2
+// showed two runs of the same text differ about as much as two different texts.
+const SCIENTIST = 'You are Dr. Ada Reyes, an experimental physicist known for one habit: before she trusts an idea, she designs the experiment most likely to prove it wrong. Her students remember her saying, "An answer that surprises me is worth ten that don\'t." She keeps a list of what she currently believes and crosses items out without regret. Stay in character as Ada for the whole conversation.';
+const CHILD = 'You are Mia, a seven-year-old who wants to know how everything works. You ask "but what if...?" about everything, you love trying odd things just to see what happens, and you are never embarrassed to be wrong. Stay in character as Mia for the whole conversation.';
+const CROSS_EXAMINER = 'You are a barrister cross-examining a witness. The owner is the witness, and their account may have gaps or contradictions they have not noticed. Your job is to find the exact situation where their account breaks. You are courteous, patient and relentless, and you never ask a question you could already answer. Stay in this role for the whole conversation.';
+const ROUND_THREE = {
+  'scientist': SCIENTIST, 'scientist, again': SCIENTIST,
+  'child': CHILD, 'child, again': CHILD,
+  'cross-examiner': CROSS_EXAMINER, 'cross-examiner, again': CROSS_EXAMINER,
+};
+const ROUNDS = { 1: ROUND_ONE, 2: ROUND_TWO, 3: ROUND_THREE };
 
 // The range of one run's questions.
 function range_of(world, asked) {
@@ -139,7 +151,7 @@ function summarise(records) {
 }
 const results_text = (records, failed) => `# System prompt and questions: results\n\nDeepSeek V4.1 Flash, default thinking, log 21's long messages, ${QUESTIONS} questions a run. ${records.length} runs; every number comes from the records in this folder. "Fair" leaves out every test question the run asked the pretend owner about.\n\n${summarise(records)}\n${failed.length ? `\nRuns that failed:\n${failed.join('\n')}\n` : ''}`;
 
-module.exports = { ROUND_ONE, ROUND_TWO, ROUNDS, QUESTIONS, range_of, run_arm, summarise };
+module.exports = { ROUND_ONE, ROUND_TWO, ROUND_THREE, ROUNDS, QUESTIONS, range_of, run_arm, summarise };
 
 if (require.main === module) {
   const [first, second, third] = process.argv.slice(2);
