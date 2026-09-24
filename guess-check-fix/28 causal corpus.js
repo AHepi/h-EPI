@@ -112,8 +112,31 @@ function grade(corpus_folder) {
     };
   });
   const model_problems = Object.fromEntries(Object.entries(prepared).map(([id, m]) => [id, m.problems]));
-  write_json(path.join(RUN_FOLDER, 'results.json'), { model_problems, results });
-  return { results, model_problems };
+  const seeing = seeing_and_making(models);
+  write_json(path.join(RUN_FOLDER, 'results.json'), { model_problems, seeing_and_making: seeing, results });
+  return { results, model_problems, seeing };
+}
+
+// For each model: over pairs of things (A, B), how often seeing A at "more" goes with B moving, and how
+// often making A "more" moves B. Pairs where seeing says yes and making says no are associations that
+// are not causes in the model (the dark room and the lamp). Starts change one outside thing at a time.
+function seeing_and_making(models) {
+  const out = {};
+  for (const [id, raw] of Object.entries(models)) {
+    const model = K.prepare(raw);
+    const names = Object.keys(model.things).filter(t => model.things[t].includes('more'));
+    let seen_only = 0, made_only = 0, both = 0, pairs = 0;
+    for (const a of names) for (const b of names) {
+      if (a === b) continue;
+      pairs++;
+      const sd = K.seeing_and_doing(model, a, 'more', b, { one_at_a_time: true });
+      const seen = Object.keys(sd.seeing).some(s => s !== 'usual');
+      const made = K.what_if(model, { [a]: 'more' }, b).verdict === 'changed';
+      if (seen && made) both++; else if (seen) seen_only++; else if (made) made_only++;
+    }
+    out[id] = { things: names.length, pairs, seen_and_made: both, seen_not_made: seen_only, made_not_seen: made_only };
+  }
+  return out;
 }
 
 function tables(results) {
@@ -137,10 +160,11 @@ if (require.main === module) {
   if (!corpus_folder) { console.log('Use: select CORPUS_FOLDER | grade CORPUS_FOLDER'); process.exit(1); }
   if (command === 'select') console.log(JSON.stringify(select(corpus_folder)));
   else if (command === 'grade') {
-    const { results, model_problems } = grade(corpus_folder);
+    const { results, model_problems, seeing } = grade(corpus_folder);
+    console.log('Seeing and making, per model:', JSON.stringify(seeing));
     for (const [id, problems] of Object.entries(model_problems)) if (problems.length) console.log(`Paragraph ${id} model problems: ${problems.join(' ')}`);
     console.log(tables(results));
   } else console.log('Use: select CORPUS_FOLDER | grade CORPUS_FOLDER');
 }
 
-module.exports = { pick, select, grade, tables, scramble, KIND_NAMES, RUN_FOLDER };
+module.exports = { pick, select, grade, tables, seeing_and_making, scramble, KIND_NAMES, RUN_FOLDER };

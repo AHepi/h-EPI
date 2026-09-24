@@ -188,8 +188,15 @@ function admitted_starts(model, limit = 512) {
   }
   return { starts, cut: false };
 }
-function seeing_and_doing(model, thing, state, other) {
-  const { starts, cut } = admitted_starts(model);
+// Starts that change one outside thing at a time from the model's start (plus the start itself):
+// fewer than every combination, for models with many outside things.
+function one_at_a_time_starts(model) {
+  const starts = [{}];
+  for (const thing of outside_things(model)) for (const state of model.things[thing]) if (state !== model.start[thing]) starts.push({ [thing]: state });
+  return { starts, cut: false };
+}
+function seeing_and_doing(model, thing, state, other, options = {}) {
+  const { starts, cut } = options.one_at_a_time ? one_at_a_time_starts(model) : admitted_starts(model);
   const seen = [], made = [];
   for (const start of starts) {
     const plain = run_with(model, { start });
@@ -270,6 +277,6 @@ function answer_what_if_question(model, reading) {
 }
 
 module.exports = {
-  LEVELS, add_influences, prepare, run_with, ending, what_if, outside_things, admitted_starts,
+  LEVELS, add_influences, prepare, run_with, ending, what_if, outside_things, admitted_starts, one_at_a_time_starts,
   seeing_and_doing, why, describe_difference, answer_what_if_question, route_to, upstream_of,
 };
