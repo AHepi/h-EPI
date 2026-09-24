@@ -31,9 +31,19 @@ Each can be refuted by the records.
 
 *Corrected before any run: conjecture 5 first said "at least 110 of 120", but the gate has only two actions and so 30 sequences.*
 
+## Added after repeat 1, before repeats 2 and 3
+
+Repeat 1 (all five arms, one run per device) showed explanations that fit all 14 observations and still got test cases wrong: in the vial both explanation arms, in the magnet ball blind retries (53 of 120 sequences right). The loop stops once everything fits, so a wrong explanation that fits is never criticised again. Read offline, at no cost, the checker's hard-to-vary sweep separated them: the true models have at most two parts the observations do not hold in place (idle: removing them changes no observation; unknown: no observation makes them act), and the wrong fitting ones had 12 to 28.
+
+So a sixth arm is added: **conjecture, criticism and hard to vary.** Like conjecture and criticism, but once an explanation fits, the checker criticises it for those parts and DeepSeek writes a new one, with the same limit of 6 explanations and the same 14 observations. It keeps the fitting explanation with the fewest such parts, and stops when a new one has no fewer. A true explanation can have a part the observations happen not to test, so the aim is fewest, not none.
+
+This arm was designed after seeing repeat 1, so repeat 1 is not evidence for it. The conjecture below is tested on repeats 2 and 3 only:
+
+6. **Conjecture, criticism and hard to vary gets more hard test cases right than conjecture and criticism**, summed over repeats 2 and 3, and its kept explanations have fewer parts not held in place.
+
 ## How much
 
-$4.52 of DeepSeek credit is left. First one repeat of all four devices; if the cost allows, a second repeat with the same code. Every record is kept, whichever way it comes out.
+$4.52 of DeepSeek credit is left. First one repeat of all four devices; if the cost allows, more repeats with the same code. (Repeat 1 cost $0.73; repeats 2 and 3 are run with the sixth arm added.) Every record is kept, whichever way it comes out.
 
 ## Traps
 

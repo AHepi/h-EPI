@@ -20,6 +20,15 @@
  *                           instead; DeepSeek writes a new explanation; up to 6 explanations. The one
  *                           that fits the most observations answers the test cases, by being run.
  *   blind retries         - the same, but the report says only how many observations fail
+ *   conjecture, criticism and hard to vary - added after repeat 1: like conjecture and criticism, but once
+ *                           an explanation fits every observation, the checker goes on criticising it for
+ *                           parts that do no work (removing them changes no observation) and parts nothing
+ *                           tests (no observation makes them act), and DeepSeek writes a new one; the same
+ *                           limit of 6 explanations. The one kept fits the most observations, then has the
+ *                           fewest such parts; the loop stops once a new fitting explanation has no fewer
+ *                           such parts than the best so far. A true explanation can have a part the
+ *                           observations happen not to test, so the aim is fewest, not none.
+ *                           Same 14 observations: no new information.
  * For the two model arms, "reach" is also measured: of all sequences of up to four actions (120, or 30 for
  * the gate, which has two actions), how many the final explanation gets right.
  *
@@ -87,7 +96,13 @@ async function bare_checks_itself(D, device, observations, tests) {
   return { replies, graded: grade_answers(device, tests, last && last.answers), first_graded: grade_answers(device, tests, replies[0] && replies[0].answers), tokens_out: g.counts.tokens_out, cut_off: g.counts.cut_off, calls: replies.length };
 }
 
-async function explain_and_criticise(D, device, observations, tests, blind) {
+// Parts of a model that the observations do not hold in place: idle (removing it changes no observation)
+// and unknown (no observation makes it act). From the checker's hard-to-vary sweep (Part VI).
+function unheld_parts(model, jobs) {
+  return C.vary(model, jobs, { decide: false }).rules.filter(r => r.mark === 'idle' || r.mark === 'unknown').map(r => ({ rule: r.rule, mark: r.mark, why: r.why }));
+}
+
+async function explain_and_criticise(D, device, observations, tests, blind, hard_to_vary = false) {
   const g = D.make_deepseek_guesser();
   const jobs = C.prepare_jobs({ jobs: observations }).jobs;
   const opening = `Task: ${evidence_in_words(device, observations)}\n\nWrite a model that explains every observation. Use exactly the names above for what you can see and for the actions.`;
@@ -98,19 +113,31 @@ async function explain_and_criticise(D, device, observations, tests, blind) {
     let ask = opening;
     if (current) {
       const check = C.check(current.model, jobs);
-      const report = blind ? `${check.failed.length} of ${jobs.length} observations do not hold.` : C.report_check(current.model, jobs).text;
-      ask = `${opening}\n\nYour last model:\n${JSON.stringify(C.model_to_form(current.model))}\n\nThe checker ran it on the observations.\n${report}\n\nWrite the whole model again so that every observation holds. You may add things you cannot see.`;
+      if (hard_to_vary && !check.failed.length) {
+        const parts = unheld_parts(current.model, jobs);
+        ask = `${opening}\n\nYour last model:\n${JSON.stringify(C.model_to_form(current.model))}\n\nThe checker ran it: every observation holds. But these parts of it are not held in place by any observation:\n${parts.map(p => `- rule "${p.rule}": ${p.why}`).join('\n')}\n\nA good explanation is hard to vary: its parts do work that the observations check, so they cannot be removed or changed without an observation noticing. Write the whole model again so that every observation still holds and as few parts as possible are unchecked. Keep a part the task clearly implies even if no observation tests it. You may add, remove or change things you cannot see.`;
+      } else {
+        const report = blind ? `${check.failed.length} of ${jobs.length} observations do not hold.` : C.report_check(current.model, jobs).text;
+        ask = `${opening}\n\nYour last model:\n${JSON.stringify(C.model_to_form(current.model))}\n\nThe checker ran it on the observations.\n${report}\n\nWrite the whole model again so that every observation holds. You may add things you cannot see.`;
+      }
     }
     const text = await g([{ role: 'system', content: L.GUIDE }, { role: 'user', content: ask }], {});
     const raw = L.read_reply(text);
     const model = raw ? C.prepare_model(raw) : null;
     const passed = model ? C.check(model, jobs).passed.length : 0;
-    rounds.push({ round, readable: !!model, passed, hidden_things: model ? hidden_things(device, model) : [], model: raw });
-    if (model) { current = { model, passed }; if (!best || passed >= best.passed) best = { model, passed, round }; }
-    if (model && passed === jobs.length) break;
+    const unheld = model && hard_to_vary && passed === jobs.length ? unheld_parts(model, jobs).length : null;
+    rounds.push({ round, readable: !!model, passed, unheld, hidden_things: model ? hidden_things(device, model) : [], model: raw });
+    if (model) {
+      current = { model, passed };
+      const improved_unheld = hard_to_vary && best && passed === best.passed && unheld !== null && best.unheld !== null && unheld < best.unheld;
+      const better = !best || passed > best.passed || improved_unheld || (passed === best.passed && !hard_to_vary);
+      if (hard_to_vary && best && passed === jobs.length && best.passed === jobs.length && !improved_unheld) break; // a fitting explanation no less easy to vary than the best: stop
+      if (better) best = { model, passed, round, unheld };
+    }
+    if (model && passed === jobs.length && (!hard_to_vary || unheld === 0)) break;
   }
   const graded = best ? grade_model(device, tests, best.model) : tests.map(t => ({ test: t.name, hard: !t.obvious_right, right: false }));
-  return { rounds, best_round: best ? best.round : null, best_passes: best ? best.passed : 0, observations: jobs.length, final_hidden_things: best ? hidden_things(device, best.model) : [],
+  return { rounds, best_round: best ? best.round : null, best_passes: best ? best.passed : 0, best_unheld: best && best.passed === jobs.length ? unheld_parts(best.model, jobs).length : null, observations: jobs.length, final_hidden_things: best ? hidden_things(device, best.model) : [],
     reach: best ? reach(device, best.model) : { right: 0, of: 120 }, graded, tokens_out: g.counts.tokens_out, cut_off: g.counts.cut_off, calls: rounds.length };
 }
 
@@ -135,10 +162,11 @@ async function run_device(device, repeat, D) {
   arms['bare, checks itself'] = await bare_checks_itself(D, device, observations, tests);
   arms['conjecture and criticism'] = await explain_and_criticise(D, device, observations, tests, false);
   arms['blind retries'] = await explain_and_criticise(D, device, observations, tests, true);
+  if (!process.env.WITHOUT_HARD_TO_VARY) arms['conjecture, criticism and hard to vary'] = await explain_and_criticise(D, device, observations, tests, false, true);
   return { device: device.id, repeat, guesser: D.MODEL_NAME, observations, tests, arms };
 }
 
-const ARMS = ['bare', 'bare, majority of 5', 'bare, checks itself', 'conjecture and criticism', 'blind retries'];
+const ARMS = ['bare', 'bare, majority of 5', 'bare, checks itself', 'conjecture and criticism', 'blind retries', 'conjecture, criticism and hard to vary'];
 function summarise(records) {
   const lines = ['| Arm | Test cases right | Of the 8 hard ones per run | Of the 4 easy ones per run | Runs with every test right | DeepSeek calls | Output tokens | Replies cut off |', '|---|---|---|---|---|---|---|---|'];
   for (const n of ARMS) {
@@ -153,16 +181,17 @@ function summarise(records) {
   }
   const by_device = ['', 'Test cases right (of 12), by device and repeat:', '', `| Device | Repeat | ${ARMS.join(' | ')} |`, `|---|---|${ARMS.map(() => '---').join('|')}|`];
   for (const r of records) by_device.push(`| ${r.device} | ${r.repeat} | ${ARMS.map(n => (r.arms[n] ? r.arms[n].graded.filter(g => g.right).length : '')).join(' | ')} |`);
-  const loops = ['', 'The two explanation arms: observations explained by the best explanation (of 14), its round, the hidden things it built, and its reach (of all sequences of up to four actions):', '', '| Device | Repeat | Arm | Explained | Round | Hidden things | Reach |', '|---|---|---|---|---|---|---|'];
-  for (const r of records) for (const n of ['conjecture and criticism', 'blind retries']) {
+  const loops = ['', 'The two explanation arms: observations explained by the best explanation (of 14), its round, the hidden things it built, and its reach (of all sequences of up to four actions):', '', '| Device | Repeat | Arm | Explained | Round | Hidden things | Reach | Parts not held in place |', '|---|---|---|---|---|---|---|---|'];
+  for (const r of records) for (const n of ['conjecture and criticism', 'blind retries', 'conjecture, criticism and hard to vary']) {
     const a = r.arms[n]; if (!a) continue;
-    loops.push(`| ${r.device} | ${r.repeat} | ${n} | ${a.best_passes}/${a.observations} | ${a.best_round || '-'} | ${a.final_hidden_things.join(', ') || 'none'} | ${a.reach.right}/${a.reach.of} |`);
+    const unheld = a.best_unheld === undefined || a.best_unheld === null ? 'not measured' : a.best_unheld;
+    loops.push(`| ${r.device} | ${r.repeat} | ${n} | ${a.best_passes}/${a.observations} | ${a.best_round || '-'} | ${a.final_hidden_things.join(', ') || 'none'} | ${a.reach.right}/${a.reach.of} | ${unheld} |`);
   }
   return lines.concat(by_device, loops).join('\n');
 }
 const results_text = (records, failed) => `# Construction test: results\n\nDeepSeek V4.1 Flash, default thinking. ${records.length} device-and-repeat runs; every number comes from the records in this folder. Every arm had the same description and 14 observations; the 12 test cases were shown to none of them.\n\n${summarise(records)}\n${failed.length ? `\nRuns that failed:\n${failed.join('\n')}\n` : ''}`;
 
-module.exports = { evidence_in_words, questions_in_words, grade_answers, grade_model, reach, majority, bare, bare_checks_itself, explain_and_criticise, run_device, summarise, HIDDEN_HINT };
+module.exports = { unheld_parts, evidence_in_words, questions_in_words, grade_answers, grade_model, reach, majority, bare, bare_checks_itself, explain_and_criticise, run_device, summarise, HIDDEN_HINT };
 
 if (require.main === module) {
   const [first, second, third] = process.argv.slice(2);

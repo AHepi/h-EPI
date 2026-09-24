@@ -10,7 +10,9 @@
  *     all right with reach 120 of 120; the obvious model's reach is lower
  *   - conjecture and criticism: a stand-in that first writes the obvious model and, once shown the
  *     failures, writes the true one, ends right; blind retries tells it only how many fail
- *   - a whole device runs through all five arms
+ *   - the hard-to-vary arm criticises a fitting model for parts no observation holds in place, and keeps
+ *     the one without them
+ *   - a whole device runs through all six arms
  * Run with:  node "25 construction test tests.js"
  */
 const C = require('./03 checker.js');
@@ -69,12 +71,24 @@ function stand_in(device) {
   const s2 = stand_in(d);
   const blind = await X.explain_and_criticise(s2, d, observations, tests, true);
   expect_that('blind retries: told only how many fail', s2.seen.some(m => /\d+ of 14 observations do not hold\./.test(m)) && blind.rounds.length === 6 && blind.best_passes < 14);
+  // The hard-to-vary arm: first a fitting model with a rule nothing ever triggers, then, once criticised, the true one.
+  const padded = JSON.parse(JSON.stringify(d.world));
+  padded.rules.push({ name: 'never acts', when: ['tilt left happens', 'tilt right happens'], then: 'ball is left' });
+  const seen3 = [];
+  const htv = { MODEL_NAME: 'stand-in', make_deepseek_guesser() { const g = async messages => { const last = messages[messages.length - 1].content; seen3.push(last); g.counts.tokens_out += 2; return JSON.stringify(last.includes('not held in place') ? d.world : padded); }; g.counts = { tokens_out: 0, cut_off: 0 }; return g; } };
+  const h = await X.explain_and_criticise(htv, d, observations, tests, false, true);
+  expect_that('hard to vary: a fitting model with an untested rule is criticised for it', seen3.some(m => m.includes('not held in place') && m.includes('never acts')));
+  expect_that('hard to vary: the model kept has the fewest unheld parts, and the loop stops when that stops falling', h.rounds.length === 3 && h.best_round === 2 && h.best_unheld === 1 && h.rounds[0].unheld === 2, JSON.stringify(h.rounds.map(r => [r.passed, r.unheld])));
+  const plain = await X.explain_and_criticise(htv, d, observations, tests, false, false);
+  expect_that('without hard to vary, the fitting padded model is accepted at once', plain.rounds.length === 1);
+  expect_that('the true model of every device has at most two unheld parts on its observations (untested is not wrong)', K.DEVICES.every(dev => X.unheld_parts(C.prepare_model(dev.world), C.prepare_jobs({ jobs: K.observations_and_tests(dev).observations }).jobs).length <= 2));
+
   expect_that('a majority takes the most common answer', X.majority(d, tests.slice(0, 1), [{ answers: { T1: 'left' } }, { answers: { T1: 'right' } }, { answers: { T1: 'left' } }]).T1 === 'left');
 
   const rec = await X.run_device(d, 1, stand_in(d));
-  expect_that('a whole device runs through all five arms', ['bare', 'bare, majority of 5', 'bare, checks itself', 'conjecture and criticism', 'blind retries'].every(n => rec.arms[n]));
+  expect_that('a whole device runs through all six arms', ['bare', 'bare, majority of 5', 'bare, checks itself', 'conjecture and criticism', 'blind retries', 'conjecture, criticism and hard to vary'].every(n => rec.arms[n]));
   expect_that('bare arms answering from the truth are all right', rec.arms['bare'].graded.every(g => g.right) && rec.arms['bare, checks itself'].graded.every(g => g.right));
-  expect_that('the summary has a row per arm', X.summarise([rec]).split('\n\n')[0].split('\n').length === 7);
+  expect_that('the summary has a row per arm', X.summarise([rec]).split('\n\n')[0].split('\n').length === 8);
 
   console.log(`\n${failed} test(s) failed.`);
   process.exit(failed ? 1 : 0);
