@@ -325,9 +325,11 @@ Written up in "28 Causal checker.md" and "28 What the causal checker presupposes
 - **A wrong example nearly went into the report.** I wrote that in paragraph 515's model making more frogs changes no eggs; running it showed it does, through the loop. Replaced with paragraph 517's model before publishing.
 - **Overlooked in what worked:** 48 of 50 unrelated questions right comes mostly free, since a question whose words match nothing gets "no effect" by default. Three levels cannot add: with erosion already "more" from one cause, a second cause shows "no change". There was one translation and one reading, with no repeats, so another run of the same AI could score differently.
 
+**30. Does a system prompt change DeepSeek's questions? Planned, not run.** The owner topped up $20 and asked for a mini experiment: does text put at the very top of DeepSeek's standing instructions change the range and quality of the questions it asks, trying different texts and looking for patterns (Decisions O15). Built on log 22's task, shortened to 10 questions (files 30): seven arms differing only in the text at the top (nothing; nothing, run again as a control for run-to-run variation; filler; doubt; spread; explain; a detective character), on the ten worlds. The plan and six conjectures were committed before any run ("30 Plan - system prompt and questions.md"). Along the way two of my new tests failed: they expected 4 different situations and 6 repeats from the stand-in's script, which in fact asks 3 different situations and repeats 7 times; my count was wrong, not the code, so the test was corrected. The second plain arm was added before any run, once I saw that without it a prompt's effect could not be told from DeepSeek varying on its own. Not run: my attempt to call DeepSeek with the key typed into the command was refused by this session's safety check, which treats a key in a command as a leak. The key needs to be stored in the environment's settings instead. 10 new tests (file 30), all passing; log 22's and 23's tests still pass. No DeepSeek credit used.
+
 ## Next step
 
-When the DeepSeek account is topped up, run the attack-surface test (log 26) as planned: three repeats on the four devices, about $1 to $1.50.
+Store a new DeepSeek key as DEEPSEEK_API_KEY in the environment's settings, then run log 30's round 1 (about $4 to $6).
 
 ## Traps
 

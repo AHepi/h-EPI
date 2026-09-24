@@ -46,8 +46,10 @@ Failures in building and testing, and how each was fixed. Only cases where somet
 | 28 | That new tracing ran past a held thing and round a loop. | It stops at held things; a test with a loop. |
 | 28 | Two opposite pushes gave "changed", because the nearer one arrived first. | Any clash on or upstream of the thing asked about reads "unsettled"; my judgement, made after the test failed, reported in log 29. |
 | 28 | An event list was read letter by letter. | Lists go through the checker's own reader. |
+| 30 | My test expected 4 different situations from a script that asks 3; I counted two identical questions as different. | The test's numbers corrected; the code was right. |
+| 30 | Calling DeepSeek with the key typed into the command was refused by the session's safety check. | The key is to be stored in the environment's settings, never in a command or file. |
 
 ## Traps
 
 - **Filing a finding as a lesson.** A result about how well a guesser did belongs in the log. This file is for things that broke and were fixed.
-- **Fixing without a test.** Each fix above has a test in "11 checker tests.js", "16 Sonnet guesser tests.js", "17 error correction tests.js", "19 baseline tests.js", "20 who picks tests.js", "21 long text tests.js", "22 twenty questions tests.js", "23 owner will not say tests.js", "25 construction test tests.js", "26 attack surface tests.js", "28 causal checker tests.js" or "16 page test in a browser.py", except the small AI's, which need the small AI to test, and the run-script and browser-path fixes, which were checked by running them.
+- **Fixing without a test.** Each fix above has a test in "11 checker tests.js", "16 Sonnet guesser tests.js", "17 error correction tests.js", "19 baseline tests.js", "20 who picks tests.js", "21 long text tests.js", "22 twenty questions tests.js", "23 owner will not say tests.js", "25 construction test tests.js", "26 attack surface tests.js", "28 causal checker tests.js", "30 system prompt tests.js" or "16 page test in a browser.py", except the small AI's, which need the small AI to test, and the run-script and browser-path fixes, which were checked by running them.
