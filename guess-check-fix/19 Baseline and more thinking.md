@@ -4,6 +4,8 @@ Log entry 19. The owner asked for two things: test the project against a baselin
 
 ## The short answer
 
+*Log 20 tested the conclusion below that the loop's contribution is finding the right questions, and refuted it: answers to random questions helped as much. See "20 Who picks the questions.md".*
+
 - **Against the baseline, the loop wins, but in one particular way.** "DeepSeek alone" gets the request, the owner's word list and the shown jobs with their answers, and answers questions directly: no model, no checker, no loop. On 376 nearby situations, "guesser fixes first" got 338 right, DeepSeek alone 300. On the 62 held-back situations it was 54 against 49, **but that lead disappears on held-back situations the loop never asked the world about: 29 of 37 against 30 of 37.**
 - **More tokens do not close the nearby gap.** Thinking harder (385,000 tokens, no cut-offs) got 312 right. Asking five times and taking the majority (1.34 million tokens, four times the loop's) got 310. The loop got 338 with 332,000 tokens. The lowest thinking setting did best of the DeepSeek-alone arms (318).
 - **More thinking does not help the loop either.** "Guesser fixes first" at the highest setting: 337 (default: 338), for 50% more tokens.

@@ -5,15 +5,17 @@
 - DeepSeek V4.1 Flash is the guesser. Every live result comes from DeepSeek, and every run's record is in `runs/`.
 - Ten test worlds, seven ways of running, and a test with 32 planted mistakes.
 - Best way of running so far: "guesser fixes first". It is not the default of any script yet; the run script runs all the ways.
-- Tested against DeepSeek alone and against spending more tokens (log 19): the loop wins on nearby situations, more tokens do not close the gap, but the loop's value is the questions it finds; given those answers, DeepSeek alone does better still.
-- All tests pass: `11 checker tests.js` (20), `16 Sonnet guesser tests.js` (13), `17 error correction tests.js` (26), `19 baseline tests.js` (11), `16 page test in a browser.py` (12).
-- DeepSeek balance after log 19: $15.65.
+- Tested against DeepSeek alone and against spending more tokens (log 19): more tokens do not close the gap between DeepSeek alone and the loop; answers from the world do.
+- Who picks the questions (log 20): random questions helped as much as the loop's; DeepSeek's own choice helped least; the loop's rule model was about level with DeepSeek alone. More answers from the world is what reliably helps.
+- All tests pass: `11 checker tests.js` (20), `16 Sonnet guesser tests.js` (13), `17 error correction tests.js` (26), `19 baseline tests.js` (11), `20 who picks tests.js` (13), `16 page test in a browser.py` (12).
+- DeepSeek balance after log 20: $13.99.
 - The project lives in the h-EPI repository, folder `guess-check-fix`, on the branch `claude/deepseek-v4-project-j9k1ap`, waiting for the owner to merge it.
 
 **Waiting on:** nothing from the owner to continue. The next step in the project story needs about two dollars of DeepSeek credit.
 
 **Open questions:**
-- If the loop only finds the questions and DeepSeek answers from the collected answers, does that beat both (log 19 suggests so)?
+- Does choosing questions matter when there are only one to three of them?
+- Are the rule models worth keeping? They did not answer better than DeepSeek alone in log 20; they do give a model that can be run and tested part by part, and they repaired every visible planted mistake (log 18).
 - Can DeepSeek repair only what is broken, if asked to return only the rules it changes, so a repair stops re-guessing parts that were right?
 - How many questions to the world is a real owner willing to answer? The full loop asked up to 12 per task.
 - The world can only be asked about the things the shown jobs mention (the ghost lantern case). Should the owner be able to be asked about anything in the model?

@@ -13,11 +13,14 @@ The idea in one line: an AI guesses, an ordinary program checks, and the fixing 
 - **An error-correction test with planted mistakes**: 32 known mistakes, each handed to seven correctors (log 18).
 - **The main finding**: DeepSeek's first guesses usually pass every shown job; its mistakes are in what it was not shown. Checking the shown jobs can never find those. Asking the world about nearby situations finds some; DeepSeek rereading its own model finds others. Whole rewrites fix the broken part but re-guess the rest. The full write-up is "18 What DeepSeek showed about error correction.md".
 - **Best way of running so far: "guesser fixes first"**: 15 of 20 ten-world runs ended with every job passing, and it repaired all 10 visible and 11, then 13, of 20 hidden planted mistakes.
-- **Tested against a baseline and against spending more tokens** (log 19). The loop beats DeepSeek on its own (338 of 376 nearby situations right, against 300), and neither thinking harder nor asking five times closes the gap. But given the answers the loop collected from the world, DeepSeek on its own does better than the loop (356). The loop's real contribution is finding the right questions. Written up in "19 Baseline and more thinking.md".
-- **All tests pass**: 20 checker tests, 13 Sonnet-guesser tests, 26 error-correction tests, 11 baseline tests, 12 browser tests.
+- **Tested against a baseline and against spending more tokens** (log 19). In that run the loop beat DeepSeek on its own (338 of 376 nearby situations right, against 300), and neither thinking harder nor asking five times closed the gap. Given the answers the loop collected from the world, DeepSeek on its own did better than the loop (356). Written up in "19 Baseline and more thinking.md".
+- **Who picks the questions does not matter much** (log 20, three repeats). Answers to questions picked at random helped DeepSeek as much as answers to the loop's questions, slightly more (524 against 516); DeepSeek's own choice of questions helped least (488). The loop's rule model was about level with DeepSeek alone (462 against 452). What reliably helps is more answers from the world. This overturns log 19's conclusion that the loop's value lay in finding the right questions. Written up in "20 Who picks the questions.md".
+- **All tests pass**: 20 checker tests, 13 Sonnet-guesser tests, 26 error-correction tests, 11 baseline tests, 13 question-picking tests, 12 browser tests.
 - **The project now lives in the owner's h-EPI repository**, in the folder `guess-check-fix`, so it cannot be lost the way log 15 describes.
 
 ## How the pieces fit
+
+**Three roles.** The **guesser** is the AI that writes the rules; in every run since log 17 that is DeepSeek. The **checker** is an ordinary program with no AI in it: it runs the rules and reports what passes and fails. The **world** is a hidden correct version of each task, standing in for the owner: it answers questions. "DeepSeek alone" (log 19 and 20) is DeepSeek not playing the guesser: it writes no rules and answers questions directly.
 
 **An example first.** Take the lighthouse story. The loop gives DeepSeek the request and the shown jobs. DeepSeek writes a model in which Mara realises Tev can't cope "when she lights the lamp during the storm". Every shown job passes. In the full loop, the checker then looks for surprises: it notices no rule reads the lamp, so it asks the world, "if the lamp was already lit when the storm came, what happens?" The world says Mara leaves; the model says she stays. A job fails. In "guesser fixes first", DeepSeek is shown the checker's report, now including the world's answer, and rewrites the model; the checker keeps the rewrite only if it repairs the failing job and breaks none that passed. Any fix the checker makes itself is first cross-checked with one more question to the world. At the end, the held-back jobs DeepSeek never saw are run.
 
@@ -34,13 +37,15 @@ The idea in one line: an AI guesses, an ordinary program checks, and the fixing 
 | `18 planted mistakes.js` | Plants known mistakes in the true models, hands each to the correctors, and grades the result on shown jobs, held-back jobs and 400 nearby situations. | A record per planted mistake, under `runs/`. |
 | `18 summarise planted mistakes.js` | Counts, per corrector, how many planted mistakes ended repaired, better, unchanged or worse, with their tokens, and lists every one. | `results.md` in the run's folder. |
 | `19 baseline and more thinking.js` | Builds one fixed set of questions per world and puts them to every arm: DeepSeek alone at each thinking setting, five times with a majority vote, and given the world's answers; and the first guess and guesser fixes first at each thinking setting. Counts every token. | A record per world and repeat, under `runs/`. |
+| `20 who picks the questions.js` | Runs the loop, then hands DeepSeek alone the answers to the same number of questions picked three ways (by the loop, at random, by DeepSeek) and grades each on log 19's questions. `--summarise` rewrites the tables from the records. | A record per world and repeat, and `results.md`, under `runs/`. |
 | `19 summarise baseline.js` | The log-19 tables, including the counts that leave out situations the loop asked the world about (found by replaying the loop from its recorded replies). | `summary.md` in the run's folder. |
 | `16 Sonnet guesser.js`, `16 Sonnet page template.html`, `16 build the Sonnet page.js`, `16 Sonnet page.html` | The Sonnet page from log 16, rebuilt from the changed code. | A results table on screen, for when Sonnet is run. |
-| `11 checker tests.js`, `16 Sonnet guesser tests.js`, `17 error correction tests.js`, `19 baseline tests.js`, `16 page test in a browser.py` | The tests. `17 error correction tests.js` replays DeepSeek's real guesses from the records, and tests the DeepSeek guesser with a stand-in. | ok or FAIL for each. |
+| `11 checker tests.js`, `16 Sonnet guesser tests.js`, `17 error correction tests.js`, `19 baseline tests.js`, `20 who picks tests.js`, `16 page test in a browser.py` | The tests. `17 error correction tests.js` replays DeepSeek's real guesses from the records, and tests the DeepSeek guesser with a stand-in. | ok or FAIL for each. |
 | `15 Guide for the guesser.md` and `15 make the guide for the guesser.js` | The exact text the guesser is given. | Something to hand to any other model. |
 | `15 How to work on this project.md` | How to read, change, run and document the project. | |
 | `18 What DeepSeek showed about error correction.md` | The findings of log 17 and 18 in plain words. | |
 | `19 Baseline and more thinking.md` | The findings of log 19 in plain words. | |
+| `20 Who picks the questions.md` | The findings of log 20 in plain words. | |
 | `runs/` | Every DeepSeek run: every request, every reply, every step, every final model. | The evidence for every number in the log. |
 
 ## Word list
@@ -98,7 +103,11 @@ The idea in one line: an AI guesses, an ordinary program checks, and the fixing 
 | tokens | The pieces of text a model reads and writes; DeepSeek charges by them. "Output tokens" here include its thinking. |
 | cut off | A reply that reached the reply limit before it finished. A cut-off reply answers nothing. |
 | majority of 5 | Asking DeepSeek alone the same questions five times and taking, for each answer, the one given most often. |
-| arm | One of the ways compared in log 19, each answering the same questions. |
+| arm | One of the ways compared in log 19 and 20, each answering the same questions. |
+| ask then answer | The loop asks the world its questions; then DeepSeek alone is given the answers and answers directly. |
+| random questions | Situations one or two changes from the jobs, picked by a fixed shuffle, put to the world instead of the loop's questions. |
+| DeepSeek picks questions | DeepSeek is told it may ask the owner a number of questions and writes them itself. |
+| fair count | A count that leaves out every test question whose situation some arm asked the world about. |
 | stand-in | A fake guesser used in tests, so everything but the real connection can be tested. |
 | reply cap | Sonnet's replies are cut off at 1000 tokens by the page's connection. DeepSeek's limit is 32,000 tokens, thinking included, raised to 200,000 for two arms in log 19. |
 
@@ -177,9 +186,18 @@ The findings are written up in "18 What DeepSeek showed about error correction.m
 - 11 new tests (file 19), all passing. Cost: $4.46 of DeepSeek credit ($20.11 to $15.65).
 Written up in "19 Baseline and more thinking.md".
 
+**20. Who picks the questions.** The owner asked what the guesser is (it is the AI that writes the rules: DeepSeek; a plain explanation of the three roles is now at the top of "How the pieces fit") and to go ahead with the next step. That step was refined before running: log 19 had shown that the loop's answers help DeepSeek alone, but not that the loop's choice of questions is what helps. So, per world and repeat (ten worlds, three repeats; `runs/20 who picks the questions`, files 20): the loop ran and asked the world its questions; then DeepSeek alone was given the answers to the same number of questions picked three ways, by the loop ("ask then answer"), at random, and by DeepSeek itself, and all were graded on log 19's questions. Fair count (leaving out test questions any arm asked about):
+- Random questions 524 of 543 nearby and 60 of 65 held-back; the loop's questions 516 and 55; DeepSeek's own questions 488 and 57; the loop's own rule model 462 and 49; DeepSeek alone 452 and 54. Random was ahead of the loop's questions in each of the three repeats.
+- **This refutes log 19's conclusion** that the loop's value lies in finding the right questions: with about nine questions per task, any questions near the jobs did as well. The loop's rule model was not clearly better than DeepSeek alone this time (it was in log 19).
+- DeepSeek's own choice of questions was the weakest, and it barely helped in the river puzzle (35 against 63 for the others): it asked about what its reading already settled.
+- A possible bias, stated: random questions are the same kind of situation as the nearby test questions. It does not explain the held-back count, where random also did best.
+- Along the way: a sentence of mine in the write-up miscounted the worlds where random was ahead (it is 4 ahead, 5 level, 1 behind) and was corrected; the tables by world and repeat now come from the script. A test of mine assumed one table in the summary and was corrected.
+- 13 new tests (file 20), all passing. Cost: $1.59 ($15.58 to $13.99).
+Written up in "20 Who picks the questions.md".
+
 ## Next step
 
-Split the work the way log 19 points to: let the loop find the questions and collect the world's answers, then hand all the answers to DeepSeek to answer from directly, and compare that on the same questions against guesser fixes first (about two dollars of DeepSeek credit).
+Find out whether choosing questions matters when questions are scarce: give DeepSeek alone the answers to 1, 3 and 6 questions picked by the loop, at random, and by DeepSeek, on the same worlds (about two dollars of DeepSeek credit).
 
 ## Traps
 
@@ -189,6 +207,7 @@ Split the work the way log 19 points to: let the loop find the questions and col
 - **Reading "repaired" as "right".** It means matching this world's reading of the request. The river puzzle and the lantern story can be read another way.
 - **Reading full-loop held-back scores as unseen tests.** The world is sometimes asked about a held-back situation; every results table says how many.
 - **The fifth way's two names.** "full loop, guesser first" in the first planted-mistakes records is "guesser fixes first".
+- **Reading log 19's "the loop's value is finding the questions" as standing.** Log 20 refutes it for about nine questions per task.
 - **Reading log 19's "given the world's answers" arm as a baseline.** It used information only the loop's questions produced.
 - **Reading a difference of one or two as real.** The same way of running on the same inputs differed by two between log 18 and log 19.
 - **Putting the account key in a file.** It is read from the DEEPSEEK_API_KEY setting only. It was pasted into the chat that made log 17 and 18, so it should be replaced with a new one.

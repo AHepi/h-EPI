@@ -30,8 +30,10 @@ Failures in building and testing, and how each was fixed. Only cases where somet
 | 19 | A test of mine called an answer leaked from a held-back job when it was the answer to a shown job. | The test checks that no held-back job's name appears. |
 | 19 | Corrector names with commas would have been split, the log-18 comma bug again. | The planted-mistakes script splits its list at semicolons. |
 | 19 | The loop's questions were not saved in the arms' records, and they were needed for the fair counts. | Recovered by replaying each loop from DeepSeek's recorded replies; every replay reproduced its final model. |
+| 20 | A test of mine assumed the question-picking summary had one table; it has three. | The test checks the first table and that the others are there. |
+| 20 | A sentence in the write-up miscounted the worlds where random questions were ahead. | Corrected against the tables, which now come from the script. |
 
 ## Traps
 
 - **Filing a finding as a lesson.** A result about how well a guesser did belongs in the log. This file is for things that broke and were fixed.
-- **Fixing without a test.** Each fix above has a test in "11 checker tests.js", "16 Sonnet guesser tests.js", "17 error correction tests.js", "19 baseline tests.js" or "16 page test in a browser.py", except the small AI's, which need the small AI to test, and the run-script and browser-path fixes, which were checked by running them.
+- **Fixing without a test.** Each fix above has a test in "11 checker tests.js", "16 Sonnet guesser tests.js", "17 error correction tests.js", "19 baseline tests.js", "20 who picks tests.js" or "16 page test in a browser.py", except the small AI's, which need the small AI to test, and the run-script and browser-path fixes, which were checked by running them.

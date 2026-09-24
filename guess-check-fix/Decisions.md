@@ -22,6 +22,9 @@ Every decision that shapes the project. The owner's decisions are quoted exactly
 **O6. Test against a baseline, and rule out more tokens.** (Log 19.)
 > "Great! Test against baseline as well. And rule out the possibility that spending more tokens solves the problems."
 
+**O7. Go ahead with the next step.** (Log 20.)
+> "What's the guesser? I'm confused. Also go ahead."
+
 ## Claude's routine choices
 
 **C1. A new small language of things and rules, rather than extending Strata.** Strata refused cause-and-effect sentences (log 01), its instructions drop causes, and its checker answers "does this follow?" while the hard-to-vary tests need "what happens when something is changed?".
@@ -98,7 +101,13 @@ Every decision that shapes the project. The owner's decisions are quoted exactly
 
 **C37. Every comparison is also made leaving out the situations the loop asked the world about** (log 19), since the loop's answers there are information, not reasoning.
 
+**C38. Test the choice of questions before building on it** (log 20). Log 19's next step assumed the loop's questions were what helped; the step was changed to compare the loop's questions with random ones and DeepSeek's own at the same number, before building "ask then answer" into the loop.
+
+**C39. Random questions come from the same place as the loop's: situations one or two changes from the jobs, by a fixed shuffle that differs per repeat, never a test question** (log 20).
+
+**C40. Three repeats, not two, for log 20**, because log 18 and 19 showed differences of about two between repeats.
+
 ## Traps
 
-- **Treating a routine choice as settled.** C1 to C37 are Claude's choices; any can be overturned. The ones forced by a failure say which log entry forced them.
+- **Treating a routine choice as settled.** C1 to C40 are Claude's choices; any can be overturned. The ones forced by a failure say which log entry forced them.
 - **Losing the owner's exact words.** Paraphrasing a decision changes it. Quote it.

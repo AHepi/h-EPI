@@ -163,7 +163,7 @@ const tally = graded => ({ held_back_right: graded.filter(g => g.kind === 'held-
   nearby_right: graded.filter(g => g.kind === 'nearby' && g.right).length, nearby_total: graded.filter(g => g.kind === 'nearby').length });
 const log_tokens = log => log.reduce((sum, e) => sum + (e.tokens_out || 0), 0);
 
-module.exports = { build_questions, grade_direct, grade_model, majority, direct_messages };
+module.exports = { build_questions, grade_direct, grade_model, majority, direct_messages, ask_direct, situation_in_words, stable_key, tally };
 
 async function run_world(world, repeat, D) {
   const { questions, left_out } = build_questions(world);
