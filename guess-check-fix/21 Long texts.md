@@ -1,5 +1,7 @@
 # Long texts
 
+*A word first: "the owner" in this report is the **pretend owner**, a made-up person who writes the test message and whose answers the hidden correct version of each world supplies. It never means the real owner of this project, who asked nothing in these tests.*
+
 Log entry 21. The owner asked whether the findings so far hold for long texts: when the question is buried in a long message, does DeepSeek find it, including when it may stop whenever it likes? Every number here comes from the records in `runs/21 long texts`, made with DeepSeek V4.1 Flash at its default thinking setting on 24 September 2026: ten worlds, two repeats, each in a short and a long form.
 
 ## The short answer

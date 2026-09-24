@@ -37,6 +37,7 @@ Failures in building and testing, and how each was fixed. Only cases where somet
 | 21 | The buried question's wording ("start the usual way") clashed with a job name in the river world, and DeepSeek read it as that job. | Not fixed in this run; recorded in the findings as a fault of the test. |
 | 22 | The stand-in in my tests looked for words the real instruction does not use, so its first turn counted as a try to stop. | The stand-in looks for the instruction's real words. |
 | 22 | "Questions that changed a starting state" counted every question, because DeepSeek writes out default starts. | It now counts only states that differ from the usual start. |
+| 24 | My summary to the owner said "your question" for the made-up letter-writer's question, and "owner" meant two different people in the documents. | Word list: "owner" is the real owner, "pretend owner" the made-up one; the reports for logs 21 to 23 say which is meant. |
 
 ## Traps
 

@@ -91,6 +91,8 @@ The idea in one line: an AI guesses, an ordinary program checks, and the fixing 
 | route | The set of rules that change something in a situation. |
 | poke | One surprise question per round that changes the start of a thing no rule reads, to test the model's claim that it cannot matter. |
 | surprise | A question to the world whose answer the model got wrong. |
+| owner | You, the person this project is for. |
+| pretend owner | The made-up person who writes a test world's request (in logs 21 to 23, a long letter with a question buried in it) and whose answers the world supplies. Logs 21 to 23 and their write-ups call this person "the owner"; there it never means you. |
 | owner's word list | The things and states the shown jobs use. Given by the owner, so adding them is not guessing. |
 | ways of running | One guess, rewrite, guess and fix, full loop, guesser fixes first, self review, review first. |
 | one guess | The first guess, nothing more. |
@@ -242,6 +244,8 @@ Written up in "22 Twenty questions.md".
 - 9 new tests (file 23), all passing. Cost: $2.93 ($7.45 to $4.52), above my estimate of $2 to $2.50.
 Written up in "23 The owner will not say.md".
 
+**24. A word clash.** The owner asked what "your question" meant, having asked nothing: my summary of log 23 said "your question" and "you refuse" for the made-up letter-writer in the tests. That also broke the one-word rule: "owner" meant the real owner in the Decisions file and the made-up letter-writer in logs 21 to 23. Fixed without rewriting the log: the word list now has "owner" (the real one) and "pretend owner" (the made-up one), and the reports for logs 21 to 23 each open with a note saying which is meant. No code changed, and no DeepSeek credit was used.
+
 ## Next step
 
 Try it on a real request of the owner's: the owner writes a long message with their own question in it, DeepSeek asks up to 20 questions one at a time, and the owner answers them in the chat. A few cents of DeepSeek credit; it needs the owner's time rather than money.
@@ -254,6 +258,7 @@ Try it on a real request of the owner's: the owner writes a long message with th
 - **Reading "repaired" as "right".** It means matching this world's reading of the request. The river puzzle and the lantern story can be read another way.
 - **Reading full-loop held-back scores as unseen tests.** The world is sometimes asked about a held-back situation; every results table says how many.
 - **The fifth way's two names.** "full loop, guesser first" in the first planted-mistakes records is "guesser fixes first".
+- **Reading "the owner" in logs 21 to 23 as the real owner.** It is the pretend owner, the made-up letter-writer (log 24).
 - **Reading log 23's hidden-ball miss as a reasoning failure.** The owner in that test only says how things end.
 - **Reading log 22's "20 of 20" on the owner's question as reasoning.** DeepSeek asked the owner that very question in every run.
 - **Reading log 21's "ask or stop" as a test of asking.** DeepSeek hardly asked, so it mostly measures answering straight away.

@@ -1,5 +1,7 @@
 # The owner will not say
 
+*A word first: "the owner" in this report is the **pretend owner**, a made-up person who writes the test message and whose answers the hidden correct version of each world supplies. It never means the real owner of this project, who asked nothing in these tests.*
+
 Log entry 23. In log 22, DeepSeek, made to ask 20 questions, first asked the owner their own buried question back, so its right answers showed nothing about its reasoning. Here the owner refuses: asking the buried question gets "I can't tell you that one; that's what I'm asking you", and it still uses up one of the 20. Every number comes from the records in `runs/23 owner will not say`, made with DeepSeek V4.1 Flash at its default thinking setting on 24 September 2026, on log 21's long messages: ten worlds, two repeats.
 
 ## The short answer

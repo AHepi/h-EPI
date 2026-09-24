@@ -1,5 +1,7 @@
 # Twenty questions
 
+*A word first: "the owner" in this report is the **pretend owner**, a made-up person who writes the test message and whose answers the hidden correct version of each world supplies. It never means the real owner of this project, who asked nothing in these tests.*
+
 Log entry 22. In log 21 DeepSeek, free to stop, almost never asked the owner anything. The owner said: make it ask 20 questions first, and see what it does. Every number here comes from the records in `runs/22 twenty questions`, made with DeepSeek V4.1 Flash at its default thinking setting on 24 September 2026, on log 21's long messages (about 2,300 words, one question buried in the middle): ten worlds, two repeats.
 
 ## The short answer
