@@ -30,6 +30,7 @@ An example: to find out why the checker applies small fixes itself instead of as
    - `node "22 twenty questions tests.js"` (11 tests)
    - `node "23 owner will not say tests.js"` (9 tests)
    - `node "25 construction test tests.js"` (39 tests)
+   - `node "26 attack surface tests.js"` (14 tests)
    - `python3 "16 page test in a browser.py"` (12 tests; needs Playwright and Chromium. If Playwright wants a different browser version than the one installed, point it at the installed one: `BROWSER_PATH=/opt/pw-browsers/chromium`)
 5. **If the change touched the words the guesser is given** (in "09 loop.js" or "16 Sonnet guesser.js"), remake the guide file: `node "15 make the guide for the guesser.js"`.
 6. **When a test fails and the failure is fixed**, add a line to "Lessons.md", and a test that would catch it again.
@@ -50,6 +51,7 @@ Every live run costs DeepSeek credit and writes records that belong in `runs/`. 
 - **Twenty questions:** `DEEPSEEK_API_KEY=... NODE_USE_ENV_PROXY=1 node "22 twenty questions.js" "runs/NN what it is" 2`; `--summarise "runs/..."` rewrites the tables.
 - **The owner will not say:** `DEEPSEEK_API_KEY=... NODE_USE_ENV_PROXY=1 node "23 owner will not say.js" "runs/NN what it is" 2`; `--summarise "runs/..."` rewrites the tables.
 - **Construction test:** `DEEPSEEK_API_KEY=... NODE_USE_ENV_PROXY=1 node "25 construction test.js" "runs/NN what it is" REPEATS`; `FIRST_REPEAT=2` numbers the repeats from 2; `WITHOUT_HARD_TO_VARY=1` leaves out the sixth arm; `--summarise "runs/..."` rewrites the tables. Commit a plan with its conjectures before running.
+- **Attack surface** (after a top-up): `DEEPSEEK_API_KEY=... NODE_USE_ENV_PROXY=1 node "26 attack surface.js" "runs/26 attack surface" 3`; `--summarise "runs/..."` rewrites the tables.
 - **Planted-mistakes correctors from log 19** (names hold commas, so the list is split at semicolons): `ONLY="self review, max thinking, reply limit 200,000;guesser fixes first"`.
 - `NODE_USE_ENV_PROXY=1` is needed only where the internet is reached through a proxy, as on the computer that made log 17 and 18.
 - The DeepSeek balance can be read before and after a run (`https://api.deepseek.com/user/balance`) to say what it cost.

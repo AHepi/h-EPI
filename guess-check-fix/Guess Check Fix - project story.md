@@ -14,12 +14,13 @@ The idea in one line: an AI guesses, an ordinary program checks, and the fixing 
 - **The main finding**: DeepSeek's first guesses usually pass every shown job; its mistakes are in what it was not shown. Checking the shown jobs can never find those. Asking the world about nearby situations finds some; DeepSeek rereading its own model finds others. Whole rewrites fix the broken part but re-guess the rest. The full write-up is "18 What DeepSeek showed about error correction.md".
 - **Best way of running so far: "guesser fixes first"**: 15 of 20 ten-world runs ended with every job passing, and it repaired all 10 visible and 11, then 13, of 20 hidden planted mistakes.
 - **Tested against a baseline and against spending more tokens** (log 19). In that run the loop beat DeepSeek on its own (338 of 376 nearby situations right, against 300), and neither thinking harder nor asking five times closed the gap. Given the answers the loop collected from the world, DeepSeek on its own did better than the loop (356). Written up in "19 Baseline and more thinking.md".
+- **The attack surface** (log 26): planned and built, not run; waiting for the owner to top up the DeepSeek account. DeepSeek commits in advance to what would cast doubt on its conjecture; the world answers the riskiest commitments; a fresh DeepSeek rebuilds from the facts alone, compared with feeding the attack back to it. The plan reads where an LLM sits in the semantics: a selected transport, the source of conjectures, not their critic. See "26 Plan - attack surface.md".
 - **The construction test** (log 25), planned against the semantics and committed before running: four made-up devices whose right explanation needs a hidden thing, the same 14 observations for every arm, no way to ask for more. With the evidence fixed, the error-correction loop did not beat bare DeepSeek overall (84 of 96 hard cases against 85). On one device, the grudge, every bare run failed the same way, even asked five times or made to check itself, and writing an explicit explanation did better; but that came from the form, since the first explanation fitted all 14 observations in all 32 attempts and so was never refuted. Hard-to-vary criticism was the one correction that worked without new evidence, a little. Written up in "25 Construction test.md".
 - **The owner will not say** (log 23): when the owner refuses to answer their own buried question, DeepSeek works it out from what it may ask. In the borrowed lantern, the world it had misread since log 18, it was wrong twice answering straight away and right twice after asking around the question. Overall 19 of 20 against 18 of 20; the one it lost was a limit of the test (the owner only says how things end). Written up in "23 The owner will not say.md".
 - **Twenty questions** (log 22): made to ask 20 questions one at a time before answering, DeepSeek asks well: afterwards it was right on 345 of 350 nearby situations (20 random questions: 338; answering straight away: 287). But its first move, in 15 of 20 runs, is to ask the owner their own buried question back, and it costs six and a half times the tokens of random questions. Written up in "22 Twenty questions.md".
 - **Long texts** (log 21): DeepSeek finds a question buried in about 2,300 words and answers it as well as in a short message, and answers from the world still help as much. But given the option to stop, it almost never asks (32 of 40 runs asked nothing), so it gets none of that help. Written up in "21 Long texts.md".
 - **Who picks the questions does not matter much** (log 20, three repeats). Answers to questions picked at random helped DeepSeek as much as answers to the loop's questions, slightly more (524 against 516); DeepSeek's own choice of questions helped least (488). The loop's rule model was about level with DeepSeek alone (462 against 452). What reliably helps is more answers from the world. This overturns log 19's conclusion that the loop's value lay in finding the right questions. Written up in "20 Who picks the questions.md".
-- **All tests pass**: 20 checker tests, 13 Sonnet-guesser tests, 26 error-correction tests, 11 baseline tests, 13 question-picking tests, 16 long-text tests, 11 twenty-questions tests, 9 refusal tests, 39 construction-test tests, 12 browser tests.
+- **All tests pass**: 20 checker tests, 13 Sonnet-guesser tests, 26 error-correction tests, 11 baseline tests, 13 question-picking tests, 16 long-text tests, 11 twenty-questions tests, 9 refusal tests, 39 construction-test tests, 14 attack-surface tests, 12 browser tests.
 - **The project now lives in the owner's h-EPI repository**, in the folder `guess-check-fix`, so it cannot be lost the way log 15 describes.
 
 ## How the pieces fit
@@ -48,9 +49,10 @@ The idea in one line: an AI guesses, an ordinary program checks, and the fixing 
 | `23 owner will not say.js` | Log 22's twenty questions, but the owner refuses to answer their own buried question; compared with answering straight away. Counts refusals and near copies. `--summarise` rewrites the tables. | A record per world and repeat, and `results.md`, under `runs/`. |
 | `25 construction worlds.js` | Four made-up devices (a grudge, a magnet ball, a counting gate, a charged vial), each needing a hidden thing; builds their 14 observations and 12 test cases. | Devices, observations and test cases, to the construction test. |
 | `25 construction test.js` | Gives every arm the same observations and grades each on the same unseen test cases: bare, bare majority of 5, bare checking itself, conjecture and criticism, blind retries, and conjecture, criticism and hard to vary. `--summarise` rewrites the tables. | A record per device and repeat, and `results.md`, under `runs/`. |
+| `26 attack surface.js` | DeepSeek commits to predictions that would cast doubt on its rule; the world answers the riskiest; a fresh DeepSeek rebuilds from facts, or the same conversation is told the result ("defend"); compared with bare and random answers. Not run yet. | A record per device and repeat, and `results.md`, under `runs/`. |
 | `19 summarise baseline.js` | The log-19 tables, including the counts that leave out situations the loop asked the world about (found by replaying the loop from its recorded replies). | `summary.md` in the run's folder. |
 | `16 Sonnet guesser.js`, `16 Sonnet page template.html`, `16 build the Sonnet page.js`, `16 Sonnet page.html` | The Sonnet page from log 16, rebuilt from the changed code. | A results table on screen, for when Sonnet is run. |
-| `11 checker tests.js`, `16 Sonnet guesser tests.js`, `17 error correction tests.js`, `19 baseline tests.js`, `20 who picks tests.js`, `21 long text tests.js`, `22 twenty questions tests.js`, `23 owner will not say tests.js`, `25 construction test tests.js`, `16 page test in a browser.py` | The tests. `17 error correction tests.js` replays DeepSeek's real guesses from the records, and tests the DeepSeek guesser with a stand-in. | ok or FAIL for each. |
+| `11 checker tests.js`, `16 Sonnet guesser tests.js`, `17 error correction tests.js`, `19 baseline tests.js`, `20 who picks tests.js`, `21 long text tests.js`, `22 twenty questions tests.js`, `23 owner will not say tests.js`, `25 construction test tests.js`, `26 attack surface tests.js`, `16 page test in a browser.py` | The tests. `17 error correction tests.js` replays DeepSeek's real guesses from the records, and tests the DeepSeek guesser with a stand-in. | ok or FAIL for each. |
 | `15 Guide for the guesser.md` and `15 make the guide for the guesser.js` | The exact text the guesser is given. | Something to hand to any other model. |
 | `15 How to work on this project.md` | How to read, change, run and document the project. | |
 | `18 What DeepSeek showed about error correction.md` | The findings of log 17 and 18 in plain words. | |
@@ -61,6 +63,7 @@ The idea in one line: an AI guesses, an ordinary program checks, and the fixing 
 | `23 The owner will not say.md` | The findings of log 23 in plain words. | |
 | `25 Plan - construction test.md` | The plan and conjectures of log 25, committed before its runs. | |
 | `25 Construction test.md` | The findings of log 25 in plain words. | |
+| `26 Plan - attack surface.md` | Where an LLM sits in the semantics, and the plan and conjectures of log 26, committed before its runs. | |
 | `runs/` | Every DeepSeek run: every request, every reply, every step, every final model. | The evidence for every number in the log. |
 
 ## Word list
@@ -145,6 +148,11 @@ The idea in one line: an AI guesses, an ordinary program checks, and the fixing 
 | blind retries | The same, told only how many observations fail. |
 | hard to vary (arm) | Conjecture and criticism that goes on, once an explanation fits, to criticise parts no observation holds in place (idle or untested). |
 | reach | Of all sequences of up to four actions, how many an explanation gets right. |
+| attack surface | What a conjecture commits to that could come out otherwise: its predictions for unseen cases, stated in advance. |
+| commitment | One prediction DeepSeek makes in advance: "if my rule is right, this situation ends this way", with why it would cast doubt if not. |
+| risky | A commitment the obvious explanation disagrees with. |
+| rebuild fresh | After the world answers its commitments, a new DeepSeek conversation gets only the facts, never the old rule or any verdict. |
+| defend | The same conversation is told "you predicted X; the world says Y" and carries on. |
 | stand-in | A fake guesser used in tests, so everything but the real connection can be tested. |
 | reply cap | Sonnet's replies are cut off at 1000 tokens by the page's connection. DeepSeek's limit is 32,000 tokens, thinking included, raised to 200,000 for two arms in log 19. |
 
@@ -271,9 +279,11 @@ Written up in "23 The owner will not say.md".
 - 39 new tests (file 25), all passing. Cost: $2.55 ($4.48 to $1.93).
 Written up in "25 Construction test.md".
 
+**26. The attack surface, planned.** The owner proposed commitments DeepSeek fills in about what would cast doubt on its conjecture, warned that feeding the attack back makes it defend its first answer, and asked where an LLM sits in the semantics, saying the semantics is now what is being tested (Decisions O12). Read against the semantics: an LLM is a selected transport (Part IV), so asking again, voting and rereading are selection responses, which log 25 bore out; feeding its answer back puts the answer into the input (Part V, non-circular dependence), so the criticism has no bearing on what produces the answer (Part IX); the LLM is the source of conjectures, and construction happens in the system around it, which keeps its commitments, has the world answer them, and passes on only facts. Built (file 26), with 14 tests, all passing, and the plan with five conjectures and three results that would count against this reading committed before any run ("26 Plan - attack surface.md"). Not run: the owner asked to wait for a top-up. The earlier next step (the hard-to-vary sweep choosing questions) is set aside for this one, which the owner asked to try first. Along the way my first test picked, for its stand-in, a situation that is one of the grudge's test cases, which the world rightly refused; the test now picks its situation by rule.
+
 ## Next step
 
-Give the explanation a way to be refuted: on the grudge and the vial, let the hard-to-vary sweep choose a few questions to the world where the explanation's unchecked parts would decide the answer, and compare with bare runs given answers to the same number of random questions (about a dollar of DeepSeek credit; $1.93 is left). the owner writes a long message with their own question in it, DeepSeek asks up to 20 questions one at a time, and the owner answers them in the chat. A few cents of DeepSeek credit; it needs the owner's time rather than money.
+When the DeepSeek account is topped up, run the attack-surface test as planned, three repeats on the four devices (about $1 to $1.50). on the grudge and the vial, let the hard-to-vary sweep choose a few questions to the world where the explanation's unchecked parts would decide the answer, and compare with bare runs given answers to the same number of random questions (about a dollar of DeepSeek credit; $1.93 is left). the owner writes a long message with their own question in it, DeepSeek asks up to 20 questions one at a time, and the owner answers them in the chat. A few cents of DeepSeek credit; it needs the owner's time rather than money.
 
 ## Traps
 
@@ -283,6 +293,7 @@ Give the explanation a way to be refuted: on the grudge and the vial, let the ha
 - **Reading "repaired" as "right".** It means matching this world's reading of the request. The river puzzle and the lantern story can be read another way.
 - **Reading full-loop held-back scores as unseen tests.** The world is sometimes asked about a held-back situation; every results table says how many.
 - **The fifth way's two names.** "full loop, guesser first" in the first planted-mistakes records is "guesser fixes first".
+- **Running log 26 before the owner tops up.** The owner asked to wait.
 - **Reading log 25's grudge result as error correction.** The first explanation already fitted every observation; the gain came from its form.
 - **Reading "the owner" in logs 21 to 23 as the real owner.** It is the pretend owner, the made-up letter-writer (log 24).
 - **Reading log 23's hidden-ball miss as a reasoning failure.** The owner in that test only says how things end.

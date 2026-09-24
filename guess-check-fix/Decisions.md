@@ -37,6 +37,9 @@ Every decision that shapes the project. The owner's decisions are quoted exactly
 **O11. Test error correction as the semantics means it.** (Log 25.)
 > "My actual goal is error correction. This is a good start, but the semantics I gave you is about creativity, not spotting little semantic tricks. At the heart of creativity is error correction. Maybe go over the semantics to see what I'm actually testing. Then run a test that meets the standards. If anything, we know Deepseek has a limited knowledge base. But can we get it to solve a problem a bare run can't? Even with repeated loops. You have a small budget left. See what you can do."
 
+**O12. Try an attack surface first; wait for a top-up before running.** (Log 26.)
+> "Ok. Don't start yet until I top up. What about a series of commitments DeepSeek (ds) has to fill in that asks "what would it take to prove this conjecture is wrong". Error correction comes from spotting holes, sure. But it also comes from exposing your guesses to attack. A conjecture is worthless without an attack surface. So try that first. Try getting ds to imagine what it would take to refute a conjecturer. Or, actually, what it would take to cast doubt. You can't feed the conjecture and possible refutation back to Deepseek because it'll just "disagree", reject the attack and default to its first answer. Any thoughts? Go back to the semantics, see what it suggests given the type of generators LLMs actually are. Because that determines where it sits in this scheme. I'm now testing the semantics here."
+
 ## Claude's routine choices
 
 **C1. A new small language of things and rules, rather than extending Strata.** Strata refused cause-and-effect sentences (log 01), its instructions drop causes, and its checker answers "does this follow?" while the hard-to-vary tests need "what happens when something is changed?".
@@ -141,7 +144,11 @@ Every decision that shapes the project. The owner's decisions are quoted exactly
 
 **C51. The hard-to-vary arm aims for the fewest parts the observations do not hold in place, not none** (log 25), because the true explanations themselves have up to two parts the observations happen not to test.
 
+**C52. The attack lives outside DeepSeek** (log 26): its commitments are recorded before any test, the verdict is a mechanical comparison with the world's answer, and a fresh conversation gets only facts. The owner's expected failure, defending in the same conversation, is an arm of its own so it can be seen.
+
+**C53. The attack-surface test gives every arm at most 6 answers from the world, and random answers as a control** (log 26), so a win for the attack surface is not just more information (the lesson of log 20).
+
 ## Traps
 
-- **Treating a routine choice as settled.** C1 to C51 are Claude's choices; any can be overturned. The ones forced by a failure say which log entry forced them.
+- **Treating a routine choice as settled.** C1 to C53 are Claude's choices; any can be overturned. The ones forced by a failure say which log entry forced them.
 - **Losing the owner's exact words.** Paraphrasing a decision changes it. Quote it.
