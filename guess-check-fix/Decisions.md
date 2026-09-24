@@ -25,6 +25,9 @@ Every decision that shapes the project. The owner's decisions are quoted exactly
 **O7. Go ahead with the next step.** (Log 20.)
 > "What's the guesser? I'm confused. Also go ahead."
 
+**O8. Test long texts, a buried question, and the option to exit.** (Log 21.)
+> "Can you verify that this translates to long texts? When you give it an embedded question, and it has to find it when give the option to exit a loop. If not, test that next."
+
 ## Claude's routine choices
 
 **C1. A new small language of things and rules, rather than extending Strata.** Strata refused cause-and-effect sentences (log 01), its instructions drop causes, and its checker answers "does this follow?" while the hard-to-vary tests need "what happens when something is changed?".
@@ -107,7 +110,15 @@ Every decision that shapes the project. The owner's decisions are quoted exactly
 
 **C40. Three repeats, not two, for log 20**, because log 18 and 19 showed differences of about two between repeats.
 
+**C41. The long message keeps the request's exact sentences and adds only filler that names nothing from any world** (log 21), so the long and short forms carry the same information and differ only in length and burying.
+
+**C42. The embedded question is a held-back job chosen by a fixed shuffle, asked in the middle paragraph, and DeepSeek is told only to answer what the owner asks** (log 21). It is never told the question is buried.
+
+**C43. "Found" means naming the same situation in exact names; misses are then read one by one** (log 21), because a strict check can refuse a question that was found in substance.
+
+**C44. Six random questions for log 21's random arm**, fewer than log 20's nine or so, to leave room for the scarce-questions step.
+
 ## Traps
 
-- **Treating a routine choice as settled.** C1 to C40 are Claude's choices; any can be overturned. The ones forced by a failure say which log entry forced them.
+- **Treating a routine choice as settled.** C1 to C44 are Claude's choices; any can be overturned. The ones forced by a failure say which log entry forced them.
 - **Losing the owner's exact words.** Paraphrasing a decision changes it. Quote it.
