@@ -133,7 +133,7 @@ For comparison, the plain runs: 93 and 95 different situations, 2.2 and 2.1 even
 
 ### What this means for the idea
 
-A role changes the words DeepSeek uses. It does not change what it asks, or how it asks, beyond what any text at the top does. The cross-examiner was the most expensive character: about 50% more output tokens than plain, spent on staying in role. A character built around refutation (the scientist) did not seek refutation any more than polite filler did. This is the same finding as rounds 1 and 2, now for role-play: the questioning comes from the task and DeepSeek's habits, not from who it is told to be.
+A role changes the words DeepSeek uses. It does not change what it asks, or how it asks, beyond what any text at the top does. The cross-examiner was the most expensive character: about two-thirds more output tokens than the plain runs (759,000 and 812,000 against 510,000 and 433,000). A character built around refutation (the scientist) did not seek refutation any more than polite filler did. This is the same finding as rounds 1 and 2, now for role-play: the questioning comes from the task and DeepSeek's habits, not from who it is told to be.
 
 ### What it cost
 
