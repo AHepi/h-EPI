@@ -8,6 +8,7 @@ The idea in one line: an AI guesses, an ordinary program checks, and the fixing 
 
 ## Where things stand
 
+- **One-page summary of logs 25 to 42** (log 43): "43 Summary - logs 25 to 42.md". Start there to choose the next direction.
 - **The system changed one of its own methods** (log 39): DeepSeek rewrote the checker's fix-acceptance method after seeing its failure, and the program kept the new method only because, on fixes DeepSeek never saw, it caught fixes that break what no job checks without losing anything; its methods caught more than the person's repair from log 17. See "39 Changing a method.md".
 - **A rule language that can grow closes the gap** (log 35): with a door to add new kinds of thing, DeepSeek added a number or a pile and got every long test right, as in JavaScript; the fixed language approximated (even inventing binary counting) or could not write a model. On the grudge, the door let its old running-score habit in. See "35 A language that grows.md".
 - **The checker's own language is a limit** (log 34). Where the explanation needs an unlimited count or pile, DeepSeek could write it in JavaScript every time and never in the rule language: big enough models were too long to write, small ones broke past their size. On a device the rule language can hold, both did the same. See "34 Can the language express it.md".
@@ -412,9 +413,11 @@ Written up in "41 Finding the failure.md".
 
 **42. Finding the failure, follow-up with a higher reply limit.** The owner said "Do it" (Decisions O25). Planned after log 41's results and committed before running: the with-the-record arm again, three times, reply limit raised to 200,000 tokens (added to log 41's plan as its "Follow-up" section). No reply was cut off (all 26,000 to 29,000 tokens, just under the old limit); all three methods were kept, rejecting 19, 16 and 9 of 24 held bad fixes; one of three cited the record ("Fix 2's 'throw does not happen' case"). Conjectures 5 and 6 not ruled out, 7 ruled out (1 of 3 cited the record). Reading: given room, DeepSeek finds this failure and writes a kept repair every time, mostly from the method's inputs; the record did not visibly change how it found the failure. Cost $0.08 ($14.16 to $14.08). Added to "41 Finding the failure.md".
 
+**43. One summary of logs 25 to 42. No runs.** The owner said "Great idea" to writing logs 25 to 42 up as one page (Decisions O26). Written as "43 Summary - logs 25 to 42.md": what the project set out to test, what was found in five groups (correcting with fixed evidence, cause and effect, steering with text, the language, changing a method), where DeepSeek sits in the semantics (a selected source of guesses; the criticising and keeping happened in the program and the world), four claims of mine that went too far, what people still supplied, and five open questions. Nothing new was run; every number was taken from the reports. The next step it proposes is running log 26, the attack surface, which has been built and tested since before the top-up and never run.
+
 ## Next step
 
-Write up logs 25 to 42 as one plain summary for the owner: what the project set out to test, what was found about error correction, where DeepSeek sits, and the open questions, so the owner can decide the next direction.
+Run log 26, the attack surface ("26 Plan - attack surface.md"), as planned and without changing the plan: about $1 to $1.50 of the $14.08 left. It tests whether DeepSeek does better when a fresh DeepSeek rebuilds from the world's answers to its riskiest predictions than when it is told "you predicted X; the world says Y" in the same conversation.
 
 ## Traps
 

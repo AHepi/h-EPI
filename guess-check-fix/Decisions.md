@@ -79,6 +79,9 @@ Every decision that shapes the project. The owner's decisions are quoted exactly
 **O25. Rerun log 41's with-the-record arm with a higher reply limit.** (Log 42.)
 > "Do it"
 
+**O26. Write logs 25 to 42 up as one plain summary.** (Log 43.)
+> "Great idea"
+
 ## Claude's routine choices
 
 **C1. A new small language of things and rules, rather than extending Strata.** Strata refused cause-and-effect sentences (log 01), its instructions drop causes, and its checker answers "does this follow?" while the hard-to-vary tests need "what happens when something is changed?".
