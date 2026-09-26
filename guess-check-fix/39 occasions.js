@@ -99,7 +99,7 @@ function occasions(per_kind = 3) {
   return out;
 }
 
-module.exports = { occasions, occasions_of, mistaken_models, WORLDS, NEARBY };
+module.exports = { occasions, occasions_of, mistaken_models, ending_words, shown_jobs, scramble_key, WORLDS, NEARBY };
 
 if (require.main === module) {
   const list = occasions();
