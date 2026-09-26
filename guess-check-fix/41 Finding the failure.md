@@ -68,3 +68,25 @@ $0.06 of DeepSeek credit ($14.22 to $14.16).
 
 - **Reading the method-only arm as the system finding the failure from nothing.** The description of the method's inputs pointed at it.
 - **Reading the with-the-record arm as failing to find it.** Two of its three replies never arrived; the one that did found it.
+
+## Follow-up: the record with a higher reply limit (log 42)
+
+Planned after the results above and committed before running (the plan's "Follow-up" section): the with-the-record arm only, three more times, with the same record, question and judging, and the reply limit raised from 32,000 to 200,000 tokens. Records: the "follow-up" files in `runs/41 finding the failure/`. Cost $0.08 ($14.16 to $14.08).
+
+| Repeat | Cut off | Kept | Held bad fixes rejected (of 24) | Good fixes not accepted | Output tokens |
+|---|---|---|---|---|---|
+| 1 | no | yes | 19 | 0 | 26,681 |
+| 2 | no | yes | 16 | 0 | 29,101 |
+| 3 | no | yes | 9 | 0 | 25,958 |
+
+What each said is wrong:
+- **Repeat 1:** "The current method ignores fix_case.nearby and ask, so it can accept fixes that repair jobs but break nearby situations that were already correct (e.g., Fix 2's 'throw does not happen' case)."
+- **Repeat 2:** "The original method ignores fix_case.nearby and the ask oracle entirely, so it accepts fixes that repair a job but break nearby situations that were previously correct. The new version checks up to 3 changed nearby situations (prioritizing likely regressions)..."
+- **Repeat 3:** "the current method ignores nearby situations and the world, so it accepts fixes that repair jobs but break nearby situations that were already correct..."
+
+The follow-up's conjectures:
+5. **No reply is cut off.** *Not ruled out:* none was. All used 26,000 to 29,000 tokens, just under the old limit, so the first run's cut-offs were near misses.
+6. **At least 2 of 3 changed methods are kept.** *Not ruled out:* 3 of 3.
+7. **At least 2 of 3 replies cite a fix or situation from the record.** *Ruled out:* 1 of 3. Repeat 1 cited the same break the first run's repeat 3 did; the other two named the failure without pointing at the record.
+
+**What the follow-up adds.** Given room to finish, DeepSeek found the failure and wrote a kept repair every time. Its methods rejected 19, 16 and 9 held bad fixes; the method-only runs had 13, 13, and one that rejected everything. So with the record, the methods varied more, and two of them beat the person's repair. It still named the failure mostly from the method's inputs, citing the record in 2 of the 4 replies it gave with the record across both runs. The record did not visibly change how DeepSeek found the failure. It may have changed what it built: two methods "prioritizing likely regressions", like log 39's shown arm.

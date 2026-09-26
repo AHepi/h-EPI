@@ -410,9 +410,11 @@ Written up in "40 A kept method at work.md".
 - 9 tests (file 41), all passing. Cost: $0.06 ($14.22 to $14.16).
 Written up in "41 Finding the failure.md".
 
+**42. Finding the failure, follow-up with a higher reply limit.** The owner said "Do it" (Decisions O25). Planned after log 41's results and committed before running: the with-the-record arm again, three times, reply limit raised to 200,000 tokens (added to log 41's plan as its "Follow-up" section). No reply was cut off (all 26,000 to 29,000 tokens, just under the old limit); all three methods were kept, rejecting 19, 16 and 9 of 24 held bad fixes; one of three cited the record ("Fix 2's 'throw does not happen' case"). Conjectures 5 and 6 not ruled out, 7 ruled out (1 of 3 cited the record). Reading: given room, DeepSeek finds this failure and writes a kept repair every time, mostly from the method's inputs; the record did not visibly change how it found the failure. Cost $0.08 ($14.16 to $14.08). Added to "41 Finding the failure.md".
+
 ## Next step
 
-Rerun the with-the-record arm with the reply limit raised to 200,000 (as log 19 did), labelled as a follow-up to log 41, so its three replies can be read; the method-only arm stays as it was.
+Write up logs 25 to 42 as one plain summary for the owner: what the project set out to test, what was found about error correction, where DeepSeek sits, and the open questions, so the owner can decide the next direction.
 
 ## Traps
 
