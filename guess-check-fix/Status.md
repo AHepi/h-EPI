@@ -2,6 +2,7 @@
 
 **Where the project is today.**
 
+- Asked only whether anything is wrong with the fix-acceptance method (log 41), every DeepSeek reply that arrived named its failure and wrote a repair; but it found it from the method's description, not from the record, and two replies with the record were cut off.
 - The changed method works where it is used (log 40): in the checker's correction loop, DeepSeek's methods let through far less damage than the current one; but my declared aims conflicted on a few starts, so by the plan none counts as a repair there.
 - The system changed one of its own methods (log 39): DeepSeek rewrote the checker's fix-acceptance method, and the program kept it only because it met declared aims on fixes DeepSeek never saw; shown the failure, it beat the person's repair from log 17.
 - A rule language that can grow closes the gap (log 35): given a door to add a new kind of thing, DeepSeek held an unlimited count and pile as well as in JavaScript. On the grudge the door let its old running-score habit in.
@@ -18,8 +19,8 @@
 - Twenty questions (log 22): made to ask 20 questions one at a time, DeepSeek asks well (at least as good as random questions) but first asks the owner their own question back, and costs six and a half times as much.
 - Long texts (log 21): DeepSeek finds a question buried in about 2,300 words, and answers from the world help as much as with short requests; but when it may stop whenever it likes, it almost never asks.
 - Who picks the questions (log 20): random questions helped as much as the loop's; DeepSeek's own choice helped least; the loop's rule model was about level with DeepSeek alone. More answers from the world is what reliably helps.
-- All tests pass: `11 checker tests.js` (20), `16 Sonnet guesser tests.js` (13), `17 error correction tests.js` (26), `19 baseline tests.js` (11), `20 who picks tests.js` (13), `21 long text tests.js` (16), `22 twenty questions tests.js` (11), `23 owner will not say tests.js` (9), `25 construction test tests.js` (39), `26 attack surface tests.js` (14), `28 causal checker tests.js` (30), `30 system prompt tests.js` (10), `34 language tests.js` (23), `35 growing language tests.js` (21), `39 changing a method tests.js` (19), `40 kept method at work tests.js` (7), `16 page test in a browser.py` (12).
-- DeepSeek balance after log 39: $14.22.
+- All tests pass: `11 checker tests.js` (20), `16 Sonnet guesser tests.js` (13), `17 error correction tests.js` (26), `19 baseline tests.js` (11), `20 who picks tests.js` (13), `21 long text tests.js` (16), `22 twenty questions tests.js` (11), `23 owner will not say tests.js` (9), `25 construction test tests.js` (39), `26 attack surface tests.js` (14), `28 causal checker tests.js` (30), `30 system prompt tests.js` (10), `34 language tests.js` (23), `35 growing language tests.js` (21), `39 changing a method tests.js` (19), `40 kept method at work tests.js` (7), `41 finding the failure tests.js` (9), `16 page test in a browser.py` (12).
+- DeepSeek balance after log 41: $14.16.
 - The project lives in the h-EPI repository, folder `guess-check-fix`, on the branch `claude/deepseek-v4-project-j9k1ap`, waiting for the owner to merge it.
 
 **Waiting on:** nothing. Next: log 26 runs as planned.

@@ -402,12 +402,21 @@ Written up in "39 Changing a method.md".
 - 7 tests (file 40), all passing. No DeepSeek credit used.
 Written up in "40 A kept method at work.md".
 
+**41. Finding the failure.** The owner said "Do it" (Decisions O24). DeepSeek was asked only "Is anything wrong with this method?" about the checker's fix-acceptance method, in two arms, three repeats each: with a record of 8 fixes the method accepted in log 40's loop (4 of which broke something no job checks, 9 breaks visible, nothing labelled), and with the method only. A changed method was judged by what it does on log 39's 72 held occasions and aims, which were first checked to be jointly satisfiable (log 40's lesson). Plan and four conjectures committed first (files 41; `runs/41 finding the failure`):
+- **Every reply that arrived named the failure:** four replies, each saying the method ignores the nearby situations and so can accept a fix that breaks what was right; three of the four methods were kept (the fourth rejected every fix that changes anything nearby, 23 of 24 good fixes included).
+- **With the record, two of three replies were cut off** at the 32,000-token reply limit; the one that arrived cited a break from the record ("Fix 2's 'clay ball at solid wall, but throw does not happen'") and was kept.
+- **Method only found it in all three runs,** because the description of the method's inputs mentions nearby situations and questions to the world it ignores. My control was flawed: it pointed at the failure. So this shows DeepSeek finding the failure by criticising the method itself, not from evidence.
+- **Conjectures:** all four ruled out: two by the cut-offs, and conjecture 2 (method only would rarely find it) by the flawed control.
+- 9 tests (file 41), all passing. Cost: $0.06 ($14.22 to $14.16).
+Written up in "41 Finding the failure.md".
+
 ## Next step
 
-Test whether the system can find a method's failure itself: give DeepSeek the fix-acceptance method and a record of the loop's runs (fixes accepted, and what the world said when asked afterwards), without saying what is wrong, and see whether the failure it names is the one log 39 showed it; plan and aims first, with aims checked for conflict before the run (log 40's lesson).
+Rerun the with-the-record arm with the reply limit raised to 200,000 (as log 19 did), labelled as a follow-up to log 41, so its three replies can be read; the method-only arm stays as it was.
 
 ## Traps
 
+- **Reading log 41's method-only arm as finding the failure from nothing.** The description of the method's inputs pointed at it.
 - **Reading log 40's "no method is a repair" as the methods failing.** The protected aim I declared conflicts with the aim to repair on the starts where it failed.
 - **Reading log 39 as the system changing its method by itself.** DeepSeek proposed; the program, with aims a person declared, decided.
 - **Reading a result that was not ruled out as supported.** Under the revised semantics (log 36) it gets nothing from that; say what a run ruled out, and for whom.
