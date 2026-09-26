@@ -61,6 +61,9 @@ Every decision that shapes the project. The owner's decisions are quoted exactly
 **O19. Read the revised semantics against the project.** (Log 36.)
 > "Does this change anything?" (with the revised semantics attached)
 
+**O20. The owner's pushback on finite states, and a question about the semantics.** (Log 37.)
+> "I want to push back on your claim regarding log 34. Languages are combinatorial. There's no reason to believe it represents a finite number of states. Unless I'm misunderstanding you. Also, do you agree with the semantics or where do you disagree?"
+
 ## Claude's routine choices
 
 **C1. A new small language of things and rules, rather than extending Strata.** Strata refused cause-and-effect sentences (log 01), its instructions drop causes, and its checker answers "does this follow?" while the hard-to-vary tests need "what happens when something is changed?".
