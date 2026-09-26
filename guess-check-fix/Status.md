@@ -21,6 +21,8 @@
 **Waiting on:** nothing. Next: log 26 runs as planned.
 
 **Open questions:**
+- To explore later (log 33): is humanity, with its writing and institutions, the universal explainer, and individual humans creative agents whose coming together produces it? Deutsch holds each person is one; what would a single person lack?
+- Which of log 33's seven conditions for a universal explainer are necessary? Each can be tested by taking it away; conditions 2 (a language that can express any explanation) and 6 (methods open to criticism) are the ones the project lacks.
 - Can the checker's "not in the model" answers be turned into criticism of the model, so the translator adds what a question needs (weather, space) rather than the checker saying "no effect"?
 - Does DeepSeek, as translator and reader, do as well as Claude did in log 28?
 - Does DeepSeek, asked, expose its conjecture to attack, and does rebuilding fresh from the world's answers beat defending in the same conversation?
