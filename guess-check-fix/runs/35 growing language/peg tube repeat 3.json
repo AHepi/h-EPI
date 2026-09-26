@@ -1,0 +1,797 @@
+{
+ "device": "peg tube",
+ "repeat": 3,
+ "guesser": "deepseek-flash",
+ "observations": 24,
+ "observations_rival_wrong": 4,
+ "tests": [
+  {
+   "name": "test 1",
+   "length": 2,
+   "long": false,
+   "hard": false,
+   "rival_wrong": false,
+   "see": {
+    "light": "green"
+   }
+  },
+  {
+   "name": "test 2",
+   "length": 4,
+   "long": false,
+   "hard": false,
+   "rival_wrong": false,
+   "see": {
+    "light": "green"
+   }
+  },
+  {
+   "name": "test 3",
+   "length": 5,
+   "long": false,
+   "hard": false,
+   "rival_wrong": false,
+   "see": {
+    "light": "amber"
+   }
+  },
+  {
+   "name": "test 4",
+   "length": 5,
+   "long": false,
+   "hard": false,
+   "rival_wrong": false,
+   "see": {
+    "light": "amber"
+   }
+  },
+  {
+   "name": "test 5",
+   "length": 5,
+   "long": false,
+   "hard": true,
+   "rival_wrong": true,
+   "see": {
+    "light": "red"
+   }
+  },
+  {
+   "name": "test 6",
+   "length": 5,
+   "long": false,
+   "hard": false,
+   "rival_wrong": false,
+   "see": {
+    "light": "red"
+   }
+  },
+  {
+   "name": "test 7",
+   "length": 24,
+   "long": true,
+   "hard": false,
+   "rival_wrong": false,
+   "see": {
+    "light": "green"
+   }
+  },
+  {
+   "name": "test 8",
+   "length": 23,
+   "long": true,
+   "hard": false,
+   "rival_wrong": false,
+   "see": {
+    "light": "amber"
+   }
+  },
+  {
+   "name": "test 9",
+   "length": 24,
+   "long": true,
+   "hard": true,
+   "rival_wrong": false,
+   "see": {
+    "light": "red"
+   }
+  },
+  {
+   "name": "test 10",
+   "length": 30,
+   "long": true,
+   "hard": false,
+   "rival_wrong": false,
+   "see": {
+    "light": "green"
+   }
+  },
+  {
+   "name": "test 11",
+   "length": 30,
+   "long": true,
+   "hard": false,
+   "rival_wrong": false,
+   "see": {
+    "light": "green"
+   }
+  },
+  {
+   "name": "test 12",
+   "length": 24,
+   "long": true,
+   "hard": true,
+   "rival_wrong": false,
+   "see": {
+    "light": "red"
+   }
+  },
+  {
+   "name": "test 13",
+   "length": 17,
+   "long": true,
+   "hard": true,
+   "rival_wrong": true,
+   "see": {
+    "light": "red"
+   }
+  },
+  {
+   "name": "test 14",
+   "length": 60,
+   "long": true,
+   "hard": false,
+   "rival_wrong": false,
+   "see": {
+    "light": "green"
+   }
+  },
+  {
+   "name": "test 15",
+   "length": 40,
+   "long": true,
+   "hard": false,
+   "rival_wrong": false,
+   "see": {
+    "light": "green"
+   }
+  },
+  {
+   "name": "test 16",
+   "length": 40,
+   "long": true,
+   "hard": true,
+   "rival_wrong": false,
+   "see": {
+    "light": "red"
+   }
+  },
+  {
+   "name": "test 17",
+   "length": 32,
+   "long": true,
+   "hard": true,
+   "rival_wrong": true,
+   "see": {
+    "light": "red"
+   }
+  },
+  {
+   "name": "test 18",
+   "length": 40,
+   "long": true,
+   "hard": true,
+   "rival_wrong": true,
+   "see": {
+    "light": "red"
+   }
+  },
+  {
+   "name": "test 19",
+   "length": 40,
+   "long": true,
+   "hard": true,
+   "rival_wrong": true,
+   "see": {
+    "light": "red"
+   }
+  }
+ ],
+ "arms": {
+  "universal language": {
+   "rounds": [
+    {
+     "round": 1,
+     "readable": true,
+     "passed": 24,
+     "code": "function visible(actions) {\n  const stack = [];\n  let error = false;\n\n  for (const action of actions) {\n    if (action === \"red in\") {\n      stack.push(\"red\");\n    } else if (action === \"blue in\") {\n      stack.push(\"blue\");\n    } else if (action === \"red out\") {\n      if (stack.length > 0 && stack[stack.length - 1] === \"red\") {\n        stack.pop();\n      } else {\n        error = true;\n      }\n    } else if (action === \"blue out\") {\n      if (stack.length > 0 && stack[stack.length - 1] === \"blue\") {\n        stack.pop();\n      } else {\n        error = true;\n      }\n    }\n  }\n\n  let light;\n  if (error) {\n    light = \"red\";\n  } else if (stack.length === 0) {\n    light = \"green\";\n  } else {\n    light = \"amber\";\n  }\n\n  return { light };\n}"
+    }
+   ],
+   "best_round": 1,
+   "best_passes": 24,
+   "observations": 24,
+   "graded": [
+    {
+     "test": "test 1",
+     "hard": false,
+     "long": false,
+     "right": true,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 2",
+     "hard": false,
+     "long": false,
+     "right": true,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 3",
+     "hard": false,
+     "long": false,
+     "right": true,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 4",
+     "hard": false,
+     "long": false,
+     "right": true,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 5",
+     "hard": true,
+     "long": false,
+     "right": true,
+     "rival_wrong": true
+    },
+    {
+     "test": "test 6",
+     "hard": false,
+     "long": false,
+     "right": true,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 7",
+     "hard": false,
+     "long": true,
+     "right": true,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 8",
+     "hard": false,
+     "long": true,
+     "right": true,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 9",
+     "hard": true,
+     "long": true,
+     "right": true,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 10",
+     "hard": false,
+     "long": true,
+     "right": true,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 11",
+     "hard": false,
+     "long": true,
+     "right": true,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 12",
+     "hard": true,
+     "long": true,
+     "right": true,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 13",
+     "hard": true,
+     "long": true,
+     "right": true,
+     "rival_wrong": true
+    },
+    {
+     "test": "test 14",
+     "hard": false,
+     "long": true,
+     "right": true,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 15",
+     "hard": false,
+     "long": true,
+     "right": true,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 16",
+     "hard": true,
+     "long": true,
+     "right": true,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 17",
+     "hard": true,
+     "long": true,
+     "right": true,
+     "rival_wrong": true
+    },
+    {
+     "test": "test 18",
+     "hard": true,
+     "long": true,
+     "right": true,
+     "rival_wrong": true
+    },
+    {
+     "test": "test 19",
+     "hard": true,
+     "long": true,
+     "right": true,
+     "rival_wrong": true
+    }
+   ],
+   "tokens_out": 13067,
+   "cut_off": 0,
+   "calls": 1
+  },
+  "growing language": {
+   "rounds": [
+    {
+     "round": 1,
+     "readable": true,
+     "problems": [],
+     "passed": 24,
+     "shape": {
+      "kinds": 1,
+      "new_things": 1,
+      "rules": 7,
+      "kind_expressions": 8
+     },
+     "model": {
+      "things": {
+       "light": [
+        "green",
+        "amber",
+        "red"
+       ]
+      },
+      "events": [
+       "red in",
+       "blue in",
+       "red out",
+       "blue out"
+      ],
+      "start": {
+       "light": "green"
+      },
+      "kinds": {
+       "tubeKind": {
+        "start": {
+         "pegs": [],
+         "error": false
+        },
+        "changes": {
+         "push red": "({pegs: value.pegs.concat(['R']), error: value.error})",
+         "push blue": "({pegs: value.pegs.concat(['B']), error: value.error})",
+         "pop red": "value.pegs.length > 0 && value.pegs[value.pegs.length - 1] === 'R' ? ({pegs: value.pegs.slice(0, -1), error: value.error}) : ({pegs: value.pegs, error: true})",
+         "pop blue": "value.pegs.length > 0 && value.pegs[value.pegs.length - 1] === 'B' ? ({pegs: value.pegs.slice(0, -1), error: value.error}) : ({pegs: value.pegs, error: true})"
+        },
+        "tests": {
+         "empty": "value.pegs.length === 0",
+         "not empty": "value.pegs.length > 0",
+         "error": "value.error === true",
+         "no error": "value.error === false"
+        }
+       }
+      },
+      "new_things": {
+       "tube": "tubeKind"
+      },
+      "rules": [
+       {
+        "name": "red in",
+        "when": [
+         "red in happens"
+        ],
+        "then": "tube does push red"
+       },
+       {
+        "name": "blue in",
+        "when": [
+         "blue in happens"
+        ],
+        "then": "tube does push blue"
+       },
+       {
+        "name": "red out",
+        "when": [
+         "red out happens"
+        ],
+        "then": "tube does pop red"
+       },
+       {
+        "name": "blue out",
+        "when": [
+         "blue out happens"
+        ],
+        "then": "tube does pop blue"
+       },
+       {
+        "name": "light green",
+        "when": [
+         "tube is empty",
+         "tube is no error"
+        ],
+        "then": "light is green"
+       },
+       {
+        "name": "light amber",
+        "when": [
+         "tube is not empty",
+         "tube is no error"
+        ],
+        "then": "light is amber"
+       },
+       {
+        "name": "light red",
+        "when": [
+         "tube is error"
+        ],
+        "then": "light is red"
+       }
+      ]
+     }
+    }
+   ],
+   "best_round": 1,
+   "best_passes": 24,
+   "observations": 24,
+   "shape": {
+    "kinds": 1,
+    "new_things": 1,
+    "rules": 7,
+    "kind_expressions": 8
+   },
+   "graded": [
+    {
+     "test": "test 1",
+     "hard": false,
+     "long": false,
+     "right": true,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 2",
+     "hard": false,
+     "long": false,
+     "right": true,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 3",
+     "hard": false,
+     "long": false,
+     "right": true,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 4",
+     "hard": false,
+     "long": false,
+     "right": true,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 5",
+     "hard": true,
+     "long": false,
+     "right": true,
+     "rival_wrong": true
+    },
+    {
+     "test": "test 6",
+     "hard": false,
+     "long": false,
+     "right": true,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 7",
+     "hard": false,
+     "long": true,
+     "right": true,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 8",
+     "hard": false,
+     "long": true,
+     "right": true,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 9",
+     "hard": true,
+     "long": true,
+     "right": true,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 10",
+     "hard": false,
+     "long": true,
+     "right": true,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 11",
+     "hard": false,
+     "long": true,
+     "right": true,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 12",
+     "hard": true,
+     "long": true,
+     "right": true,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 13",
+     "hard": true,
+     "long": true,
+     "right": true,
+     "rival_wrong": true
+    },
+    {
+     "test": "test 14",
+     "hard": false,
+     "long": true,
+     "right": true,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 15",
+     "hard": false,
+     "long": true,
+     "right": true,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 16",
+     "hard": true,
+     "long": true,
+     "right": true,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 17",
+     "hard": true,
+     "long": true,
+     "right": true,
+     "rival_wrong": true
+    },
+    {
+     "test": "test 18",
+     "hard": true,
+     "long": true,
+     "right": true,
+     "rival_wrong": true
+    },
+    {
+     "test": "test 19",
+     "hard": true,
+     "long": true,
+     "right": true,
+     "rival_wrong": true
+    }
+   ],
+   "tokens_out": 15781,
+   "cut_off": 0,
+   "calls": 1
+  },
+  "fixed language": {
+   "rounds": [
+    {
+     "round": 1,
+     "readable": false,
+     "passed": 0,
+     "largest_hidden": 0,
+     "model": null
+    },
+    {
+     "round": 2,
+     "readable": false,
+     "passed": 0,
+     "largest_hidden": 0,
+     "model": null
+    },
+    {
+     "round": 3,
+     "readable": false,
+     "passed": 0,
+     "largest_hidden": 0,
+     "model": null
+    },
+    {
+     "round": 4,
+     "readable": false,
+     "passed": 0,
+     "largest_hidden": 0,
+     "model": null
+    },
+    {
+     "round": 5,
+     "readable": false,
+     "passed": 0,
+     "largest_hidden": 0,
+     "model": null
+    },
+    {
+     "round": 6,
+     "readable": false,
+     "passed": 0,
+     "largest_hidden": 0,
+     "model": null
+    }
+   ],
+   "best_round": null,
+   "best_passes": 0,
+   "observations": 24,
+   "largest_hidden": 0,
+   "graded": [
+    {
+     "test": "test 1",
+     "hard": false,
+     "long": false,
+     "right": false,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 2",
+     "hard": false,
+     "long": false,
+     "right": false,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 3",
+     "hard": false,
+     "long": false,
+     "right": false,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 4",
+     "hard": false,
+     "long": false,
+     "right": false,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 5",
+     "hard": true,
+     "long": false,
+     "right": false,
+     "rival_wrong": true
+    },
+    {
+     "test": "test 6",
+     "hard": false,
+     "long": false,
+     "right": false,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 7",
+     "hard": false,
+     "long": true,
+     "right": false,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 8",
+     "hard": false,
+     "long": true,
+     "right": false,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 9",
+     "hard": true,
+     "long": true,
+     "right": false,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 10",
+     "hard": false,
+     "long": true,
+     "right": false,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 11",
+     "hard": false,
+     "long": true,
+     "right": false,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 12",
+     "hard": true,
+     "long": true,
+     "right": false,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 13",
+     "hard": true,
+     "long": true,
+     "right": false,
+     "rival_wrong": true
+    },
+    {
+     "test": "test 14",
+     "hard": false,
+     "long": true,
+     "right": false,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 15",
+     "hard": false,
+     "long": true,
+     "right": false,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 16",
+     "hard": true,
+     "long": true,
+     "right": false,
+     "rival_wrong": false
+    },
+    {
+     "test": "test 17",
+     "hard": true,
+     "long": true,
+     "right": false,
+     "rival_wrong": true
+    },
+    {
+     "test": "test 18",
+     "hard": true,
+     "long": true,
+     "right": false,
+     "rival_wrong": true
+    },
+    {
+     "test": "test 19",
+     "hard": true,
+     "long": true,
+     "right": false,
+     "rival_wrong": true
+    }
+   ],
+   "tokens_out": 192000,
+   "cut_off": 6,
+   "calls": 6
+  }
+ }
+}

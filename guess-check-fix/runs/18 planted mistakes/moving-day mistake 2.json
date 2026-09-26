@@ -1,0 +1,987 @@
+{
+ "world": "moving-day",
+ "planted": {
+  "kind": "hidden",
+  "how": "picked by the fixed shuffle",
+  "description": "in rule \"returning the key\": condition \"van is not driven off\" replaced by \"boxes is in van\"",
+  "form": {
+   "things": {
+    "boxes": [
+     "unpacked",
+     "packed",
+     "in van"
+    ],
+    "van": [
+     "not booked",
+     "booked",
+     "driven off"
+    ],
+    "key": [
+     "with us",
+     "returned"
+    ],
+    "deposit": [
+     "held",
+     "back",
+     "lost"
+    ]
+   },
+   "events": [
+    "pack",
+    "book van",
+    "load",
+    "return key",
+    "drive"
+   ],
+   "start": {
+    "boxes": "unpacked",
+    "van": "not booked",
+    "key": "with us",
+    "deposit": "held"
+   },
+   "rules": [
+    {
+     "name": "packing",
+     "when": [
+      "pack happens",
+      "boxes is unpacked"
+     ],
+     "then": "boxes is packed"
+    },
+    {
+     "name": "booking",
+     "when": [
+      "book van happens",
+      "van is not booked"
+     ],
+     "then": "van is booked"
+    },
+    {
+     "name": "loading",
+     "when": [
+      "load happens",
+      "boxes is packed",
+      "van is booked"
+     ],
+     "then": "boxes is in van"
+    },
+    {
+     "name": "driving",
+     "when": [
+      "drive happens",
+      "boxes is in van",
+      "van is booked"
+     ],
+     "then": "van is driven off"
+    },
+    {
+     "name": "returning the key",
+     "when": [
+      "return key happens",
+      "boxes is in van"
+     ],
+     "then": "key is returned"
+    },
+    {
+     "name": "deposit back",
+     "when": [
+      "van is driven off",
+      "key is returned",
+      "deposit is held"
+     ],
+     "then": "deposit is back"
+    },
+    {
+     "name": "deposit lost",
+     "when": [
+      "van is driven off",
+      "key is with us",
+      "deposit is held"
+     ],
+     "then": "deposit is lost"
+    }
+   ]
+  },
+  "before": {
+   "shown": "4/4",
+   "held_back": "2/3",
+   "nearby": {
+    "tried": 400,
+    "differ": 40,
+    "cannot_run": 0,
+    "examples": [
+     "the situation of job \"key first, then the rest\": deposit lost, world says back",
+     "the situation of job \"forgot the key\", but \"return key\" also happens first: deposit lost, world says back",
+     "the situation of job \"forgot the key\", but \"return key\" also happens after \"pack\": deposit lost, world says back"
+    ]
+   }
+  }
+ },
+ "guesser": "deepseek-flash",
+ "counts": {
+  "requests": 2,
+  "replies": 2,
+  "cut_off": 0,
+  "plain_form": 0,
+  "refused": 0,
+  "thinking_characters": 93472,
+  "answer_characters": 2419,
+  "tokens_in": 3012,
+  "tokens_out": 23347
+ },
+ "results": [
+  {
+   "corrector": "checker alone",
+   "shown": "4/4",
+   "held_back": "2/3",
+   "held_back_asked": [],
+   "questions_to_world": 0,
+   "deepseek_asked": 0,
+   "nearby": {
+    "tried": 400,
+    "differ": 40,
+    "cannot_run": 0,
+    "examples": [
+     "the situation of job \"key first, then the rest\": deposit lost, world says back",
+     "the situation of job \"forgot the key\", but \"return key\" also happens first: deposit lost, world says back",
+     "the situation of job \"forgot the key\", but \"return key\" also happens after \"pack\": deposit lost, world says back"
+    ]
+   },
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "4/4",
+     "problems": 0
+    }
+   ],
+   "model": {
+    "things": {
+     "boxes": [
+      "unpacked",
+      "packed",
+      "in van"
+     ],
+     "van": [
+      "not booked",
+      "booked",
+      "driven off"
+     ],
+     "key": [
+      "with us",
+      "returned"
+     ],
+     "deposit": [
+      "held",
+      "back",
+      "lost"
+     ]
+    },
+    "events": [
+     "pack",
+     "book van",
+     "load",
+     "return key",
+     "drive"
+    ],
+    "start": {
+     "boxes": "unpacked",
+     "van": "not booked",
+     "key": "with us",
+     "deposit": "held"
+    },
+    "rules": [
+     {
+      "name": "packing",
+      "when": [
+       "pack happens",
+       "boxes is unpacked"
+      ],
+      "then": "boxes is packed",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "booking",
+      "when": [
+       "book van happens",
+       "van is not booked"
+      ],
+      "then": "van is booked",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "loading",
+      "when": [
+       "load happens",
+       "boxes is packed",
+       "van is booked"
+      ],
+      "then": "boxes is in van",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "driving",
+      "when": [
+       "drive happens",
+       "boxes is in van",
+       "van is booked"
+      ],
+      "then": "van is driven off",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "returning the key",
+      "when": [
+       "return key happens",
+       "boxes is in van"
+      ],
+      "then": "key is returned",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "deposit back",
+      "when": [
+       "van is driven off",
+       "key is returned",
+       "deposit is held"
+      ],
+      "then": "deposit is back",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "deposit lost",
+      "when": [
+       "van is driven off",
+       "key is with us",
+       "deposit is held"
+      ],
+      "then": "deposit is lost",
+      "made_by": "guesser first guess"
+     }
+    ]
+   },
+   "log": []
+  },
+  {
+   "corrector": "rewrite",
+   "shown": "4/4",
+   "held_back": "2/3",
+   "held_back_asked": [],
+   "questions_to_world": 0,
+   "deepseek_asked": 0,
+   "nearby": {
+    "tried": 400,
+    "differ": 40,
+    "cannot_run": 0,
+    "examples": [
+     "the situation of job \"key first, then the rest\": deposit lost, world says back",
+     "the situation of job \"forgot the key\", but \"return key\" also happens first: deposit lost, world says back",
+     "the situation of job \"forgot the key\", but \"return key\" also happens after \"pack\": deposit lost, world says back"
+    ]
+   },
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "4/4",
+     "problems": 0
+    }
+   ],
+   "model": {
+    "things": {
+     "boxes": [
+      "unpacked",
+      "packed",
+      "in van"
+     ],
+     "van": [
+      "not booked",
+      "booked",
+      "driven off"
+     ],
+     "key": [
+      "with us",
+      "returned"
+     ],
+     "deposit": [
+      "held",
+      "back",
+      "lost"
+     ]
+    },
+    "events": [
+     "pack",
+     "book van",
+     "load",
+     "return key",
+     "drive"
+    ],
+    "start": {
+     "boxes": "unpacked",
+     "van": "not booked",
+     "key": "with us",
+     "deposit": "held"
+    },
+    "rules": [
+     {
+      "name": "packing",
+      "when": [
+       "pack happens",
+       "boxes is unpacked"
+      ],
+      "then": "boxes is packed",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "booking",
+      "when": [
+       "book van happens",
+       "van is not booked"
+      ],
+      "then": "van is booked",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "loading",
+      "when": [
+       "load happens",
+       "boxes is packed",
+       "van is booked"
+      ],
+      "then": "boxes is in van",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "driving",
+      "when": [
+       "drive happens",
+       "boxes is in van",
+       "van is booked"
+      ],
+      "then": "van is driven off",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "returning the key",
+      "when": [
+       "return key happens",
+       "boxes is in van"
+      ],
+      "then": "key is returned",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "deposit back",
+      "when": [
+       "van is driven off",
+       "key is returned",
+       "deposit is held"
+      ],
+      "then": "deposit is back",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "deposit lost",
+      "when": [
+       "van is driven off",
+       "key is with us",
+       "deposit is held"
+      ],
+      "then": "deposit is lost",
+      "made_by": "guesser first guess"
+     }
+    ]
+   },
+   "log": []
+  },
+  {
+   "corrector": "self review",
+   "shown": "4/4",
+   "held_back": "3/3",
+   "held_back_asked": [],
+   "questions_to_world": 0,
+   "deepseek_asked": 1,
+   "nearby": {
+    "tried": 400,
+    "differ": 8,
+    "cannot_run": 0,
+    "examples": [
+     "the situation of job \"the whole plan\", but \"book van\" also happens after \"drive\": van driven off, world says booked",
+     "the situation of job \"forgot the key\", but \"book van\" also happens after \"drive\": van driven off, world says booked",
+     "the situation of job \"key handed back too late\", but \"book van\" also happens after \"drive\": van driven off, world says booked"
+    ]
+   },
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "4/4",
+     "problems": 0
+    },
+    {
+     "step": "self review",
+     "verdict": "no change",
+     "kept": true,
+     "lost": [],
+     "seen": "4/4"
+    }
+   ],
+   "model": {
+    "things": {
+     "boxes": [
+      "unpacked",
+      "packed",
+      "in van"
+     ],
+     "van": [
+      "not booked",
+      "booked",
+      "driven off"
+     ],
+     "key": [
+      "with us",
+      "returned"
+     ],
+     "deposit": [
+      "held",
+      "back",
+      "lost"
+     ]
+    },
+    "events": [
+     "pack",
+     "book van",
+     "load",
+     "return key",
+     "drive"
+    ],
+    "start": {
+     "boxes": "unpacked",
+     "van": "not booked",
+     "key": "with us",
+     "deposit": "held"
+    },
+    "rules": [
+     {
+      "name": "packing",
+      "when": [
+       "pack happens",
+       "boxes is unpacked"
+      ],
+      "then": "boxes is packed"
+     },
+     {
+      "name": "booking",
+      "when": [
+       "book van happens",
+       "van is not booked",
+       "van is not driven off"
+      ],
+      "then": "van is booked"
+     },
+     {
+      "name": "loading",
+      "when": [
+       "load happens",
+       "boxes is packed",
+       "van is booked"
+      ],
+      "then": "boxes is in van"
+     },
+     {
+      "name": "driving",
+      "when": [
+       "drive happens",
+       "boxes is in van",
+       "van is booked"
+      ],
+      "then": "van is driven off"
+     },
+     {
+      "name": "returning the key",
+      "when": [
+       "return key happens",
+       "van is not driven off",
+       "key is with us"
+      ],
+      "then": "key is returned"
+     },
+     {
+      "name": "deposit back",
+      "when": [
+       "van is driven off",
+       "key is returned",
+       "deposit is held"
+      ],
+      "then": "deposit is back"
+     },
+     {
+      "name": "deposit lost",
+      "when": [
+       "van is driven off",
+       "key is with us",
+       "deposit is held"
+      ],
+      "then": "deposit is lost"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "Task: Plan moving day. Boxes must be packed before they can be loaded, and the van must be booked before anything can be loaded into it. We drive off once the boxes are in the van. The key has to go back to the landlord before we drive off, or we lose the deposit; once we have driven off it is too late to hand it back.\n\nThings and states to use:\n  van: not booked, booked, driven off\n  deposit: held, back, lost\n  boxes: unpacked, packed, in van\nEvents to use: pack, book van, load, return key, drive\n\nThe checker will test your model on these jobs:\n- \"the whole plan\": events in order: pack, then book van, then load, then return key, then drive; expected at the end: van is driven off and deposit is back.\n- \"forgot the key\": events in order: pack, then book van, then load, then drive; expected at the end: deposit is lost.\n- \"loading before packing\": events in order: book van, then load, then pack, then drive; expected at the end: boxes is packed and van is booked.\n- \"nothing done\": no events; expected at the end: deposit is held.\n\nHere is a model for this task. It may contain mistakes, including mistakes the jobs above do not catch.\n\n{\"things\":{\"boxes\":[\"unpacked\",\"packed\",\"in van\"],\"van\":[\"not booked\",\"booked\",\"driven off\"],\"key\":[\"with us\",\"returned\"],\"deposit\":[\"held\",\"back\",\"lost\"]},\"events\":[\"pack\",\"book van\",\"load\",\"return key\",\"drive\"],\"start\":{\"boxes\":\"unpacked\",\"van\":\"not booked\",\"key\":\"with us\",\"deposit\":\"held\"},\"rules\":[{\"name\":\"packing\",\"when\":[\"pack happens\",\"boxes is unpacked\"],\"then\":\"boxes is packed\",\"made_by\":\"guesser first guess\"},{\"name\":\"booking\",\"when\":[\"book van happens\",\"van is not booked\"],\"then\":\"van is booked\",\"made_by\":\"guesser first guess\"},{\"name\":\"loading\",\"when\":[\"load happens\",\"boxes is packed\",\"van is booked\"],\"then\":\"boxes is in van\",\"made_by\":\"guesser first guess\"},{\"name\":\"driving\",\"when\":[\"drive happens\",\"boxes is in van\",\"van is booked\"],\"then\":\"van is driven off\",\"made_by\":\"guesser first guess\"},{\"name\":\"returning the key\",\"when\":[\"return key happens\",\"boxes is in van\"],\"then\":\"key is returned\",\"made_by\":\"guesser first guess\"},{\"name\":\"deposit back\",\"when\":[\"van is driven off\",\"key is returned\",\"deposit is held\"],\"then\":\"deposit is back\",\"made_by\":\"guesser first guess\"},{\"name\":\"deposit lost\",\"when\":[\"van is driven off\",\"key is with us\",\"deposit is held\"],\"then\":\"deposit is lost\",\"made_by\":\"guesser first guess\"}]}\n\nGo through the task sentence by sentence and check that every part of it is in the model, and that every rule does what the task says, in every situation the task describes, not only in the jobs. Correct every mistake you find. Write the whole corrected model. If you find no mistake, write it unchanged.",
+     "replied": "{\n  \"things\": {\n    \"boxes\": [\"unpacked\", \"packed\", \"in van\"],\n    \"van\": [\"not booked\", \"booked\", \"driven off\"],\n    \"key\": [\"with us\", \"returned\"],\n    \"deposit\": [\"held\", \"back\", \"lost\"]\n  },\n  \"events\": [\"pack\", \"book van\", \"load\", \"return key\", \"drive\"],\n  \"start\": {\n    \"boxes\": \"unpacked\",\n    \"van\": \"not booked\",\n    \"key\": \"with us\",\n    \"deposit\": \"held\"\n  },\n  \"rules\": [\n    {\n      \"name\": \"packing\",\n      \"when\": [\"pack happens\", \"boxes is unpacked\"],\n      \"then\": \"boxes is packed\"\n    },\n    {\n      \"name\": \"booking\",\n      \"when\": [\"book van happens\", \"van is not booked\", \"van is not driven off\"],\n      \"then\": \"van is booked\"\n    },\n    {\n      \"name\": \"loading\",\n      \"when\": [\"load happens\", \"boxes is packed\", \"van is booked\"],\n      \"then\": \"boxes is in van\"\n    },\n    {\n      \"name\": \"driving\",\n      \"when\": [\"drive happens\", \"boxes is in van\", \"van is booked\"],\n      \"then\": \"van is driven off\"\n    },\n    {\n      \"name\": \"returning the key\",\n      \"when\": [\"return key happens\", \"van is not driven off\", \"key is with us\"],\n      \"then\": \"key is returned\"\n    },\n    {\n      \"name\": \"deposit back\",\n      \"when\": [\"van is driven off\", \"key is returned\", \"deposit is held\"],\n      \"then\": \"deposit is back\"\n    },\n    {\n      \"name\": \"deposit lost\",\n      \"when\": [\"van is driven off\", \"key is with us\", \"deposit is held\"],\n      \"then\": \"deposit is lost\"\n    }\n  ]\n}",
+     "seconds": 62
+    }
+   ]
+  },
+  {
+   "corrector": "guess and fix",
+   "shown": "4/4",
+   "held_back": "2/3",
+   "held_back_asked": [],
+   "questions_to_world": 0,
+   "deepseek_asked": 0,
+   "nearby": {
+    "tried": 400,
+    "differ": 40,
+    "cannot_run": 0,
+    "examples": [
+     "the situation of job \"key first, then the rest\": deposit lost, world says back",
+     "the situation of job \"forgot the key\", but \"return key\" also happens first: deposit lost, world says back",
+     "the situation of job \"forgot the key\", but \"return key\" also happens after \"pack\": deposit lost, world says back"
+    ]
+   },
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "4/4",
+     "problems": 0
+    }
+   ],
+   "model": {
+    "things": {
+     "boxes": [
+      "unpacked",
+      "packed",
+      "in van"
+     ],
+     "van": [
+      "not booked",
+      "booked",
+      "driven off"
+     ],
+     "key": [
+      "with us",
+      "returned"
+     ],
+     "deposit": [
+      "held",
+      "back",
+      "lost"
+     ]
+    },
+    "events": [
+     "pack",
+     "book van",
+     "load",
+     "return key",
+     "drive"
+    ],
+    "start": {
+     "boxes": "unpacked",
+     "van": "not booked",
+     "key": "with us",
+     "deposit": "held"
+    },
+    "rules": [
+     {
+      "name": "packing",
+      "when": [
+       "pack happens",
+       "boxes is unpacked"
+      ],
+      "then": "boxes is packed",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "booking",
+      "when": [
+       "book van happens",
+       "van is not booked"
+      ],
+      "then": "van is booked",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "loading",
+      "when": [
+       "load happens",
+       "boxes is packed",
+       "van is booked"
+      ],
+      "then": "boxes is in van",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "driving",
+      "when": [
+       "drive happens",
+       "boxes is in van",
+       "van is booked"
+      ],
+      "then": "van is driven off",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "returning the key",
+      "when": [
+       "return key happens",
+       "boxes is in van"
+      ],
+      "then": "key is returned",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "deposit back",
+      "when": [
+       "van is driven off",
+       "key is returned",
+       "deposit is held"
+      ],
+      "then": "deposit is back",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "deposit lost",
+      "when": [
+       "van is driven off",
+       "key is with us",
+       "deposit is held"
+      ],
+      "then": "deposit is lost",
+      "made_by": "guesser first guess"
+     }
+    ]
+   },
+   "log": []
+  },
+  {
+   "corrector": "full loop",
+   "shown": "4/4",
+   "held_back": "3/3",
+   "held_back_asked": [],
+   "questions_to_world": 12,
+   "deepseek_asked": 0,
+   "nearby": {
+    "tried": 400,
+    "differ": 0,
+    "cannot_run": 0,
+    "examples": []
+   },
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "4/4",
+     "problems": 0
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 3,
+     "seen": "7/7"
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 3,
+     "seen": "9/10"
+    },
+    {
+     "step": "ask world to choose",
+     "job": "world answer 7",
+     "seen": "9/11"
+    },
+    {
+     "step": "cross-check a fix with the world",
+     "what": "in rule \"returning the key\": condition \"boxes is in van\" replaced by \"deposit is held\"",
+     "world_sides_with": "the fix",
+     "seen": "9/12"
+    },
+    {
+     "step": "small fix",
+     "what": "in rule \"returning the key\": condition \"boxes is in van\" replaced by \"deposit is held\"",
+     "repaired": [
+      "world answer 5",
+      "world answer 7",
+      "world answer 8"
+     ],
+     "seen": "12/12"
+    },
+    {
+     "step": "look for surprises",
+     "added": 4,
+     "surprises": 0,
+     "seen": "16/16"
+    }
+   ],
+   "model": {
+    "things": {
+     "boxes": [
+      "unpacked",
+      "packed",
+      "in van"
+     ],
+     "van": [
+      "not booked",
+      "booked",
+      "driven off"
+     ],
+     "key": [
+      "with us",
+      "returned"
+     ],
+     "deposit": [
+      "held",
+      "back",
+      "lost"
+     ]
+    },
+    "events": [
+     "pack",
+     "book van",
+     "load",
+     "return key",
+     "drive"
+    ],
+    "start": {
+     "boxes": "unpacked",
+     "van": "not booked",
+     "key": "with us",
+     "deposit": "held"
+    },
+    "rules": [
+     {
+      "name": "packing",
+      "when": [
+       "pack happens",
+       "boxes is unpacked"
+      ],
+      "then": "boxes is packed",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "booking",
+      "when": [
+       "book van happens",
+       "van is not booked"
+      ],
+      "then": "van is booked",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "loading",
+      "when": [
+       "load happens",
+       "boxes is packed",
+       "van is booked"
+      ],
+      "then": "boxes is in van",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "driving",
+      "when": [
+       "drive happens",
+       "boxes is in van",
+       "van is booked"
+      ],
+      "then": "van is driven off",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "returning the key",
+      "when": [
+       "return key happens",
+       "deposit is held"
+      ],
+      "then": "key is returned",
+      "made_by": "checker small fix"
+     },
+     {
+      "name": "deposit back",
+      "when": [
+       "van is driven off",
+       "key is returned",
+       "deposit is held"
+      ],
+      "then": "deposit is back",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "deposit lost",
+      "when": [
+       "van is driven off",
+       "key is with us",
+       "deposit is held"
+      ],
+      "then": "deposit is lost",
+      "made_by": "guesser first guess"
+     }
+    ]
+   },
+   "log": []
+  },
+  {
+   "corrector": "full loop, guesser first",
+   "shown": "4/4",
+   "held_back": "3/3",
+   "held_back_asked": [],
+   "questions_to_world": 12,
+   "deepseek_asked": 1,
+   "nearby": {
+    "tried": 400,
+    "differ": 0,
+    "cannot_run": 0,
+    "examples": []
+   },
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "4/4",
+     "problems": 0
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 3,
+     "seen": "7/7"
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 3,
+     "seen": "9/10"
+    },
+    {
+     "step": "guesser rewrites first",
+     "verdict": "accepted",
+     "repaired": [
+      "world answer 5"
+     ],
+     "lost": [],
+     "seen": "10/10"
+    },
+    {
+     "step": "look for surprises",
+     "added": 4,
+     "surprises": 0,
+     "seen": "14/14"
+    },
+    {
+     "step": "look for surprises",
+     "added": 2,
+     "surprises": 0,
+     "seen": "16/16"
+    }
+   ],
+   "model": {
+    "things": {
+     "boxes": [
+      "unpacked",
+      "packed",
+      "in van"
+     ],
+     "van": [
+      "not booked",
+      "booked",
+      "driven off"
+     ],
+     "key": [
+      "with us",
+      "returned"
+     ],
+     "deposit": [
+      "held",
+      "back",
+      "lost"
+     ]
+    },
+    "events": [
+     "pack",
+     "book van",
+     "load",
+     "return key",
+     "drive"
+    ],
+    "start": {
+     "boxes": "unpacked",
+     "van": "not booked",
+     "key": "with us",
+     "deposit": "held"
+    },
+    "rules": [
+     {
+      "name": "packing",
+      "when": [
+       "pack happens",
+       "boxes is unpacked"
+      ],
+      "then": "boxes is packed"
+     },
+     {
+      "name": "booking",
+      "when": [
+       "book van happens",
+       "van is not booked"
+      ],
+      "then": "van is booked"
+     },
+     {
+      "name": "loading",
+      "when": [
+       "load happens",
+       "boxes is packed",
+       "van is booked"
+      ],
+      "then": "boxes is in van"
+     },
+     {
+      "name": "driving",
+      "when": [
+       "drive happens",
+       "boxes is in van",
+       "van is booked"
+      ],
+      "then": "van is driven off"
+     },
+     {
+      "name": "returning the key",
+      "when": [
+       "return key happens",
+       "deposit is held"
+      ],
+      "then": "key is returned"
+     },
+     {
+      "name": "deposit back",
+      "when": [
+       "van is driven off",
+       "key is returned",
+       "deposit is held"
+      ],
+      "then": "deposit is back"
+     },
+     {
+      "name": "deposit lost",
+      "when": [
+       "van is driven off",
+       "key is with us",
+       "deposit is held"
+      ],
+      "then": "deposit is lost"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "Task: Plan moving day. Boxes must be packed before they can be loaded, and the van must be booked before anything can be loaded into it. We drive off once the boxes are in the van. The key has to go back to the landlord before we drive off, or we lose the deposit; once we have driven off it is too late to hand it back.\n\nThings and states to use:\n  van: not booked, booked, driven off\n  deposit: held, back, lost\n  boxes: unpacked, packed, in van\nEvents to use: pack, book van, load, return key, drive\n\nThe checker will test your model on these jobs:\n- \"the whole plan\": events in order: pack, then book van, then load, then return key, then drive; expected at the end: van is driven off and deposit is back.\n- \"forgot the key\": events in order: pack, then book van, then load, then drive; expected at the end: deposit is lost.\n- \"loading before packing\": events in order: book van, then load, then pack, then drive; expected at the end: boxes is packed and van is booked.\n- \"nothing done\": no events; expected at the end: deposit is held.\n- \"world answer 1\": events in order: pack, then book van, then load, then pack, then return key, then drive; expected at the end: boxes is in van and van is driven off and key is returned and deposit is back.\n- \"world answer 2\": events in order: book van, then load, then return key, then drive; expected at the end: van is booked.\n- \"world answer 3\": no events; expected at the end: van is not booked.\n- \"world answer 4\": events in order: pack, then book van, then load, then return key, then drive, then book van; expected at the end: van is booked.\n- \"world answer 5\": events in order: pack, then load, then return key, then drive; expected at the end: boxes is packed and key is returned.\n- \"world answer 6\": events in order: pack, then book van, then load, then drive, then return key, then book van, then drive; expected at the end: van is driven off.\n\nThe current model:\n{\"things\":{\"boxes\":[\"unpacked\",\"packed\",\"in van\"],\"van\":[\"not booked\",\"booked\",\"driven off\"],\"key\":[\"with us\",\"returned\"],\"deposit\":[\"held\",\"back\",\"lost\"]},\"events\":[\"pack\",\"book van\",\"load\",\"return key\",\"drive\"],\"start\":{\"boxes\":\"unpacked\",\"van\":\"not booked\",\"key\":\"with us\",\"deposit\":\"held\"},\"rules\":[{\"name\":\"packing\",\"when\":[\"pack happens\",\"boxes is unpacked\"],\"then\":\"boxes is packed\",\"made_by\":\"guesser first guess\"},{\"name\":\"booking\",\"when\":[\"book van happens\",\"van is not booked\"],\"then\":\"van is booked\",\"made_by\":\"guesser first guess\"},{\"name\":\"loading\",\"when\":[\"load happens\",\"boxes is packed\",\"van is booked\"],\"then\":\"boxes is in van\",\"made_by\":\"guesser first guess\"},{\"name\":\"driving\",\"when\":[\"drive happens\",\"boxes is in van\",\"van is booked\"],\"then\":\"van is driven off\",\"made_by\":\"guesser first guess\"},{\"name\":\"returning the key\",\"when\":[\"return key happens\",\"boxes is in van\"],\"then\":\"key is returned\",\"made_by\":\"guesser first guess\"},{\"name\":\"deposit back\",\"when\":[\"van is driven off\",\"key is returned\",\"deposit is held\"],\"then\":\"deposit is back\",\"made_by\":\"guesser first guess\"},{\"name\":\"deposit lost\",\"when\":[\"van is driven off\",\"key is with us\",\"deposit is held\"],\"then\":\"deposit is lost\",\"made_by\":\"guesser first guess\"}]}\n\nThe checker ran it.\n\nPASS: job \"the whole plan\"\nPASS: job \"forgot the key\"\nPASS: job \"loading before packing\"\nPASS: job \"nothing done\"\nPASS: job \"world answer 1\"\nPASS: job \"world answer 2\"\nPASS: job \"world answer 3\"\nPASS: job \"world answer 4\"\nFAIL: job \"world answer 5\"\n  - What happened: step 1: packing made boxes packed.\n  - Wanted key is returned at the end; got key with us.\n  - Rule \"returning the key\" never fired: \"boxes is in van\" was never true.\nPASS: job \"world answer 6\"\n9 of 10 jobs pass.\n\nSMALL FIX FOUND: in rule \"returning the key\": condition \"boxes is in van\" left out repairs \"world answer 5\" and breaks nothing.\nSMALL FIX FOUND: in rule \"returning the key\": condition \"boxes is in van\" replaced by \"deposit is held\" repairs \"world answer 5\" and breaks nothing.\n\nWrite the whole model again so that every job passes. Keep every rule that already works. Give every thing a start state.",
+     "replied": "{\"things\":{\"boxes\":[\"unpacked\",\"packed\",\"in van\"],\"van\":[\"not booked\",\"booked\",\"driven off\"],\"key\":[\"with us\",\"returned\"],\"deposit\":[\"held\",\"back\",\"lost\"]},\"events\":[\"pack\",\"book van\",\"load\",\"return key\",\"drive\"],\"start\":{\"boxes\":\"unpacked\",\"van\":\"not booked\",\"key\":\"with us\",\"deposit\":\"held\"},\"rules\":[{\"name\":\"packing\",\"when\":[\"pack happens\",\"boxes is unpacked\"],\"then\":\"boxes is packed\"},{\"name\":\"booking\",\"when\":[\"book van happens\",\"van is not booked\"],\"then\":\"van is booked\"},{\"name\":\"loading\",\"when\":[\"load happens\",\"boxes is packed\",\"van is booked\"],\"then\":\"boxes is in van\"},{\"name\":\"driving\",\"when\":[\"drive happens\",\"boxes is in van\",\"van is booked\"],\"then\":\"van is driven off\"},{\"name\":\"returning the key\",\"when\":[\"return key happens\",\"deposit is held\"],\"then\":\"key is returned\"},{\"name\":\"deposit back\",\"when\":[\"van is driven off\",\"key is returned\",\"deposit is held\"],\"then\":\"deposit is back\"},{\"name\":\"deposit lost\",\"when\":[\"van is driven off\",\"key is with us\",\"deposit is held\"],\"then\":\"deposit is lost\"}]}",
+     "seconds": 21
+    }
+   ]
+  }
+ ]
+}

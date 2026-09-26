@@ -1,0 +1,883 @@
+{
+ "world": "door-game",
+ "kind": "planning a video game",
+ "repeat": 2,
+ "guesser": "deepseek-flash",
+ "started": "2026-09-23T22:15:58.223Z",
+ "finished": "2026-09-23T22:16:22.733Z",
+ "first_guess": {
+  "raw": {
+   "things": {
+    "game": [
+     "playing",
+     "won",
+     "over"
+    ],
+    "door": [
+     "locked",
+     "open"
+    ],
+    "lives": [
+     "2",
+     "1",
+     "0"
+    ],
+    "key": [
+     "on floor",
+     "carried"
+    ]
+   },
+   "events": [
+    "pick up key",
+    "use door",
+    "walk through",
+    "touch ghost"
+   ],
+   "start": {
+    "game": "playing",
+    "door": "locked",
+    "lives": "2",
+    "key": "on floor"
+   },
+   "rules": [
+    {
+     "name": "pick up key",
+     "when": [
+      "pick up key happens",
+      "key is on floor",
+      "game is playing"
+     ],
+     "then": "key is carried"
+    },
+    {
+     "name": "use door",
+     "when": [
+      "use door happens",
+      "key is carried",
+      "game is playing"
+     ],
+     "then": "door is open"
+    },
+    {
+     "name": "walk through",
+     "when": [
+      "walk through happens",
+      "door is open",
+      "game is playing"
+     ],
+     "then": "game is won"
+    },
+    {
+     "name": "touch ghost lose life 2",
+     "when": [
+      "touch ghost happens",
+      "lives is 2",
+      "game is playing"
+     ],
+     "then": "lives is 1"
+    },
+    {
+     "name": "touch ghost lose life 1",
+     "when": [
+      "touch ghost happens",
+      "lives is 1",
+      "game is playing"
+     ],
+     "then": "lives is 0"
+    },
+    {
+     "name": "game over",
+     "when": [
+      "lives is 0",
+      "game is playing"
+     ],
+     "then": "game is over"
+    }
+   ]
+  },
+  "log": [
+   {
+    "asked": "Task: A small game: the player can pick up a key, open a door with it, and walk through to win. Touching the ghost costs a life. With no lives left the game is over. Opening the door without the key does nothing.\n\nThings and states to use:\n  game: playing, won, over\n  door: locked, open\n  lives: 2, 1, 0\n  key: on floor, carried\nEvents to use: pick up key, use door, walk through, touch ghost\n\nThe checker will test your model on these jobs:\n- \"key, door, walk: win\": events in order: pick up key, then use door, then walk through; expected at the end: game is won.\n- \"door without key stays locked\": events in order: use door, then walk through; expected at the end: door is locked and game is playing.\n- \"one ghost touch\": events in order: touch ghost; expected at the end: lives is 1 and game is playing.\n- \"two ghost touches\": events in order: touch ghost, then touch ghost; expected at the end: game is over.\n\nWrite the model.",
+    "replied": "{\"things\":{\"game\":[\"playing\",\"won\",\"over\"],\"door\":[\"locked\",\"open\"],\"lives\":[\"2\",\"1\",\"0\"],\"key\":[\"on floor\",\"carried\"]},\"events\":[\"pick up key\",\"use door\",\"walk through\",\"touch ghost\"],\"start\":{\"game\":\"playing\",\"door\":\"locked\",\"lives\":\"2\",\"key\":\"on floor\"},\"rules\":[{\"name\":\"pick up key\",\"when\":[\"pick up key happens\",\"key is on floor\",\"game is playing\"],\"then\":\"key is carried\"},{\"name\":\"use door\",\"when\":[\"use door happens\",\"key is carried\",\"game is playing\"],\"then\":\"door is open\"},{\"name\":\"walk through\",\"when\":[\"walk through happens\",\"door is open\",\"game is playing\"],\"then\":\"game is won\"},{\"name\":\"touch ghost lose life 2\",\"when\":[\"touch ghost happens\",\"lives is 2\",\"game is playing\"],\"then\":\"lives is 1\"},{\"name\":\"touch ghost lose life 1\",\"when\":[\"touch ghost happens\",\"lives is 1\",\"game is playing\"],\"then\":\"lives is 0\"},{\"name\":\"game over\",\"when\":[\"lives is 0\",\"game is playing\"],\"then\":\"game is over\"}]}",
+    "seconds": 24
+   }
+  ]
+ },
+ "counts": {
+  "requests": 1,
+  "replies": 1,
+  "cut_off": 0,
+  "plain_form": 0,
+  "refused": 0,
+  "thinking_characters": 20124,
+  "answer_characters": 913,
+  "tokens_in": 851,
+  "tokens_out": 5273
+ },
+ "results": {
+  "one guess": {
+   "world": "door-game",
+   "mode": "one guess",
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "4/4",
+     "problems": 0
+    }
+   ],
+   "added_jobs": [],
+   "questions_to_world": 0,
+   "guesser_calls": 0,
+   "final": {
+    "original_seen_passed": 4,
+    "original_seen_total": 4,
+    "all_seen_passed": 4,
+    "all_seen_total": 4,
+    "held_back_passed": 3,
+    "held_back_total": 3,
+    "held_back_failed": [],
+    "problems": [],
+    "held_back_asked": []
+   },
+   "model": {
+    "things": {
+     "game": [
+      "playing",
+      "won",
+      "over"
+     ],
+     "door": [
+      "locked",
+      "open"
+     ],
+     "lives": [
+      "2",
+      "1",
+      "0"
+     ],
+     "key": [
+      "on floor",
+      "carried"
+     ]
+    },
+    "events": [
+     "pick up key",
+     "use door",
+     "walk through",
+     "touch ghost"
+    ],
+    "start": {
+     "game": "playing",
+     "door": "locked",
+     "lives": "2",
+     "key": "on floor"
+    },
+    "rules": [
+     {
+      "name": "pick up key",
+      "when": [
+       "pick up key happens",
+       "key is on floor",
+       "game is playing"
+      ],
+      "then": "key is carried",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "use door",
+      "when": [
+       "use door happens",
+       "key is carried",
+       "game is playing"
+      ],
+      "then": "door is open",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "walk through",
+      "when": [
+       "walk through happens",
+       "door is open",
+       "game is playing"
+      ],
+      "then": "game is won",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "touch ghost lose life 2",
+      "when": [
+       "touch ghost happens",
+       "lives is 2",
+       "game is playing"
+      ],
+      "then": "lives is 1",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "touch ghost lose life 1",
+      "when": [
+       "touch ghost happens",
+       "lives is 1",
+       "game is playing"
+      ],
+      "then": "lives is 0",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "game over",
+      "when": [
+       "lives is 0",
+       "game is playing"
+      ],
+      "then": "game is over",
+      "made_by": "guesser first guess"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "Task: A small game: the player can pick up a key, open a door with it, and walk through to win. Touching the ghost costs a life. With no lives left the game is over. Opening the door without the key does nothing.\n\nThings and states to use:\n  game: playing, won, over\n  door: locked, open\n  lives: 2, 1, 0\n  key: on floor, carried\nEvents to use: pick up key, use door, walk through, touch ghost\n\nThe checker will test your model on these jobs:\n- \"key, door, walk: win\": events in order: pick up key, then use door, then walk through; expected at the end: game is won.\n- \"door without key stays locked\": events in order: use door, then walk through; expected at the end: door is locked and game is playing.\n- \"one ghost touch\": events in order: touch ghost; expected at the end: lives is 1 and game is playing.\n- \"two ghost touches\": events in order: touch ghost, then touch ghost; expected at the end: game is over.\n\nWrite the model.",
+     "replied": "{\"things\":{\"game\":[\"playing\",\"won\",\"over\"],\"door\":[\"locked\",\"open\"],\"lives\":[\"2\",\"1\",\"0\"],\"key\":[\"on floor\",\"carried\"]},\"events\":[\"pick up key\",\"use door\",\"walk through\",\"touch ghost\"],\"start\":{\"game\":\"playing\",\"door\":\"locked\",\"lives\":\"2\",\"key\":\"on floor\"},\"rules\":[{\"name\":\"pick up key\",\"when\":[\"pick up key happens\",\"key is on floor\",\"game is playing\"],\"then\":\"key is carried\"},{\"name\":\"use door\",\"when\":[\"use door happens\",\"key is carried\",\"game is playing\"],\"then\":\"door is open\"},{\"name\":\"walk through\",\"when\":[\"walk through happens\",\"door is open\",\"game is playing\"],\"then\":\"game is won\"},{\"name\":\"touch ghost lose life 2\",\"when\":[\"touch ghost happens\",\"lives is 2\",\"game is playing\"],\"then\":\"lives is 1\"},{\"name\":\"touch ghost lose life 1\",\"when\":[\"touch ghost happens\",\"lives is 1\",\"game is playing\"],\"then\":\"lives is 0\"},{\"name\":\"game over\",\"when\":[\"lives is 0\",\"game is playing\"],\"then\":\"game is over\"}]}",
+     "seconds": 24
+    }
+   ]
+  },
+  "rewrite": {
+   "world": "door-game",
+   "mode": "rewrite",
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "4/4",
+     "problems": 0
+    }
+   ],
+   "added_jobs": [],
+   "questions_to_world": 0,
+   "guesser_calls": 0,
+   "final": {
+    "original_seen_passed": 4,
+    "original_seen_total": 4,
+    "all_seen_passed": 4,
+    "all_seen_total": 4,
+    "held_back_passed": 3,
+    "held_back_total": 3,
+    "held_back_failed": [],
+    "problems": [],
+    "held_back_asked": []
+   },
+   "model": {
+    "things": {
+     "game": [
+      "playing",
+      "won",
+      "over"
+     ],
+     "door": [
+      "locked",
+      "open"
+     ],
+     "lives": [
+      "2",
+      "1",
+      "0"
+     ],
+     "key": [
+      "on floor",
+      "carried"
+     ]
+    },
+    "events": [
+     "pick up key",
+     "use door",
+     "walk through",
+     "touch ghost"
+    ],
+    "start": {
+     "game": "playing",
+     "door": "locked",
+     "lives": "2",
+     "key": "on floor"
+    },
+    "rules": [
+     {
+      "name": "pick up key",
+      "when": [
+       "pick up key happens",
+       "key is on floor",
+       "game is playing"
+      ],
+      "then": "key is carried",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "use door",
+      "when": [
+       "use door happens",
+       "key is carried",
+       "game is playing"
+      ],
+      "then": "door is open",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "walk through",
+      "when": [
+       "walk through happens",
+       "door is open",
+       "game is playing"
+      ],
+      "then": "game is won",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "touch ghost lose life 2",
+      "when": [
+       "touch ghost happens",
+       "lives is 2",
+       "game is playing"
+      ],
+      "then": "lives is 1",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "touch ghost lose life 1",
+      "when": [
+       "touch ghost happens",
+       "lives is 1",
+       "game is playing"
+      ],
+      "then": "lives is 0",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "game over",
+      "when": [
+       "lives is 0",
+       "game is playing"
+      ],
+      "then": "game is over",
+      "made_by": "guesser first guess"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "Task: A small game: the player can pick up a key, open a door with it, and walk through to win. Touching the ghost costs a life. With no lives left the game is over. Opening the door without the key does nothing.\n\nThings and states to use:\n  game: playing, won, over\n  door: locked, open\n  lives: 2, 1, 0\n  key: on floor, carried\nEvents to use: pick up key, use door, walk through, touch ghost\n\nThe checker will test your model on these jobs:\n- \"key, door, walk: win\": events in order: pick up key, then use door, then walk through; expected at the end: game is won.\n- \"door without key stays locked\": events in order: use door, then walk through; expected at the end: door is locked and game is playing.\n- \"one ghost touch\": events in order: touch ghost; expected at the end: lives is 1 and game is playing.\n- \"two ghost touches\": events in order: touch ghost, then touch ghost; expected at the end: game is over.\n\nWrite the model.",
+     "replied": "{\"things\":{\"game\":[\"playing\",\"won\",\"over\"],\"door\":[\"locked\",\"open\"],\"lives\":[\"2\",\"1\",\"0\"],\"key\":[\"on floor\",\"carried\"]},\"events\":[\"pick up key\",\"use door\",\"walk through\",\"touch ghost\"],\"start\":{\"game\":\"playing\",\"door\":\"locked\",\"lives\":\"2\",\"key\":\"on floor\"},\"rules\":[{\"name\":\"pick up key\",\"when\":[\"pick up key happens\",\"key is on floor\",\"game is playing\"],\"then\":\"key is carried\"},{\"name\":\"use door\",\"when\":[\"use door happens\",\"key is carried\",\"game is playing\"],\"then\":\"door is open\"},{\"name\":\"walk through\",\"when\":[\"walk through happens\",\"door is open\",\"game is playing\"],\"then\":\"game is won\"},{\"name\":\"touch ghost lose life 2\",\"when\":[\"touch ghost happens\",\"lives is 2\",\"game is playing\"],\"then\":\"lives is 1\"},{\"name\":\"touch ghost lose life 1\",\"when\":[\"touch ghost happens\",\"lives is 1\",\"game is playing\"],\"then\":\"lives is 0\"},{\"name\":\"game over\",\"when\":[\"lives is 0\",\"game is playing\"],\"then\":\"game is over\"}]}",
+     "seconds": 24
+    }
+   ]
+  },
+  "guess and fix": {
+   "world": "door-game",
+   "mode": "guess and fix",
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "4/4",
+     "problems": 0
+    }
+   ],
+   "added_jobs": [],
+   "questions_to_world": 0,
+   "guesser_calls": 0,
+   "final": {
+    "original_seen_passed": 4,
+    "original_seen_total": 4,
+    "all_seen_passed": 4,
+    "all_seen_total": 4,
+    "held_back_passed": 3,
+    "held_back_total": 3,
+    "held_back_failed": [],
+    "problems": [],
+    "held_back_asked": []
+   },
+   "model": {
+    "things": {
+     "game": [
+      "playing",
+      "won",
+      "over"
+     ],
+     "door": [
+      "locked",
+      "open"
+     ],
+     "lives": [
+      "2",
+      "1",
+      "0"
+     ],
+     "key": [
+      "on floor",
+      "carried"
+     ]
+    },
+    "events": [
+     "pick up key",
+     "use door",
+     "walk through",
+     "touch ghost"
+    ],
+    "start": {
+     "game": "playing",
+     "door": "locked",
+     "lives": "2",
+     "key": "on floor"
+    },
+    "rules": [
+     {
+      "name": "pick up key",
+      "when": [
+       "pick up key happens",
+       "key is on floor",
+       "game is playing"
+      ],
+      "then": "key is carried",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "use door",
+      "when": [
+       "use door happens",
+       "key is carried",
+       "game is playing"
+      ],
+      "then": "door is open",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "walk through",
+      "when": [
+       "walk through happens",
+       "door is open",
+       "game is playing"
+      ],
+      "then": "game is won",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "touch ghost lose life 2",
+      "when": [
+       "touch ghost happens",
+       "lives is 2",
+       "game is playing"
+      ],
+      "then": "lives is 1",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "touch ghost lose life 1",
+      "when": [
+       "touch ghost happens",
+       "lives is 1",
+       "game is playing"
+      ],
+      "then": "lives is 0",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "game over",
+      "when": [
+       "lives is 0",
+       "game is playing"
+      ],
+      "then": "game is over",
+      "made_by": "guesser first guess"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "Task: A small game: the player can pick up a key, open a door with it, and walk through to win. Touching the ghost costs a life. With no lives left the game is over. Opening the door without the key does nothing.\n\nThings and states to use:\n  game: playing, won, over\n  door: locked, open\n  lives: 2, 1, 0\n  key: on floor, carried\nEvents to use: pick up key, use door, walk through, touch ghost\n\nThe checker will test your model on these jobs:\n- \"key, door, walk: win\": events in order: pick up key, then use door, then walk through; expected at the end: game is won.\n- \"door without key stays locked\": events in order: use door, then walk through; expected at the end: door is locked and game is playing.\n- \"one ghost touch\": events in order: touch ghost; expected at the end: lives is 1 and game is playing.\n- \"two ghost touches\": events in order: touch ghost, then touch ghost; expected at the end: game is over.\n\nWrite the model.",
+     "replied": "{\"things\":{\"game\":[\"playing\",\"won\",\"over\"],\"door\":[\"locked\",\"open\"],\"lives\":[\"2\",\"1\",\"0\"],\"key\":[\"on floor\",\"carried\"]},\"events\":[\"pick up key\",\"use door\",\"walk through\",\"touch ghost\"],\"start\":{\"game\":\"playing\",\"door\":\"locked\",\"lives\":\"2\",\"key\":\"on floor\"},\"rules\":[{\"name\":\"pick up key\",\"when\":[\"pick up key happens\",\"key is on floor\",\"game is playing\"],\"then\":\"key is carried\"},{\"name\":\"use door\",\"when\":[\"use door happens\",\"key is carried\",\"game is playing\"],\"then\":\"door is open\"},{\"name\":\"walk through\",\"when\":[\"walk through happens\",\"door is open\",\"game is playing\"],\"then\":\"game is won\"},{\"name\":\"touch ghost lose life 2\",\"when\":[\"touch ghost happens\",\"lives is 2\",\"game is playing\"],\"then\":\"lives is 1\"},{\"name\":\"touch ghost lose life 1\",\"when\":[\"touch ghost happens\",\"lives is 1\",\"game is playing\"],\"then\":\"lives is 0\"},{\"name\":\"game over\",\"when\":[\"lives is 0\",\"game is playing\"],\"then\":\"game is over\"}]}",
+     "seconds": 24
+    }
+   ]
+  },
+  "full loop": {
+   "world": "door-game",
+   "mode": "full loop",
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "4/4",
+     "problems": 0
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 3,
+     "seen": "7/7"
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 3,
+     "seen": "10/10"
+    },
+    {
+     "step": "look for surprises",
+     "added": 4,
+     "surprises": 0,
+     "seen": "14/14"
+    },
+    {
+     "step": "look for surprises",
+     "added": 2,
+     "surprises": 0,
+     "seen": "16/16"
+    }
+   ],
+   "added_jobs": [
+    {
+     "job": {
+      "name": "world answer 1",
+      "start": {
+       "door": "open"
+      },
+      "events": [
+       "pick up key",
+       "use door",
+       "walk through"
+      ],
+      "expect": [
+       "key is carried"
+      ],
+      "from": "given"
+     },
+     "why": "loose rule \"pick up key\": condition \"key is on floor\" replaced by \"door is locked\""
+    },
+    {
+     "job": {
+      "name": "world answer 2",
+      "start": {},
+      "events": [
+       "pick up key",
+       "walk through"
+      ],
+      "expect": [
+       "game is playing",
+       "door is locked"
+      ],
+      "from": "given"
+     },
+     "why": "loose rule \"use door\": condition \"use door happens\" left out"
+    },
+    {
+     "job": {
+      "name": "world answer 3",
+      "start": {},
+      "events": [
+       "pick up key",
+       "use door"
+      ],
+      "expect": [
+       "game is playing"
+      ],
+      "from": "given"
+     },
+     "why": "loose rule \"walk through\": condition \"walk through happens\" left out"
+    },
+    {
+     "job": {
+      "name": "world answer 4",
+      "start": {},
+      "events": [
+       "touch ghost",
+       "pick up key",
+       "use door",
+       "walk through"
+      ],
+      "expect": [
+       "game is won",
+       "door is open",
+       "key is carried"
+      ],
+      "from": "given"
+     },
+     "why": "loose rule \"pick up key\": condition \"key is on floor\" replaced by \"lives is 2\""
+    },
+    {
+     "job": {
+      "name": "world answer 5",
+      "start": {},
+      "events": [
+       "touch ghost",
+       "pick up key",
+       "touch ghost",
+       "use door",
+       "walk through"
+      ],
+      "expect": [
+       "door is locked"
+      ],
+      "from": "given"
+     },
+     "why": "loose rule \"use door\": condition \"game is playing\" left out"
+    },
+    {
+     "job": {
+      "name": "world answer 6",
+      "start": {},
+      "events": [
+       "touch ghost",
+       "pick up key",
+       "use door",
+       "walk through"
+      ],
+      "expect": [
+       "game is won",
+       "door is open"
+      ],
+      "from": "given"
+     },
+     "why": "loose rule \"use door\": condition \"game is playing\" replaced by \"lives is 2\""
+    },
+    {
+     "job": {
+      "name": "world answer 7",
+      "start": {
+       "door": "open"
+      },
+      "events": [
+       "use door",
+       "walk through"
+      ],
+      "expect": [
+       "game is won",
+       "door is open",
+       "lives is 2",
+       "key is on floor"
+      ],
+      "from": "given"
+     },
+     "why": "look for surprises: the situation of job \"door without key stays locked\", but door starts open",
+     "surprise": false
+    },
+    {
+     "job": {
+      "name": "world answer 8",
+      "start": {},
+      "events": [
+       "pick up key",
+       "touch ghost"
+      ],
+      "expect": [
+       "game is playing",
+       "door is locked",
+       "lives is 1",
+       "key is carried"
+      ],
+      "from": "given"
+     },
+     "why": "look for surprises: the situation of job \"one ghost touch\", but \"pick up key\" also happens first",
+     "surprise": false
+    },
+    {
+     "job": {
+      "name": "world answer 9",
+      "start": {
+       "door": "open"
+      },
+      "events": [
+       "touch ghost",
+       "pick up key",
+       "use door",
+       "walk through"
+      ],
+      "expect": [
+       "game is won",
+       "door is open",
+       "lives is 1",
+       "key is carried"
+      ],
+      "from": "given"
+     },
+     "why": "look for surprises: the situation of job \"world answer 1\", but \"touch ghost\" also happens first",
+     "surprise": false
+    },
+    {
+     "job": {
+      "name": "world answer 10",
+      "start": {},
+      "events": [
+       "touch ghost",
+       "pick up key",
+       "use door"
+      ],
+      "expect": [
+       "game is playing",
+       "door is open",
+       "lives is 1",
+       "key is carried"
+      ],
+      "from": "given"
+     },
+     "why": "look for surprises: the situation of job \"world answer 3\", but \"touch ghost\" also happens first",
+     "surprise": false
+    },
+    {
+     "job": {
+      "name": "world answer 11",
+      "start": {},
+      "events": [
+       "touch ghost",
+       "pick up key",
+       "use door",
+       "touch ghost",
+       "walk through"
+      ],
+      "expect": [
+       "game is over",
+       "door is open",
+       "lives is 0",
+       "key is carried"
+      ],
+      "from": "given"
+     },
+     "why": "look for surprises: the situation of job \"world answer 4\", but \"touch ghost\" also happens after \"use door\"",
+     "surprise": false
+    },
+    {
+     "job": {
+      "name": "world answer 12",
+      "start": {
+       "door": "open"
+      },
+      "events": [
+       "touch ghost",
+       "use door",
+       "walk through"
+      ],
+      "expect": [
+       "game is won",
+       "door is open",
+       "lives is 1",
+       "key is on floor"
+      ],
+      "from": "given"
+     },
+     "why": "look for surprises: the situation of job \"world answer 7\", but \"touch ghost\" also happens first",
+     "surprise": false
+    }
+   ],
+   "questions_to_world": 12,
+   "guesser_calls": 0,
+   "final": {
+    "original_seen_passed": 4,
+    "original_seen_total": 4,
+    "all_seen_passed": 16,
+    "all_seen_total": 16,
+    "held_back_passed": 3,
+    "held_back_total": 3,
+    "held_back_failed": [],
+    "problems": [],
+    "held_back_asked": [
+     "walk through a locked door"
+    ]
+   },
+   "model": {
+    "things": {
+     "game": [
+      "playing",
+      "won",
+      "over"
+     ],
+     "door": [
+      "locked",
+      "open"
+     ],
+     "lives": [
+      "2",
+      "1",
+      "0"
+     ],
+     "key": [
+      "on floor",
+      "carried"
+     ]
+    },
+    "events": [
+     "pick up key",
+     "use door",
+     "walk through",
+     "touch ghost"
+    ],
+    "start": {
+     "game": "playing",
+     "door": "locked",
+     "lives": "2",
+     "key": "on floor"
+    },
+    "rules": [
+     {
+      "name": "pick up key",
+      "when": [
+       "pick up key happens",
+       "key is on floor",
+       "game is playing"
+      ],
+      "then": "key is carried",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "use door",
+      "when": [
+       "use door happens",
+       "key is carried",
+       "game is playing"
+      ],
+      "then": "door is open",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "walk through",
+      "when": [
+       "walk through happens",
+       "door is open",
+       "game is playing"
+      ],
+      "then": "game is won",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "touch ghost lose life 2",
+      "when": [
+       "touch ghost happens",
+       "lives is 2",
+       "game is playing"
+      ],
+      "then": "lives is 1",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "touch ghost lose life 1",
+      "when": [
+       "touch ghost happens",
+       "lives is 1",
+       "game is playing"
+      ],
+      "then": "lives is 0",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "game over",
+      "when": [
+       "lives is 0",
+       "game is playing"
+      ],
+      "then": "game is over",
+      "made_by": "guesser first guess"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "Task: A small game: the player can pick up a key, open a door with it, and walk through to win. Touching the ghost costs a life. With no lives left the game is over. Opening the door without the key does nothing.\n\nThings and states to use:\n  game: playing, won, over\n  door: locked, open\n  lives: 2, 1, 0\n  key: on floor, carried\nEvents to use: pick up key, use door, walk through, touch ghost\n\nThe checker will test your model on these jobs:\n- \"key, door, walk: win\": events in order: pick up key, then use door, then walk through; expected at the end: game is won.\n- \"door without key stays locked\": events in order: use door, then walk through; expected at the end: door is locked and game is playing.\n- \"one ghost touch\": events in order: touch ghost; expected at the end: lives is 1 and game is playing.\n- \"two ghost touches\": events in order: touch ghost, then touch ghost; expected at the end: game is over.\n\nWrite the model.",
+     "replied": "{\"things\":{\"game\":[\"playing\",\"won\",\"over\"],\"door\":[\"locked\",\"open\"],\"lives\":[\"2\",\"1\",\"0\"],\"key\":[\"on floor\",\"carried\"]},\"events\":[\"pick up key\",\"use door\",\"walk through\",\"touch ghost\"],\"start\":{\"game\":\"playing\",\"door\":\"locked\",\"lives\":\"2\",\"key\":\"on floor\"},\"rules\":[{\"name\":\"pick up key\",\"when\":[\"pick up key happens\",\"key is on floor\",\"game is playing\"],\"then\":\"key is carried\"},{\"name\":\"use door\",\"when\":[\"use door happens\",\"key is carried\",\"game is playing\"],\"then\":\"door is open\"},{\"name\":\"walk through\",\"when\":[\"walk through happens\",\"door is open\",\"game is playing\"],\"then\":\"game is won\"},{\"name\":\"touch ghost lose life 2\",\"when\":[\"touch ghost happens\",\"lives is 2\",\"game is playing\"],\"then\":\"lives is 1\"},{\"name\":\"touch ghost lose life 1\",\"when\":[\"touch ghost happens\",\"lives is 1\",\"game is playing\"],\"then\":\"lives is 0\"},{\"name\":\"game over\",\"when\":[\"lives is 0\",\"game is playing\"],\"then\":\"game is over\"}]}",
+     "seconds": 24
+    }
+   ]
+  }
+ }
+}

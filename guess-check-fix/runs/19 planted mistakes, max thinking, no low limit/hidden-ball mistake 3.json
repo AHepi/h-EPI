@@ -1,0 +1,254 @@
+{
+ "world": "hidden-ball",
+ "planted": {
+  "kind": "hidden",
+  "how": "picked by the fixed shuffle",
+  "description": "rule \"see 2\" removed",
+  "form": {
+   "things": {
+    "place": [
+     "1",
+     "2",
+     "3",
+     "4"
+    ],
+    "screen": [
+     "down",
+     "up"
+    ],
+    "seen": [
+     "at 1",
+     "at 2",
+     "at 3",
+     "at 4",
+     "nothing"
+    ]
+   },
+   "events": [],
+   "start": {
+    "place": "1",
+    "screen": "down",
+    "seen": "at 1"
+   },
+   "rules": [
+    {
+     "name": "roll 1 to 2",
+     "when": [
+      "place is 1"
+     ],
+     "then": "place is 2"
+    },
+    {
+     "name": "roll 2 to 3",
+     "when": [
+      "place is 2"
+     ],
+     "then": "place is 3"
+    },
+    {
+     "name": "roll 3 to 4",
+     "when": [
+      "place is 3"
+     ],
+     "then": "place is 4"
+    },
+    {
+     "name": "see 1",
+     "when": [
+      "place is 1"
+     ],
+     "then": "seen is at 1"
+    },
+    {
+     "name": "see 3",
+     "when": [
+      "place is 3",
+      "screen is down"
+     ],
+     "then": "seen is at 3"
+    },
+    {
+     "name": "see 4",
+     "when": [
+      "place is 4"
+     ],
+     "then": "seen is at 4"
+    },
+    {
+     "name": "hidden at 2",
+     "when": [
+      "place is 2",
+      "screen is up"
+     ],
+     "then": "seen is nothing"
+    },
+    {
+     "name": "hidden at 3",
+     "when": [
+      "place is 3",
+      "screen is up"
+     ],
+     "then": "seen is nothing"
+    }
+   ]
+  },
+  "before": {
+   "shown": "5/5",
+   "held_back": "2/3",
+   "nearby": {
+    "tried": 10,
+    "differ": 0,
+    "cannot_run": 0,
+    "examples": []
+   }
+  }
+ },
+ "guesser": "deepseek-flash",
+ "counts": {
+  "requests": 0,
+  "replies": 0,
+  "cut_off": 0,
+  "plain_form": 0,
+  "refused": 0,
+  "thinking_characters": 0,
+  "answer_characters": 0,
+  "tokens_in": 0,
+  "tokens_out": 0
+ },
+ "results": [
+  {
+   "corrector": "self review, max thinking, reply limit 200,000",
+   "shown": "5/5",
+   "held_back": "3/3",
+   "held_back_asked": [],
+   "questions_to_world": 0,
+   "deepseek_asked": 1,
+   "tokens_out": 22489,
+   "nearby": {
+    "tried": 10,
+    "differ": 0,
+    "cannot_run": 0,
+    "examples": []
+   },
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "5/5",
+     "problems": 0
+    },
+    {
+     "step": "self review",
+     "verdict": "no change",
+     "kept": true,
+     "lost": [],
+     "seen": "5/5"
+    }
+   ],
+   "model": {
+    "things": {
+     "place": [
+      "1",
+      "2",
+      "3",
+      "4"
+     ],
+     "screen": [
+      "down",
+      "up"
+     ],
+     "seen": [
+      "at 1",
+      "at 2",
+      "at 3",
+      "at 4",
+      "nothing"
+     ]
+    },
+    "events": [],
+    "start": {
+     "place": "1",
+     "screen": "down",
+     "seen": "at 1"
+    },
+    "rules": [
+     {
+      "name": "roll 1 to 2",
+      "when": [
+       "place is 1"
+      ],
+      "then": "place is 2"
+     },
+     {
+      "name": "roll 2 to 3",
+      "when": [
+       "place is 2"
+      ],
+      "then": "place is 3"
+     },
+     {
+      "name": "roll 3 to 4",
+      "when": [
+       "place is 3"
+      ],
+      "then": "place is 4"
+     },
+     {
+      "name": "see 1",
+      "when": [
+       "place is 1"
+      ],
+      "then": "seen is at 1"
+     },
+     {
+      "name": "see 2",
+      "when": [
+       "place is 2",
+       "screen is down"
+      ],
+      "then": "seen is at 2"
+     },
+     {
+      "name": "see 3",
+      "when": [
+       "place is 3",
+       "screen is down"
+      ],
+      "then": "seen is at 3"
+     },
+     {
+      "name": "see 4",
+      "when": [
+       "place is 4"
+      ],
+      "then": "seen is at 4"
+     },
+     {
+      "name": "hidden at 2",
+      "when": [
+       "place is 2",
+       "screen is up"
+      ],
+      "then": "seen is nothing"
+     },
+     {
+      "name": "hidden at 3",
+      "when": [
+       "place is 3",
+       "screen is up"
+      ],
+      "then": "seen is nothing"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "Task: A ball rolls from spot 1 to spot 4, one spot per step. A screen can hide spots 2 and 3. We only see where the ball is when it is not hidden. Predict what we see.\n\nThings and states to use:\n  screen: down, up\n  seen: at 1, at 2, at 3, at 4, nothing\nEvents to use: (none)\n\nThe checker will test your model on these jobs:\n- \"no screen, ends at 4\": start with screen is down, seen is at 1; no events; expected at the end: seen is at 4.\n- \"no screen, seen at 3 on step 3\": start with screen is down, seen is at 1; no events; expected at step 3: seen is at 3.\n- \"screen up, ends at 4\": start with screen is up, seen is at 1; no events; expected at the end: seen is at 4.\n- \"screen up, nothing on step 2\": start with screen is up, seen is at 1; no events; expected at step 2: seen is nothing.\n- \"screen up, nothing on step 3\": start with screen is up, seen is at 1; no events; expected at step 3: seen is nothing.\n\nHere is a model for this task. It may contain mistakes, including mistakes the jobs above do not catch.\n\n{\"things\":{\"place\":[\"1\",\"2\",\"3\",\"4\"],\"screen\":[\"down\",\"up\"],\"seen\":[\"at 1\",\"at 2\",\"at 3\",\"at 4\",\"nothing\"]},\"events\":[],\"start\":{\"place\":\"1\",\"screen\":\"down\",\"seen\":\"at 1\"},\"rules\":[{\"name\":\"roll 1 to 2\",\"when\":[\"place is 1\"],\"then\":\"place is 2\",\"made_by\":\"guesser first guess\"},{\"name\":\"roll 2 to 3\",\"when\":[\"place is 2\"],\"then\":\"place is 3\",\"made_by\":\"guesser first guess\"},{\"name\":\"roll 3 to 4\",\"when\":[\"place is 3\"],\"then\":\"place is 4\",\"made_by\":\"guesser first guess\"},{\"name\":\"see 1\",\"when\":[\"place is 1\"],\"then\":\"seen is at 1\",\"made_by\":\"guesser first guess\"},{\"name\":\"see 3\",\"when\":[\"place is 3\",\"screen is down\"],\"then\":\"seen is at 3\",\"made_by\":\"guesser first guess\"},{\"name\":\"see 4\",\"when\":[\"place is 4\"],\"then\":\"seen is at 4\",\"made_by\":\"guesser first guess\"},{\"name\":\"hidden at 2\",\"when\":[\"place is 2\",\"screen is up\"],\"then\":\"seen is nothing\",\"made_by\":\"guesser first guess\"},{\"name\":\"hidden at 3\",\"when\":[\"place is 3\",\"screen is up\"],\"then\":\"seen is nothing\",\"made_by\":\"guesser first guess\"}]}\n\nGo through the task sentence by sentence and check that every part of it is in the model, and that every rule does what the task says, in every situation the task describes, not only in the jobs. Correct every mistake you find. Write the whole corrected model. If you find no mistake, write it unchanged.",
+     "replied": "{\"things\":{\"place\":[\"1\",\"2\",\"3\",\"4\"],\"screen\":[\"down\",\"up\"],\"seen\":[\"at 1\",\"at 2\",\"at 3\",\"at 4\",\"nothing\"]},\"events\":[],\"start\":{\"place\":\"1\",\"screen\":\"down\",\"seen\":\"at 1\"},\"rules\":[{\"name\":\"roll 1 to 2\",\"when\":[\"place is 1\"],\"then\":\"place is 2\"},{\"name\":\"roll 2 to 3\",\"when\":[\"place is 2\"],\"then\":\"place is 3\"},{\"name\":\"roll 3 to 4\",\"when\":[\"place is 3\"],\"then\":\"place is 4\"},{\"name\":\"see 1\",\"when\":[\"place is 1\"],\"then\":\"seen is at 1\"},{\"name\":\"see 2\",\"when\":[\"place is 2\",\"screen is down\"],\"then\":\"seen is at 2\"},{\"name\":\"see 3\",\"when\":[\"place is 3\",\"screen is down\"],\"then\":\"seen is at 3\"},{\"name\":\"see 4\",\"when\":[\"place is 4\"],\"then\":\"seen is at 4\"},{\"name\":\"hidden at 2\",\"when\":[\"place is 2\",\"screen is up\"],\"then\":\"seen is nothing\"},{\"name\":\"hidden at 3\",\"when\":[\"place is 3\",\"screen is up\"],\"then\":\"seen is nothing\"}]}",
+     "seconds": 101,
+     "tokens_in": 1319,
+     "tokens_out": 22489
+    }
+   ]
+  }
+ ]
+}

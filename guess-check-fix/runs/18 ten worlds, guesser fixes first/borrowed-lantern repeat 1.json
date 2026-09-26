@@ -1,0 +1,365 @@
+{
+ "world": "borrowed-lantern",
+ "kind": "a story whose ending must follow",
+ "repeat": 1,
+ "guesser": "deepseek-flash",
+ "started": "2026-09-23T22:22:48.021Z",
+ "finished": "2026-09-23T22:23:05.345Z",
+ "first_guess": {
+  "reused_from": "runs/18 ten worlds after the fixes/borrowed-lantern repeat 1.json",
+  "raw": {
+   "things": {
+    "ada": [
+     "on the road",
+     "lost",
+     "found",
+     "home safe"
+    ],
+    "lantern": [
+     "with ada",
+     "with stranger"
+    ]
+   },
+   "events": [
+    "lend lantern",
+    "night falls",
+    "stranger searches"
+   ],
+   "start": {
+    "ada": "on the road",
+    "lantern": "with ada"
+   },
+   "rules": [
+    {
+     "name": "lend lantern to stranger",
+     "when": [
+      "lend lantern happens",
+      "lantern is with ada"
+     ],
+     "then": "lantern is with stranger"
+    },
+    {
+     "name": "night falls with lantern",
+     "when": [
+      "night falls happens",
+      "lantern is with ada",
+      "ada is on the road"
+     ],
+     "then": "ada is home safe"
+    },
+    {
+     "name": "night falls without lantern",
+     "when": [
+      "night falls happens",
+      "lantern is with stranger",
+      "ada is on the road"
+     ],
+     "then": "ada is lost"
+    },
+    {
+     "name": "stranger finds ada",
+     "when": [
+      "stranger searches happens",
+      "lantern is with stranger",
+      "ada is lost"
+     ],
+     "then": "ada is found"
+    }
+   ]
+  },
+  "log": [
+   {
+    "asked": "Task: A story: Ada lends her lantern to a stranger she meets on the road. Night falls before she reaches home, and without a light she gets lost in the woods. The stranger goes out searching with the lantern; Ada sees her own lantern through the trees, calls out, and is found. If she had kept her lantern she would have got home safely. If nobody had come searching she would still be lost.\n\nThings and states to use:\n  ada: on the road, lost, found, home safe\n  lantern: with ada, with stranger\nEvents to use: lend lantern, night falls, stranger searches\n\nThe checker will test your model on these jobs:\n- \"the story as told\": events in order: lend lantern, then night falls, then stranger searches; expected at the end: ada is found.\n- \"she keeps her lantern\": events in order: night falls; expected at the end: ada is home safe.\n- \"nobody searches\": events in order: lend lantern, then night falls; expected at the end: ada is lost.\n\nWrite the model.",
+    "replied": "{\"things\": {\"ada\": [\"on the road\", \"lost\", \"found\", \"home safe\"], \"lantern\": [\"with ada\", \"with stranger\"]}, \"events\": [\"lend lantern\", \"night falls\", \"stranger searches\"], \"start\": {\"ada\": \"on the road\", \"lantern\": \"with ada\"}, \"rules\": [{\"name\": \"lend lantern to stranger\", \"when\": [\"lend lantern happens\", \"lantern is with ada\"], \"then\": \"lantern is with stranger\"}, {\"name\": \"night falls with lantern\", \"when\": [\"night falls happens\", \"lantern is with ada\", \"ada is on the road\"], \"then\": \"ada is home safe\"}, {\"name\": \"night falls without lantern\", \"when\": [\"night falls happens\", \"lantern is with stranger\", \"ada is on the road\"], \"then\": \"ada is lost\"}, {\"name\": \"stranger finds ada\", \"when\": [\"stranger searches happens\", \"lantern is with stranger\", \"ada is lost\"], \"then\": \"ada is found\"}]}",
+    "seconds": 10
+   }
+  ]
+ },
+ "counts": {
+  "requests": 1,
+  "replies": 1,
+  "cut_off": 0,
+  "plain_form": 0,
+  "refused": 0,
+  "thinking_characters": 11751,
+  "answer_characters": 771,
+  "tokens_in": 1388,
+  "tokens_out": 2928
+ },
+ "results": {
+  "guesser fixes first": {
+   "world": "borrowed-lantern",
+   "mode": "guesser fixes first",
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "3/3",
+     "problems": 0
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 3,
+     "seen": "5/6"
+    },
+    {
+     "step": "guesser rewrites first",
+     "verdict": "accepted",
+     "repaired": [
+      "world answer 1"
+     ],
+     "lost": [],
+     "seen": "6/6"
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 2,
+     "seen": "8/8"
+    },
+    {
+     "step": "look for surprises",
+     "added": 3,
+     "surprises": 0,
+     "seen": "11/11"
+    },
+    {
+     "step": "look for surprises",
+     "added": 0,
+     "surprises": 0,
+     "seen": "11/11"
+    }
+   ],
+   "added_jobs": [
+    {
+     "job": {
+      "name": "world answer 1",
+      "start": {},
+      "events": [
+       "night falls",
+       "lend lantern",
+       "night falls",
+       "stranger searches"
+      ],
+      "expect": [
+       "lantern is with ada"
+      ],
+      "from": "given"
+     },
+     "why": "loose rule \"lend lantern to stranger\": condition \"lantern is with ada\" replaced by \"ada is on the road\""
+    },
+    {
+     "job": {
+      "name": "world answer 2",
+      "start": {
+       "ada": "lost"
+      },
+      "events": [
+       "night falls"
+      ],
+      "expect": [
+       "ada is lost"
+      ],
+      "from": "given"
+     },
+     "why": "loose rule \"night falls with lantern\": condition \"ada is on the road\" left out"
+    },
+    {
+     "job": {
+      "name": "world answer 3",
+      "start": {},
+      "events": [
+       "lend lantern",
+       "stranger searches"
+      ],
+      "expect": [
+       "ada is on the road"
+      ],
+      "from": "given"
+     },
+     "why": "loose rule \"night falls without lantern\": condition \"night falls happens\" left out"
+    },
+    {
+     "job": {
+      "name": "world answer 4",
+      "start": {},
+      "events": [
+       "lend lantern",
+       "night falls",
+       "stranger searches",
+       "night falls"
+      ],
+      "expect": [
+       "ada is found"
+      ],
+      "from": "given"
+     },
+     "why": "loose rule \"night falls without lantern\": condition \"ada is on the road\" left out"
+    },
+    {
+     "job": {
+      "name": "world answer 5",
+      "start": {
+       "ada": "lost"
+      },
+      "events": [
+       "lend lantern",
+       "night falls",
+       "stranger searches"
+      ],
+      "expect": [
+       "ada is lost"
+      ],
+      "from": "given"
+     },
+     "why": "loose rule \"stranger finds ada\": condition \"lantern is with stranger\" left out"
+    },
+    {
+     "job": {
+      "name": "world answer 6",
+      "start": {
+       "lantern": "with stranger"
+      },
+      "events": [
+       "lend lantern",
+       "night falls",
+       "stranger searches"
+      ],
+      "expect": [
+       "ada is found",
+       "lantern is with stranger"
+      ],
+      "from": "given"
+     },
+     "why": "look for surprises: the situation of job \"the story as told\", but lantern starts with stranger",
+     "surprise": false
+    },
+    {
+     "job": {
+      "name": "world answer 7",
+      "start": {
+       "lantern": "with stranger"
+      },
+      "events": [
+       "night falls"
+      ],
+      "expect": [
+       "ada is lost",
+       "lantern is with stranger"
+      ],
+      "from": "given"
+     },
+     "why": "look for surprises: the situation of job \"she keeps her lantern\", but lantern starts with stranger",
+     "surprise": false
+    },
+    {
+     "job": {
+      "name": "world answer 8",
+      "start": {
+       "ada": "lost",
+       "lantern": "with stranger"
+      },
+      "events": [
+       "lend lantern",
+       "night falls",
+       "stranger searches"
+      ],
+      "expect": [
+       "ada is found",
+       "lantern is with stranger"
+      ],
+      "from": "given"
+     },
+     "why": "look for surprises: the situation of job \"world answer 5\", but lantern starts with stranger",
+     "surprise": false
+    }
+   ],
+   "questions_to_world": 8,
+   "guesser_calls": 1,
+   "final": {
+    "original_seen_passed": 3,
+    "original_seen_total": 3,
+    "all_seen_passed": 11,
+    "all_seen_total": 11,
+    "held_back_passed": 2,
+    "held_back_total": 3,
+    "held_back_failed": [
+     "the search starts before dark"
+    ],
+    "problems": [],
+    "held_back_asked": []
+   },
+   "model": {
+    "things": {
+     "ada": [
+      "on the road",
+      "lost",
+      "found",
+      "home safe"
+     ],
+     "lantern": [
+      "with ada",
+      "with stranger"
+     ]
+    },
+    "events": [
+     "lend lantern",
+     "night falls",
+     "stranger searches"
+    ],
+    "start": {
+     "ada": "on the road",
+     "lantern": "with ada"
+    },
+    "rules": [
+     {
+      "name": "lend lantern to stranger",
+      "when": [
+       "lend lantern happens",
+       "lantern is with ada",
+       "ada is on the road"
+      ],
+      "then": "lantern is with stranger"
+     },
+     {
+      "name": "night falls with lantern",
+      "when": [
+       "night falls happens",
+       "lantern is with ada",
+       "ada is on the road"
+      ],
+      "then": "ada is home safe"
+     },
+     {
+      "name": "night falls without lantern",
+      "when": [
+       "night falls happens",
+       "lantern is with stranger",
+       "ada is on the road"
+      ],
+      "then": "ada is lost"
+     },
+     {
+      "name": "stranger finds ada",
+      "when": [
+       "stranger searches happens",
+       "lantern is with stranger",
+       "ada is lost"
+      ],
+      "then": "ada is found"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "Task: A story: Ada lends her lantern to a stranger she meets on the road. Night falls before she reaches home, and without a light she gets lost in the woods. The stranger goes out searching with the lantern; Ada sees her own lantern through the trees, calls out, and is found. If she had kept her lantern she would have got home safely. If nobody had come searching she would still be lost.\n\nThings and states to use:\n  ada: on the road, lost, found, home safe\n  lantern: with ada, with stranger\nEvents to use: lend lantern, night falls, stranger searches\n\nThe checker will test your model on these jobs:\n- \"the story as told\": events in order: lend lantern, then night falls, then stranger searches; expected at the end: ada is found.\n- \"she keeps her lantern\": events in order: night falls; expected at the end: ada is home safe.\n- \"nobody searches\": events in order: lend lantern, then night falls; expected at the end: ada is lost.\n\nWrite the model.",
+     "replied": "{\"things\": {\"ada\": [\"on the road\", \"lost\", \"found\", \"home safe\"], \"lantern\": [\"with ada\", \"with stranger\"]}, \"events\": [\"lend lantern\", \"night falls\", \"stranger searches\"], \"start\": {\"ada\": \"on the road\", \"lantern\": \"with ada\"}, \"rules\": [{\"name\": \"lend lantern to stranger\", \"when\": [\"lend lantern happens\", \"lantern is with ada\"], \"then\": \"lantern is with stranger\"}, {\"name\": \"night falls with lantern\", \"when\": [\"night falls happens\", \"lantern is with ada\", \"ada is on the road\"], \"then\": \"ada is home safe\"}, {\"name\": \"night falls without lantern\", \"when\": [\"night falls happens\", \"lantern is with stranger\", \"ada is on the road\"], \"then\": \"ada is lost\"}, {\"name\": \"stranger finds ada\", \"when\": [\"stranger searches happens\", \"lantern is with stranger\", \"ada is lost\"], \"then\": \"ada is found\"}]}",
+     "seconds": 10
+    },
+    {
+     "asked": "Task: A story: Ada lends her lantern to a stranger she meets on the road. Night falls before she reaches home, and without a light she gets lost in the woods. The stranger goes out searching with the lantern; Ada sees her own lantern through the trees, calls out, and is found. If she had kept her lantern she would have got home safely. If nobody had come searching she would still be lost.\n\nThings and states to use:\n  ada: on the road, lost, found, home safe\n  lantern: with ada, with stranger\nEvents to use: lend lantern, night falls, stranger searches\n\nThe checker will test your model on these jobs:\n- \"the story as told\": events in order: lend lantern, then night falls, then stranger searches; expected at the end: ada is found.\n- \"she keeps her lantern\": events in order: night falls; expected at the end: ada is home safe.\n- \"nobody searches\": events in order: lend lantern, then night falls; expected at the end: ada is lost.\n- \"world answer 1\": events in order: night falls, then lend lantern, then night falls, then stranger searches; expected at the end: lantern is with ada.\n- \"world answer 2\": start with ada is lost; events in order: night falls; expected at the end: ada is lost.\n- \"world answer 3\": events in order: lend lantern, then stranger searches; expected at the end: ada is on the road.\n\nThe current model:\n{\"things\":{\"ada\":[\"on the road\",\"lost\",\"found\",\"home safe\"],\"lantern\":[\"with ada\",\"with stranger\"]},\"events\":[\"lend lantern\",\"night falls\",\"stranger searches\"],\"start\":{\"ada\":\"on the road\",\"lantern\":\"with ada\"},\"rules\":[{\"name\":\"lend lantern to stranger\",\"when\":[\"lend lantern happens\",\"lantern is with ada\"],\"then\":\"lantern is with stranger\",\"made_by\":\"guesser first guess\"},{\"name\":\"night falls with lantern\",\"when\":[\"night falls happens\",\"lantern is with ada\",\"ada is on the road\"],\"then\":\"ada is home safe\",\"made_by\":\"guesser first guess\"},{\"name\":\"night falls without lantern\",\"when\":[\"night falls happens\",\"lantern is with stranger\",\"ada is on the road\"],\"then\":\"ada is lost\",\"made_by\":\"guesser first guess\"},{\"name\":\"stranger finds ada\",\"when\":[\"stranger searches happens\",\"lantern is with stranger\",\"ada is lost\"],\"then\":\"ada is found\",\"made_by\":\"guesser first guess\"}]}\n\nThe checker ran it.\n\nPASS: job \"the story as told\"\nPASS: job \"she keeps her lantern\"\nPASS: job \"nobody searches\"\nFAIL: job \"world answer 1\"\n  - What happened: step 1: night falls with lantern made ada home safe; step 2: lend lantern to stranger made lantern with stranger.\n  - Wanted lantern is with ada at the end; got lantern with stranger.\n  - No rule in the model can make lantern with ada.\nPASS: job \"world answer 2\"\nPASS: job \"world answer 3\"\n5 of 6 jobs pass.\n\nSMALL FIX FOUND: in rule \"lend lantern to stranger\": condition \"ada is on the road\" added repairs \"world answer 1\" and breaks nothing.\nSMALL FIX FOUND: in rule \"lend lantern to stranger\": condition \"lantern is with ada\" replaced by \"ada is on the road\" repairs \"world answer 1\" and breaks nothing.\n\nWrite the whole model again so that every job passes. Keep every rule that already works. Give every thing a start state.",
+     "replied": "{\"things\":{\"ada\":[\"on the road\",\"lost\",\"found\",\"home safe\"],\"lantern\":[\"with ada\",\"with stranger\"]},\"events\":[\"lend lantern\",\"night falls\",\"stranger searches\"],\"start\":{\"ada\":\"on the road\",\"lantern\":\"with ada\"},\"rules\":[{\"name\":\"lend lantern to stranger\",\"when\":[\"lend lantern happens\",\"lantern is with ada\",\"ada is on the road\"],\"then\":\"lantern is with stranger\"},{\"name\":\"night falls with lantern\",\"when\":[\"night falls happens\",\"lantern is with ada\",\"ada is on the road\"],\"then\":\"ada is home safe\"},{\"name\":\"night falls without lantern\",\"when\":[\"night falls happens\",\"lantern is with stranger\",\"ada is on the road\"],\"then\":\"ada is lost\"},{\"name\":\"stranger finds ada\",\"when\":[\"stranger searches happens\",\"lantern is with stranger\",\"ada is lost\"],\"then\":\"ada is found\"}]}",
+     "seconds": 17
+    }
+   ]
+  }
+ }
+}

@@ -1,0 +1,773 @@
+{
+ "world": "river-crossing",
+ "kind": "problem solving",
+ "repeat": 1,
+ "guesser": "deepseek-flash",
+ "started": "2026-09-23T22:22:46.089Z",
+ "finished": "2026-09-23T22:25:39.569Z",
+ "first_guess": {
+  "reused_from": "runs/18 ten worlds after the fixes/river-crossing repeat 1.json",
+  "raw": {
+   "things": {
+    "goose_is": [
+     "alive",
+     "eaten"
+    ],
+    "goose": [
+     "left",
+     "right"
+    ],
+    "grain_is": [
+     "whole",
+     "eaten"
+    ],
+    "fox": [
+     "left",
+     "right"
+    ],
+    "grain": [
+     "left",
+     "right"
+    ],
+    "farmer": [
+     "left",
+     "right"
+    ]
+   },
+   "events": [
+    "cross alone",
+    "cross with fox",
+    "cross with goose",
+    "cross with grain"
+   ],
+   "start": {
+    "goose_is": "alive",
+    "goose": "left",
+    "grain_is": "whole",
+    "fox": "left",
+    "grain": "left",
+    "farmer": "left"
+   },
+   "rules": [
+    {
+     "name": "cross alone left to right",
+     "when": [
+      "cross alone happens",
+      "farmer is left"
+     ],
+     "then": "farmer is right"
+    },
+    {
+     "name": "cross alone right to left",
+     "when": [
+      "cross alone happens",
+      "farmer is right"
+     ],
+     "then": "farmer is left"
+    },
+    {
+     "name": "cross with fox left to right farmer",
+     "when": [
+      "cross with fox happens",
+      "farmer is left",
+      "fox is left"
+     ],
+     "then": "farmer is right"
+    },
+    {
+     "name": "cross with fox left to right fox",
+     "when": [
+      "cross with fox happens",
+      "farmer is left",
+      "fox is left"
+     ],
+     "then": "fox is right"
+    },
+    {
+     "name": "cross with fox right to left farmer",
+     "when": [
+      "cross with fox happens",
+      "farmer is right",
+      "fox is right"
+     ],
+     "then": "farmer is left"
+    },
+    {
+     "name": "cross with fox right to left fox",
+     "when": [
+      "cross with fox happens",
+      "farmer is right",
+      "fox is right"
+     ],
+     "then": "fox is left"
+    },
+    {
+     "name": "cross with goose left to right farmer",
+     "when": [
+      "cross with goose happens",
+      "farmer is left",
+      "goose is left"
+     ],
+     "then": "farmer is right"
+    },
+    {
+     "name": "cross with goose left to right goose",
+     "when": [
+      "cross with goose happens",
+      "farmer is left",
+      "goose is left"
+     ],
+     "then": "goose is right"
+    },
+    {
+     "name": "cross with goose right to left farmer",
+     "when": [
+      "cross with goose happens",
+      "farmer is right",
+      "goose is right"
+     ],
+     "then": "farmer is left"
+    },
+    {
+     "name": "cross with goose right to left goose",
+     "when": [
+      "cross with goose happens",
+      "farmer is right",
+      "goose is right"
+     ],
+     "then": "goose is left"
+    },
+    {
+     "name": "cross with grain left to right farmer",
+     "when": [
+      "cross with grain happens",
+      "farmer is left",
+      "grain is left"
+     ],
+     "then": "farmer is right"
+    },
+    {
+     "name": "cross with grain left to right grain",
+     "when": [
+      "cross with grain happens",
+      "farmer is left",
+      "grain is left"
+     ],
+     "then": "grain is right"
+    },
+    {
+     "name": "cross with grain right to left farmer",
+     "when": [
+      "cross with grain happens",
+      "farmer is right",
+      "grain is right"
+     ],
+     "then": "farmer is left"
+    },
+    {
+     "name": "cross with grain right to left grain",
+     "when": [
+      "cross with grain happens",
+      "farmer is right",
+      "grain is right"
+     ],
+     "then": "grain is left"
+    },
+    {
+     "name": "fox eats goose left",
+     "when": [
+      "fox is left",
+      "goose is left",
+      "farmer is right"
+     ],
+     "then": "goose_is is eaten"
+    },
+    {
+     "name": "fox eats goose right",
+     "when": [
+      "fox is right",
+      "goose is right",
+      "farmer is left"
+     ],
+     "then": "goose_is is eaten"
+    },
+    {
+     "name": "goose eats grain left",
+     "when": [
+      "goose is left",
+      "grain is left",
+      "farmer is right",
+      "fox is right"
+     ],
+     "then": "grain_is is eaten"
+    },
+    {
+     "name": "goose eats grain right",
+     "when": [
+      "goose is right",
+      "grain is right",
+      "farmer is left",
+      "fox is left"
+     ],
+     "then": "grain_is is eaten"
+    }
+   ]
+  },
+  "log": [
+   {
+    "asked": "Task: A farmer must get a fox, a goose and a sack of grain across a river, from the left bank to the right. The boat carries the farmer and at most one of the three, and only the farmer can row, so it can only take something from the bank the farmer is on. If the fox and the goose are left on a bank without the farmer, the fox eats the goose. If the goose and the grain are left without the farmer, the goose eats the grain.\n\nThings and states to use:\n  goose_is: alive, eaten\n  goose: left, right\n  grain_is: whole, eaten\n  fox: left, right\n  grain: left, right\nEvents to use: cross alone, cross with fox, cross with goose, cross with grain\n\nThe checker will test your model on these jobs:\n- \"farmer crosses alone first\": events in order: cross alone; expected at the end: goose_is is eaten.\n- \"goose over first\": events in order: cross with goose; expected at the end: goose is right and goose_is is alive and grain_is is whole.\n- \"fox over first\": events in order: cross with fox; expected at the end: grain_is is eaten and goose_is is alive.\n- \"the usual solution\": events in order: cross with goose, then cross alone, then cross with fox, then cross with goose, then cross with grain, then cross alone, then cross with goose; expected at the end: fox is right and goose is right and grain is right and goose_is is alive and grain_is is whole.\n\nWrite the model.",
+    "replied": "{\"things\": {\"goose_is\": [\"alive\", \"eaten\"], \"goose\": [\"left\", \"right\"], \"grain_is\": [\"whole\", \"eaten\"], \"fox\": [\"left\", \"right\"], \"grain\": [\"left\", \"right\"], \"farmer\": [\"left\", \"right\"]}, \"events\": [\"cross alone\", \"cross with fox\", \"cross with goose\", \"cross with grain\"], \"start\": {\"goose_is\": \"alive\", \"goose\": \"left\", \"grain_is\": \"whole\", \"fox\": \"left\", \"grain\": \"left\", \"farmer\": \"left\"}, \"rules\": [{\"name\": \"cross alone left to right\", \"when\": [\"cross alone happens\", \"farmer is left\"], \"then\": \"farmer is right\"}, {\"name\": \"cross alone right to left\", \"when\": [\"cross alone happens\", \"farmer is right\"], \"then\": \"farmer is left\"}, {\"name\": \"cross with fox left to right farmer\", \"when\": [\"cross with fox happens\", \"farmer is left\", \"fox is left\"], \"then\": \"farmer is right\"}, {\"name\": \"cross with fox left to right fox\", \"when\": [\"cross with fox happens\", \"farmer is left\", \"fox is left\"], \"then\": \"fox is right\"}, {\"name\": \"cross with fox right to left farmer\", \"when\": [\"cross with fox happens\", \"farmer is right\", \"fox is right\"], \"then\": \"farmer is left\"}, {\"name\": \"cross with fox right to left fox\", \"when\": [\"cross with fox happens\", \"farmer is right\", \"fox is right\"], \"then\": \"fox is left\"}, {\"name\": \"cross with goose left to right farmer\", \"when\": [\"cross with goose happens\", \"farmer is left\", \"goose is left\"], \"then\": \"farmer is right\"}, {\"name\": \"cross with goose left to right goose\", \"when\": [\"cross with goose happens\", \"farmer is left\", \"goose is left\"], \"then\": \"goose is right\"}, {\"name\": \"cross with goose right to left farmer\", \"when\": [\"cross with goose happens\", \"farmer is right\", \"goose is right\"], \"then\": \"farmer is left\"}, {\"name\": \"cross with goose right to left goose\", \"when\": [\"cross with goose happens\", \"farmer is right\", \"goose is right\"], \"then\": \"goose is left\"}, {\"name\": \"cross with grain left to right farmer\", \"when\": [\"cross with grain happens\", \"farmer is left\", \"grain is left\"], \"then\": \"farmer is right\"}, {\"name\": \"cross with grain left to right grain\", \"when\": [\"cross with grain happens\", \"farmer is left\", \"grain is left\"], \"then\": \"grain is right\"}, {\"name\": \"cross with grain right to left farmer\", \"when\": [\"cross with grain happens\", \"farmer is right\", \"grain is right\"], \"then\": \"farmer is left\"}, {\"name\": \"cross with grain right to left grain\", \"when\": [\"cross with grain happens\", \"farmer is right\", \"grain is right\"], \"then\": \"grain is left\"}, {\"name\": \"fox eats goose left\", \"when\": [\"fox is left\", \"goose is left\", \"farmer is right\"], \"then\": \"goose_is is eaten\"}, {\"name\": \"fox eats goose right\", \"when\": [\"fox is right\", \"goose is right\", \"farmer is left\"], \"then\": \"goose_is is eaten\"}, {\"name\": \"goose eats grain left\", \"when\": [\"goose is left\", \"grain is left\", \"farmer is right\", \"fox is right\"], \"then\": \"grain_is is eaten\"}, {\"name\": \"goose eats grain right\", \"when\": [\"goose is right\", \"grain is right\", \"farmer is left\", \"fox is left\"], \"then\": \"grain_is is eaten\"}]}",
+    "seconds": 37
+   }
+  ]
+ },
+ "counts": {
+  "requests": 2,
+  "replies": 2,
+  "cut_off": 0,
+  "plain_form": 0,
+  "refused": 0,
+  "thinking_characters": 146453,
+  "answer_characters": 5923,
+  "tokens_in": 5609,
+  "tokens_out": 37795
+ },
+ "results": {
+  "guesser fixes first": {
+   "world": "river-crossing",
+   "mode": "guesser fixes first",
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "4/4",
+     "problems": 0
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 3,
+     "seen": "5/7"
+    },
+    {
+     "step": "guesser rewrites first",
+     "verdict": "accepted",
+     "repaired": [
+      "world answer 1",
+      "world answer 2"
+     ],
+     "lost": [],
+     "seen": "7/7"
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 3,
+     "seen": "8/10"
+    },
+    {
+     "step": "guesser rewrites first",
+     "verdict": "accepted",
+     "repaired": [
+      "world answer 5",
+      "world answer 6"
+     ],
+     "lost": [],
+     "seen": "10/10"
+    },
+    {
+     "step": "look for surprises",
+     "added": 4,
+     "surprises": 0,
+     "seen": "14/14"
+    },
+    {
+     "step": "look for surprises",
+     "added": 2,
+     "surprises": 0,
+     "seen": "16/16"
+    }
+   ],
+   "added_jobs": [
+    {
+     "job": {
+      "name": "world answer 1",
+      "start": {},
+      "events": [
+       "cross alone",
+       "cross with goose",
+       "cross alone",
+       "cross with fox",
+       "cross with goose",
+       "cross with grain",
+       "cross alone",
+       "cross with goose"
+      ],
+      "expect": [
+       "grain_is is eaten",
+       "farmer is left"
+      ],
+      "from": "given"
+     },
+     "why": "loose rule \"cross with fox left to right farmer\": condition \"farmer is left\" replaced by \"goose_is is alive\""
+    },
+    {
+     "job": {
+      "name": "world answer 2",
+      "start": {},
+      "events": [
+       "cross alone",
+       "cross with fox"
+      ],
+      "expect": [
+       "grain_is is eaten",
+       "fox is left"
+      ],
+      "from": "given"
+     },
+     "why": "loose rule \"cross with fox left to right fox\": condition \"farmer is left\" left out"
+    },
+    {
+     "job": {
+      "name": "world answer 3",
+      "start": {},
+      "events": [
+       "cross with goose",
+       "cross with fox"
+      ],
+      "expect": [
+       "fox is left"
+      ],
+      "from": "given"
+     },
+     "why": "loose rule \"cross with fox left to right fox\": condition \"farmer is left\" replaced by \"goose_is is alive\""
+    },
+    {
+     "job": {
+      "name": "world answer 4",
+      "start": {},
+      "events": [
+       "cross alone",
+       "cross with goose",
+       "cross alone",
+       "cross with fox",
+       "cross with goose",
+       "cross with grain",
+       "cross alone",
+       "cross with goose"
+      ],
+      "expect": [
+       "grain is left"
+      ],
+      "from": "given"
+     },
+     "why": "loose rule \"cross with fox left to right farmer\": condition \"farmer is left\" replaced by \"goose_is is alive\""
+    },
+    {
+     "job": {
+      "name": "world answer 5",
+      "start": {},
+      "events": [
+       "cross alone",
+       "cross with goose",
+       "cross alone",
+       "cross with fox",
+       "cross with goose",
+       "cross with grain",
+       "cross alone",
+       "cross with goose"
+      ],
+      "expect": [
+       "fox is left"
+      ],
+      "from": "given"
+     },
+     "why": "loose rule \"cross with fox left to right fox\": condition \"fox is left\" replaced by \"goose_is is alive\""
+    },
+    {
+     "job": {
+      "name": "world answer 6",
+      "start": {},
+      "events": [
+       "cross with goose",
+       "cross alone",
+       "cross with fox",
+       "cross with goose",
+       "cross alone",
+       "cross with grain",
+       "cross alone",
+       "cross with goose"
+      ],
+      "expect": [
+       "goose_is is alive",
+       "farmer is left"
+      ],
+      "from": "given"
+     },
+     "why": "loose rule \"cross with goose left to right farmer\": condition \"farmer is left\" replaced by \"grain_is is whole\""
+    },
+    {
+     "job": {
+      "name": "world answer 7",
+      "start": {},
+      "events": [],
+      "expect": [
+       "goose_is is alive",
+       "goose is left",
+       "grain_is is whole",
+       "fox is left",
+       "grain is left",
+       "farmer is left"
+      ],
+      "from": "given"
+     },
+     "why": "look for surprises: the situation of job \"farmer crosses alone first\", but \"cross alone\" does not happen",
+     "surprise": false
+    },
+    {
+     "job": {
+      "name": "world answer 8",
+      "start": {},
+      "events": [
+       "cross alone",
+       "cross alone"
+      ],
+      "expect": [
+       "goose_is is eaten",
+       "goose is left",
+       "grain_is is eaten",
+       "fox is left",
+       "grain is left",
+       "farmer is left"
+      ],
+      "from": "given"
+     },
+     "why": "look for surprises: the situation of job \"farmer crosses alone first\", but \"cross alone\" also happens first",
+     "surprise": false
+    },
+    {
+     "job": {
+      "name": "world answer 9",
+      "start": {},
+      "events": [
+       "cross with fox",
+       "cross alone"
+      ],
+      "expect": [
+       "goose_is is alive",
+       "goose is left",
+       "grain_is is eaten",
+       "fox is right",
+       "grain is left",
+       "farmer is left"
+      ],
+      "from": "given"
+     },
+     "why": "look for surprises: the situation of job \"farmer crosses alone first\", but \"cross with fox\" also happens first",
+     "surprise": false
+    },
+    {
+     "job": {
+      "name": "world answer 10",
+      "start": {},
+      "events": [
+       "cross with goose",
+       "cross alone"
+      ],
+      "expect": [
+       "goose_is is alive",
+       "goose is right",
+       "grain_is is whole",
+       "fox is left",
+       "grain is left",
+       "farmer is left"
+      ],
+      "from": "given"
+     },
+     "why": "look for surprises: the situation of job \"farmer crosses alone first\", but \"cross with goose\" also happens first",
+     "surprise": false
+    },
+    {
+     "job": {
+      "name": "world answer 11",
+      "start": {},
+      "events": [
+       "cross with grain",
+       "cross alone"
+      ],
+      "expect": [
+       "goose_is is eaten",
+       "goose is left",
+       "grain_is is whole",
+       "fox is left",
+       "grain is right",
+       "farmer is left"
+      ],
+      "from": "given"
+     },
+     "why": "look for surprises: the situation of job \"farmer crosses alone first\", but \"cross with grain\" also happens first",
+     "surprise": false
+    },
+    {
+     "job": {
+      "name": "world answer 12",
+      "start": {},
+      "events": [
+       "cross with goose",
+       "cross with goose"
+      ],
+      "expect": [
+       "goose_is is alive",
+       "goose is left",
+       "grain_is is whole",
+       "fox is left",
+       "grain is left",
+       "farmer is left"
+      ],
+      "from": "given"
+     },
+     "why": "look for surprises: the situation of job \"goose over first\", but \"cross with goose\" also happens first",
+     "surprise": false
+    }
+   ],
+   "questions_to_world": 12,
+   "guesser_calls": 2,
+   "final": {
+    "original_seen_passed": 4,
+    "original_seen_total": 4,
+    "all_seen_passed": 16,
+    "all_seen_total": 16,
+    "held_back_passed": 3,
+    "held_back_total": 3,
+    "held_back_failed": [],
+    "problems": [],
+    "held_back_asked": [
+     "the fox cannot be fetched from the wrong bank"
+    ]
+   },
+   "model": {
+    "things": {
+     "goose_is": [
+      "alive",
+      "eaten"
+     ],
+     "goose": [
+      "left",
+      "right"
+     ],
+     "grain_is": [
+      "whole",
+      "eaten"
+     ],
+     "fox": [
+      "left",
+      "right"
+     ],
+     "grain": [
+      "left",
+      "right"
+     ],
+     "farmer": [
+      "left",
+      "right"
+     ]
+    },
+    "events": [
+     "cross alone",
+     "cross with fox",
+     "cross with goose",
+     "cross with grain"
+    ],
+    "start": {
+     "goose_is": "alive",
+     "goose": "left",
+     "grain_is": "whole",
+     "fox": "left",
+     "grain": "left",
+     "farmer": "left"
+    },
+    "rules": [
+     {
+      "name": "cross alone left to right",
+      "when": [
+       "cross alone happens",
+       "farmer is left"
+      ],
+      "then": "farmer is right"
+     },
+     {
+      "name": "cross alone right to left",
+      "when": [
+       "cross alone happens",
+       "farmer is right"
+      ],
+      "then": "farmer is left"
+     },
+     {
+      "name": "cross with fox left to right farmer",
+      "when": [
+       "cross with fox happens",
+       "farmer is left",
+       "fox is left"
+      ],
+      "then": "farmer is right"
+     },
+     {
+      "name": "cross with fox left to right fox",
+      "when": [
+       "cross with fox happens",
+       "farmer is left",
+       "fox is left",
+       "goose_is is alive"
+      ],
+      "then": "fox is right"
+     },
+     {
+      "name": "cross with fox right to left farmer",
+      "when": [
+       "cross with fox happens",
+       "farmer is right",
+       "fox is right"
+      ],
+      "then": "farmer is left"
+     },
+     {
+      "name": "cross with fox right to left fox",
+      "when": [
+       "cross with fox happens",
+       "farmer is right",
+       "fox is right"
+      ],
+      "then": "fox is left"
+     },
+     {
+      "name": "cross with goose left to right farmer",
+      "when": [
+       "cross with goose happens",
+       "farmer is left",
+       "goose is left",
+       "goose_is is alive",
+       "grain_is is whole"
+      ],
+      "then": "farmer is right"
+     },
+     {
+      "name": "cross with goose left to right goose",
+      "when": [
+       "cross with goose happens",
+       "farmer is left",
+       "goose is left",
+       "grain_is is whole"
+      ],
+      "then": "goose is right"
+     },
+     {
+      "name": "cross with goose right to left farmer",
+      "when": [
+       "cross with goose happens",
+       "farmer is right",
+       "goose is right"
+      ],
+      "then": "farmer is left"
+     },
+     {
+      "name": "cross with goose right to left goose",
+      "when": [
+       "cross with goose happens",
+       "farmer is right",
+       "goose is right"
+      ],
+      "then": "goose is left"
+     },
+     {
+      "name": "cross with grain left to right farmer",
+      "when": [
+       "cross with grain happens",
+       "farmer is left",
+       "grain is left"
+      ],
+      "then": "farmer is right"
+     },
+     {
+      "name": "cross with grain left to right grain",
+      "when": [
+       "cross with grain happens",
+       "farmer is left",
+       "grain is left"
+      ],
+      "then": "grain is right"
+     },
+     {
+      "name": "cross with grain right to left farmer",
+      "when": [
+       "cross with grain happens",
+       "farmer is right",
+       "grain is right"
+      ],
+      "then": "farmer is left"
+     },
+     {
+      "name": "cross with grain right to left grain",
+      "when": [
+       "cross with grain happens",
+       "farmer is right",
+       "grain is right"
+      ],
+      "then": "grain is left"
+     },
+     {
+      "name": "fox eats goose left",
+      "when": [
+       "fox is left",
+       "goose is left",
+       "farmer is right"
+      ],
+      "then": "goose_is is eaten"
+     },
+     {
+      "name": "fox eats goose right",
+      "when": [
+       "fox is right",
+       "goose is right",
+       "farmer is left"
+      ],
+      "then": "goose_is is eaten"
+     },
+     {
+      "name": "goose eats grain left",
+      "when": [
+       "goose is left",
+       "grain is left",
+       "farmer is right"
+      ],
+      "then": "grain_is is eaten"
+     },
+     {
+      "name": "goose eats grain right",
+      "when": [
+       "goose is right",
+       "grain is right",
+       "farmer is left",
+       "fox is left"
+      ],
+      "then": "grain_is is eaten"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "Task: A farmer must get a fox, a goose and a sack of grain across a river, from the left bank to the right. The boat carries the farmer and at most one of the three, and only the farmer can row, so it can only take something from the bank the farmer is on. If the fox and the goose are left on a bank without the farmer, the fox eats the goose. If the goose and the grain are left without the farmer, the goose eats the grain.\n\nThings and states to use:\n  goose_is: alive, eaten\n  goose: left, right\n  grain_is: whole, eaten\n  fox: left, right\n  grain: left, right\nEvents to use: cross alone, cross with fox, cross with goose, cross with grain\n\nThe checker will test your model on these jobs:\n- \"farmer crosses alone first\": events in order: cross alone; expected at the end: goose_is is eaten.\n- \"goose over first\": events in order: cross with goose; expected at the end: goose is right and goose_is is alive and grain_is is whole.\n- \"fox over first\": events in order: cross with fox; expected at the end: grain_is is eaten and goose_is is alive.\n- \"the usual solution\": events in order: cross with goose, then cross alone, then cross with fox, then cross with goose, then cross with grain, then cross alone, then cross with goose; expected at the end: fox is right and goose is right and grain is right and goose_is is alive and grain_is is whole.\n\nWrite the model.",
+     "replied": "{\"things\": {\"goose_is\": [\"alive\", \"eaten\"], \"goose\": [\"left\", \"right\"], \"grain_is\": [\"whole\", \"eaten\"], \"fox\": [\"left\", \"right\"], \"grain\": [\"left\", \"right\"], \"farmer\": [\"left\", \"right\"]}, \"events\": [\"cross alone\", \"cross with fox\", \"cross with goose\", \"cross with grain\"], \"start\": {\"goose_is\": \"alive\", \"goose\": \"left\", \"grain_is\": \"whole\", \"fox\": \"left\", \"grain\": \"left\", \"farmer\": \"left\"}, \"rules\": [{\"name\": \"cross alone left to right\", \"when\": [\"cross alone happens\", \"farmer is left\"], \"then\": \"farmer is right\"}, {\"name\": \"cross alone right to left\", \"when\": [\"cross alone happens\", \"farmer is right\"], \"then\": \"farmer is left\"}, {\"name\": \"cross with fox left to right farmer\", \"when\": [\"cross with fox happens\", \"farmer is left\", \"fox is left\"], \"then\": \"farmer is right\"}, {\"name\": \"cross with fox left to right fox\", \"when\": [\"cross with fox happens\", \"farmer is left\", \"fox is left\"], \"then\": \"fox is right\"}, {\"name\": \"cross with fox right to left farmer\", \"when\": [\"cross with fox happens\", \"farmer is right\", \"fox is right\"], \"then\": \"farmer is left\"}, {\"name\": \"cross with fox right to left fox\", \"when\": [\"cross with fox happens\", \"farmer is right\", \"fox is right\"], \"then\": \"fox is left\"}, {\"name\": \"cross with goose left to right farmer\", \"when\": [\"cross with goose happens\", \"farmer is left\", \"goose is left\"], \"then\": \"farmer is right\"}, {\"name\": \"cross with goose left to right goose\", \"when\": [\"cross with goose happens\", \"farmer is left\", \"goose is left\"], \"then\": \"goose is right\"}, {\"name\": \"cross with goose right to left farmer\", \"when\": [\"cross with goose happens\", \"farmer is right\", \"goose is right\"], \"then\": \"farmer is left\"}, {\"name\": \"cross with goose right to left goose\", \"when\": [\"cross with goose happens\", \"farmer is right\", \"goose is right\"], \"then\": \"goose is left\"}, {\"name\": \"cross with grain left to right farmer\", \"when\": [\"cross with grain happens\", \"farmer is left\", \"grain is left\"], \"then\": \"farmer is right\"}, {\"name\": \"cross with grain left to right grain\", \"when\": [\"cross with grain happens\", \"farmer is left\", \"grain is left\"], \"then\": \"grain is right\"}, {\"name\": \"cross with grain right to left farmer\", \"when\": [\"cross with grain happens\", \"farmer is right\", \"grain is right\"], \"then\": \"farmer is left\"}, {\"name\": \"cross with grain right to left grain\", \"when\": [\"cross with grain happens\", \"farmer is right\", \"grain is right\"], \"then\": \"grain is left\"}, {\"name\": \"fox eats goose left\", \"when\": [\"fox is left\", \"goose is left\", \"farmer is right\"], \"then\": \"goose_is is eaten\"}, {\"name\": \"fox eats goose right\", \"when\": [\"fox is right\", \"goose is right\", \"farmer is left\"], \"then\": \"goose_is is eaten\"}, {\"name\": \"goose eats grain left\", \"when\": [\"goose is left\", \"grain is left\", \"farmer is right\", \"fox is right\"], \"then\": \"grain_is is eaten\"}, {\"name\": \"goose eats grain right\", \"when\": [\"goose is right\", \"grain is right\", \"farmer is left\", \"fox is left\"], \"then\": \"grain_is is eaten\"}]}",
+     "seconds": 37
+    },
+    {
+     "asked": "Task: A farmer must get a fox, a goose and a sack of grain across a river, from the left bank to the right. The boat carries the farmer and at most one of the three, and only the farmer can row, so it can only take something from the bank the farmer is on. If the fox and the goose are left on a bank without the farmer, the fox eats the goose. If the goose and the grain are left without the farmer, the goose eats the grain.\n\nThings and states to use:\n  goose_is: alive, eaten\n  goose: left, right\n  grain_is: whole, eaten\n  fox: left, right\n  grain: left, right\nEvents to use: cross alone, cross with fox, cross with goose, cross with grain\n\nThe checker will test your model on these jobs:\n- \"farmer crosses alone first\": events in order: cross alone; expected at the end: goose_is is eaten.\n- \"goose over first\": events in order: cross with goose; expected at the end: goose is right and goose_is is alive and grain_is is whole.\n- \"fox over first\": events in order: cross with fox; expected at the end: grain_is is eaten and goose_is is alive.\n- \"the usual solution\": events in order: cross with goose, then cross alone, then cross with fox, then cross with goose, then cross with grain, then cross alone, then cross with goose; expected at the end: fox is right and goose is right and grain is right and goose_is is alive and grain_is is whole.\n- \"world answer 1\": events in order: cross alone, then cross with goose, then cross alone, then cross with fox, then cross with goose, then cross with grain, then cross alone, then cross with goose; expected at the end: grain_is is eaten and farmer is left.\n- \"world answer 2\": events in order: cross alone, then cross with fox; expected at the end: grain_is is eaten and fox is left.\n- \"world answer 3\": events in order: cross with goose, then cross with fox; expected at the end: fox is left.\n\nThe current model:\n{\"things\":{\"goose_is\":[\"alive\",\"eaten\"],\"goose\":[\"left\",\"right\"],\"grain_is\":[\"whole\",\"eaten\"],\"fox\":[\"left\",\"right\"],\"grain\":[\"left\",\"right\"],\"farmer\":[\"left\",\"right\"]},\"events\":[\"cross alone\",\"cross with fox\",\"cross with goose\",\"cross with grain\"],\"start\":{\"goose_is\":\"alive\",\"goose\":\"left\",\"grain_is\":\"whole\",\"fox\":\"left\",\"grain\":\"left\",\"farmer\":\"left\"},\"rules\":[{\"name\":\"cross alone left to right\",\"when\":[\"cross alone happens\",\"farmer is left\"],\"then\":\"farmer is right\",\"made_by\":\"guesser first guess\"},{\"name\":\"cross alone right to left\",\"when\":[\"cross alone happens\",\"farmer is right\"],\"then\":\"farmer is left\",\"made_by\":\"guesser first guess\"},{\"name\":\"cross with fox left to right farmer\",\"when\":[\"cross with fox happens\",\"farmer is left\",\"fox is left\"],\"then\":\"farmer is right\",\"made_by\":\"guesser first guess\"},{\"name\":\"cross with fox left to right fox\",\"when\":[\"cross with fox happens\",\"farmer is left\",\"fox is left\"],\"then\":\"fox is right\",\"made_by\":\"guesser first guess\"},{\"name\":\"cross with fox right to left farmer\",\"when\":[\"cross with fox happens\",\"farmer is right\",\"fox is right\"],\"then\":\"farmer is left\",\"made_by\":\"guesser first guess\"},{\"name\":\"cross with fox right to left fox\",\"when\":[\"cross with fox happens\",\"farmer is right\",\"fox is right\"],\"then\":\"fox is left\",\"made_by\":\"guesser first guess\"},{\"name\":\"cross with goose left to right farmer\",\"when\":[\"cross with goose happens\",\"farmer is left\",\"goose is left\"],\"then\":\"farmer is right\",\"made_by\":\"guesser first guess\"},{\"name\":\"cross with goose left to right goose\",\"when\":[\"cross with goose happens\",\"farmer is left\",\"goose is left\"],\"then\":\"goose is right\",\"made_by\":\"guesser first guess\"},{\"name\":\"cross with goose right to left farmer\",\"when\":[\"cross with goose happens\",\"farmer is right\",\"goose is right\"],\"then\":\"farmer is left\",\"made_by\":\"guesser first guess\"},{\"name\":\"cross with goose right to left goose\",\"when\":[\"cross with goose happens\",\"farmer is right\",\"goose is right\"],\"then\":\"goose is left\",\"made_by\":\"guesser first guess\"},{\"name\":\"cross with grain left to right farmer\",\"when\":[\"cross with grain happens\",\"farmer is left\",\"grain is left\"],\"then\":\"farmer is right\",\"made_by\":\"guesser first guess\"},{\"name\":\"cross with grain left to right grain\",\"when\":[\"cross with grain happens\",\"farmer is left\",\"grain is left\"],\"then\":\"grain is right\",\"made_by\":\"guesser first guess\"},{\"name\":\"cross with grain right to left farmer\",\"when\":[\"cross with grain happens\",\"farmer is right\",\"grain is right\"],\"then\":\"farmer is left\",\"made_by\":\"guesser first guess\"},{\"name\":\"cross with grain right to left grain\",\"when\":[\"cross with grain happens\",\"farmer is right\",\"grain is right\"],\"then\":\"grain is left\",\"made_by\":\"guesser first guess\"},{\"name\":\"fox eats goose left\",\"when\":[\"fox is left\",\"goose is left\",\"farmer is right\"],\"then\":\"goose_is is eaten\",\"made_by\":\"guesser first guess\"},{\"name\":\"fox eats goose right\",\"when\":[\"fox is right\",\"goose is right\",\"farmer is left\"],\"then\":\"goose_is is eaten\",\"made_by\":\"guesser first guess\"},{\"name\":\"goose eats grain left\",\"when\":[\"goose is left\",\"grain is left\",\"farmer is right\",\"fox is right\"],\"then\":\"grain_is is eaten\",\"made_by\":\"guesser first guess\"},{\"name\":\"goose eats grain right\",\"when\":[\"goose is right\",\"grain is right\",\"farmer is left\",\"fox is left\"],\"then\":\"grain_is is eaten\",\"made_by\":\"guesser first guess\"}]}\n\nThe checker ran it.\n\nPASS: job \"farmer crosses alone first\"\nPASS: job \"goose over first\"\nPASS: job \"fox over first\"\nPASS: job \"the usual solution\"\nFAIL: job \"world answer 1\"\n  - What happened: step 1: cross alone left to right made farmer right; step 2: fox eats goose left made goose_is eaten; step 4: cross alone right to left made farmer left; step 5: cross with fox left to right farmer made farmer right; step 5: cross with fox left to right fox made fox right; step 6: goose eats grain left made grain_is eaten; step 9: cross alone right to left made farmer left; step 10: cross with goose left to right farmer made farmer right; step 10: cross with goose left to right goose made goose right.\n  - Wanted farmer is left at the end; got farmer right.\n  - Rule \"cross alone right to left\" made farmer left at step 4, then at step 10 rule \"cross with goose left to right farmer\" changed it to right.\n  - Rule \"cross with fox right to left farmer\" never fired: each of its conditions was true at some step, but never all at the same step.\n  - Rule \"cross with goose right to left farmer\" never fired: each of its conditions was true at some step, but never all at the same step.\n  - Rule \"cross with grain right to left farmer\" never fired: \"grain is right\" was never true.\nFAIL: job \"world answer 2\"\n  - What happened: step 1: cross alone left to right made farmer right; step 2: fox eats goose left made goose_is eaten.\n  - Wanted grain_is is eaten at the end; got grain_is whole.\n  - Rule \"goose eats grain left\" never fired: \"fox is right\" was never true.\n  - Rule \"goose eats grain right\" never fired: \"goose is right\" was never true, and \"grain is right\" was never true.\nPASS: job \"world answer 3\"\n5 of 7 jobs pass.\n\nSMALL FIX FOUND: in rule \"cross with goose left to right farmer\": condition \"goose_is is alive\" added repairs \"world answer 1\" and breaks nothing.\nSMALL FIX FOUND: in rule \"cross with goose left to right farmer\": condition \"grain_is is whole\" added repairs \"world answer 1\" and breaks nothing.\nSMALL FIX FOUND: in rule \"goose eats grain left\": condition \"fox is right\" left out repairs \"world answer 2\" and breaks nothing.\nSMALL FIX FOUND: in rule \"cross with fox right to left farmer\": condition \"cross with fox happens\" replaced by \"goose_is is eaten\" repairs \"world answer 1\" and breaks nothing.\nSMALL FIX FOUND: in rule \"cross with fox right to left farmer\": condition \"cross with fox happens\" replaced by \"goose is left\" repairs \"world answer 1\" and breaks nothing.\nSMALL FIX FOUND: in rule \"cross with fox right to left farmer\": condition \"cross with fox happens\" replaced by \"grain_is is eaten\" repairs \"world answer 1\" and breaks nothing.\n\nWrite the whole model again so that every job passes. Keep every rule that already works. Give every thing a start state.",
+     "replied": "{\n  \"things\": {\n    \"goose_is\": [\"alive\", \"eaten\"],\n    \"goose\": [\"left\", \"right\"],\n    \"grain_is\": [\"whole\", \"eaten\"],\n    \"fox\": [\"left\", \"right\"],\n    \"grain\": [\"left\", \"right\"],\n    \"farmer\": [\"left\", \"right\"]\n  },\n  \"events\": [\"cross alone\", \"cross with fox\", \"cross with goose\", \"cross with grain\"],\n  \"start\": {\n    \"goose_is\": \"alive\",\n    \"goose\": \"left\",\n    \"grain_is\": \"whole\",\n    \"fox\": \"left\",\n    \"grain\": \"left\",\n    \"farmer\": \"left\"\n  },\n  \"rules\": [\n    {\"name\": \"cross alone left to right\", \"when\": [\"cross alone happens\", \"farmer is left\"], \"then\": \"farmer is right\"},\n    {\"name\": \"cross alone right to left\", \"when\": [\"cross alone happens\", \"farmer is right\"], \"then\": \"farmer is left\"},\n    {\"name\": \"cross with fox left to right farmer\", \"when\": [\"cross with fox happens\", \"farmer is left\", \"fox is left\"], \"then\": \"farmer is right\"},\n    {\"name\": \"cross with fox left to right fox\", \"when\": [\"cross with fox happens\", \"farmer is left\", \"fox is left\"], \"then\": \"fox is right\"},\n    {\"name\": \"cross with fox right to left farmer\", \"when\": [\"cross with fox happens\", \"farmer is right\", \"fox is right\"], \"then\": \"farmer is left\"},\n    {\"name\": \"cross with fox right to left fox\", \"when\": [\"cross with fox happens\", \"farmer is right\", \"fox is right\"], \"then\": \"fox is left\"},\n    {\"name\": \"cross with goose left to right farmer\", \"when\": [\"cross with goose happens\", \"farmer is left\", \"goose is left\", \"goose_is is alive\"], \"then\": \"farmer is right\"},\n    {\"name\": \"cross with goose left to right goose\", \"when\": [\"cross with goose happens\", \"farmer is left\", \"goose is left\"], \"then\": \"goose is right\"},\n    {\"name\": \"cross with goose right to left farmer\", \"when\": [\"cross with goose happens\", \"farmer is right\", \"goose is right\"], \"then\": \"farmer is left\"},\n    {\"name\": \"cross with goose right to left goose\", \"when\": [\"cross with goose happens\", \"farmer is right\", \"goose is right\"], \"then\": \"goose is left\"},\n    {\"name\": \"cross with grain left to right farmer\", \"when\": [\"cross with grain happens\", \"farmer is left\", \"grain is left\"], \"then\": \"farmer is right\"},\n    {\"name\": \"cross with grain left to right grain\", \"when\": [\"cross with grain happens\", \"farmer is left\", \"grain is left\"], \"then\": \"grain is right\"},\n    {\"name\": \"cross with grain right to left farmer\", \"when\": [\"cross with grain happens\", \"farmer is right\", \"grain is right\"], \"then\": \"farmer is left\"},\n    {\"name\": \"cross with grain right to left grain\", \"when\": [\"cross with grain happens\", \"farmer is right\", \"grain is right\"], \"then\": \"grain is left\"},\n    {\"name\": \"fox eats goose left\", \"when\": [\"fox is left\", \"goose is left\", \"farmer is right\"], \"then\": \"goose_is is eaten\"},\n    {\"name\": \"fox eats goose right\", \"when\": [\"fox is right\", \"goose is right\", \"farmer is left\"], \"then\": \"goose_is is eaten\"},\n    {\"name\": \"goose eats grain left\", \"when\": [\"goose is left\", \"grain is left\", \"farmer is right\"], \"then\": \"grain_is is eaten\"},\n    {\"name\": \"goose eats grain right\", \"when\": [\"goose is right\", \"grain is right\", \"farmer is left\", \"fox is left\"], \"then\": \"grain_is is eaten\"}\n  ]\n}",
+     "seconds": 64
+    },
+    {
+     "asked": "Task: A farmer must get a fox, a goose and a sack of grain across a river, from the left bank to the right. The boat carries the farmer and at most one of the three, and only the farmer can row, so it can only take something from the bank the farmer is on. If the fox and the goose are left on a bank without the farmer, the fox eats the goose. If the goose and the grain are left without the farmer, the goose eats the grain.\n\nThings and states to use:\n  goose_is: alive, eaten\n  goose: left, right\n  grain_is: whole, eaten\n  fox: left, right\n  grain: left, right\nEvents to use: cross alone, cross with fox, cross with goose, cross with grain\n\nThe checker will test your model on these jobs:\n- \"farmer crosses alone first\": events in order: cross alone; expected at the end: goose_is is eaten.\n- \"goose over first\": events in order: cross with goose; expected at the end: goose is right and goose_is is alive and grain_is is whole.\n- \"fox over first\": events in order: cross with fox; expected at the end: grain_is is eaten and goose_is is alive.\n- \"the usual solution\": events in order: cross with goose, then cross alone, then cross with fox, then cross with goose, then cross with grain, then cross alone, then cross with goose; expected at the end: fox is right and goose is right and grain is right and goose_is is alive and grain_is is whole.\n- \"world answer 1\": events in order: cross alone, then cross with goose, then cross alone, then cross with fox, then cross with goose, then cross with grain, then cross alone, then cross with goose; expected at the end: grain_is is eaten and farmer is left.\n- \"world answer 2\": events in order: cross alone, then cross with fox; expected at the end: grain_is is eaten and fox is left.\n- \"world answer 3\": events in order: cross with goose, then cross with fox; expected at the end: fox is left.\n- \"world answer 4\": events in order: cross alone, then cross with goose, then cross alone, then cross with fox, then cross with goose, then cross with grain, then cross alone, then cross with goose; expected at the end: grain is left.\n- \"world answer 5\": events in order: cross alone, then cross with goose, then cross alone, then cross with fox, then cross with goose, then cross with grain, then cross alone, then cross with goose; expected at the end: fox is left.\n- \"world answer 6\": events in order: cross with goose, then cross alone, then cross with fox, then cross with goose, then cross alone, then cross with grain, then cross alone, then cross with goose; expected at the end: goose_is is alive and farmer is left.\n\nThe current model:\n{\"things\":{\"goose_is\":[\"alive\",\"eaten\"],\"goose\":[\"left\",\"right\"],\"grain_is\":[\"whole\",\"eaten\"],\"fox\":[\"left\",\"right\"],\"grain\":[\"left\",\"right\"],\"farmer\":[\"left\",\"right\"]},\"events\":[\"cross alone\",\"cross with fox\",\"cross with goose\",\"cross with grain\"],\"start\":{\"goose_is\":\"alive\",\"goose\":\"left\",\"grain_is\":\"whole\",\"fox\":\"left\",\"grain\":\"left\",\"farmer\":\"left\"},\"rules\":[{\"name\":\"cross alone left to right\",\"when\":[\"cross alone happens\",\"farmer is left\"],\"then\":\"farmer is right\"},{\"name\":\"cross alone right to left\",\"when\":[\"cross alone happens\",\"farmer is right\"],\"then\":\"farmer is left\"},{\"name\":\"cross with fox left to right farmer\",\"when\":[\"cross with fox happens\",\"farmer is left\",\"fox is left\"],\"then\":\"farmer is right\"},{\"name\":\"cross with fox left to right fox\",\"when\":[\"cross with fox happens\",\"farmer is left\",\"fox is left\"],\"then\":\"fox is right\"},{\"name\":\"cross with fox right to left farmer\",\"when\":[\"cross with fox happens\",\"farmer is right\",\"fox is right\"],\"then\":\"farmer is left\"},{\"name\":\"cross with fox right to left fox\",\"when\":[\"cross with fox happens\",\"farmer is right\",\"fox is right\"],\"then\":\"fox is left\"},{\"name\":\"cross with goose left to right farmer\",\"when\":[\"cross with goose happens\",\"farmer is left\",\"goose is left\",\"goose_is is alive\"],\"then\":\"farmer is right\"},{\"name\":\"cross with goose left to right goose\",\"when\":[\"cross with goose happens\",\"farmer is left\",\"goose is left\"],\"then\":\"goose is right\"},{\"name\":\"cross with goose right to left farmer\",\"when\":[\"cross with goose happens\",\"farmer is right\",\"goose is right\"],\"then\":\"farmer is left\"},{\"name\":\"cross with goose right to left goose\",\"when\":[\"cross with goose happens\",\"farmer is right\",\"goose is right\"],\"then\":\"goose is left\"},{\"name\":\"cross with grain left to right farmer\",\"when\":[\"cross with grain happens\",\"farmer is left\",\"grain is left\"],\"then\":\"farmer is right\"},{\"name\":\"cross with grain left to right grain\",\"when\":[\"cross with grain happens\",\"farmer is left\",\"grain is left\"],\"then\":\"grain is right\"},{\"name\":\"cross with grain right to left farmer\",\"when\":[\"cross with grain happens\",\"farmer is right\",\"grain is right\"],\"then\":\"farmer is left\"},{\"name\":\"cross with grain right to left grain\",\"when\":[\"cross with grain happens\",\"farmer is right\",\"grain is right\"],\"then\":\"grain is left\"},{\"name\":\"fox eats goose left\",\"when\":[\"fox is left\",\"goose is left\",\"farmer is right\"],\"then\":\"goose_is is eaten\"},{\"name\":\"fox eats goose right\",\"when\":[\"fox is right\",\"goose is right\",\"farmer is left\"],\"then\":\"goose_is is eaten\"},{\"name\":\"goose eats grain left\",\"when\":[\"goose is left\",\"grain is left\",\"farmer is right\"],\"then\":\"grain_is is eaten\"},{\"name\":\"goose eats grain right\",\"when\":[\"goose is right\",\"grain is right\",\"farmer is left\",\"fox is left\"],\"then\":\"grain_is is eaten\"}]}\n\nThe checker ran it.\n\nPASS: job \"farmer crosses alone first\"\nPASS: job \"goose over first\"\nPASS: job \"fox over first\"\nPASS: job \"the usual solution\"\nPASS: job \"world answer 1\"\nPASS: job \"world answer 2\"\nPASS: job \"world answer 3\"\nPASS: job \"world answer 4\"\nFAIL: job \"world answer 5\"\n  - What happened: step 1: cross alone left to right made farmer right; step 2: fox eats goose left made goose_is eaten; step 2: goose eats grain left made grain_is eaten; step 4: cross alone right to left made farmer left; step 5: cross with fox left to right farmer made farmer right; step 5: cross with fox left to right fox made fox right; step 8: cross alone right to left made farmer left; step 9: cross with goose left to right goose made goose right.\n  - Wanted fox is left at the end; got fox right.\n  - Rule \"cross with fox right to left fox\" never fired: each of its conditions was true at some step, but never all at the same step.\nFAIL: job \"world answer 6\"\n  - What happened: step 1: cross with goose left to right farmer made farmer right; step 1: cross with goose left to right goose made goose right; step 2: cross alone right to left made farmer left; step 3: cross with fox left to right farmer made farmer right; step 3: cross with fox left to right fox made fox right; step 4: cross with goose right to left farmer made farmer left; step 4: cross with goose right to left goose made goose left; step 5: cross alone left to right made farmer right; step 6: goose eats grain left made grain_is eaten; step 8: cross alone right to left made farmer left; step 9: cross with goose left to right farmer made farmer right; step 9: cross with goose left to right goose made goose right.\n  - Wanted farmer is left at the end; got farmer right.\n  - Rule \"cross alone right to left\" made farmer left at step 2, then at step 9 rule \"cross with goose left to right farmer\" changed it to right.\n  - Rule \"cross with fox right to left farmer\" never fired: each of its conditions was true at some step, but never all at the same step.\n  - Rule \"cross with goose right to left farmer\" made farmer left at step 4, then at step 5 rule \"cross alone left to right\" changed it to right.\n  - Rule \"cross with grain right to left farmer\" never fired: \"grain is right\" was never true.\n8 of 10 jobs pass.\n\nSMALL FIX FOUND: in rule \"cross with fox left to right fox\": condition \"goose_is is alive\" added repairs \"world answer 5\" and breaks nothing.\nSMALL FIX FOUND: in rule \"cross with fox left to right fox\": condition \"grain_is is whole\" added repairs \"world answer 5\" and breaks nothing.\nSMALL FIX FOUND: in rule \"cross with fox right to left fox\": condition \"cross with fox happens\" changed to \"cross with grain happens\" repairs \"world answer 5\" and breaks nothing.\nSMALL FIX FOUND: in rule \"cross with fox left to right fox\": condition \"fox is left\" replaced by \"goose_is is alive\" repairs \"world answer 5\" and breaks nothing.\nSMALL FIX FOUND: in rule \"cross with fox left to right fox\": condition \"fox is left\" replaced by \"grain_is is whole\" repairs \"world answer 5\" and breaks nothing.\nSMALL FIX FOUND: in rule \"cross with fox right to left fox\": condition \"cross with fox happens\" replaced by \"goose_is is eaten\" repairs \"world answer 5\" and breaks nothing.\nNO SMALL CHANGE to the existing rules repairs \"world answer 6\". Something new is needed: a new rule, or a new thing to keep track of.\n\nWrite the whole model again so that every job passes. Keep every rule that already works. Give every thing a start state.",
+     "replied": "{\"things\":{\"goose_is\":[\"alive\",\"eaten\"],\"goose\":[\"left\",\"right\"],\"grain_is\":[\"whole\",\"eaten\"],\"fox\":[\"left\",\"right\"],\"grain\":[\"left\",\"right\"],\"farmer\":[\"left\",\"right\"]},\"events\":[\"cross alone\",\"cross with fox\",\"cross with goose\",\"cross with grain\"],\"start\":{\"goose_is\":\"alive\",\"goose\":\"left\",\"grain_is\":\"whole\",\"fox\":\"left\",\"grain\":\"left\",\"farmer\":\"left\"},\"rules\":[{\"name\":\"cross alone left to right\",\"when\":[\"cross alone happens\",\"farmer is left\"],\"then\":\"farmer is right\"},{\"name\":\"cross alone right to left\",\"when\":[\"cross alone happens\",\"farmer is right\"],\"then\":\"farmer is left\"},{\"name\":\"cross with fox left to right farmer\",\"when\":[\"cross with fox happens\",\"farmer is left\",\"fox is left\"],\"then\":\"farmer is right\"},{\"name\":\"cross with fox left to right fox\",\"when\":[\"cross with fox happens\",\"farmer is left\",\"fox is left\",\"goose_is is alive\"],\"then\":\"fox is right\"},{\"name\":\"cross with fox right to left farmer\",\"when\":[\"cross with fox happens\",\"farmer is right\",\"fox is right\"],\"then\":\"farmer is left\"},{\"name\":\"cross with fox right to left fox\",\"when\":[\"cross with fox happens\",\"farmer is right\",\"fox is right\"],\"then\":\"fox is left\"},{\"name\":\"cross with goose left to right farmer\",\"when\":[\"cross with goose happens\",\"farmer is left\",\"goose is left\",\"goose_is is alive\",\"grain_is is whole\"],\"then\":\"farmer is right\"},{\"name\":\"cross with goose left to right goose\",\"when\":[\"cross with goose happens\",\"farmer is left\",\"goose is left\",\"grain_is is whole\"],\"then\":\"goose is right\"},{\"name\":\"cross with goose right to left farmer\",\"when\":[\"cross with goose happens\",\"farmer is right\",\"goose is right\"],\"then\":\"farmer is left\"},{\"name\":\"cross with goose right to left goose\",\"when\":[\"cross with goose happens\",\"farmer is right\",\"goose is right\"],\"then\":\"goose is left\"},{\"name\":\"cross with grain left to right farmer\",\"when\":[\"cross with grain happens\",\"farmer is left\",\"grain is left\"],\"then\":\"farmer is right\"},{\"name\":\"cross with grain left to right grain\",\"when\":[\"cross with grain happens\",\"farmer is left\",\"grain is left\"],\"then\":\"grain is right\"},{\"name\":\"cross with grain right to left farmer\",\"when\":[\"cross with grain happens\",\"farmer is right\",\"grain is right\"],\"then\":\"farmer is left\"},{\"name\":\"cross with grain right to left grain\",\"when\":[\"cross with grain happens\",\"farmer is right\",\"grain is right\"],\"then\":\"grain is left\"},{\"name\":\"fox eats goose left\",\"when\":[\"fox is left\",\"goose is left\",\"farmer is right\"],\"then\":\"goose_is is eaten\"},{\"name\":\"fox eats goose right\",\"when\":[\"fox is right\",\"goose is right\",\"farmer is left\"],\"then\":\"goose_is is eaten\"},{\"name\":\"goose eats grain left\",\"when\":[\"goose is left\",\"grain is left\",\"farmer is right\"],\"then\":\"grain_is is eaten\"},{\"name\":\"goose eats grain right\",\"when\":[\"goose is right\",\"grain is right\",\"farmer is left\",\"fox is left\"],\"then\":\"grain_is is eaten\"}]}",
+     "seconds": 108
+    }
+   ]
+  }
+ }
+}

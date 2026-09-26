@@ -1,0 +1,1424 @@
+{
+ "repeat": 3,
+ "guesser": "deepseek-flash",
+ "arms": {
+  "told the aim": {
+   "rounds": [
+    {
+     "round": 1,
+     "code": "function accept_fix(fix_case, ask) {\n  const jobs = fix_case.jobs || [];\n  const nearby = fix_case.nearby || [];\n\n  const repaired = jobs.some(j => j.before === 'fail' && j.after === 'pass');\n  const lost = jobs.some(j => j.before === 'pass' && j.after === 'fail');\n  if (!repaired || lost) {\n    return false;\n  }\n\n  let asksLeft = 3;\n  for (const n of nearby) {\n    if (asksLeft <= 0) break;\n    if (n.before === n.after) continue;\n\n    const truth = ask(n.id);\n    asksLeft--;\n    if (truth === null) break;\n\n    if (n.before === truth) {\n      return false;\n    }\n  }\n\n  return true;\n}",
+     "said": "It accepts only fixes that repair at least one failing job and lose none, then checks changed nearby situations (up to three) against the world and rejects if the fix broke a nearby situation that the model previously got right."
+    }
+   ],
+   "code": "function accept_fix(fix_case, ask) {\n  const jobs = fix_case.jobs || [];\n  const nearby = fix_case.nearby || [];\n\n  const repaired = jobs.some(j => j.before === 'fail' && j.after === 'pass');\n  const lost = jobs.some(j => j.before === 'pass' && j.after === 'fail');\n  if (!repaired || lost) {\n    return false;\n  }\n\n  let asksLeft = 3;\n  for (const n of nearby) {\n    if (asksLeft <= 0) break;\n    if (n.before === n.after) continue;\n\n    const truth = ask(n.id);\n    asksLeft--;\n    if (truth === null) break;\n\n    if (n.before === truth) {\n      return false;\n    }\n  }\n\n  return true;\n}",
+   "said": "It accepts only fixes that repair at least one failing job and lose none, then checks changed nearby situations (up to three) against the world and rejects if the fix broke a nearby situation that the model previously got right.",
+   "held": {
+    "kept": true,
+    "bad_rejected": 13,
+    "bad_total": 24,
+    "protected_losses": {
+     "good_not_accepted": [],
+     "losing_accepted": [],
+     "errors": []
+    },
+    "questions_asked": 137,
+    "occasions_with_questions": 48,
+    "whole_method_error": null,
+    "rows": [
+     {
+      "id": "hidden-ball | in rule \"roll 1 to 2\": condition \"place is 1\" replaced by \"seen is nothing\" | fix: in rule \"roll 3 to 4\": condition \"place is 3\" replaced by \"screen is up\"",
+      "kind": "bad",
+      "accept": false,
+      "error": null,
+      "asked": [
+       1,
+       5
+      ]
+     },
+     {
+      "id": "hidden-ball | in rule \"roll 2 to 3\": condition \"place is 2\" replaced by \"seen is at 1\" | fix: in rule \"roll 1 to 2\": condition \"place is 1\" replaced by \"seen is at 4\"",
+      "kind": "bad",
+      "accept": false,
+      "error": null,
+      "asked": [
+       0,
+       1,
+       2
+      ]
+     },
+     {
+      "id": "hidden-ball | in rule \"roll 1 to 2\": condition \"place is 1\" replaced by \"seen is at 3\" | fix: in rule \"roll 3 to 4\": condition \"place is 3\" replaced by \"screen is down\"",
+      "kind": "bad",
+      "accept": true,
+      "error": null,
+      "asked": [
+       0,
+       2,
+       3
+      ]
+     },
+     {
+      "id": "hidden-ball | in rule \"roll 3 to 4\": condition \"place is 3\" changed to \"place is 4\" | fix: in rule \"roll 3 to 4\": condition \"place is 4\" replaced by \"seen is nothing\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       1,
+       6,
+       7
+      ]
+     },
+     {
+      "id": "hidden-ball | in rule \"hidden at 3\": condition \"place is 3\" turned into \"place is not 3\" | fix: rule \"hidden at 3\" removed",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       1,
+       6,
+       7
+      ]
+     },
+     {
+      "id": "hidden-ball | in rule \"roll 1 to 2\": condition \"place is 1\" replaced by \"seen is at 4\" | fix: in rule \"roll 3 to 4\": condition \"place is 3\" replaced by \"screen is up\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       1,
+       4,
+       6
+      ]
+     },
+     {
+      "id": "hidden-ball | in rule \"roll 1 to 2\": result \"place is 2\" changed to \"place is 3\" | fix: in rule \"roll 3 to 4\": condition \"place is 3\" replaced by \"screen is down\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "hidden-ball | in rule \"roll 2 to 3\": result \"place is 3\" changed to \"place is 4\" | fix: in rule \"hidden at 3\": condition \"place is 3\" changed to \"place is 4\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "hidden-ball | in rule \"see 1\": condition \"place is 1\" replaced by \"screen is down\" | fix: in rule \"roll 3 to 4\": condition \"place is 3\" changed to \"place is 4\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "door-game | in rule \"unlock\": condition \"key is carried\" turned into \"key is not carried\" | fix: in rule \"take key\": condition \"game is playing\" turned into \"game is not playing\"",
+      "kind": "bad",
+      "accept": false,
+      "error": null,
+      "asked": [
+       0,
+       4
+      ]
+     },
+     {
+      "id": "door-game | in rule \"lose the last life\": condition \"lives is 1\" replaced by \"door is locked\" | fix: in rule \"lose a life\": condition \"game is playing\" turned into \"game is not playing\"",
+      "kind": "bad",
+      "accept": false,
+      "error": null,
+      "asked": [
+       2,
+       3,
+       5
+      ]
+     },
+     {
+      "id": "door-game | in rule \"lose the last life\": condition \"lives is 1\" replaced by \"key is on floor\" | fix: in rule \"lose a life\": condition \"lives is 2\" turned into \"lives is not 2\"",
+      "kind": "bad",
+      "accept": true,
+      "error": null,
+      "asked": [
+       2,
+       3,
+       6
+      ]
+     },
+     {
+      "id": "door-game | in rule \"lose a life\": condition \"lives is 2\" replaced by \"key is on floor\" | fix: in rule \"lose a life\": condition \"key is on floor\" left out",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       3,
+       6,
+       23
+      ]
+     },
+     {
+      "id": "door-game | in rule \"lose a life\": condition \"lives is 2\" turned into \"lives is not 2\" | fix: in rule \"lose the last life\": condition \"lives is 1\" left out",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       2,
+       3,
+       6
+      ]
+     },
+     {
+      "id": "door-game | in rule \"lose the last life\": condition \"lives is 1\" changed to \"lives is 2\" | fix: in rule \"lose the last life\": condition \"lives is 2\" turned into \"lives is not 2\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       2,
+       3,
+       6
+      ]
+     },
+     {
+      "id": "door-game | in rule \"lose the last life\": result \"lives is 0\" changed to \"lives is 2\" | fix: in rule \"game over\": condition \"lives is 0\" turned into \"lives is not 0\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "door-game | in rule \"lose a life\": condition \"game is playing\" turned into \"game is not playing\" | fix: in rule \"game over\": condition \"lives is 0\" changed to \"lives is 2\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "door-game | in rule \"lose a life\": condition \"touch ghost happens\" replaced by \"key is on floor\" | fix: in rule \"lose the last life\": condition \"lives is 1\" replaced by \"door is open\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "reminder-app | in rule \"finishing\": condition \"finish happens\" replaced by \"snoozes is 1\" | fix: in rule \"first snooze\": result \"snoozes is 1\" changed to \"snoozes is 2\"",
+      "kind": "bad",
+      "accept": true,
+      "error": null,
+      "asked": [
+       1,
+       3,
+       4
+      ]
+     },
+     {
+      "id": "reminder-app | in rule \"second snooze\": condition \"snooze happens\" changed to \"finish happens\" | fix: in rule \"first snooze\": result \"snoozes is 1\" changed to \"snoozes is 2\"",
+      "kind": "bad",
+      "accept": false,
+      "error": null,
+      "asked": [
+       1,
+       3
+      ]
+     },
+     {
+      "id": "reminder-app | in rule \"second snooze\": condition \"snoozes is 1\" changed to \"snoozes is 0\" | fix: in rule \"first snooze\": condition \"snooze happens\" changed to \"day passes happens\"",
+      "kind": "bad",
+      "accept": false,
+      "error": null,
+      "asked": [
+       1,
+       3
+      ]
+     },
+     {
+      "id": "reminder-app | in rule \"first snooze\": condition \"task is not done\" changed to \"task is not new\" | fix: in rule \"first snooze\": condition \"task is not new\" left out",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       1,
+       4,
+       14
+      ]
+     },
+     {
+      "id": "reminder-app | in rule \"first snooze\": condition \"snoozes is 0\" turned into \"snoozes is not 0\" | fix: in rule \"first snooze\": condition \"snoozes is not 0\" turned into \"snoozes is 0\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       1,
+       4,
+       14
+      ]
+     },
+     {
+      "id": "reminder-app | in rule \"first snooze\": condition \"task is not done\" changed to \"task is not new\" | fix: in rule \"first snooze\": condition \"task is not new\" changed to \"task is not urgent\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       1,
+       4,
+       14
+      ]
+     },
+     {
+      "id": "reminder-app | in rule \"first snooze\": condition \"task is not done\" turned into \"task is done\" | fix: in rule \"urgent after two snoozes\": condition \"snoozes is 2\" changed to \"snoozes is 0\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "reminder-app | in rule \"urgent after two snoozes\": condition \"snoozes is 2\" left out | fix: in rule \"urgent after two snoozes\": condition \"task is new\" changed to \"task is overdue\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "reminder-app | rule \"first snooze\" removed | fix: in rule \"urgent after two snoozes\": condition \"snoozes is 2\" left out",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "moving-day | in rule \"loading\": condition \"boxes is packed\" replaced by \"deposit is lost\" | fix: in rule \"driving\": condition \"boxes is in van\" replaced by \"key is returned\"",
+      "kind": "bad",
+      "accept": false,
+      "error": null,
+      "asked": [
+       0,
+       6,
+       7
+      ]
+     },
+     {
+      "id": "moving-day | in rule \"loading\": result \"boxes is in van\" changed to \"boxes is packed\" | fix: in rule \"deposit lost\": condition \"van is driven off\" replaced by \"boxes is packed\"",
+      "kind": "bad",
+      "accept": false,
+      "error": null,
+      "asked": [
+       0,
+       1,
+       2
+      ]
+     },
+     {
+      "id": "moving-day | in rule \"booking\": condition \"book van happens\" changed to \"load happens\" | fix: in rule \"booking\": condition \"load happens\" changed to \"pack happens\"",
+      "kind": "bad",
+      "accept": true,
+      "error": null,
+      "asked": [
+       0,
+       1,
+       4
+      ]
+     },
+     {
+      "id": "moving-day | in rule \"deposit lost\": condition \"deposit is held\" changed to \"deposit is back\" | fix: in rule \"deposit lost\": condition \"deposit is back\" turned into \"deposit is not back\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       1,
+       4,
+       10
+      ]
+     },
+     {
+      "id": "moving-day | in rule \"driving\": condition \"boxes is in van\" turned into \"boxes is not in van\" | fix: in rule \"loading\": condition \"load happens\" replaced by \"key is returned\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       1,
+       4,
+       9
+      ]
+     },
+     {
+      "id": "moving-day | in rule \"driving\": condition \"van is booked\" replaced by \"deposit is lost\" | fix: in rule \"driving\": condition \"deposit is lost\" changed to \"deposit is held\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       0,
+       1,
+       4
+      ]
+     },
+     {
+      "id": "moving-day | in rule \"deposit lost\": condition \"van is driven off\" left out | fix: rule \"deposit lost\" removed",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "moving-day | in rule \"packing\": condition \"pack happens\" replaced by \"deposit is held\" | fix: in rule \"loading\": result \"boxes is in van\" changed to \"boxes is unpacked\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "moving-day | in rule \"returning the key\": condition \"return key happens\" replaced by \"deposit is lost\" | fix: in rule \"returning the key\": condition \"deposit is lost\" changed to \"deposit is held\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "river-crossing | in rule \"fox eats goose on the left\": condition \"goose is left\" turned into \"goose is not left\" | fix: in rule \"farmer rows right with goose\": condition \"cross with goose happens\" changed to \"cross with fox happens\"",
+      "kind": "bad",
+      "accept": true,
+      "error": null,
+      "asked": [
+       1,
+       3,
+       4
+      ]
+     },
+     {
+      "id": "river-crossing | in rule \"farmer rows left with grain\": condition \"farmer is right\" replaced by \"goose is left\" | fix: in rule \"farmer rows left with fox\": condition \"cross with fox happens\" replaced by \"goose is left\"",
+      "kind": "bad",
+      "accept": false,
+      "error": null,
+      "asked": [
+       3,
+       6
+      ]
+     },
+     {
+      "id": "river-crossing | in rule \"fox goes right\": condition \"cross with fox happens\" changed to \"cross with goose happens\" | fix: in rule \"fox goes right\": condition \"farmer is left\" changed to \"farmer is right\"",
+      "kind": "bad",
+      "accept": true,
+      "error": null,
+      "asked": [
+       1,
+       3,
+       4
+      ]
+     },
+     {
+      "id": "river-crossing | in rule \"fox eats goose on the left\": condition \"fox is left\" changed to \"fox is right\" | fix: in rule \"fox eats goose on the left\": condition \"goose is left\" replaced by \"grain_is is eaten\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       3,
+       4,
+       37
+      ]
+     },
+     {
+      "id": "river-crossing | in rule \"farmer rows right with grain\": condition \"farmer is left\" changed to \"farmer is right\" | fix: in rule \"farmer rows right with grain\": condition \"farmer is right\" replaced by \"fox is right\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       3,
+       32,
+       33
+      ]
+     },
+     {
+      "id": "river-crossing | in rule \"goose goes left\": condition \"cross with goose happens\" replaced by \"goose_is is alive\" | fix: in rule \"farmer rows left with goose\": condition \"farmer is right\" changed to \"farmer is left\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       1,
+       3,
+       4
+      ]
+     },
+     {
+      "id": "river-crossing | in rule \"fox eats goose on the left\": condition \"goose is left\" replaced by \"grain is right\" | fix: in rule \"grain goes right\": condition \"cross with grain happens\" changed to \"cross alone happens\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "river-crossing | in rule \"goose goes right\": condition \"cross with goose happens\" left out | fix: in rule \"fox eats goose on the left\": condition \"goose is left\" replaced by \"grain is left\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "river-crossing | in rule \"goose goes left\": condition \"farmer is right\" replaced by \"grain is right\" | fix: in rule \"grain goes right\": condition \"cross with grain happens\" changed to \"cross with fox happens\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "plant-watering | in rule \"open when dry and no rain coming\": condition \"forecast is clear\" left out | fix: in rule \"sun dries damp soil\": condition \"sunny day happens\" replaced by \"forecast is rain\"",
+      "kind": "bad",
+      "accept": false,
+      "error": null,
+      "asked": [
+       1,
+       3,
+       13
+      ]
+     },
+     {
+      "id": "plant-watering | in rule \"sun dries damp soil\": condition \"sunny day happens\" replaced by \"valve is closed\" | fix: rule \"sun dries damp soil\" removed",
+      "kind": "bad",
+      "accept": true,
+      "error": null,
+      "asked": [
+       0,
+       2,
+       3
+      ]
+     },
+     {
+      "id": "plant-watering | in rule \"sun dries damp soil\": condition \"sunny day happens\" left out | fix: rule \"sun dries damp soil\" removed",
+      "kind": "bad",
+      "accept": true,
+      "error": null,
+      "asked": [
+       0,
+       2,
+       3
+      ]
+     },
+     {
+      "id": "plant-watering | in rule \"rain on dry soil\": condition \"rain falls happens\" changed to \"morning check happens\" | fix: in rule \"rain on dry soil\": condition \"morning check happens\" changed to \"rain falls happens\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       1,
+       3,
+       17
+      ]
+     },
+     {
+      "id": "plant-watering | in rule \"water wets dry soil\": result \"soil is damp\" changed to \"soil is soaked\" | fix: in rule \"water wets dry soil\": result \"soil is soaked\" changed to \"soil is damp\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       0,
+       4,
+       5
+      ]
+     },
+     {
+      "id": "plant-watering | in rule \"water wets dry soil\": condition \"valve is open\" changed to \"valve is closed\" | fix: in rule \"water wets dry soil\": condition \"valve is closed\" replaced by \"forecast is clear\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       1,
+       3,
+       16
+      ]
+     },
+     {
+      "id": "plant-watering | in rule \"rain on damp soil\": condition \"soil is damp\" turned into \"soil is not damp\" | fix: in rule \"rain on damp soil\": condition \"rain falls happens\" replaced by \"forecast is clear\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "plant-watering | in rule \"rain on damp soil\": condition \"rain falls happens\" replaced by \"forecast is clear\" | fix: in rule \"rain on damp soil\": condition \"forecast is clear\" changed to \"forecast is rain\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "plant-watering | in rule \"open when dry and no rain coming\": condition \"forecast is clear\" left out | fix: in rule \"open when dry and no rain coming\": condition \"soil is dry\" turned into \"soil is not dry\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "borrowed-lantern | in rule \"lost in the dark\": condition \"night falls happens\" changed to \"lend lantern happens\" | fix: in rule \"lost in the dark\": condition \"lantern is with stranger\" turned into \"lantern is not with stranger\"",
+      "kind": "bad",
+      "accept": true,
+      "error": null,
+      "asked": [
+       0,
+       2,
+       3
+      ]
+     },
+     {
+      "id": "borrowed-lantern | in rule \"lending\": condition \"ada is on the road\" replaced by \"stranger is searching\" | fix: in rule \"lending\": condition \"stranger is searching\" changed to \"stranger is at home\"",
+      "kind": "bad",
+      "accept": true,
+      "error": null,
+      "asked": [
+       0,
+       2,
+       3
+      ]
+     },
+     {
+      "id": "borrowed-lantern | in rule \"lost in the dark\": result \"ada is lost\" changed to \"ada is home safe\" | fix: in rule \"she sees her lantern\": condition \"ada is lost\" left out",
+      "kind": "bad",
+      "accept": false,
+      "error": null,
+      "asked": [
+       0,
+       3,
+       7
+      ]
+     },
+     {
+      "id": "borrowed-lantern | in rule \"lost in the dark\": condition \"ada is on the road\" changed to \"ada is home safe\" | fix: in rule \"lost in the dark\": condition \"ada is home safe\" left out",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       0,
+       2,
+       3
+      ]
+     },
+     {
+      "id": "borrowed-lantern | in rule \"home by her own light\": condition \"ada is on the road\" changed to \"ada is lost\" | fix: in rule \"home by her own light\": condition \"ada is lost\" turned into \"ada is not lost\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       1,
+       4,
+       5
+      ]
+     },
+     {
+      "id": "borrowed-lantern | in rule \"lost in the dark\": condition \"lantern is with stranger\" changed to \"lantern is with ada\" | fix: rule \"lost in the dark\" removed",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       1,
+       4,
+       5
+      ]
+     },
+     {
+      "id": "borrowed-lantern | in rule \"she sees her lantern\": condition \"ada is lost\" turned into \"ada is not lost\" | fix: in rule \"the search\": condition \"stranger searches happens\" replaced by \"lantern is with ada\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "borrowed-lantern | in rule \"lending\": result \"lantern is with stranger\" changed to \"lantern is with ada\" | fix: in rule \"home by her own light\": result \"ada is home safe\" changed to \"ada is found\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "borrowed-lantern | in rule \"the search\": condition \"stranger searches happens\" changed to \"night falls happens\" | fix: in rule \"she sees her lantern\": condition \"stranger is searching\" changed to \"stranger is at home\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "ghost-lantern | in rule \"unlock\": condition \"key is carried\" changed to \"key is on floor\" | fix: in rule \"unlock\": condition \"game is playing\" changed to \"game is won\"",
+      "kind": "bad",
+      "accept": false,
+      "error": null,
+      "asked": [
+       2,
+       9,
+       16
+      ]
+     },
+     {
+      "id": "ghost-lantern | in rule \"lose a life\": condition \"ghost is here\" changed to \"ghost is gone\" | fix: in rule \"light the lantern\": condition \"game is playing\" turned into \"game is not playing\"",
+      "kind": "bad",
+      "accept": false,
+      "error": null,
+      "asked": [
+       3,
+       4
+      ]
+     },
+     {
+      "id": "ghost-lantern | in rule \"take key\": condition \"game is playing\" changed to \"game is over\" | fix: in rule \"light the lantern\": condition \"key is carried\" changed to \"key is on floor\"",
+      "kind": "bad",
+      "accept": true,
+      "error": null,
+      "asked": [
+       3,
+       4,
+       5
+      ]
+     },
+     {
+      "id": "ghost-lantern | in rule \"lose a life\": condition \"touch ghost happens\" changed to \"walk through happens\" | fix: in rule \"lose a life\": condition \"walk through happens\" changed to \"touch ghost happens\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       0,
+       1,
+       2
+      ]
+     },
+     {
+      "id": "ghost-lantern | in rule \"lose the last life\": condition \"lives is 1\" turned into \"lives is not 1\" | fix: in rule \"lose a life\": condition \"lives is 2\" changed to \"lives is 0\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       1,
+       6,
+       7
+      ]
+     },
+     {
+      "id": "ghost-lantern | in rule \"the key burns out\": condition \"game is playing\" replaced by \"lantern is lit\" | fix: in rule \"the key burns out\": condition \"lantern is lit\" left out",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       4,
+       29
+      ]
+     },
+     {
+      "id": "ghost-lantern | in rule \"the key burns out\": condition \"light lantern happens\" changed to \"pick up key happens\" | fix: in rule \"take key\": condition \"game is playing\" replaced by \"lives is 0\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "ghost-lantern | in rule \"take key\": condition \"pick up key happens\" replaced by \"lives is 1\" | fix: in rule \"take key\": condition \"lives is 1\" left out",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "ghost-lantern | in rule \"light the lantern\": condition \"light lantern happens\" replaced by \"lives is 0\" | fix: in rule \"lose the last life\": result \"lives is 0\" changed to \"lives is 2\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     }
+    ]
+   },
+   "tokens_out": 9952,
+   "cut_off": 0,
+   "calls": 1
+  },
+  "shown the failure": {
+   "rounds": [
+    {
+     "round": 1,
+     "code": "function accept_fix(fix_case, ask) {\n  const jobs = fix_case.jobs || [];\n  const nearby = fix_case.nearby || [];\n\n  const repaired = jobs.some(j => j.before === 'fail' && j.after === 'pass');\n  const lost = jobs.some(j => j.before === 'pass' && j.after === 'fail');\n  if (!repaired || lost) return false;\n\n  const repairedJobs = jobs.filter(j => j.before === 'fail' && j.after === 'pass');\n  const passingJobs = jobs.filter(j => j.before === 'pass');\n  const jobNames = new Set(jobs.map(j => j.name));\n\n  const tokenize = s => (s || '').toLowerCase().match(/[a-z0-9]+/g) || [];\n\n  const overlap = (tokensA, tokensB) => {\n    const setB = new Set(tokensB);\n    let inter = 0;\n    for (const t of tokensA) if (setB.has(t)) inter++;\n    return tokensB.length ? inter / tokensB.length : 0;\n  };\n\n  const quotedName = s => {\n    const m = s.match(/\"([^\"]+)\"|'([^']+)'/);\n    return m ? (m[1] || m[2]) : null;\n  };\n\n  const candidates = [];\n\n  for (const n of nearby) {\n    if (n.before === n.after) continue;\n\n    const situation = n.situation || '';\n    const quoted = quotedName(situation);\n\n    // Skip exact job situations; the jobs list already covers those.\n    if (quoted && jobNames.has(quoted) && !situation.includes(', but')) continue;\n\n    const candTokens = tokenize(situation);\n    let maxRep = 0;\n    for (const j of repairedJobs) {\n      const sim = overlap(candTokens, tokenize(j.name));\n      if (sim > maxRep) maxRep = sim;\n    }\n\n    let maxPass = 0;\n    for (const j of passingJobs) {\n      const sim = overlap(candTokens, tokenize(j.name));\n      if (sim > maxPass) maxPass = sim;\n    }\n\n    let score = Math.min(maxRep, maxPass) * 2 + maxRep + maxPass;\n    if (/\\b(not|no|without|never|does not|doesn't)\\b/i.test(situation)) {\n      score += 0.5;\n    }\n\n    candidates.push({ id: n.id, before: n.before, after: n.after, score });\n  }\n\n  candidates.sort((a, b) => {\n    if (b.score !== a.score) return b.score - a.score;\n    return a.id - b.id;\n  });\n\n  let asked = 0;\n  for (const cand of candidates) {\n    if (asked >= 3) break;\n    const truth = ask(cand.id);\n    asked++;\n    if (truth === null) break;\n    if (truth === cand.before) return false;\n  }\n\n  return true;\n}",
+     "said": "It rejects fixes that lose a passing job or fail to repair one, then asks up to three of the most suspicious nearby situations that changed and rejects if any world answer matches the model's pre-fix prediction (i.e., the fix broke a previously correct nearby case).",
+     "shown_right": 17
+    },
+    {
+     "round": 2,
+     "code": "function accept_fix(fix_case, ask) {\n  const jobs = fix_case.jobs || [];\n  const nearby = fix_case.nearby || [];\n\n  // Must repair at least one job and not lose any\n  const repaired = jobs.some(j => j.before === 'fail' && j.after === 'pass');\n  const lost = jobs.some(j => j.before === 'pass' && j.after === 'fail');\n  if (!repaired || lost) return false;\n\n  const jobNames = new Set(jobs.map(j => j.name));\n\n  const tokenize = s => (s || '').toLowerCase().match(/[a-z0-9]+/g) || [];\n  const jaccard = (a, b) => {\n    const setA = new Set(a);\n    const setB = new Set(b);\n    let inter = 0;\n    for (const x of setA) if (setB.has(x)) inter++;\n    const union = setA.size + setB.size - inter;\n    return union === 0 ? 0 : inter / union;\n  };\n\n  const extractBase = (situation) => {\n    let m = situation.match(/job\\s+\"([^\"]+)\"/i);\n    if (m) return m[1];\n    m = situation.match(/job\\s+'([^']+)'/i);\n    if (m) return m[1];\n    m = situation.match(/the situation of job\\s+([^,]+)/i);\n    if (m) return m[1].trim();\n    return situation;\n  };\n\n  const hasNegation = (s) => /\\b(not|no|without|never|does not|doesn't|isn't|aren't|wasn't|weren't|hasn't|haven't|hadn't|can't|cannot|won't|wouldn't|shouldn't|couldn't|mustn't)\\b/i.test(s || '');\n\n  const candidates = [];\n\n  for (const n of nearby) {\n    if (n.before === n.after) continue;\n    const situation = n.situation || '';\n    const base = extractBase(situation);\n    const baseTokens = tokenize(base);\n\n    // Skip exact job situations (no \"but\" and base matches a job name)\n    const hasBut = /,\\s*but\\b/i.test(situation);\n    if (!hasBut && jobNames.has(base)) continue;\n\n    const neg = hasNegation(situation);\n    let bestScore = 0;\n\n    for (const j of jobs) {\n      const jTokens = tokenize(j.name);\n      const sim = jaccard(baseTokens, jTokens);\n      if (sim < 0.3) continue;\n\n      let bonus = 0;\n      if (j.before === 'pass') bonus += 2.0;\n      if (j.before === 'fail' && j.after === 'pass' && neg) bonus += 2.0;\n\n      const score = sim + bonus;\n      if (score > bestScore) bestScore = score;\n    }\n\n    if (bestScore === 0 && neg) bestScore = 1.0;\n\n    candidates.push({ id: n.id, before: n.before, score: bestScore });\n  }\n\n  candidates.sort((a, b) => b.score - a.score || a.id - b.id);\n\n  let asked = 0;\n  for (const cand of candidates) {\n    if (asked >= 3) break;\n    const truth = ask(cand.id);\n    asked++;\n    if (truth === null) break;\n    if (truth === cand.before) return false;\n  }\n\n  return true;\n}",
+     "said": "It rejects any fix that loses a previously passing job or repairs nothing, then asks the world about up to three nearby situations that are most suspicious for regressions—specifically variants of jobs that already passed before, or negated variants of repaired jobs—and rejects if any of those was correct before but wrong after.",
+     "shown_right": 18
+    }
+   ],
+   "code": "function accept_fix(fix_case, ask) {\n  const jobs = fix_case.jobs || [];\n  const nearby = fix_case.nearby || [];\n\n  // Must repair at least one job and not lose any\n  const repaired = jobs.some(j => j.before === 'fail' && j.after === 'pass');\n  const lost = jobs.some(j => j.before === 'pass' && j.after === 'fail');\n  if (!repaired || lost) return false;\n\n  const jobNames = new Set(jobs.map(j => j.name));\n\n  const tokenize = s => (s || '').toLowerCase().match(/[a-z0-9]+/g) || [];\n  const jaccard = (a, b) => {\n    const setA = new Set(a);\n    const setB = new Set(b);\n    let inter = 0;\n    for (const x of setA) if (setB.has(x)) inter++;\n    const union = setA.size + setB.size - inter;\n    return union === 0 ? 0 : inter / union;\n  };\n\n  const extractBase = (situation) => {\n    let m = situation.match(/job\\s+\"([^\"]+)\"/i);\n    if (m) return m[1];\n    m = situation.match(/job\\s+'([^']+)'/i);\n    if (m) return m[1];\n    m = situation.match(/the situation of job\\s+([^,]+)/i);\n    if (m) return m[1].trim();\n    return situation;\n  };\n\n  const hasNegation = (s) => /\\b(not|no|without|never|does not|doesn't|isn't|aren't|wasn't|weren't|hasn't|haven't|hadn't|can't|cannot|won't|wouldn't|shouldn't|couldn't|mustn't)\\b/i.test(s || '');\n\n  const candidates = [];\n\n  for (const n of nearby) {\n    if (n.before === n.after) continue;\n    const situation = n.situation || '';\n    const base = extractBase(situation);\n    const baseTokens = tokenize(base);\n\n    // Skip exact job situations (no \"but\" and base matches a job name)\n    const hasBut = /,\\s*but\\b/i.test(situation);\n    if (!hasBut && jobNames.has(base)) continue;\n\n    const neg = hasNegation(situation);\n    let bestScore = 0;\n\n    for (const j of jobs) {\n      const jTokens = tokenize(j.name);\n      const sim = jaccard(baseTokens, jTokens);\n      if (sim < 0.3) continue;\n\n      let bonus = 0;\n      if (j.before === 'pass') bonus += 2.0;\n      if (j.before === 'fail' && j.after === 'pass' && neg) bonus += 2.0;\n\n      const score = sim + bonus;\n      if (score > bestScore) bestScore = score;\n    }\n\n    if (bestScore === 0 && neg) bestScore = 1.0;\n\n    candidates.push({ id: n.id, before: n.before, score: bestScore });\n  }\n\n  candidates.sort((a, b) => b.score - a.score || a.id - b.id);\n\n  let asked = 0;\n  for (const cand of candidates) {\n    if (asked >= 3) break;\n    const truth = ask(cand.id);\n    asked++;\n    if (truth === null) break;\n    if (truth === cand.before) return false;\n  }\n\n  return true;\n}",
+   "said": "It rejects any fix that loses a previously passing job or repairs nothing, then asks the world about up to three nearby situations that are most suspicious for regressions—specifically variants of jobs that already passed before, or negated variants of repaired jobs—and rejects if any of those was correct before but wrong after.",
+   "held": {
+    "kept": true,
+    "bad_rejected": 18,
+    "bad_total": 24,
+    "protected_losses": {
+     "good_not_accepted": [],
+     "losing_accepted": [],
+     "errors": []
+    },
+    "questions_asked": 112,
+    "occasions_with_questions": 48,
+    "whole_method_error": null,
+    "rows": [
+     {
+      "id": "hidden-ball | in rule \"roll 1 to 2\": condition \"place is 1\" replaced by \"seen is nothing\" | fix: in rule \"roll 3 to 4\": condition \"place is 3\" replaced by \"screen is up\"",
+      "kind": "bad",
+      "accept": false,
+      "error": null,
+      "asked": [
+       5
+      ]
+     },
+     {
+      "id": "hidden-ball | in rule \"roll 2 to 3\": condition \"place is 2\" replaced by \"seen is at 1\" | fix: in rule \"roll 1 to 2\": condition \"place is 1\" replaced by \"seen is at 4\"",
+      "kind": "bad",
+      "accept": false,
+      "error": null,
+      "asked": [
+       2
+      ]
+     },
+     {
+      "id": "hidden-ball | in rule \"roll 1 to 2\": condition \"place is 1\" replaced by \"seen is at 3\" | fix: in rule \"roll 3 to 4\": condition \"place is 3\" replaced by \"screen is down\"",
+      "kind": "bad",
+      "accept": true,
+      "error": null,
+      "asked": [
+       2,
+       3,
+       4
+      ]
+     },
+     {
+      "id": "hidden-ball | in rule \"roll 3 to 4\": condition \"place is 3\" changed to \"place is 4\" | fix: in rule \"roll 3 to 4\": condition \"place is 4\" replaced by \"seen is nothing\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       6,
+       7,
+       8
+      ]
+     },
+     {
+      "id": "hidden-ball | in rule \"hidden at 3\": condition \"place is 3\" turned into \"place is not 3\" | fix: rule \"hidden at 3\" removed",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       6,
+       7,
+       8
+      ]
+     },
+     {
+      "id": "hidden-ball | in rule \"roll 1 to 2\": condition \"place is 1\" replaced by \"seen is at 4\" | fix: in rule \"roll 3 to 4\": condition \"place is 3\" replaced by \"screen is up\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       4,
+       6,
+       7
+      ]
+     },
+     {
+      "id": "hidden-ball | in rule \"roll 1 to 2\": result \"place is 2\" changed to \"place is 3\" | fix: in rule \"roll 3 to 4\": condition \"place is 3\" replaced by \"screen is down\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "hidden-ball | in rule \"roll 2 to 3\": result \"place is 3\" changed to \"place is 4\" | fix: in rule \"hidden at 3\": condition \"place is 3\" changed to \"place is 4\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "hidden-ball | in rule \"see 1\": condition \"place is 1\" replaced by \"screen is down\" | fix: in rule \"roll 3 to 4\": condition \"place is 3\" changed to \"place is 4\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "door-game | in rule \"unlock\": condition \"key is carried\" turned into \"key is not carried\" | fix: in rule \"take key\": condition \"game is playing\" turned into \"game is not playing\"",
+      "kind": "bad",
+      "accept": false,
+      "error": null,
+      "asked": [
+       8
+      ]
+     },
+     {
+      "id": "door-game | in rule \"lose the last life\": condition \"lives is 1\" replaced by \"door is locked\" | fix: in rule \"lose a life\": condition \"game is playing\" turned into \"game is not playing\"",
+      "kind": "bad",
+      "accept": false,
+      "error": null,
+      "asked": [
+       22,
+       23,
+       24
+      ]
+     },
+     {
+      "id": "door-game | in rule \"lose the last life\": condition \"lives is 1\" replaced by \"key is on floor\" | fix: in rule \"lose a life\": condition \"lives is 2\" turned into \"lives is not 2\"",
+      "kind": "bad",
+      "accept": false,
+      "error": null,
+      "asked": [
+       22,
+       23
+      ]
+     },
+     {
+      "id": "door-game | in rule \"lose a life\": condition \"lives is 2\" replaced by \"key is on floor\" | fix: in rule \"lose a life\": condition \"key is on floor\" left out",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       23,
+       24,
+       6
+      ]
+     },
+     {
+      "id": "door-game | in rule \"lose a life\": condition \"lives is 2\" turned into \"lives is not 2\" | fix: in rule \"lose the last life\": condition \"lives is 1\" left out",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       22,
+       23,
+       24
+      ]
+     },
+     {
+      "id": "door-game | in rule \"lose the last life\": condition \"lives is 1\" changed to \"lives is 2\" | fix: in rule \"lose the last life\": condition \"lives is 2\" turned into \"lives is not 2\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       22,
+       23,
+       24
+      ]
+     },
+     {
+      "id": "door-game | in rule \"lose the last life\": result \"lives is 0\" changed to \"lives is 2\" | fix: in rule \"game over\": condition \"lives is 0\" turned into \"lives is not 0\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "door-game | in rule \"lose a life\": condition \"game is playing\" turned into \"game is not playing\" | fix: in rule \"game over\": condition \"lives is 0\" changed to \"lives is 2\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "door-game | in rule \"lose a life\": condition \"touch ghost happens\" replaced by \"key is on floor\" | fix: in rule \"lose the last life\": condition \"lives is 1\" replaced by \"door is open\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "reminder-app | in rule \"finishing\": condition \"finish happens\" replaced by \"snoozes is 1\" | fix: in rule \"first snooze\": result \"snoozes is 1\" changed to \"snoozes is 2\"",
+      "kind": "bad",
+      "accept": true,
+      "error": null,
+      "asked": [
+       13,
+       23,
+       32
+      ]
+     },
+     {
+      "id": "reminder-app | in rule \"second snooze\": condition \"snooze happens\" changed to \"finish happens\" | fix: in rule \"first snooze\": result \"snoozes is 1\" changed to \"snoozes is 2\"",
+      "kind": "bad",
+      "accept": false,
+      "error": null,
+      "asked": [
+       13
+      ]
+     },
+     {
+      "id": "reminder-app | in rule \"second snooze\": condition \"snoozes is 1\" changed to \"snoozes is 0\" | fix: in rule \"first snooze\": condition \"snooze happens\" changed to \"day passes happens\"",
+      "kind": "bad",
+      "accept": false,
+      "error": null,
+      "asked": [
+       13
+      ]
+     },
+     {
+      "id": "reminder-app | in rule \"first snooze\": condition \"task is not done\" changed to \"task is not new\" | fix: in rule \"first snooze\": condition \"task is not new\" left out",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       14,
+       15,
+       16
+      ]
+     },
+     {
+      "id": "reminder-app | in rule \"first snooze\": condition \"snoozes is 0\" turned into \"snoozes is not 0\" | fix: in rule \"first snooze\": condition \"snoozes is not 0\" turned into \"snoozes is 0\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       14,
+       15,
+       16
+      ]
+     },
+     {
+      "id": "reminder-app | in rule \"first snooze\": condition \"task is not done\" changed to \"task is not new\" | fix: in rule \"first snooze\": condition \"task is not new\" changed to \"task is not urgent\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       14,
+       15,
+       16
+      ]
+     },
+     {
+      "id": "reminder-app | in rule \"first snooze\": condition \"task is not done\" turned into \"task is done\" | fix: in rule \"urgent after two snoozes\": condition \"snoozes is 2\" changed to \"snoozes is 0\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "reminder-app | in rule \"urgent after two snoozes\": condition \"snoozes is 2\" left out | fix: in rule \"urgent after two snoozes\": condition \"task is new\" changed to \"task is overdue\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "reminder-app | rule \"first snooze\" removed | fix: in rule \"urgent after two snoozes\": condition \"snoozes is 2\" left out",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "moving-day | in rule \"loading\": condition \"boxes is packed\" replaced by \"deposit is lost\" | fix: in rule \"driving\": condition \"boxes is in van\" replaced by \"key is returned\"",
+      "kind": "bad",
+      "accept": false,
+      "error": null,
+      "asked": [
+       7
+      ]
+     },
+     {
+      "id": "moving-day | in rule \"loading\": result \"boxes is in van\" changed to \"boxes is packed\" | fix: in rule \"deposit lost\": condition \"van is driven off\" replaced by \"boxes is packed\"",
+      "kind": "bad",
+      "accept": false,
+      "error": null,
+      "asked": [
+       5
+      ]
+     },
+     {
+      "id": "moving-day | in rule \"booking\": condition \"book van happens\" changed to \"load happens\" | fix: in rule \"booking\": condition \"load happens\" changed to \"pack happens\"",
+      "kind": "bad",
+      "accept": false,
+      "error": null,
+      "asked": [
+       7
+      ]
+     },
+     {
+      "id": "moving-day | in rule \"deposit lost\": condition \"deposit is held\" changed to \"deposit is back\" | fix: in rule \"deposit lost\": condition \"deposit is back\" turned into \"deposit is not back\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       10,
+       39,
+       4
+      ]
+     },
+     {
+      "id": "moving-day | in rule \"driving\": condition \"boxes is in van\" turned into \"boxes is not in van\" | fix: in rule \"loading\": condition \"load happens\" replaced by \"key is returned\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       9,
+       10,
+       39
+      ]
+     },
+     {
+      "id": "moving-day | in rule \"driving\": condition \"van is booked\" replaced by \"deposit is lost\" | fix: in rule \"driving\": condition \"deposit is lost\" changed to \"deposit is held\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       10,
+       12,
+       13
+      ]
+     },
+     {
+      "id": "moving-day | in rule \"deposit lost\": condition \"van is driven off\" left out | fix: rule \"deposit lost\" removed",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "moving-day | in rule \"packing\": condition \"pack happens\" replaced by \"deposit is held\" | fix: in rule \"loading\": result \"boxes is in van\" changed to \"boxes is unpacked\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "moving-day | in rule \"returning the key\": condition \"return key happens\" replaced by \"deposit is lost\" | fix: in rule \"returning the key\": condition \"deposit is lost\" changed to \"deposit is held\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "river-crossing | in rule \"fox eats goose on the left\": condition \"goose is left\" turned into \"goose is not left\" | fix: in rule \"farmer rows right with goose\": condition \"cross with goose happens\" changed to \"cross with fox happens\"",
+      "kind": "bad",
+      "accept": true,
+      "error": null,
+      "asked": [
+       28,
+       19,
+       20
+      ]
+     },
+     {
+      "id": "river-crossing | in rule \"farmer rows left with grain\": condition \"farmer is right\" replaced by \"goose is left\" | fix: in rule \"farmer rows left with fox\": condition \"cross with fox happens\" replaced by \"goose is left\"",
+      "kind": "bad",
+      "accept": false,
+      "error": null,
+      "asked": [
+       11
+      ]
+     },
+     {
+      "id": "river-crossing | in rule \"fox goes right\": condition \"cross with fox happens\" changed to \"cross with goose happens\" | fix: in rule \"fox goes right\": condition \"farmer is left\" changed to \"farmer is right\"",
+      "kind": "bad",
+      "accept": false,
+      "error": null,
+      "asked": [
+       12,
+       13
+      ]
+     },
+     {
+      "id": "river-crossing | in rule \"fox eats goose on the left\": condition \"fox is left\" changed to \"fox is right\" | fix: in rule \"fox eats goose on the left\": condition \"goose is left\" replaced by \"grain_is is eaten\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       37,
+       38,
+       4
+      ]
+     },
+     {
+      "id": "river-crossing | in rule \"farmer rows right with grain\": condition \"farmer is left\" changed to \"farmer is right\" | fix: in rule \"farmer rows right with grain\": condition \"farmer is right\" replaced by \"fox is right\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       32,
+       33,
+       34
+      ]
+     },
+     {
+      "id": "river-crossing | in rule \"goose goes left\": condition \"cross with goose happens\" replaced by \"goose_is is alive\" | fix: in rule \"farmer rows left with goose\": condition \"farmer is right\" changed to \"farmer is left\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       28,
+       19,
+       20
+      ]
+     },
+     {
+      "id": "river-crossing | in rule \"fox eats goose on the left\": condition \"goose is left\" replaced by \"grain is right\" | fix: in rule \"grain goes right\": condition \"cross with grain happens\" changed to \"cross alone happens\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "river-crossing | in rule \"goose goes right\": condition \"cross with goose happens\" left out | fix: in rule \"fox eats goose on the left\": condition \"goose is left\" replaced by \"grain is left\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "river-crossing | in rule \"goose goes left\": condition \"farmer is right\" replaced by \"grain is right\" | fix: in rule \"grain goes right\": condition \"cross with grain happens\" changed to \"cross with fox happens\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "plant-watering | in rule \"open when dry and no rain coming\": condition \"forecast is clear\" left out | fix: in rule \"sun dries damp soil\": condition \"sunny day happens\" replaced by \"forecast is rain\"",
+      "kind": "bad",
+      "accept": false,
+      "error": null,
+      "asked": [
+       13
+      ]
+     },
+     {
+      "id": "plant-watering | in rule \"sun dries damp soil\": condition \"sunny day happens\" replaced by \"valve is closed\" | fix: rule \"sun dries damp soil\" removed",
+      "kind": "bad",
+      "accept": true,
+      "error": null,
+      "asked": [
+       14,
+       19,
+       20
+      ]
+     },
+     {
+      "id": "plant-watering | in rule \"sun dries damp soil\": condition \"sunny day happens\" left out | fix: rule \"sun dries damp soil\" removed",
+      "kind": "bad",
+      "accept": true,
+      "error": null,
+      "asked": [
+       14,
+       19,
+       20
+      ]
+     },
+     {
+      "id": "plant-watering | in rule \"rain on dry soil\": condition \"rain falls happens\" changed to \"morning check happens\" | fix: in rule \"rain on dry soil\": condition \"morning check happens\" changed to \"rain falls happens\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       33,
+       17,
+       18
+      ]
+     },
+     {
+      "id": "plant-watering | in rule \"water wets dry soil\": result \"soil is damp\" changed to \"soil is soaked\" | fix: in rule \"water wets dry soil\": result \"soil is soaked\" changed to \"soil is damp\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       28,
+       32,
+       4
+      ]
+     },
+     {
+      "id": "plant-watering | in rule \"water wets dry soil\": condition \"valve is open\" changed to \"valve is closed\" | fix: in rule \"water wets dry soil\": condition \"valve is closed\" replaced by \"forecast is clear\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       16,
+       33,
+       17
+      ]
+     },
+     {
+      "id": "plant-watering | in rule \"rain on damp soil\": condition \"soil is damp\" turned into \"soil is not damp\" | fix: in rule \"rain on damp soil\": condition \"rain falls happens\" replaced by \"forecast is clear\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "plant-watering | in rule \"rain on damp soil\": condition \"rain falls happens\" replaced by \"forecast is clear\" | fix: in rule \"rain on damp soil\": condition \"forecast is clear\" changed to \"forecast is rain\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "plant-watering | in rule \"open when dry and no rain coming\": condition \"forecast is clear\" left out | fix: in rule \"open when dry and no rain coming\": condition \"soil is dry\" turned into \"soil is not dry\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "borrowed-lantern | in rule \"lost in the dark\": condition \"night falls happens\" changed to \"lend lantern happens\" | fix: in rule \"lost in the dark\": condition \"lantern is with stranger\" turned into \"lantern is not with stranger\"",
+      "kind": "bad",
+      "accept": false,
+      "error": null,
+      "asked": [
+       7
+      ]
+     },
+     {
+      "id": "borrowed-lantern | in rule \"lending\": condition \"ada is on the road\" replaced by \"stranger is searching\" | fix: in rule \"lending\": condition \"stranger is searching\" changed to \"stranger is at home\"",
+      "kind": "bad",
+      "accept": false,
+      "error": null,
+      "asked": [
+       7,
+       21,
+       22
+      ]
+     },
+     {
+      "id": "borrowed-lantern | in rule \"lost in the dark\": result \"ada is lost\" changed to \"ada is home safe\" | fix: in rule \"she sees her lantern\": condition \"ada is lost\" left out",
+      "kind": "bad",
+      "accept": false,
+      "error": null,
+      "asked": [
+       7
+      ]
+     },
+     {
+      "id": "borrowed-lantern | in rule \"lost in the dark\": condition \"ada is on the road\" changed to \"ada is home safe\" | fix: in rule \"lost in the dark\": condition \"ada is home safe\" left out",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       21,
+       8,
+       9
+      ]
+     },
+     {
+      "id": "borrowed-lantern | in rule \"home by her own light\": condition \"ada is on the road\" changed to \"ada is lost\" | fix: in rule \"home by her own light\": condition \"ada is lost\" turned into \"ada is not lost\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       6,
+       12,
+       27
+      ]
+     },
+     {
+      "id": "borrowed-lantern | in rule \"lost in the dark\": condition \"lantern is with stranger\" changed to \"lantern is with ada\" | fix: rule \"lost in the dark\" removed",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       6,
+       12,
+       22
+      ]
+     },
+     {
+      "id": "borrowed-lantern | in rule \"she sees her lantern\": condition \"ada is lost\" turned into \"ada is not lost\" | fix: in rule \"the search\": condition \"stranger searches happens\" replaced by \"lantern is with ada\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "borrowed-lantern | in rule \"lending\": result \"lantern is with stranger\" changed to \"lantern is with ada\" | fix: in rule \"home by her own light\": result \"ada is home safe\" changed to \"ada is found\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "borrowed-lantern | in rule \"the search\": condition \"stranger searches happens\" changed to \"night falls happens\" | fix: in rule \"she sees her lantern\": condition \"stranger is searching\" changed to \"stranger is at home\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "ghost-lantern | in rule \"unlock\": condition \"key is carried\" changed to \"key is on floor\" | fix: in rule \"unlock\": condition \"game is playing\" changed to \"game is won\"",
+      "kind": "bad",
+      "accept": true,
+      "error": null,
+      "asked": [
+       37,
+       38,
+       9
+      ]
+     },
+     {
+      "id": "ghost-lantern | in rule \"lose a life\": condition \"ghost is here\" changed to \"ghost is gone\" | fix: in rule \"light the lantern\": condition \"game is playing\" turned into \"game is not playing\"",
+      "kind": "bad",
+      "accept": false,
+      "error": null,
+      "asked": [
+       29
+      ]
+     },
+     {
+      "id": "ghost-lantern | in rule \"take key\": condition \"game is playing\" changed to \"game is over\" | fix: in rule \"light the lantern\": condition \"key is carried\" changed to \"key is on floor\"",
+      "kind": "bad",
+      "accept": false,
+      "error": null,
+      "asked": [
+       6
+      ]
+     },
+     {
+      "id": "ghost-lantern | in rule \"lose a life\": condition \"touch ghost happens\" changed to \"walk through happens\" | fix: in rule \"lose a life\": condition \"walk through happens\" changed to \"touch ghost happens\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       9,
+       10,
+       12
+      ]
+     },
+     {
+      "id": "ghost-lantern | in rule \"lose the last life\": condition \"lives is 1\" turned into \"lives is not 1\" | fix: in rule \"lose a life\": condition \"lives is 2\" changed to \"lives is 0\"",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       24,
+       25,
+       26
+      ]
+     },
+     {
+      "id": "ghost-lantern | in rule \"the key burns out\": condition \"game is playing\" replaced by \"lantern is lit\" | fix: in rule \"the key burns out\": condition \"lantern is lit\" left out",
+      "kind": "good",
+      "accept": true,
+      "error": null,
+      "asked": [
+       29
+      ]
+     },
+     {
+      "id": "ghost-lantern | in rule \"the key burns out\": condition \"light lantern happens\" changed to \"pick up key happens\" | fix: in rule \"take key\": condition \"game is playing\" replaced by \"lives is 0\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "ghost-lantern | in rule \"take key\": condition \"pick up key happens\" replaced by \"lives is 1\" | fix: in rule \"take key\": condition \"lives is 1\" left out",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     },
+     {
+      "id": "ghost-lantern | in rule \"light the lantern\": condition \"light lantern happens\" replaced by \"lives is 0\" | fix: in rule \"lose the last life\": result \"lives is 0\" changed to \"lives is 2\"",
+      "kind": "losing",
+      "accept": false,
+      "error": null,
+      "asked": []
+     }
+    ]
+   },
+   "tokens_out": 39539,
+   "cut_off": 0,
+   "calls": 2
+  }
+ }
+}
