@@ -53,3 +53,13 @@ Under $0.50: 6 DeepSeek calls.
 - **Reading "kept" in the method-only arm as finding the failure from the evidence.** It had none; a kept method there came from the code and what DeepSeek already knows.
 - **Reading this as the system finding a failure by itself.** The question "is anything wrong?" was asked by the program, and the record was chosen by the program's rules; what DeepSeek did not get was any hint of what is wrong.
 - **Reading one method and three repeats as settled.**
+
+## Follow-up, added after log 41's first results and before the follow-up runs
+
+Two of the three with-the-record replies were cut off at the 32,000-token reply limit and gave no answer. The follow-up reruns the with-the-record arm only, three times, with the same record, question and judging, and the reply limit raised to 200,000 tokens (as log 19 did). Nothing else changes. Its records are kept beside the first ones, named "follow-up".
+
+Conjectures for the follow-up:
+
+5. **No reply is cut off.**
+6. **At least 2 of 3 changed methods are kept** on log 39's held occasions.
+7. **In at least 2 of 3 replies, what DeepSeek says is wrong cites a fix or situation from the record** (read by hand). That would show the record, not only the description, was used.

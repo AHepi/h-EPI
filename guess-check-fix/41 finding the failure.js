@@ -16,6 +16,9 @@
  * Run with:
  *   DEEPSEEK_API_KEY=... NODE_USE_ENV_PROXY=1 node "41 finding the failure.js" OUTFOLDER [REPEATS]
  *   node "41 finding the failure.js" --record   (prints the record, with no DeepSeek call)
+ *   DEEPSEEK_API_KEY=... NODE_USE_ENV_PROXY=1 node "41 finding the failure.js" --follow-up OUTFOLDER [REPEATS]
+ *       the follow-up planned after log 41's first results: the with-the-record arm only, with the reply
+ *       limit raised to 200,000 tokens
  */
 const fs = require('fs');
 const path = require('path');
@@ -86,8 +89,9 @@ function read(text) {
 }
 const same_as_current = code => !!code && code.replace(/\s+/g, '') === M.CURRENT.replace(/\s+/g, '');
 
-async function ask_arm(D, entries, held, with_record) {
-  const g = D.make_deepseek_guesser();
+// settings: guesser settings, such as { reply_limit: 200000 } for the follow-up (log 41, after its first results).
+async function ask_arm(D, entries, held, with_record, settings) {
+  const g = settings ? D.make_deepseek_guesser(undefined, settings) : D.make_deepseek_guesser();
   const text = with_record
     ? `${JOB}\n\nA record of the method at work: fixes it accepted while correcting models, in no particular order.\n\n${record_words(entries)}\n\n${QUESTION}`
     : `${JOB}\n\n${QUESTION}`;
@@ -118,6 +122,26 @@ if (require.main === module) {
     console.log(`accepted fixes: ${all.length}, of which broke something: ${all.filter(e => e.broke).length}`);
     console.log(`record: ${entries.length} entries, broke something: ${entries.map(e => e.broke).join(', ')}`);
     console.log(record_words(entries).slice(0, 3000));
+  } else if (first === '--follow-up') {
+    const D = require('./17 DeepSeek guesser.js');
+    const folder = second;
+    const REPEATS = Number(process.argv[4]) || 3;
+    fs.mkdirSync(folder, { recursive: true });
+    const entries = record();
+    const { held } = M.split(O.occasions());
+    (async () => {
+      const rows = await Promise.all(Array.from({ length: REPEATS }, (_, i) => i + 1).map(async repeat => {
+        const a = await ask_arm(D, entries, held, true, { reply_limit: 200000 });
+        const rec = { repeat, guesser: D.MODEL_NAME, reply_limit: 200000, arms: { 'with the record': a } };
+        fs.writeFileSync(path.join(folder, `follow-up repeat ${repeat}.json`), JSON.stringify(rec, null, 1) + '\n');
+        return rec;
+      }));
+      const lines = ['| Repeat | Cut off | Changed the method | Kept | Held bad fixes rejected (of 24) | Good fixes not accepted | Output tokens | What is wrong |', '|---|---|---|---|---|---|---|---|'];
+      for (const r of rows) { const a = r.arms['with the record'], h = a.held; lines.push(`| ${r.repeat} | ${a.cut_off} | ${a.unchanged ? 'no' : 'yes'} | ${h ? (h.kept ? 'yes' : 'no') : '-'} | ${h ? h.bad_rejected : '-'} | ${h ? h.protected_losses.good_not_accepted.length : '-'} | ${a.tokens_out} | ${(a.what_is_wrong || '(nothing said)').replace(/\|/g, '/')} |`); }
+      const text = `# Finding the failure, follow-up: results\n\nThe with-the-record arm only, reply limit 200,000 tokens, planned after log 41's first results. Every number comes from the "follow-up" records in this folder.\n\n${lines.join('\n')}\n`;
+      fs.writeFileSync(path.join(folder, 'follow-up results.md'), text);
+      console.log(text);
+    })();
   } else if (first === '--summarise') {
     const records = fs.readdirSync(second).filter(f => /^repeat \d+\.json$/.test(f)).sort().map(f => JSON.parse(fs.readFileSync(path.join(second, f), 'utf8')));
     const text = results_text(records, []);
