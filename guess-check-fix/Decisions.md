@@ -67,6 +67,9 @@ Every decision that shapes the project. The owner's decisions are quoted exactly
 **O21. Whether an agent must know "hard to vary" for it to count.** (Log 38.)
 > "Hmm. That may be correct. The only reason I left it out was because the agent may not know the rule, or may never use it at all. But then that raises the question: can such an agent actually be creative? Having knowledge that something has occured and the fact that it occurs are two separate phenomenon. Is this what you mean?"
 
+**O22. Test condition 6.** (Log 39.)
+> "Do it!"
+
 ## Claude's routine choices
 
 **C1. A new small language of things and rules, rather than extending Strata.** Strata refused cause-and-effect sentences (log 01), its instructions drop causes, and its checker answers "does this follow?" while the hard-to-vary tests need "what happens when something is changed?".
@@ -189,7 +192,9 @@ Every decision that shapes the project. The owner's decisions are quoted exactly
 
 **C60. A new kind's changes and tests are short JavaScript expressions, run in a separate process** (log 35): a kind needs something that can hold values the rule language cannot, and the process keeps it away from files, the network and the key.
 
+**C61. The method opened up is fix acceptance, and a method may ask the world three questions per fix** (log 39): it has a known failure (log 17), a person's repair to compare with, and a tool the checker already has.
+
 ## Traps
 
-- **Treating a routine choice as settled.** C1 to C60 are Claude's choices; any can be overturned. The ones forced by a failure say which log entry forced them.
+- **Treating a routine choice as settled.** C1 to C61 are Claude's choices; any can be overturned. The ones forced by a failure say which log entry forced them.
 - **Losing the owner's exact words.** Paraphrasing a decision changes it. Quote it.
