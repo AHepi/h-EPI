@@ -10,6 +10,7 @@
  *     function that tries to reach the account key or load a library cannot
  *   - the universal-language loop reports which observations fail and how, and keeps the best function
  *   - a whole device runs through all three arms, and the summary has a row for each
+ *   - the probes after the run list each arm's answer beside the truth
  * Run with:  node "34 language tests.js"
  */
 const X = require('./34 language test.js');
@@ -107,6 +108,9 @@ function stand_in(device) {
   expect_that('bare answers are graded', rec.arms.bare.graded.every(g => g.right));
   const text = X.summarise([rec]);
   expect_that('the summary has a row for each arm', ['| peg tube | fixed language |', '| peg tube | universal language |', '| peg tube | bare |'].every(r => text.includes(r)));
+
+  const probed = X.probe_after_run([{ device: 'peg tube', repeat: 1, arms: { 'fixed language': { best_round: null, rounds: [] }, 'universal language': { best_round: 1, rounds: [{ round: 1, code: 'function visible(a) { return { light: "amber" }; }' }] } } }]);
+  expect_that('the probes after the run cover each arm, with the truth beside them', probed[0].probes.length === 5 && probed[0].probes[0].truth === 'red' && probed[0].probes[0].universal_language === 'amber' && probed[0].probes[0].fixed_language === 'no model', JSON.stringify(probed[0].probes[0]));
 
   console.log(`\n${failed} test(s) failed.`);
   process.exit(failed ? 1 : 0);

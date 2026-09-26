@@ -52,6 +52,9 @@ Every decision that shapes the project. The owner's decisions are quoted exactly
 **O16. Try role-play.** (Log 32.)
 > "What about role playing? Does that work?"
 
+**O17. Test condition 2.** (Log 34.)
+> "Do it!"
+
 ## Claude's routine choices
 
 **C1. A new small language of things and rules, rather than extending Strata.** Strata refused cause-and-effect sentences (log 01), its instructions drop causes, and its checker answers "does this follow?" while the hard-to-vary tests need "what happens when something is changed?".
@@ -168,7 +171,11 @@ Every decision that shapes the project. The owner's decisions are quoted exactly
 
 **C57. Any clash on or upstream of the thing asked about reads "unsettled"** (log 28): without sizes, the checker cannot weigh opposite pushes, and a run should not let the nearer push win by arriving first.
 
+**C58. The universal language is JavaScript, run in a separate process with no files, network or account key, and a time limit** (log 34): DeepSeek writes it well, and anything it writes may reach whatever the process can.
+
+**C59. Probes run after a result are kept and marked as such** (log 34): they check a gap the result revealed, and are never counted as planned tests.
+
 ## Traps
 
-- **Treating a routine choice as settled.** C1 to C57 are Claude's choices; any can be overturned. The ones forced by a failure say which log entry forced them.
+- **Treating a routine choice as settled.** C1 to C59 are Claude's choices; any can be overturned. The ones forced by a failure say which log entry forced them.
 - **Losing the owner's exact words.** Paraphrasing a decision changes it. Quote it.

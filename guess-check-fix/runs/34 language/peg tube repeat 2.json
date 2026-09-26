@@ -1,0 +1,828 @@
+{
+ "device": "peg tube",
+ "repeat": 2,
+ "guesser": "deepseek-flash",
+ "observations": 24,
+ "tests": [
+  {
+   "name": "test 1",
+   "length": 2,
+   "long": false,
+   "hard": false,
+   "see": {
+    "light": "green"
+   }
+  },
+  {
+   "name": "test 2",
+   "length": 4,
+   "long": false,
+   "hard": false,
+   "see": {
+    "light": "green"
+   }
+  },
+  {
+   "name": "test 3",
+   "length": 3,
+   "long": false,
+   "hard": false,
+   "see": {
+    "light": "amber"
+   }
+  },
+  {
+   "name": "test 4",
+   "length": 3,
+   "long": false,
+   "hard": false,
+   "see": {
+    "light": "amber"
+   }
+  },
+  {
+   "name": "test 5",
+   "length": 4,
+   "long": false,
+   "hard": true,
+   "see": {
+    "light": "red"
+   }
+  },
+  {
+   "name": "test 6",
+   "length": 4,
+   "long": false,
+   "hard": false,
+   "see": {
+    "light": "red"
+   }
+  },
+  {
+   "name": "test 7",
+   "length": 24,
+   "long": true,
+   "hard": false,
+   "see": {
+    "light": "green"
+   }
+  },
+  {
+   "name": "test 8",
+   "length": 23,
+   "long": true,
+   "hard": false,
+   "see": {
+    "light": "amber"
+   }
+  },
+  {
+   "name": "test 9",
+   "length": 24,
+   "long": true,
+   "hard": true,
+   "see": {
+    "light": "red"
+   }
+  },
+  {
+   "name": "test 10",
+   "length": 30,
+   "long": true,
+   "hard": false,
+   "see": {
+    "light": "green"
+   }
+  },
+  {
+   "name": "test 11",
+   "length": 30,
+   "long": true,
+   "hard": false,
+   "see": {
+    "light": "green"
+   }
+  },
+  {
+   "name": "test 12",
+   "length": 24,
+   "long": true,
+   "hard": true,
+   "see": {
+    "light": "red"
+   }
+  }
+ ],
+ "arms": {
+  "universal language": {
+   "rounds": [
+    {
+     "round": 1,
+     "readable": true,
+     "passed": 24,
+     "code": "function visible(actions) {\n  const tube = [];\n  let error = false;\n\n  for (const action of actions) {\n    if (action === \"red in\") {\n      tube.push(\"red\");\n    } else if (action === \"blue in\") {\n      tube.push(\"blue\");\n    } else if (action === \"red out\") {\n      if (tube.length > 0 && tube[tube.length - 1] === \"red\") {\n        tube.pop();\n      } else {\n        error = true;\n      }\n    } else if (action === \"blue out\") {\n      if (tube.length > 0 && tube[tube.length - 1] === \"blue\") {\n        tube.pop();\n      } else {\n        error = true;\n      }\n    }\n  }\n\n  if (error) return { light: \"red\" };\n  if (tube.length === 0) return { light: \"green\" };\n  return { light: \"amber\" };\n}"
+    }
+   ],
+   "best_round": 1,
+   "best_passes": 24,
+   "observations": 24,
+   "graded": [
+    {
+     "test": "test 1",
+     "hard": false,
+     "long": false,
+     "right": true
+    },
+    {
+     "test": "test 2",
+     "hard": false,
+     "long": false,
+     "right": true
+    },
+    {
+     "test": "test 3",
+     "hard": false,
+     "long": false,
+     "right": true
+    },
+    {
+     "test": "test 4",
+     "hard": false,
+     "long": false,
+     "right": true
+    },
+    {
+     "test": "test 5",
+     "hard": true,
+     "long": false,
+     "right": true
+    },
+    {
+     "test": "test 6",
+     "hard": false,
+     "long": false,
+     "right": true
+    },
+    {
+     "test": "test 7",
+     "hard": false,
+     "long": true,
+     "right": true
+    },
+    {
+     "test": "test 8",
+     "hard": false,
+     "long": true,
+     "right": true
+    },
+    {
+     "test": "test 9",
+     "hard": true,
+     "long": true,
+     "right": true
+    },
+    {
+     "test": "test 10",
+     "hard": false,
+     "long": true,
+     "right": true
+    },
+    {
+     "test": "test 11",
+     "hard": false,
+     "long": true,
+     "right": true
+    },
+    {
+     "test": "test 12",
+     "hard": true,
+     "long": true,
+     "right": true
+    }
+   ],
+   "tokens_out": 8329,
+   "cut_off": 0,
+   "calls": 1
+  },
+  "bare": {
+   "rule": "Treat the tube as a stack: an in action pushes that colour, and an out action only succeeds if that colour is on top; any failed out action makes the final light red. If no out action has failed, the light is green when the stack is empty and amber when it is nonempty.",
+   "graded": [
+    {
+     "test": "test 1",
+     "hard": false,
+     "long": false,
+     "right": true
+    },
+    {
+     "test": "test 2",
+     "hard": false,
+     "long": false,
+     "right": true
+    },
+    {
+     "test": "test 3",
+     "hard": false,
+     "long": false,
+     "right": true
+    },
+    {
+     "test": "test 4",
+     "hard": false,
+     "long": false,
+     "right": true
+    },
+    {
+     "test": "test 5",
+     "hard": true,
+     "long": false,
+     "right": true
+    },
+    {
+     "test": "test 6",
+     "hard": false,
+     "long": false,
+     "right": true
+    },
+    {
+     "test": "test 7",
+     "hard": false,
+     "long": true,
+     "right": true
+    },
+    {
+     "test": "test 8",
+     "hard": false,
+     "long": true,
+     "right": true
+    },
+    {
+     "test": "test 9",
+     "hard": true,
+     "long": true,
+     "right": true
+    },
+    {
+     "test": "test 10",
+     "hard": false,
+     "long": true,
+     "right": true
+    },
+    {
+     "test": "test 11",
+     "hard": false,
+     "long": true,
+     "right": true
+    },
+    {
+     "test": "test 12",
+     "hard": true,
+     "long": true,
+     "right": true
+    }
+   ],
+   "tokens_out": 19287,
+   "cut_off": 0,
+   "calls": 1
+  },
+  "fixed language": {
+   "rounds": [
+    {
+     "round": 1,
+     "readable": false,
+     "passed": 0,
+     "largest_hidden": 0,
+     "model": null
+    },
+    {
+     "round": 2,
+     "readable": false,
+     "passed": 0,
+     "largest_hidden": 0,
+     "model": null
+    },
+    {
+     "round": 3,
+     "readable": false,
+     "passed": 0,
+     "largest_hidden": 0,
+     "model": null
+    },
+    {
+     "round": 4,
+     "readable": false,
+     "passed": 0,
+     "largest_hidden": 0,
+     "model": null
+    },
+    {
+     "round": 5,
+     "readable": true,
+     "passed": 24,
+     "largest_hidden": 11,
+     "model": {
+      "things": {
+       "red_count": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10"
+       ],
+       "blue_count": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10"
+       ],
+       "error": [
+        "ok",
+        "error"
+       ],
+       "light": [
+        "green",
+        "amber",
+        "red"
+       ]
+      },
+      "events": [
+       "red in",
+       "blue in",
+       "red out",
+       "blue out"
+      ],
+      "start": {
+       "red_count": "0",
+       "blue_count": "0",
+       "error": "ok",
+       "light": "green"
+      },
+      "rules": [
+       {
+        "name": "red in 0",
+        "when": [
+         "red in happens",
+         "red_count is 0"
+        ],
+        "then": "red_count is 1"
+       },
+       {
+        "name": "red in 1",
+        "when": [
+         "red in happens",
+         "red_count is 1"
+        ],
+        "then": "red_count is 2"
+       },
+       {
+        "name": "red in 2",
+        "when": [
+         "red in happens",
+         "red_count is 2"
+        ],
+        "then": "red_count is 3"
+       },
+       {
+        "name": "red in 3",
+        "when": [
+         "red in happens",
+         "red_count is 3"
+        ],
+        "then": "red_count is 4"
+       },
+       {
+        "name": "red in 4",
+        "when": [
+         "red in happens",
+         "red_count is 4"
+        ],
+        "then": "red_count is 5"
+       },
+       {
+        "name": "red in 5",
+        "when": [
+         "red in happens",
+         "red_count is 5"
+        ],
+        "then": "red_count is 6"
+       },
+       {
+        "name": "red in 6",
+        "when": [
+         "red in happens",
+         "red_count is 6"
+        ],
+        "then": "red_count is 7"
+       },
+       {
+        "name": "red in 7",
+        "when": [
+         "red in happens",
+         "red_count is 7"
+        ],
+        "then": "red_count is 8"
+       },
+       {
+        "name": "red in 8",
+        "when": [
+         "red in happens",
+         "red_count is 8"
+        ],
+        "then": "red_count is 9"
+       },
+       {
+        "name": "red in 9",
+        "when": [
+         "red in happens",
+         "red_count is 9"
+        ],
+        "then": "red_count is 10"
+       },
+       {
+        "name": "red out 1",
+        "when": [
+         "red out happens",
+         "red_count is 1"
+        ],
+        "then": "red_count is 0"
+       },
+       {
+        "name": "red out 2",
+        "when": [
+         "red out happens",
+         "red_count is 2"
+        ],
+        "then": "red_count is 1"
+       },
+       {
+        "name": "red out 3",
+        "when": [
+         "red out happens",
+         "red_count is 3"
+        ],
+        "then": "red_count is 2"
+       },
+       {
+        "name": "red out 4",
+        "when": [
+         "red out happens",
+         "red_count is 4"
+        ],
+        "then": "red_count is 3"
+       },
+       {
+        "name": "red out 5",
+        "when": [
+         "red out happens",
+         "red_count is 5"
+        ],
+        "then": "red_count is 4"
+       },
+       {
+        "name": "red out 6",
+        "when": [
+         "red out happens",
+         "red_count is 6"
+        ],
+        "then": "red_count is 5"
+       },
+       {
+        "name": "red out 7",
+        "when": [
+         "red out happens",
+         "red_count is 7"
+        ],
+        "then": "red_count is 6"
+       },
+       {
+        "name": "red out 8",
+        "when": [
+         "red out happens",
+         "red_count is 8"
+        ],
+        "then": "red_count is 7"
+       },
+       {
+        "name": "red out 9",
+        "when": [
+         "red out happens",
+         "red_count is 9"
+        ],
+        "then": "red_count is 8"
+       },
+       {
+        "name": "red out 10",
+        "when": [
+         "red out happens",
+         "red_count is 10"
+        ],
+        "then": "red_count is 9"
+       },
+       {
+        "name": "red out 0",
+        "when": [
+         "red out happens",
+         "red_count is 0"
+        ],
+        "then": "error is error"
+       },
+       {
+        "name": "blue in 0",
+        "when": [
+         "blue in happens",
+         "blue_count is 0"
+        ],
+        "then": "blue_count is 1"
+       },
+       {
+        "name": "blue in 1",
+        "when": [
+         "blue in happens",
+         "blue_count is 1"
+        ],
+        "then": "blue_count is 2"
+       },
+       {
+        "name": "blue in 2",
+        "when": [
+         "blue in happens",
+         "blue_count is 2"
+        ],
+        "then": "blue_count is 3"
+       },
+       {
+        "name": "blue in 3",
+        "when": [
+         "blue in happens",
+         "blue_count is 3"
+        ],
+        "then": "blue_count is 4"
+       },
+       {
+        "name": "blue in 4",
+        "when": [
+         "blue in happens",
+         "blue_count is 4"
+        ],
+        "then": "blue_count is 5"
+       },
+       {
+        "name": "blue in 5",
+        "when": [
+         "blue in happens",
+         "blue_count is 5"
+        ],
+        "then": "blue_count is 6"
+       },
+       {
+        "name": "blue in 6",
+        "when": [
+         "blue in happens",
+         "blue_count is 6"
+        ],
+        "then": "blue_count is 7"
+       },
+       {
+        "name": "blue in 7",
+        "when": [
+         "blue in happens",
+         "blue_count is 7"
+        ],
+        "then": "blue_count is 8"
+       },
+       {
+        "name": "blue in 8",
+        "when": [
+         "blue in happens",
+         "blue_count is 8"
+        ],
+        "then": "blue_count is 9"
+       },
+       {
+        "name": "blue in 9",
+        "when": [
+         "blue in happens",
+         "blue_count is 9"
+        ],
+        "then": "blue_count is 10"
+       },
+       {
+        "name": "blue out 1",
+        "when": [
+         "blue out happens",
+         "blue_count is 1"
+        ],
+        "then": "blue_count is 0"
+       },
+       {
+        "name": "blue out 2",
+        "when": [
+         "blue out happens",
+         "blue_count is 2"
+        ],
+        "then": "blue_count is 1"
+       },
+       {
+        "name": "blue out 3",
+        "when": [
+         "blue out happens",
+         "blue_count is 3"
+        ],
+        "then": "blue_count is 2"
+       },
+       {
+        "name": "blue out 4",
+        "when": [
+         "blue out happens",
+         "blue_count is 4"
+        ],
+        "then": "blue_count is 3"
+       },
+       {
+        "name": "blue out 5",
+        "when": [
+         "blue out happens",
+         "blue_count is 5"
+        ],
+        "then": "blue_count is 4"
+       },
+       {
+        "name": "blue out 6",
+        "when": [
+         "blue out happens",
+         "blue_count is 6"
+        ],
+        "then": "blue_count is 5"
+       },
+       {
+        "name": "blue out 7",
+        "when": [
+         "blue out happens",
+         "blue_count is 7"
+        ],
+        "then": "blue_count is 6"
+       },
+       {
+        "name": "blue out 8",
+        "when": [
+         "blue out happens",
+         "blue_count is 8"
+        ],
+        "then": "blue_count is 7"
+       },
+       {
+        "name": "blue out 9",
+        "when": [
+         "blue out happens",
+         "blue_count is 9"
+        ],
+        "then": "blue_count is 8"
+       },
+       {
+        "name": "blue out 10",
+        "when": [
+         "blue out happens",
+         "blue_count is 10"
+        ],
+        "then": "blue_count is 9"
+       },
+       {
+        "name": "blue out 0",
+        "when": [
+         "blue out happens",
+         "blue_count is 0"
+        ],
+        "then": "error is error"
+       },
+       {
+        "name": "light red on error",
+        "when": [
+         "error is error"
+        ],
+        "then": "light is red"
+       },
+       {
+        "name": "light green when empty",
+        "when": [
+         "error is ok",
+         "red_count is 0",
+         "blue_count is 0"
+        ],
+        "then": "light is green"
+       },
+       {
+        "name": "light amber when red",
+        "when": [
+         "error is ok",
+         "red_count is not 0"
+        ],
+        "then": "light is amber"
+       },
+       {
+        "name": "light amber when blue",
+        "when": [
+         "error is ok",
+         "blue_count is not 0"
+        ],
+        "then": "light is amber"
+       }
+      ]
+     }
+    }
+   ],
+   "best_round": 5,
+   "best_passes": 24,
+   "observations": 24,
+   "largest_hidden": 11,
+   "graded": [
+    {
+     "test": "test 1",
+     "hard": false,
+     "long": false,
+     "right": true
+    },
+    {
+     "test": "test 2",
+     "hard": false,
+     "long": false,
+     "right": true
+    },
+    {
+     "test": "test 3",
+     "hard": false,
+     "long": false,
+     "right": true
+    },
+    {
+     "test": "test 4",
+     "hard": false,
+     "long": false,
+     "right": true
+    },
+    {
+     "test": "test 5",
+     "hard": true,
+     "long": false,
+     "right": true
+    },
+    {
+     "test": "test 6",
+     "hard": false,
+     "long": false,
+     "right": true
+    },
+    {
+     "test": "test 7",
+     "hard": false,
+     "long": true,
+     "right": true
+    },
+    {
+     "test": "test 8",
+     "hard": false,
+     "long": true,
+     "right": true
+    },
+    {
+     "test": "test 9",
+     "hard": true,
+     "long": true,
+     "right": true
+    },
+    {
+     "test": "test 10",
+     "hard": false,
+     "long": true,
+     "right": true
+    },
+    {
+     "test": "test 11",
+     "hard": false,
+     "long": true,
+     "right": true
+    },
+    {
+     "test": "test 12",
+     "hard": true,
+     "long": true,
+     "right": true
+    }
+   ],
+   "tokens_out": 158743,
+   "cut_off": 4,
+   "calls": 5
+  }
+ }
+}

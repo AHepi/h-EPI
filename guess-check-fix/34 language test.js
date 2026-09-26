@@ -18,6 +18,9 @@
  * Run with:
  *   DEEPSEEK_API_KEY=... NODE_USE_ENV_PROXY=1 node "34 language test.js" OUTFOLDER [REPEATS]
  *   node "34 language test.js" --summarise FOLDER
+ *   node "34 language test.js" --probe FOLDER   (after the run, at no cost: runs each arm's best rule model
+ *                                              or function on deeper and order-sensitive cases the
+ *                                              test cases missed; added after reading the results)
  */
 const fs = require('fs');
 const os = require('os');
@@ -304,11 +307,64 @@ function summarise(records) {
 }
 const results_text = (records, failed) => `# Can the language express it: results\n\nDeepSeek V4.1 Flash, default thinking. ${records.length} device-and-repeat runs; every number comes from the records in this folder. "Largest hidden thing" is how many states the best rule model's largest unseen thing has, in each run: how far it can count.\n\n${summarise(records)}\n${failed.length ? `\nRuns that failed:\n${failed.join('\n')}\n` : ''}`;
 
-module.exports = { DEVICES, GATE, PEGS, GRUDGE, cases, run_program, check_program, read_program, fixed_language, universal_language, bare, run_device, summarise, evidence_in_words, ANY_LENGTH };
+// After the run (log 34): cases the plan's test cases missed. The peg tube's observations and tests turned
+// out not to separate a pile from separate counts of red and blue; these do. Added after reading the results.
+const peg_pattern = n => Array.from({ length: n }, (_, i) => `${peg_colour(i)} in`);
+const PROBES = {
+  'balance gate': {
+    '500 pushes then 500 pulls': repeat(500, 'push').concat(repeat(500, 'pull')),
+    '500 pushes then 499 pulls': repeat(500, 'push').concat(repeat(499, 'pull')),
+    '100 pulls then 100 pushes': repeat(100, 'pull').concat(repeat(100, 'push')),
+  },
+  'peg tube': {
+    'red in, blue in, red out': ['red in', 'blue in', 'red out'],
+    '8 red in, 8 blue in, red out': repeat(8, 'red in').concat(repeat(8, 'blue in'), ['red out']),
+    'blue in, red in, blue in, red out, blue out, blue out': ['blue in', 'red in', 'blue in', 'red out', 'blue out', 'blue out'],
+    '30 red in, 30 red out': repeat(30, 'red in').concat(repeat(30, 'red out')),
+    '20 in, then out in the right order': peg_pattern(20).concat(peg_pattern(20).reverse().map(a => a.replace(' in', ' out'))),
+  },
+};
+function run_rules_on(raw, device, events) {
+  const model = C.prepare_model(raw);
+  const thing = Object.keys(device.visible)[0];
+  const job = C.prepare_jobs({ jobs: [{ name: 'probe', events, expect: [] }] }).jobs[0];
+  const r = C.run(model, C.resolve_situation(model, job.situation, [], 'probe'));
+  return [...new Set(r.final_states.map(s => s[thing]))].join('/');
+}
+function probe_after_run(records) {
+  const out = [];
+  for (const r of records) {
+    const device = DEVICES.find(d => d.id === r.device);
+    const probes = PROBES[r.device];
+    if (!probes) continue;
+    const thing = Object.keys(device.visible)[0];
+    const list = Object.entries(probes).map(([name, events]) => ({ name, events, see: device.truth(events) }));
+    const fixed = r.arms['fixed language'], universal = r.arms['universal language'];
+    const best_rules = fixed.best_round ? fixed.rounds.find(x => x.round === fixed.best_round).model : null;
+    const best_code = universal.best_round ? universal.rounds.find(x => x.round === universal.best_round).code : null;
+    const code_results = best_code ? check_program(device, best_code, list) : null;
+    out.push({
+      device: r.device, repeat: r.repeat,
+      probes: list.map((p, i) => ({
+        probe: p.name, truth: p.see[thing],
+        fixed_language: best_rules ? run_rules_on(best_rules, device, p.events) : 'no model',
+        universal_language: code_results ? (code_results[i].got || code_results[i].problem) : 'no function',
+      })),
+    });
+  }
+  return out;
+}
+
+module.exports = { PROBES, probe_after_run, DEVICES, GATE, PEGS, GRUDGE, cases, run_program, check_program, read_program, fixed_language, universal_language, bare, run_device, summarise, evidence_in_words, ANY_LENGTH };
 
 if (require.main === module) {
   const [first, second] = process.argv.slice(2);
-  if (first === '--summarise') {
+  if (first === '--probe') {
+    const records = fs.readdirSync(second).filter(f => / repeat \d+\.json$/.test(f)).sort().map(f => JSON.parse(fs.readFileSync(path.join(second, f), 'utf8')));
+    const probes = probe_after_run(records);
+    fs.writeFileSync(path.join(second, 'probes after the run.json'), JSON.stringify(probes, null, 1) + '\n');
+    for (const p of probes) console.log(`${p.device} repeat ${p.repeat}: ${p.probes.map(x => `${x.probe}: truth ${x.truth}, rules ${x.fixed_language}, function ${x.universal_language}`).join('; ')}`);
+  } else if (first === '--summarise') {
     const records = fs.readdirSync(second).filter(f => f.endsWith('.json')).sort().map(f => JSON.parse(fs.readFileSync(path.join(second, f), 'utf8')));
     const text = results_text(records, []);
     fs.writeFileSync(path.join(second, 'results.md'), text);
