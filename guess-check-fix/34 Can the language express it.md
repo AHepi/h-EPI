@@ -80,3 +80,9 @@ $0.73 of DeepSeek credit ($15.71 to $14.98).
 - **Reading the gate's 3 of 18 as the approximation limit alone.** Two of three runs were cut off before any model arrived; that is part of the same limit (the model too big to write), but a different way of failing.
 - **Reading "universal language" as DeepSeek becoming universal.** The program around it supplied the language.
 - **Reading the probes as planned.** They were written after the results, to check a gap the results revealed.
+
+## Correction after reading the revised semantics (log 36)
+
+The owner uploaded a revised semantics on 26 September 2026 (it renames revision 1's "derivations" as "arguments" and its "normative relation" as the "appraisal relation"). Under it, a claim that no argument rules out gets nothing from that, and "a finite list of failures does not rule out a bypass" (Part XIII). Two readings above go too far:
+- **"Condition 2 stands up here."** The runs cannot show that. That a rule language with finite states cannot hold an unlimited count is ruled in by an argument with no test in it: with finitely many states, two different counts must share a state, and from there the same actions lead both to the same answer when only one is right. The runs showed how DeepSeek's attempts broke, not that the limit exists.
+- **"Big enough models were too big to write."** Log 35 found a bypass: binary counting reaches 256 in 41 rules. The failure here was one way of writing a count.

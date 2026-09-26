@@ -107,3 +107,8 @@ $0.68 of DeepSeek credit ($14.98 to $14.30).
 - **Reading the growing arm's better grudge score as a better explanation.** It is the running score, the habit log 25 found; it happens to score a little higher here.
 - **Reading "grows" as DeepSeek inventing a language.** It added primitives through a door the program provides, and wrote their insides in JavaScript.
 - **Reading one log's fixed-language failure mode as fixed.** Log 34's gate runs wrote one-state-per-number counts that were cut off; this log's wrote binary. The same arm varies from run to run.
+
+## Correction after reading the revised semantics (log 36)
+
+- **What this log rules out, and what it does not.** The growing language holding every long case is an exhibited bypass. It rules out the proposed barrier "the rule language, even with a door to new kinds, cannot hold these counts and piles", for whoever accepts the records and the grading as premises (Part XIII of the revised semantics: "an argument that exhibits one bypass rules out a proposed barrier"). "Growth closes the gap" as a general claim is only not ruled out, and gets nothing from that.
+- **"DeepSeek's invention of binary counting is itself a small construction."** Too strong. The revised semantics counts "a small binding newly prepared inside received content" as construction of that binding, but only for an owned subhistory that prepares a represented organization (Part X). Nothing in these records shows either, and binary counting itself is inherited. What the records show is that it used binary counting on this gate without being asked.

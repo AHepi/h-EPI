@@ -58,6 +58,9 @@ Every decision that shapes the project. The owner's decisions are quoted exactly
 **O18. Test a language that grows.** (Log 35.)
 > "Do it"
 
+**O19. Read the revised semantics against the project.** (Log 36.)
+> "Does this change anything?" (with the revised semantics attached)
+
 ## Claude's routine choices
 
 **C1. A new small language of things and rules, rather than extending Strata.** Strata refused cause-and-effect sentences (log 01), its instructions drop causes, and its checker answers "does this follow?" while the hard-to-vary tests need "what happens when something is changed?".

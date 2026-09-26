@@ -371,12 +371,19 @@ Written up in "34 Can the language express it.md".
 - 21 tests (file 35), all passing. Cost: $0.68 ($14.98 to $14.30).
 Written up in "35 A language that grows.md".
 
+**36. The revised semantics: what changes. No runs.** The owner uploaded a revised semantics (about 16,000 words against revision 1's 9,600) and asked whether it changes anything (Decisions O19). Read against the parts the project leans on: selection against construction, "structural, not parametric", surprise, bearing, scrutinizability and universality all say the same in substance. Renamed: revision 1's "derivations" are now "arguments", its "normative relation" the "appraisal relation"; the project's earlier documents keep revision 1's names. Three things change:
+- **How results may be read.** An argument rules a claim out for someone who admits its steps, while they stay usable; a claim no argument rules out "gets nothing from that"; "a finite list of failures does not rule out a bypass", and one exhibited bypass rules out a proposed barrier. So log 34's "condition 2 stands up here" went too far: that a finite-state language cannot hold an unlimited count is ruled in by an argument with no test in it (two different counts must share a state), not by the runs; and log 35's growing language is a bypass that rules out a barrier, not evidence for a general claim. Correction notes were added to both reports, their text left as written.
+- **A claim of mine withdrawn:** that DeepSeek's binary counting was "a small construction". The revised Part X counts a small binding prepared inside received content as construction, but only in an owned subhistory preparing a represented organization, which no record here shows.
+- **The next test is sharper.** Repair (P) now says a protected aim is lost exactly when it fails on any occasion it covers, from before the change to after; losses outside the protected set must be exposed; and the repair must be produced by the change along an active route. So a test of condition 6 must declare what the method must keep and on which occasions, check every one, list any other losses, and show the repair comes from the change (the same occasions with and without it).
+Also relevant, no change needed: premises "taken as given", such as the world's answers or WIQA's people's answers, are named a costly gamble every creative agent makes; the semantics tells a rule from a cause by whether editing the rule or intervening on the world moves it, which the checker's two operations, removing a rule and holding a thing, already separate.
+
 ## Next step
 
-Test condition 6: whether the system can change its own methods. First candidate: let DeepSeek propose a change to one of the checker's methods after a failure the method cannot see (log 17's small fix that switched off a correct rule), with the program keeping the change only if a recorded run shows the method now catches it and loses nothing it caught before. Plan and conjectures first.
+Write the plan for testing condition 6 under the revised semantics' repair: DeepSeek proposes a change to the checker's small-fix method after log 17's failure (a fix that switched off a correct rule while every job still passed); the plan declares the aim to repair, the aims to protect and the occasions each covers, before any run; the program keeps the change only if every protected aim holds on every occasion, lists any other loss, and runs the same occasions with and without the change to show the repair comes from it.
 
 ## Traps
 
+- **Reading a result that was not ruled out as supported.** Under the revised semantics (log 36) it gets nothing from that; say what a run ruled out, and for whom.
 - **Reading log 35's fixed-language gate score as holding a count.** It is binary counting to 256; probes after the run break it.
 - **Reading log 34's peg-tube scores for the rule language as partly right.** Those models were counts, not piles; only the probes after the run showed it.
 - **Reading log 30's round 1 alone.** Its apparent steering came from one lucky pair of plain runs; round 2 removed it.
