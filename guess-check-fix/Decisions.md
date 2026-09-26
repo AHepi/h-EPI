@@ -64,6 +64,9 @@ Every decision that shapes the project. The owner's decisions are quoted exactly
 **O20. The owner's pushback on finite states, and a question about the semantics.** (Log 37.)
 > "I want to push back on your claim regarding log 34. Languages are combinatorial. There's no reason to believe it represents a finite number of states. Unless I'm misunderstanding you. Also, do you agree with the semantics or where do you disagree?"
 
+**O21. Whether an agent must know "hard to vary" for it to count.** (Log 38.)
+> "Hmm. That may be correct. The only reason I left it out was because the agent may not know the rule, or may never use it at all. But then that raises the question: can such an agent actually be creative? Having knowledge that something has occured and the fact that it occurs are two separate phenomenon. Is this what you mean?"
+
 ## Claude's routine choices
 
 **C1. A new small language of things and rules, rather than extending Strata.** Strata refused cause-and-effect sentences (log 01), its instructions drop causes, and its checker answers "does this follow?" while the hard-to-vary tests need "what happens when something is changed?".
