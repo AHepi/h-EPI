@@ -11,6 +11,7 @@
  *     key cannot, and a model that never settles is reported
  *   - the arm reports a model's problems, then keeps and grades a right model
  *   - a whole device runs through all three arms, and the summary has a row for each
+ *   - the probes after the run list each arm's answer beside the truth
  * Run with:  node "35 growing language tests.js"
  */
 const G = require('./35 growing language.js');
@@ -135,6 +136,9 @@ function stand_in(device) {
   expect_that('each graded test is marked with whether separate counts gets it wrong (1 short, 4 long)', rec.arms['growing language'].graded.filter(g => g.rival_wrong).length === 5);
   const text = G.summarise([rec]);
   expect_that('the summary has a row for each arm and lists the growing model\'s shape', ['| peg tube | fixed language |', '| peg tube | growing language |', '| peg tube | universal language |', 'peg tube repeat 1: 1 kinds, 1 new things, 9 rules'].every(r => text.includes(r)), text);
+
+  const probed = G.probe_after_run([{ device: 'balance gate', repeat: 1, arms: { 'fixed language': { best_round: null, rounds: [] }, 'growing language': { best_round: 1, rounds: [{ round: 1, model: GATE_MODEL }] }, 'universal language': { best_round: null, rounds: [] } } }]);
+  expect_that('the probes after the run list each arm beside the truth', probed[0].probes.length === 4 && probed[0].probes[0].truth === 'shut' && probed[0].probes.every(p => p.growing_language === p.truth) && probed[0].probes[0].fixed_language === 'no model', JSON.stringify(probed[0].probes[0]));
 
   console.log(`\n${failed} test(s) failed.`);
   process.exit(failed ? 1 : 0);

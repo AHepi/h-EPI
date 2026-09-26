@@ -55,6 +55,9 @@ Every decision that shapes the project. The owner's decisions are quoted exactly
 **O17. Test condition 2.** (Log 34.)
 > "Do it!"
 
+**O18. Test a language that grows.** (Log 35.)
+> "Do it"
+
 ## Claude's routine choices
 
 **C1. A new small language of things and rules, rather than extending Strata.** Strata refused cause-and-effect sentences (log 01), its instructions drop causes, and its checker answers "does this follow?" while the hard-to-vary tests need "what happens when something is changed?".
@@ -175,7 +178,9 @@ Every decision that shapes the project. The owner's decisions are quoted exactly
 
 **C59. Probes run after a result are kept and marked as such** (log 34): they check a gap the result revealed, and are never counted as planned tests.
 
+**C60. A new kind's changes and tests are short JavaScript expressions, run in a separate process** (log 35): a kind needs something that can hold values the rule language cannot, and the process keeps it away from files, the network and the key.
+
 ## Traps
 
-- **Treating a routine choice as settled.** C1 to C59 are Claude's choices; any can be overturned. The ones forced by a failure say which log entry forced them.
+- **Treating a routine choice as settled.** C1 to C60 are Claude's choices; any can be overturned. The ones forced by a failure say which log entry forced them.
 - **Losing the owner's exact words.** Paraphrasing a decision changes it. Quote it.

@@ -20,6 +20,8 @@
  * Run with:
  *   DEEPSEEK_API_KEY=... NODE_USE_ENV_PROXY=1 node "35 growing language.js" OUTFOLDER [REPEATS]
  *   node "35 growing language.js" --summarise FOLDER
+ *   node "35 growing language.js" --probe FOLDER   (after the run, at no cost: each arm's best model on cases
+ *                                                past the planned tests; added after reading the results)
  */
 const fs = require('fs');
 const os = require('os');
@@ -373,11 +375,62 @@ function summarise(records) {
 }
 const results_text = (records, failed) => `# A language that grows: results\n\nDeepSeek V4.1 Flash, default thinking. ${records.length} device-and-repeat runs; every number comes from the records in this folder. "Rival-wrong" tests are the peg-tube cases that separate counts of each colour get wrong.\n\n${summarise(records)}\n${failed.length ? `\nRuns that failed:\n${failed.join('\n')}\n` : ''}`;
 
-module.exports = { DEVICES, GATE, PEGS, GRUDGE, cases, separate_counts, read_growing_model, run_growing, check_growing, growing_language, run_device, summarise, GROWTH_GUIDE, shape_of };
+// After the run (log 35): two rule models counted in binary (eight things of 0 or 1), which wraps round at
+// 256, and one counted from -100 to 100. No planned test reached either edge; these do. Added after reading
+// the results.
+const PROBES = {
+  'balance gate': {
+    '256 pushes': repeat(256, 'push'),
+    '300 pushes then 44 pulls': repeat(300, 'push').concat(repeat(44, 'pull')),
+    '150 pushes then 150 pulls': repeat(150, 'push').concat(repeat(150, 'pull')),
+    '1000 pushes then 1000 pulls': repeat(1000, 'push').concat(repeat(1000, 'pull')),
+  },
+  'peg tube': {
+    '50 in by the pattern, then out in the right order': pattern_in(50).concat(right_order_out(50)),
+    '50 red in, blue in, 50 red out': repeat(50, 'red in').concat(['blue in'], repeat(50, 'red out')),
+  },
+};
+function probe_after_run(records) {
+  const out = [];
+  for (const r of records) {
+    const device = DEVICES.find(d => d.id === r.device);
+    const probes = PROBES[r.device];
+    if (!probes) continue;
+    const thing = Object.keys(device.visible)[0];
+    const list = Object.entries(probes).map(([name, events]) => ({ name, events, see: device.truth(events) }));
+    const row = { device: r.device, repeat: r.repeat, probes: list.map(p => ({ probe: p.name, truth: p.see[thing] })) };
+    const fixed = r.arms['fixed language'], growing = r.arms['growing language'], universal = r.arms['universal language'];
+    const C = require('./03 checker.js');
+    if (fixed.best_round) {
+      const raw = fixed.rounds.find(x => x.round === fixed.best_round).model;
+      const model = C.prepare_model(raw);
+      list.forEach((p, i) => {
+        const job = C.prepare_jobs({ jobs: [{ name: 'probe', events: p.events, expect: [] }] }).jobs[0];
+        const res = C.run(model, C.resolve_situation(model, job.situation, [], 'probe'));
+        row.probes[i].fixed_language = [...new Set(res.final_states.map(st => st[thing]))].join('/');
+      });
+    } else list.forEach((p, i) => { row.probes[i].fixed_language = 'no model'; });
+    const g = growing.best_round ? check_growing(device, growing.rounds.find(x => x.round === growing.best_round).model, list).results : null;
+    const u = universal.best_round ? X.check_program(device, universal.rounds.find(x => x.round === universal.best_round).code, list) : null;
+    list.forEach((p, i) => {
+      row.probes[i].growing_language = g ? (g[i].got || g[i].problem) : 'no model';
+      row.probes[i].universal_language = u ? (u[i].got || u[i].problem) : 'no function';
+    });
+    out.push(row);
+  }
+  return out;
+}
+
+module.exports = { PROBES, probe_after_run, DEVICES, GATE, PEGS, GRUDGE, cases, separate_counts, read_growing_model, run_growing, check_growing, growing_language, run_device, summarise, GROWTH_GUIDE, shape_of };
 
 if (require.main === module) {
   const [first, second] = process.argv.slice(2);
-  if (first === '--summarise') {
+  if (first === '--probe') {
+    const records = fs.readdirSync(second).filter(f => / repeat \d+\.json$/.test(f)).sort().map(f => JSON.parse(fs.readFileSync(path.join(second, f), 'utf8')));
+    const probes = probe_after_run(records);
+    fs.writeFileSync(path.join(second, 'probes after the run.json'), JSON.stringify(probes, null, 1) + '\n');
+    for (const p of probes) console.log(`${p.device} repeat ${p.repeat}: ${p.probes.map(x => `${x.probe}: truth ${x.truth}, rules ${x.fixed_language}, growing ${x.growing_language}, JavaScript ${x.universal_language}`).join('; ')}`);
+  } else if (first === '--summarise') {
     const records = fs.readdirSync(second).filter(f => / repeat \d+\.json$/.test(f)).sort().map(f => JSON.parse(fs.readFileSync(path.join(second, f), 'utf8')));
     const text = results_text(records, []);
     fs.writeFileSync(path.join(second, 'results.md'), text);

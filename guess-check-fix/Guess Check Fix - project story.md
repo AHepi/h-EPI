@@ -8,6 +8,7 @@ The idea in one line: an AI guesses, an ordinary program checks, and the fixing 
 
 ## Where things stand
 
+- **A rule language that can grow closes the gap** (log 35): with a door to add new kinds of thing, DeepSeek added a number or a pile and got every long test right, as in JavaScript; the fixed language approximated (even inventing binary counting) or could not write a model. On the grudge, the door let its old running-score habit in. See "35 A language that grows.md".
 - **The checker's own language is a limit** (log 34). Where the explanation needs an unlimited count or pile, DeepSeek could write it in JavaScript every time and never in the rule language: big enough models were too long to write, small ones broke past their size. On a device the rule language can hold, both did the same. See "34 Can the language express it.md".
 - **A system prompt, or a character to play, does not steer DeepSeek's questions** (logs 30 to 32). Two runs with the same text at the top differ as much as runs with different texts; direct instructions were mostly ignored; any text, even a meaningless one, made more of the answers surprise it. See "30 System prompt and questions.md".
 - **Cause and effect are in the checker** (log 28). It answers "what if" by holding a thing and running the model, tells seeing from making (a dark room tells you the lamp is off; darkening the room does not switch it off), and answers "why" by "but for" tests. On 150 questions from a corpus other people wrote and answered (WIQA), with Claude translating the paragraphs into models, it gave people's answer on 101; a direct answer from the same kind of AI gave 128. The gap is almost all things the models leave out: where the model held both ends of a question, 53 of 70 against 58. What the checker takes for granted about cause is listed in "28 What the causal checker presupposes.md"; the results are in "28 Causal checker.md". DeepSeek was not used.
@@ -361,12 +362,22 @@ Added to "30 System prompt and questions.md".
 - 23 tests (file 34), all passing. Cost: $0.73 ($15.71 to $14.98).
 Written up in "34 Can the language express it.md".
 
+**35. A language that grows.** The owner said "Do it" to testing condition 2's other half (Decisions O18): the rule language may gain new kinds of thing, each with a starting value and named changes and tests written as short JavaScript expressions, used by ordinary rules ("balance does add one", "balance is zero"). Three arms, fixed, growing and universal (JavaScript), on log 34's balance gate with two deeper tests, a peg tube redesigned so its observations and tests refute separate counts of each colour, and log 25's grudge as a control. Plan and six conjectures committed first (files 35; `runs/35 growing language`, 27 runs):
+- **The growing language held the explanations as well as JavaScript:** 63 of 63 long gate and peg tests, the same as JavaScript, against 23 for the fixed language; no reply cut off; right on probes up to 2,000 actions. It added a number for the gate every time, with 4 rules; for the peg tube a pile, in one run a general one with 9 rules, in another most of the tube inside one kind.
+- **The fixed language surprised me: DeepSeek invented binary counting,** eight things of 0 or 1 and 41 rules, counting to 256, in two of three gate runs. It got every planned long test right but is an approximation: probes after the run show it saying "open" after 256 pushes. So log 34's "too big to write" was about one way of writing a count; a clever encoding makes the approximation cheap, and the limit is where it breaks. The peg tube stayed out of the fixed language's reach: all 18 replies cut off.
+- **Growth without criticism let the old habit in:** on the grudge DeepSeek added a new kind every run, each a running score, the habit that failed in log 25, scoring 10, 11 and 9 of 12 (log 25's bare: 9 or 10).
+- **Conjectures:** 1, 2, 5 and 6 not refuted; 3 refuted in the other direction (growing 19 against fixed 15 hard cases on the grudge, from the running score); 4 refuted (a new kind in every grudge run too).
+- **Along the way, before any run:** a check found the peg tube's first ten long tests let separate counts score 9 of 10 by coincidence, so three it must get wrong were added and the plan noted it; two of my tests were wrong (a model meant never to settle did settle; I expected 4 rival-wrong peg tests and there are 5), corrected.
+- 21 tests (file 35), all passing. Cost: $0.68 ($14.98 to $14.30).
+Written up in "35 A language that grows.md".
+
 ## Next step
 
-Test the growth half of condition 2: give the rule language a way for DeepSeek to add a new kind of thing (for example a count with no upper limit), accepted by the program only if it runs and can be checked, and see whether that closes the gap log 34 found; with devices whose observations separate the explanation from its near rivals by design. Plan and conjectures first.
+Test condition 6: whether the system can change its own methods. First candidate: let DeepSeek propose a change to one of the checker's methods after a failure the method cannot see (log 17's small fix that switched off a correct rule), with the program keeping the change only if a recorded run shows the method now catches it and loses nothing it caught before. Plan and conjectures first.
 
 ## Traps
 
+- **Reading log 35's fixed-language gate score as holding a count.** It is binary counting to 256; probes after the run break it.
 - **Reading log 34's peg-tube scores for the rule language as partly right.** Those models were counts, not piles; only the probes after the run showed it.
 - **Reading log 30's round 1 alone.** Its apparent steering came from one lucky pair of plain runs; round 2 removed it.
 - **Reading log 28's 101 against 128 as the checker reasoning worse.** Most of the gap is what the models leave out; where a model held both ends of the question, 53 against 58.
