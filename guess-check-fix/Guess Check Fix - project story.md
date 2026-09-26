@@ -395,12 +395,20 @@ Also relevant, no change needed: premises "taken as given", such as the world's 
 - 19 tests (file 39), all passing first time. Cost: $0.08 ($14.30 to $14.22).
 Written up in "39 Changing a method.md".
 
+**40. A kept method at work.** The owner said "Do iy" (Decisions O23). Log 39's kept fix-acceptance methods, and log 17's person-written repair, were used in the checker's own correction loop (no AI) on 80 planted-mistake starts, 8 per world by a fixed scramble, 64 in worlds log 39 never showed DeepSeek; aims and five conjectures committed first (files 40; `runs/40 kept method at work`):
+- **The change operated where it was used:** on the 64 held-out starts, damage (nearby situations right at the start and wrong at the end) was 25, 11 and 28 with DeepSeek's methods, 25 with the person's repair, and 84 with the current method; no start did worse than under the current method; held-back jobs passing 200 to 202 of 216, against 194.
+- **By my declared aims, no method (the person's included) is a repair in loop use:** each left a shown job failing on 3 or 4 starts where the current method got every shown job passing, which I protected. On every such start the current method had passed the job only with a fix that broke 1 to 8 nearby situations; the stricter methods refused all such fixes. My two aims conflict there. The plan was kept as written; held-back jobs on those starts went both ways (better in three, worse in two).
+- **Conjectures:** 1 and 5 not ruled out (less than the current method's damage, and at most half); 2 ruled out for repeat 3 (28 against the person's 25); 3 ruled out (P1 lost); 4 ruled out (229, 229 and 216 questions against 215: in the loop they rejected more candidates, asking about each).
+- 7 tests (file 40), all passing. No DeepSeek credit used.
+Written up in "40 A kept method at work.md".
+
 ## Next step
 
-Put a kept method to work: replace the checker's fix acceptance with log 39's best kept method inside the full correction loop on log 18's planted mistakes, and compare with the current method and the person's repair on how many end agreeing with the world; the plan declares the aims first. This checks that the change operates where it is used, not only one decision at a time.
+Test whether the system can find a method's failure itself: give DeepSeek the fix-acceptance method and a record of the loop's runs (fixes accepted, and what the world said when asked afterwards), without saying what is wrong, and see whether the failure it names is the one log 39 showed it; plan and aims first, with aims checked for conflict before the run (log 40's lesson).
 
 ## Traps
 
+- **Reading log 40's "no method is a repair" as the methods failing.** The protected aim I declared conflicts with the aim to repair on the starts where it failed.
 - **Reading log 39 as the system changing its method by itself.** DeepSeek proposed; the program, with aims a person declared, decided.
 - **Reading a result that was not ruled out as supported.** Under the revised semantics (log 36) it gets nothing from that; say what a run ruled out, and for whom.
 - **Reading log 35's fixed-language gate score as holding a count.** It is binary counting to 256; probes after the run break it.
