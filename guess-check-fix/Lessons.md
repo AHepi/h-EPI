@@ -63,6 +63,7 @@ Failures in building and testing, and how each was fixed. Only cases where somet
 | 44 | The automatic "rule changed between rounds" count compared wording, so rephrasing counted as change. Reported before the results, read by hand after. | A count of changed explanations is read by hand, or checked against what the rule predicts, not its words. |
 | 45 | In log 44 I named DeepSeek's grudge rule "the true explanation" from memory; the true grudge, in the code, differs from it on 2 of 120 sequences, and the 12 test cases could not show it. | A claim that a rule is the true one is checked against the world's code on every sequence before it is written. |
 | 45 | My scramble of the rules for blind reading grouped them by arm, in blocks of six; the test checked only that no arm was named. Found on opening the key. | A blind list is tested for mixing too: no two neighbours sharing an arm more often than chance would allow. |
+| 46 | My check that the reading list names no arm also read the list's heading, which names the plan file "46 Plan - rivals choose.md". Found by the test failing before the run. | A check for leaked labels reads only the lines that carry the content. |
 | 31 | Round 1's comparison used one pair of plain runs as the measure of chance; that pair happened to overlap more than any other. | Round 2 repeated two texts word for word, which showed it. |
 
 ## Traps

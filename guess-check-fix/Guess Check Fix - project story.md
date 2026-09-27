@@ -8,6 +8,7 @@ The idea in one line: an AI guesses, an ordinary program checks, and the fixing 
 
 ## Where things stand
 
+- **Rival explanations choose better questions** (log 46): when DeepSeek writes four rival rules as programs and the program asks the world where they disagree, the telling situations get asked (4 of 6 runs, against 1 of 12), and DeepSeek builds new kinds of explanation (5 of 6), the nearest yet to the true grudge (105 of 106). But none is the true grudge, and a rival that fitted everything was thrown away: the system has nothing that keeps survivors. See "46 Rivals choose.md".
 - **Telling DeepSeek its mistakes does not make it cling to its first answer** (logs 44 and 45): on the grudge, told "you predicted X; the world says Y" in the same conversation, it dropped its running score in 5 of 6 runs, more often than a fresh DeepSeek given only the facts (3 of 6). What moved it was the world contradicting a prediction, in either arm. No run found the true grudge; the best, the unresolved-insult count, is wrong on 2 of 120 sequences. Log 44 first seemed to show the opposite, from two cut-off replies and my misreading of the true rule. See "45 Grudge again.md" and "26 Attack surface.md".
 - **One-page summary of logs 25 to 42** (log 43): "43 Summary - logs 25 to 42.md". Start there to choose the next direction.
 - **The system changed one of its own methods** (log 39): DeepSeek rewrote the checker's fix-acceptance method after seeing its failure, and the program kept the new method only because, on fixes DeepSeek never saw, it caught fixes that break what no job checks without losing anything; its methods caught more than the person's repair from log 17. See "39 Changing a method.md".
@@ -435,9 +436,19 @@ Written up in "26 Attack surface.md".
 - Cost: $0.48 ($13.18 to $12.70).
 Written up in "45 Grudge again.md".
 
+**46. Rivals choose the questions.** The owner said "Ok go" (Decisions O29). On the grudge, a fresh DeepSeek wrote four rival explanations as small programs each round; the program ran them on every sequence in log 34's sealed-off process and asked the world about the 3 where they split most evenly; after two rounds a fresh DeepSeek answered all 106 cases from the facts. Control: random answers, 6 of them. Plan and six conjectures committed first (files 46; `runs/46 rivals choose`).
+- **The world was asked the right questions:** a sequence that shows a deep grudge in 4 of 6 runs (log 45: 1 of 12).
+- **DeepSeek then built new kinds of explanation:** 5 of 6 final rules had a new part (levels of anger, an apology that fails after two insults), against random answers' 4 running scores and 2 unresolved-insult counts. The nearest rule to the true grudge yet: Warm, Upset, Angry, 105 of 106.
+- **More right, not right:** 559 against 527 of 636; no final rule was the true grudge; three of the five new explanations scored below the old count.
+- **A survivor was lost:** in one run a rival agreed with the world on all 120 sequences (a different explanation, wrong on 2 of 243 five-action sequences, checked after the run), but the final DeepSeek saw only facts and wrote a parity rule (86). The system has nothing that keeps a surviving rival.
+- **Conjectures:** 1 to 4 not ruled out; 5 (a true final rule) and 6 (every final rule at least 81; one got 80) ruled out.
+- **Failures:** a test wrongly caught the word "rivals" in the plan file's name in the reading list's heading; narrowed to the rule lines before the run. Log 45's grouping fault fixed with a seeded shuffle and a mixing test.
+- Cost: $0.35 ($12.70 to $12.35).
+Written up in "46 Rivals choose.md".
+
 ## Next step
 
-Let rival explanations choose the questions. DeepSeek writes several rival rules for the grudge as small programs (run in the sealed-off process of log 34); the program finds the situations where the rivals disagree and has the world answer those; DeepSeek rewrites from the facts. Log 45 showed DeepSeek's own commitments aim where its rule differs from the obvious one, never where it differs from rules it has not imagined, so the deep grudge was almost never tested. Planned and committed before running; about $1.
+Keep the survivors. Same grudge set-up, but rivals that fit every fact are carried from round to round, new rivals are added beside them, the world is asked where the survivors disagree, and the final answer comes from the surviving rivals themselves (or DeepSeek is shown them), not only from facts. Graded also on longer sequences, where near-misses show. Planned and committed before running; about $0.50.
 
 ## Traps
 

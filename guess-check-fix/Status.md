@@ -20,10 +20,10 @@
 - Long texts (log 21): DeepSeek finds a question buried in about 2,300 words, and answers from the world help as much as with short requests; but when it may stop whenever it likes, it almost never asks.
 - Who picks the questions (log 20): random questions helped as much as the loop's; DeepSeek's own choice helped least; the loop's rule model was about level with DeepSeek alone. More answers from the world is what reliably helps.
 - All tests pass: `11 checker tests.js` (20), `16 Sonnet guesser tests.js` (13), `17 error correction tests.js` (26), `19 baseline tests.js` (11), `20 who picks tests.js` (13), `21 long text tests.js` (16), `22 twenty questions tests.js` (11), `23 owner will not say tests.js` (9), `25 construction test tests.js` (39), `26 attack surface tests.js` (14), `28 causal checker tests.js` (30), `30 system prompt tests.js` (10), `34 language tests.js` (23), `35 growing language tests.js` (21), `39 changing a method tests.js` (19), `40 kept method at work tests.js` (7), `41 finding the failure tests.js` (9), `16 page test in a browser.py` (12).
-- DeepSeek balance after log 45: $12.70.
+- DeepSeek balance after log 46: $12.35.
 - The project lives in the h-EPI repository, folder `guess-check-fix`, on the branch `claude/deepseek-v4-project-j9k1ap`, waiting for the owner to merge it.
 
-**Waiting on:** nothing. Next: rival explanations choose the questions, on the grudge.
+**Waiting on:** nothing. Next: keep the surviving rivals from round to round.
 
 **Open questions:**
 - To explore later (log 33): is humanity, with its writing and institutions, the universal explainer, and individual humans creative agents whose coming together produces it? Deutsch holds each person is one; what would a single person lack?
