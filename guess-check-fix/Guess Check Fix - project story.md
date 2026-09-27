@@ -8,7 +8,7 @@ The idea in one line: an AI guesses, an ordinary program checks, and the fixing 
 
 ## Where things stand
 
-- **The attack surface** (log 44): by the plan's own test the result counts against the owner's prediction (defend 89 hard cases, rebuild fresh 80), but most of the gap is two cut-off replies; on the grudge, the one device where DeepSeek starts wrong, rebuild fresh found the true explanation twice and defend never. See "26 Attack surface.md".
+- **Telling DeepSeek its mistakes does not make it cling to its first answer** (logs 44 and 45): on the grudge, told "you predicted X; the world says Y" in the same conversation, it dropped its running score in 5 of 6 runs, more often than a fresh DeepSeek given only the facts (3 of 6). What moved it was the world contradicting a prediction, in either arm. No run found the true grudge; the best, the unresolved-insult count, is wrong on 2 of 120 sequences. Log 44 first seemed to show the opposite, from two cut-off replies and my misreading of the true rule. See "45 Grudge again.md" and "26 Attack surface.md".
 - **One-page summary of logs 25 to 42** (log 43): "43 Summary - logs 25 to 42.md". Start there to choose the next direction.
 - **The system changed one of its own methods** (log 39): DeepSeek rewrote the checker's fix-acceptance method after seeing its failure, and the program kept the new method only because, on fixes DeepSeek never saw, it caught fixes that break what no job checks without losing anything; its methods caught more than the person's repair from log 17. See "39 Changing a method.md".
 - **A rule language that can grow closes the gap** (log 35): with a door to add new kinds of thing, DeepSeek added a number or a pile and got every long test right, as in JavaScript; the fixed language approximated (even inventing binary counting) or could not write a model. On the grudge, the door let its old running-score habit in. See "35 A language that grows.md".
@@ -426,9 +426,18 @@ Written up in "41 Finding the failure.md".
 - Cost: $0.85 ($14.03 to $13.18; the balance had been $14.03, not $14.08, when this run began).
 Written up in "26 Attack surface.md".
 
+**45. The grudge again.** The owner said "Do it" to log 44's next step (Decisions O28). While building it I found log 44's report wrong: I had called the fresh DeepSeek's final grudge rule "the true explanation", writing the true grudge from memory. The true grudge has three levels (a second insult makes it deep; an apology mends a hurt but not a deep grudge; a gift softens a deep grudge); DeepSeek's "count of unresolved insults, gifts do nothing" is right on 118 of 120 sequences and wrong on two. A correction note was added to "26 Attack surface.md", its text left as written. Then, with the plan, reading categories and six conjectures committed first (files 45; `runs/45 grudge again`): random answers, rebuild fresh and defend, six repeats each, reply limit 200,000, graded on all 106 sequences that are not observations, final rules read by hand before opening which arm wrote them.
+- **The owner's prediction did not hold:** defend 598 of 636 cases right, rebuild fresh 563, random answers 556; final rules on the running score: defend 1 of 6, rebuild fresh 3, random answers 3. No reply cut off. The plan named this as counting against the prediction.
+- **What decided each run was contradiction from the world, not the arm:** all 12 attack runs started on the running score; every run the world contradicted changed its rule (in two rebuild fresh runs only its weights); the two that stayed were one rebuild fresh run that chose only test cases and got no answers from the world, and one defend run whose every tested prediction held.
+- **No run found the true grudge.** The best rule, in 9 of 18 runs, was the unresolved-insult count (104 of 106). Only one run was answered on a sequence that shows a deep grudge, and it bent its rule towards it (101).
+- **Conjectures:** 1, 5 and 6 not ruled out; 2, 3 and 4 ruled out.
+- **Failures:** the wrong "true explanation" in log 44; my scramble of the rules for blind reading grouped them by arm in blocks of six (found on opening the key; my test checked only that no arm was named).
+- Cost: $0.48 ($13.18 to $12.70).
+Written up in "45 Grudge again.md".
+
 ## Next step
 
-The grudge only, planned and committed before running: rebuild fresh, defend and random answers, six repeats each, with the reply limit raised to 200,000 so nothing is cut off, and each final rule read by hand against the true explanation. It asks the one question log 44 could not settle: where DeepSeek's first explanation is wrong, does a fresh DeepSeek given only facts find the right one more often than one told its own mistakes? About $1.
+Let rival explanations choose the questions. DeepSeek writes several rival rules for the grudge as small programs (run in the sealed-off process of log 34); the program finds the situations where the rivals disagree and has the world answer those; DeepSeek rewrites from the facts. Log 45 showed DeepSeek's own commitments aim where its rule differs from the obvious one, never where it differs from rules it has not imagined, so the deep grudge was almost never tested. Planned and committed before running; about $1.
 
 ## Traps
 

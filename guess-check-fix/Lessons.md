@@ -61,6 +61,8 @@ Failures in building and testing, and how each was fixed. Only cases where somet
 | 41 | A 14,000-character record with the normal reply limit: two of three replies thought until the limit and gave no answer, as in logs 19 and 25. | The next run with a long prompt raises the reply limit, as log 19 did. |
 | 44 | Log 26's plan was written before logs 41 and 42 showed the default reply limit cutting off long thinking; I ran it unchanged, and six replies were cut off, two of them deciding conjecture 4. | Any plan that compares arms by their final answers raises the reply limit before it is committed. |
 | 44 | The automatic "rule changed between rounds" count compared wording, so rephrasing counted as change. Reported before the results, read by hand after. | A count of changed explanations is read by hand, or checked against what the rule predicts, not its words. |
+| 45 | In log 44 I named DeepSeek's grudge rule "the true explanation" from memory; the true grudge, in the code, differs from it on 2 of 120 sequences, and the 12 test cases could not show it. | A claim that a rule is the true one is checked against the world's code on every sequence before it is written. |
+| 45 | My scramble of the rules for blind reading grouped them by arm, in blocks of six; the test checked only that no arm was named. Found on opening the key. | A blind list is tested for mixing too: no two neighbours sharing an arm more often than chance would allow. |
 | 31 | Round 1's comparison used one pair of plain runs as the measure of chance; that pair happened to overlap more than any other. | Round 2 repeated two texts word for word, which showed it. |
 
 ## Traps
