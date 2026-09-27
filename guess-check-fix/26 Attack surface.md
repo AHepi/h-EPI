@@ -105,3 +105,7 @@ $0.85 of DeepSeek credit ($14.03 to $13.18).
 - **Reading the totals as defend being better.** Its lead comes from rebuild fresh's two cut-off replies.
 - **Reading the grudge rows as settled.** Two rebuild fresh answers against three defend answers.
 - **Reading the automatic "rule changed" count as change of explanation.**
+
+## Correction, added in log 45
+
+This report calls the fresh DeepSeek's final grudge rule "the true explanation". It is not. The true grudge has three levels: a first insult hurts; a second makes the grudge deep; an apology mends a hurt but not a deep grudge; a gift softens a deep grudge to a hurt. DeepSeek's rule, "count the unresolved insults; an apology cancels one; a gift does nothing", is right on 118 of all 120 sequences of one to four actions, and wrong on "insult, insult, apologise, apologise" and "insult, insult, gift, apologise". The 12 test cases cannot tell the two apart. I wrote the true rule from memory instead of reading the code. Every "true explanation" above should read "the unresolved-insult count, right on 118 of 120"; the claim that it is the best rule any run has reached on the grudge still stands. The text above is left as written.
