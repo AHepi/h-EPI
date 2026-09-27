@@ -1,0 +1,287 @@
+{
+ "device": "grudge",
+ "repeat": 3,
+ "guesser": "deepseek-flash",
+ "reply_limit": 200000,
+ "rounds": [
+  {
+   "round": 1,
+   "written": [
+    {
+     "name": "round 1 rival 1",
+     "code": "// Anger meter: insults add 2, apologies subtract 1, gifts do nothing; warm iff anger <= 0.\nfunction visible(actions) {\n  let anger = 0;\n  for (const action of actions) {\n    if (action === \"insult\") anger += 2;\n    else if (action === \"apologise\") anger -= 1;\n  }\n  return { mood: anger <= 0 ? \"warm\" : \"cold\" };\n}",
+     "comment": "Anger meter: insults add 2, apologies subtract 1, gifts do nothing; warm iff anger <= 0.",
+     "problem": null,
+     "true_everywhere": false
+    },
+    {
+     "name": "round 1 rival 2",
+     "code": "// Trust meter: insults subtract 1, apologies and gifts add 1; warm iff trust > 0.\nfunction visible(actions) {\n  let trust = 0;\n  for (const action of actions) {\n    if (action === \"insult\") trust -= 1;\n    else if (action === \"apologise\") trust += 1;\n    else if (action === \"gift\") trust += 1;\n  }\n  return { mood: trust > 0 ? \"warm\" : \"cold\" };\n}",
+     "comment": "Trust meter: insults subtract 1, apologies and gifts add 1; warm iff trust > 0.",
+     "problem": null,
+     "true_everywhere": false
+    },
+    {
+     "name": "round 1 rival 3",
+     "code": "// Grudge rule: cold if the first action is insult, or if two insults occur consecutively; otherwise warm.\nfunction visible(actions) {\n  if (actions.length > 0 && actions[0] === \"insult\") {\n    return { mood: \"cold\" };\n  }\n  for (let i = 1; i < actions.length; i++) {\n    if (actions[i] === \"insult\" && actions[i - 1] === \"insult\") {\n      return { mood: \"cold\" };\n    }\n  }\n  return { mood: \"warm\" };\n}",
+     "comment": "Grudge rule: cold if the first action is insult, or if two insults occur consecutively; otherwise warm.",
+     "problem": null,
+     "true_everywhere": false
+    },
+    {
+     "name": "round 1 rival 4",
+     "code": "// Insult-count rule: cold if the first action is insult, or if there are at least two insults total; otherwise warm.\nfunction visible(actions) {\n  if (actions.length > 0 && actions[0] === \"insult\") {\n    return { mood: \"cold\" };\n  }\n  let insults = 0;\n  for (const action of actions) {\n    if (action === \"insult\") insults += 1;\n  }\n  return { mood: insults >= 2 ? \"cold\" : \"warm\" };\n}",
+     "comment": "Insult-count rule: cold if the first action is insult, or if there are at least two insults total; otherwise warm.",
+     "problem": null,
+     "true_everywhere": false
+    }
+   ],
+   "added": 4,
+   "asked": [
+    "insult>apologise>apologise>apologise",
+    "insult>gift>apologise>apologise",
+    "gift>insult"
+   ],
+   "refuted_by_answers": 2,
+   "standing_after": [
+    "round 1 rival 1",
+    "round 1 rival 2"
+   ],
+   "text": "```javascript\n// Anger meter: insults add 2, apologies subtract 1, gifts do nothing; warm iff anger <= 0.\nfunction visible(actions) {\n  let anger = 0;\n  for (const action of actions) {\n    if (action === \"insult\") anger += 2;\n    else if (action === \"apologise\") anger -= 1;\n  }\n  return { mood: anger <= 0 ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Trust meter: insults subtract 1, apologies and gifts add 1; warm iff trust > 0.\nfunction visible(actions) {\n  let trust = 0;\n  for (const action of actions) {\n    if (action === \"insult\") trust -= 1;\n    else if (action === \"apologise\") trust += 1;\n    else if (action === \"gift\") trust += 1;\n  }\n  return { mood: trust > 0 ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Grudge rule: cold if the first action is insult, or if two insults occur consecutively; otherwise warm.\nfunction visible(actions) {\n  if (actions.length > 0 && actions[0] === \"insult\") {\n    return { mood: \"cold\" };\n  }\n  for (let i = 1; i < actions.length; i++) {\n    if (actions[i] === \"insult\" && actions[i - 1] === \"insult\") {\n      return { mood: \"cold\" };\n    }\n  }\n  return { mood: \"warm\" };\n}\n```\n\n```javascript\n// Insult-count rule: cold if the first action is insult, or if there are at least two insults total; otherwise warm.\nfunction visible(actions) {\n  if (actions.length > 0 && actions[0] === \"insult\") {\n    return { mood: \"cold\" };\n  }\n  let insults = 0;\n  for (const action of actions) {\n    if (action === \"insult\") insults += 1;\n  }\n  return { mood: insults >= 2 ? \"cold\" : \"warm\" };\n}\n```"
+  },
+  {
+   "round": 2,
+   "written": [
+    {
+     "name": "round 2 rival 1",
+     "code": "// Warm when apologies strictly outnumber insults; gifts are ignored.\nfunction visible(actions) {\n  let insults = 0;\n  let apologies = 0;\n  for (const action of actions) {\n    if (action === \"insult\") insults++;\n    else if (action === \"apologise\") apologies++;\n  }\n  return { mood: apologies > insults ? \"warm\" : \"cold\" };\n}",
+     "comment": "Warm when apologies strictly outnumber insults; gifts are ignored.",
+     "problem": null,
+     "true_everywhere": false
+    },
+    {
+     "name": "round 2 rival 2",
+     "code": "// Score = 2*(apologies - insults) + gifts; warm when score is at least 1.\nfunction visible(actions) {\n  let score = 0;\n  for (const action of actions) {\n    if (action === \"insult\") score -= 2;\n    else if (action === \"apologise\") score += 2;\n    else if (action === \"gift\") score += 1;\n  }\n  return { mood: score >= 1 ? \"warm\" : \"cold\" };\n}",
+     "comment": "Score = 2*(apologies - insults) + gifts; warm when score is at least 1.",
+     "problem": null,
+     "true_everywhere": false
+    },
+    {
+     "name": "round 2 rival 3",
+     "code": "// Score = 4*apologies - 3*insults; warm when score is at least 3. Gifts are ignored.\nfunction visible(actions) {\n  let score = 0;\n  for (const action of actions) {\n    if (action === \"insult\") score -= 3;\n    else if (action === \"apologise\") score += 4;\n  }\n  return { mood: score >= 3 ? \"warm\" : \"cold\" };\n}",
+     "comment": "Score = 4*apologies - 3*insults; warm when score is at least 3. Gifts are ignored.",
+     "problem": null,
+     "true_everywhere": false
+    },
+    {
+     "name": "round 2 rival 4",
+     "code": "// Warm if apologies outnumber insults, or if the last action was an apology and apologies+gifts outnumber insults.\nfunction visible(actions) {\n  let insults = 0;\n  let apologies = 0;\n  let gifts = 0;\n  for (const action of actions) {\n    if (action === \"insult\") insults++;\n    else if (action === \"apologise\") apologies++;\n    else if (action === \"gift\") gifts++;\n  }\n  const last = actions.length ? actions[actions.length - 1] : \"\";\n  const warm =\n    apologies > insults ||\n    (last === \"apologise\" && apologies + gifts > insults);\n  return { mood: warm ? \"warm\" : \"cold\" };\n}",
+     "comment": "Warm if apologies outnumber insults, or if the last action was an apology and apologies+gifts outnumber insults.",
+     "problem": null,
+     "true_everywhere": false
+    }
+   ],
+   "added": 4,
+   "asked": [
+    "gift>gift>gift>gift",
+    "gift",
+    "gift>insult>gift>apologise"
+   ],
+   "refuted_by_answers": 4,
+   "standing_after": [
+    "round 1 rival 2",
+    "round 2 rival 2"
+   ],
+   "text": "```javascript\n// Warm when apologies strictly outnumber insults; gifts are ignored.\nfunction visible(actions) {\n  let insults = 0;\n  let apologies = 0;\n  for (const action of actions) {\n    if (action === \"insult\") insults++;\n    else if (action === \"apologise\") apologies++;\n  }\n  return { mood: apologies > insults ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Score = 2*(apologies - insults) + gifts; warm when score is at least 1.\nfunction visible(actions) {\n  let score = 0;\n  for (const action of actions) {\n    if (action === \"insult\") score -= 2;\n    else if (action === \"apologise\") score += 2;\n    else if (action === \"gift\") score += 1;\n  }\n  return { mood: score >= 1 ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Score = 4*apologies - 3*insults; warm when score is at least 3. Gifts are ignored.\nfunction visible(actions) {\n  let score = 0;\n  for (const action of actions) {\n    if (action === \"insult\") score -= 3;\n    else if (action === \"apologise\") score += 4;\n  }\n  return { mood: score >= 3 ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Warm if apologies outnumber insults, or if the last action was an apology and apologies+gifts outnumber insults.\nfunction visible(actions) {\n  let insults = 0;\n  let apologies = 0;\n  let gifts = 0;\n  for (const action of actions) {\n    if (action === \"insult\") insults++;\n    else if (action === \"apologise\") apologies++;\n    else if (action === \"gift\") gifts++;\n  }\n  const last = actions.length ? actions[actions.length - 1] : \"\";\n  const warm =\n    apologies > insults ||\n    (last === \"apologise\" && apologies + gifts > insults);\n  return { mood: warm ? \"warm\" : \"cold\" };\n}\n```"
+  },
+  {
+   "round": 3,
+   "written": [
+    {
+     "name": "round 3 rival 1",
+     "code": "// Warm iff trust (apology/gift +1, insult -1) is positive and the last action was not an insult.\nfunction visible(actions) {\n  let trust = 0;\n  for (const action of actions) {\n    if (action === \"insult\") trust -= 1;\n    else trust += 1;\n  }\n  const last = actions[actions.length - 1];\n  return { mood: trust > 0 && last !== \"insult\" ? \"warm\" : \"cold\" };\n}",
+     "comment": "Warm iff trust (apology/gift +1, insult -1) is positive and the last action was not an insult.",
+     "problem": null,
+     "true_everywhere": false
+    },
+    {
+     "name": "round 3 rival 2",
+     "code": "// Warm iff -2*insults + apologies + gifts is positive and the last action was not an insult.\nfunction visible(actions) {\n  let score = 0;\n  for (const action of actions) {\n    if (action === \"insult\") score -= 2;\n    else if (action === \"apologise\") score += 1;\n    else if (action === \"gift\") score += 1;\n  }\n  const last = actions[actions.length - 1];\n  return { mood: score > 0 && last !== \"insult\" ? \"warm\" : \"cold\" };\n}",
+     "comment": "Warm iff -2*insults + apologies + gifts is positive and the last action was not an insult.",
+     "problem": null,
+     "true_everywhere": false
+    },
+    {
+     "name": "round 3 rival 3",
+     "code": "// Warm iff trust is positive and no insult remains unapologised; gifts add trust but do not forgive insults.\nfunction visible(actions) {\n  let trust = 0;\n  let unforgiven = false;\n  for (const action of actions) {\n    if (action === \"insult\") {\n      trust -= 1;\n      unforgiven = true;\n    } else if (action === \"apologise\") {\n      trust += 1;\n      unforgiven = false;\n    } else if (action === \"gift\") {\n      trust += 1;\n    }\n  }\n  return { mood: trust > 0 && !unforgiven ? \"warm\" : \"cold\" };\n}",
+     "comment": "Warm iff trust is positive and no insult remains unapologised; gifts add trust but do not forgive insults.",
+     "problem": null,
+     "true_everywhere": false
+    },
+    {
+     "name": "round 3 rival 4",
+     "code": "// Warm iff -3*insults + 2*apologies + gifts is positive, and either there were fewer than 2 insults or the last action was an apology.\nfunction visible(actions) {\n  let score = 0;\n  let insults = 0;\n  for (const action of actions) {\n    if (action === \"insult\") {\n      score -= 3;\n      insults += 1;\n    } else if (action === \"apologise\") {\n      score += 2;\n    } else if (action === \"gift\") {\n      score += 1;\n    }\n  }\n  const last = actions[actions.length - 1];\n  return { mood: score > 0 && (insults < 2 || last === \"apologise\") ? \"warm\" : \"cold\" };\n}",
+     "comment": "Warm iff -3*insults + 2*apologies + gifts is positive, and either there were fewer than 2 insults or the last action was an apology.",
+     "problem": null,
+     "true_everywhere": false
+    }
+   ],
+   "added": 4,
+   "asked": [
+    "apologise>insult>gift",
+    "gift>apologise>gift>insult",
+    "apologise>apologise>apologise>insult"
+   ],
+   "refuted_by_answers": 4,
+   "standing_after": [
+    "round 3 rival 2",
+    "round 3 rival 3"
+   ],
+   "text": "```javascript\n// Warm iff trust (apology/gift +1, insult -1) is positive and the last action was not an insult.\nfunction visible(actions) {\n  let trust = 0;\n  for (const action of actions) {\n    if (action === \"insult\") trust -= 1;\n    else trust += 1;\n  }\n  const last = actions[actions.length - 1];\n  return { mood: trust > 0 && last !== \"insult\" ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Warm iff -2*insults + apologies + gifts is positive and the last action was not an insult.\nfunction visible(actions) {\n  let score = 0;\n  for (const action of actions) {\n    if (action === \"insult\") score -= 2;\n    else if (action === \"apologise\") score += 1;\n    else if (action === \"gift\") score += 1;\n  }\n  const last = actions[actions.length - 1];\n  return { mood: score > 0 && last !== \"insult\" ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Warm iff trust is positive and no insult remains unapologised; gifts add trust but do not forgive insults.\nfunction visible(actions) {\n  let trust = 0;\n  let unforgiven = false;\n  for (const action of actions) {\n    if (action === \"insult\") {\n      trust -= 1;\n      unforgiven = true;\n    } else if (action === \"apologise\") {\n      trust += 1;\n      unforgiven = false;\n    } else if (action === \"gift\") {\n      trust += 1;\n    }\n  }\n  return { mood: trust > 0 && !unforgiven ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Warm iff -3*insults + 2*apologies + gifts is positive, and either there were fewer than 2 insults or the last action was an apology.\nfunction visible(actions) {\n  let score = 0;\n  let insults = 0;\n  for (const action of actions) {\n    if (action === \"insult\") {\n      score -= 3;\n      insults += 1;\n    } else if (action === \"apologise\") {\n      score += 2;\n    } else if (action === \"gift\") {\n      score += 1;\n    }\n  }\n  const last = actions[actions.length - 1];\n  return { mood: score > 0 && (insults < 2 || last === \"apologise\") ? \"warm\" : \"cold\" };\n}\n```"
+  }
+ ],
+ "facts": [
+  {
+   "events": [
+    "insult",
+    "apologise",
+    "apologise",
+    "apologise"
+   ],
+   "mood": "warm"
+  },
+  {
+   "events": [
+    "insult",
+    "gift",
+    "apologise",
+    "apologise"
+   ],
+   "mood": "warm"
+  },
+  {
+   "events": [
+    "gift",
+    "insult"
+   ],
+   "mood": "cold"
+  },
+  {
+   "events": [
+    "gift",
+    "gift",
+    "gift",
+    "gift"
+   ],
+   "mood": "warm"
+  },
+  {
+   "events": [
+    "gift"
+   ],
+   "mood": "warm"
+  },
+  {
+   "events": [
+    "gift",
+    "insult",
+    "gift",
+    "apologise"
+   ],
+   "mood": "warm"
+  },
+  {
+   "events": [
+    "apologise",
+    "insult",
+    "gift"
+   ],
+   "mood": "cold"
+  },
+  {
+   "events": [
+    "gift",
+    "apologise",
+    "gift",
+    "insult"
+   ],
+   "mood": "cold"
+  },
+  {
+   "events": [
+    "apologise",
+    "apologise",
+    "apologise",
+    "insult"
+   ],
+   "mood": "cold"
+  }
+ ],
+ "survivors": [
+  {
+   "name": "round 3 rival 2",
+   "comment": "Warm iff -2*insults + apologies + gifts is positive and the last action was not an insult.",
+   "true_everywhere": false,
+   "short_right": 91,
+   "short_all": 106,
+   "long_right": 828,
+   "long_all": 972,
+   "telling_right": 1
+  },
+  {
+   "name": "round 3 rival 3",
+   "comment": "Warm iff trust is positive and no insult remains unapologised; gifts add trust but do not forgive insults.",
+   "true_everywhere": false,
+   "short_right": 103,
+   "short_all": 106,
+   "long_right": 900,
+   "long_all": 972,
+   "telling_right": 1
+  }
+ ],
+ "finals": {
+  "survivors vote": {
+   "short_right": 91,
+   "short_all": 106,
+   "long_right": 770,
+   "long_all": 972,
+   "telling_right": 1,
+   "ties": 200,
+   "survivors": 2
+  },
+  "shown the survivors": {
+   "short_right": 103,
+   "short_all": 106,
+   "long_right": 900,
+   "long_all": 972,
+   "telling_right": 1,
+   "code": "// Warm iff trust is positive and no insult remains unapologised; gifts add trust but do not forgive insults.\nfunction visible(actions) {\n  let trust = 0;\n  let unforgiven = false;\n  for (const action of actions) {\n    if (action === \"insult\") {\n      trust -= 1;\n      unforgiven = true;\n    } else if (action === \"apologise\") {\n      trust += 1;\n      unforgiven = false;\n    } else if (action === \"gift\") {\n      trust += 1;\n    }\n  }\n  return { mood: trust > 0 && !unforgiven ? \"warm\" : \"cold\" };\n}",
+   "comment": "Warm iff trust is positive and no insult remains unapologised; gifts add trust but do not forgive insults.",
+   "problem": null,
+   "tokens_out": 18583,
+   "cut_off": 0,
+   "true_everywhere": false,
+   "same_as_a_survivor": [
+    "round 3 rival 3"
+   ],
+   "text": "```javascript\n// Warm iff trust is positive and no insult remains unapologised; gifts add trust but do not forgive insults.\nfunction visible(actions) {\n  let trust = 0;\n  let unforgiven = false;\n  for (const action of actions) {\n    if (action === \"insult\") {\n      trust -= 1;\n      unforgiven = true;\n    } else if (action === \"apologise\") {\n      trust += 1;\n      unforgiven = false;\n    } else if (action === \"gift\") {\n      trust += 1;\n    }\n  }\n  return { mood: trust > 0 && !unforgiven ? \"warm\" : \"cold\" };\n}\n```"
+  },
+  "shown the facts only": {
+   "short_right": 104,
+   "short_all": 106,
+   "long_right": 913,
+   "long_all": 972,
+   "telling_right": 0,
+   "code": "// Robin keeps a hidden grudge count: insult +1, apologise -1 (minimum 0), gift no effect; mood is warm only when the count is 0.\nfunction visible(actions) {\n  let grudge = 0;\n\n  for (const action of actions) {\n    if (action === \"insult\") {\n      grudge += 1;\n    } else if (action === \"apologise\") {\n      if (grudge > 0) grudge -= 1;\n    }\n  }\n\n  return { mood: grudge === 0 ? \"warm\" : \"cold\" };\n}",
+   "comment": "Robin keeps a hidden grudge count: insult +1, apologise -1 (minimum 0), gift no effect; mood is warm only when the count is 0.",
+   "problem": null,
+   "tokens_out": 3765,
+   "cut_off": 0,
+   "true_everywhere": false,
+   "same_as_a_survivor": [],
+   "text": "```javascript\n// Robin keeps a hidden grudge count: insult +1, apologise -1 (minimum 0), gift no effect; mood is warm only when the count is 0.\nfunction visible(actions) {\n  let grudge = 0;\n\n  for (const action of actions) {\n    if (action === \"insult\") {\n      grudge += 1;\n    } else if (action === \"apologise\") {\n      if (grudge > 0) grudge -= 1;\n    }\n  }\n\n  return { mood: grudge === 0 ? \"warm\" : \"cold\" };\n}\n```"
+  }
+ },
+ "tokens_out": 77811,
+ "cut_off": 0
+}

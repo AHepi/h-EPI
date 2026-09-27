@@ -8,6 +8,7 @@ The idea in one line: an AI guesses, an ordinary program checks, and the fixing 
 
 ## Where things stand
 
+- **Keeping rivals that survive did not help by itself** (log 47): a rival survives by fitting the few short situations the world was asked about, so the survivors can be the old habit or rules that break on longer sequences; DeepSeek, shown them, mostly copied one. The questions the world is asked are what moved the explanations, again. See "47 Keep the survivors.md".
 - **Rival explanations choose better questions** (log 46): when DeepSeek writes four rival rules as programs and the program asks the world where they disagree, the telling situations get asked (4 of 6 runs, against 1 of 12), and DeepSeek builds new kinds of explanation (5 of 6), the nearest yet to the true grudge (105 of 106). But none is the true grudge, and a rival that fitted everything was thrown away: the system has nothing that keeps survivors. See "46 Rivals choose.md".
 - **Telling DeepSeek its mistakes does not make it cling to its first answer** (logs 44 and 45): on the grudge, told "you predicted X; the world says Y" in the same conversation, it dropped its running score in 5 of 6 runs, more often than a fresh DeepSeek given only the facts (3 of 6). What moved it was the world contradicting a prediction, in either arm. No run found the true grudge; the best, the unresolved-insult count, is wrong on 2 of 120 sequences. Log 44 first seemed to show the opposite, from two cut-off replies and my misreading of the true rule. See "45 Grudge again.md" and "26 Attack surface.md".
 - **One-page summary of logs 25 to 42** (log 43): "43 Summary - logs 25 to 42.md". Start there to choose the next direction.
@@ -446,9 +447,18 @@ Written up in "45 Grudge again.md".
 - Cost: $0.35 ($12.70 to $12.35).
 Written up in "46 Rivals choose.md".
 
+**47. Keep the survivors.** The owner said "Ok do it" (Decisions O30). On the grudge, rivals that fitted every fact were kept from round to round over three rounds, the world was asked where the standing rivals split, and the final answer was made three ways from the same run: a vote of the survivors, a fresh DeepSeek shown the survivors, and one shown the facts only. All graded by running them on every sequence up to six actions, including 972 of five or six that nobody is asked about. Plan and six conjectures committed first (files 47; `runs/47 keep the survivors`).
+- **Keeping the survivors did not help:** long sequences right, facts only 5,282, shown the survivors 5,225, vote 5,087 (of 5,832). The plan named this as counting against the idea.
+- **Surviving is not being good:** in one run the only survivor was the old running score, never refuted by anything asked; shown the survivors, DeepSeek copied one in 5 of 6 runs, that one included.
+- **A new part appeared in 4 of 12 final programs:** "a gift softens a grudge of two or more", the true grudge's gift rule, in exactly the runs where the world had answered "insult, insult, gift, apologise" (checked after the results). Each still gets the apology on a deep grudge wrong. No answer and no rival was the true grudge.
+- **Conjectures:** 1 and 6 not ruled out; 2 to 5 ruled out.
+- **A design gap, seen in the results:** the world could be asked only up to four actions while I graded up to six, so survivors were never tested where they differ most.
+- All 13 tests passed first time. Cost: $0.30 ($12.35 to $12.05).
+Written up in "47 Keep the survivors.md".
+
 ## Next step
 
-Keep the survivors. Same grudge set-up, but rivals that fit every fact are carried from round to round, new rivals are added beside them, the world is asked where the survivors disagree, and the final answer comes from the surviving rivals themselves (or DeepSeek is shown them), not only from facts. Graded also on longer sequences, where near-misses show. Planned and committed before running; about $0.50.
+Let the world be asked where the survivors disagree at any length up to six actions, not only up to four, so a survivor that falls apart on longer sequences can be refuted before the end. Same set-up as log 47 otherwise, planned and committed before running; about $0.40.
 
 ## Traps
 
