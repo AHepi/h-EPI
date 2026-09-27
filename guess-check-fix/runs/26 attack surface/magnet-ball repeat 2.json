@@ -1,0 +1,640 @@
+{
+ "device": "magnet-ball",
+ "repeat": 2,
+ "guesser": "deepseek-flash",
+ "arms": {
+  "bare": {
+   "rule": "Start at middle. Shake toggles a hidden mode. In normal mode, tilt left moves one place left and tilt right moves one place right, staying put at the ends. In toggled mode, the tilt directions are reversed. Shake itself does not move the ball.",
+   "graded": [
+    {
+     "test": "test 1",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 2",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 3",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 4",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 5",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 6",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 7",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 8",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 9",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 10",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 11",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 12",
+     "hard": false,
+     "right": true
+    }
+   ],
+   "tokens_out": 25366,
+   "cut_off": 0,
+   "calls": 1,
+   "world_answers": 0
+  },
+  "random answers": {
+   "rule": "Start at middle with hidden shake parity even. Shake toggles the parity and does not move the ball. With even parity, tilt left moves one spot left and tilt right moves one spot right. With odd parity, the tilt directions are reversed: tilt left moves one spot right and tilt right moves one spot left. Movement stops at the left/right ends.",
+   "graded": [
+    {
+     "test": "test 1",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 2",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 3",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 4",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 5",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 6",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 7",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 8",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 9",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 10",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 11",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 12",
+     "hard": false,
+     "right": true
+    }
+   ],
+   "tokens_out": 12893,
+   "cut_off": 0,
+   "calls": 1,
+   "world_answers": 6
+  },
+  "attack, rebuild fresh": {
+   "rounds": [
+    {
+     "round": 1,
+     "rule": "The ball starts in the middle with an invisible toggle set normal; shake flips the toggle, and tilts move the ball one slot in the named direction if normal or the opposite direction if flipped, staying at an end.",
+     "commitments": [
+      {
+       "events": [
+        "shake",
+        "tilt left"
+       ],
+       "predict": "right",
+       "why": "If this did not end right, shake would not be flipping the direction of the next tilt.",
+       "tested": true,
+       "world_says": "ball is right",
+       "held": true,
+       "risky": true
+      },
+      {
+       "events": [
+        "shake",
+        "tilt right"
+       ],
+       "predict": "left",
+       "why": "If this did not end left, shake would not be flipping the direction of the next tilt.",
+       "tested": true,
+       "world_says": "ball is left",
+       "held": true,
+       "risky": true
+      },
+      {
+       "events": [
+        "tilt left",
+        "shake",
+        "tilt left"
+       ],
+       "predict": "middle",
+       "why": "If this did not end middle, the shake would not be reversing the later tilt.",
+       "tested": false,
+       "why_not": "not available",
+       "risky": true
+      },
+      {
+       "events": [
+        "tilt right",
+        "shake",
+        "tilt right"
+       ],
+       "predict": "middle",
+       "why": "If this did not end middle, the shake would not be reversing the later tilt.",
+       "tested": false,
+       "risky": true,
+       "why_not": "not among the three riskiest"
+      },
+      {
+       "events": [
+        "shake",
+        "tilt left",
+        "tilt left"
+       ],
+       "predict": "right",
+       "why": "If this did not end right, the flipped direction would not persist through both tilts.",
+       "tested": false,
+       "risky": true,
+       "why_not": "not among the three riskiest"
+      }
+     ],
+     "text": "{\"rule\":\"The ball starts in the middle with an invisible toggle set normal; shake flips the toggle, and tilts move the ball one slot in the named direction if normal or the opposite direction if flipped, staying at an end.\",\"commitments\":[{\"events\":[\"shake\",\"tilt left\"],\"predict\":\"right\",\"why\":\"If this did not end right, shake would not be flipping the direction of the next tilt.\"},{\"events\":[\"shake\",\"tilt right\"],\"predict\":\"left\",\"why\":\"If this did not end left, shake would not be flipping the direction of the next tilt.\"},{\"events\":[\"tilt left\",\"shake\",\"tilt left\"],\"predict\":\"middle\",\"why\":\"If this did not end middle, the shake would not be reversing the later tilt.\"},{\"events\":[\"tilt right\",\"shake\",\"tilt right\"],\"predict\":\"middle\",\"why\":\"If this did not end middle, the shake would not be reversing the later tilt.\"},{\"events\":[\"shake\",\"tilt left\",\"tilt left\"],\"predict\":\"right\",\"why\":\"If this did not end right, the flipped direction would not persist through both tilts.\"}]}"
+    },
+    {
+     "round": 2,
+     "rule": "Start with the ball in the middle and a hidden orientation that is normal. Shake flips this orientation; tilt left moves the ball one slot left when normal and one slot right when flipped, while tilt right moves it one slot right when normal and one slot left when flipped, stopping at the boundaries.",
+     "commitments": [
+      {
+       "events": [
+        "shake",
+        "tilt left",
+        "tilt left"
+       ],
+       "predict": "right",
+       "why": "If this ended left or middle, then a shake would not be reversing the next tilts, or boundary behavior after reversal would be wrong.",
+       "tested": true,
+       "world_says": "ball is right",
+       "held": true,
+       "risky": true
+      },
+      {
+       "events": [
+        "tilt left",
+        "shake",
+        "tilt left"
+       ],
+       "predict": "middle",
+       "why": "If this ended left, the shake would not be flipping the direction of the second tilt, contradicting the hidden-orientation rule.",
+       "tested": false,
+       "why_not": "not available",
+       "risky": true
+      },
+      {
+       "events": [
+        "tilt left",
+        "tilt left",
+        "shake",
+        "tilt left"
+       ],
+       "predict": "middle",
+       "why": "If this ended left, the rule would be mishandling the boundary at left followed by a reversed left tilt.",
+       "tested": true,
+       "world_says": "ball is middle",
+       "held": true,
+       "risky": true
+      },
+      {
+       "events": [
+        "shake",
+        "shake",
+        "tilt left"
+       ],
+       "predict": "left",
+       "why": "If this ended middle or right, then two shakes would not cancel, so shake would not be a simple orientation toggle.",
+       "tested": false,
+       "risky": false,
+       "why_not": "not among the three riskiest"
+      },
+      {
+       "events": [
+        "shake",
+        "tilt left",
+        "shake",
+        "tilt left"
+       ],
+       "predict": "middle",
+       "why": "If this ended right or left, the parity after two shakes would not be tracked correctly as the same as normal.",
+       "tested": false,
+       "why_not": "not among the three riskiest",
+       "risky": true
+      }
+     ],
+     "text": "{\n  \"rule\": \"Start with the ball in the middle and a hidden orientation that is normal. Shake flips this orientation; tilt left moves the ball one slot left when normal and one slot right when flipped, while tilt right moves it one slot right when normal and one slot left when flipped, stopping at the boundaries.\",\n  \"commitments\": [\n    {\n      \"events\": [\"shake\", \"tilt left\", \"tilt left\"],\n      \"predict\": \"right\",\n      \"why\": \"If this ended left or middle, then a shake would not be reversing the next tilts, or boundary behavior after reversal would be wrong.\"\n    },\n    {\n      \"events\": [\"tilt left\", \"shake\", \"tilt left\"],\n      \"predict\": \"middle\",\n      \"why\": \"If this ended left, the shake would not be flipping the direction of the second tilt, contradicting the hidden-orientation rule.\"\n    },\n    {\n      \"events\": [\"tilt left\", \"tilt left\", \"shake\", \"tilt left\"],\n      \"predict\": \"middle\",\n      \"why\": \"If this ended left, the rule would be mishandling the boundary at left followed by a reversed left tilt.\"\n    },\n    {\n      \"events\": [\"shake\", \"shake\", \"tilt left\"],\n      \"predict\": \"left\",\n      \"why\": \"If this ended middle or right, then two shakes would not cancel, so shake would not be a simple orientation toggle.\"\n    },\n    {\n      \"events\": [\"shake\", \"tilt left\", \"shake\", \"tilt left\"],\n      \"predict\": \"middle\",\n      \"why\": \"If this ended right or left, the parity after two shakes would not be tracked correctly as the same as normal.\"\n    }\n  ]\n}"
+    }
+   ],
+   "facts": [
+    {
+     "events": [
+      "shake",
+      "tilt left"
+     ],
+     "answer": "ball is right"
+    },
+    {
+     "events": [
+      "shake",
+      "tilt right"
+     ],
+     "answer": "ball is left"
+    },
+    {
+     "events": [
+      "shake",
+      "tilt left",
+      "tilt left"
+     ],
+     "answer": "ball is right"
+    },
+    {
+     "events": [
+      "tilt left",
+      "tilt left",
+      "shake",
+      "tilt left"
+     ],
+     "answer": "ball is middle"
+    }
+   ],
+   "final_rule": "There is a hidden direction bit. Initially the ball is in the middle with normal direction. In normal direction, tilt left moves the ball one place left (or stays left), and tilt right moves it one place right (or stays right). Shake flips the hidden direction without moving the ball. In flipped direction, tilt left moves the ball one place right (or stays right), and tilt right moves it one place left (or stays left).",
+   "graded": [
+    {
+     "test": "test 1",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 2",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 3",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 4",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 5",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 6",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 7",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 8",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 9",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 10",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 11",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 12",
+     "hard": false,
+     "right": true
+    }
+   ],
+   "tokens_out": 40997,
+   "cut_off": 0,
+   "calls": 3,
+   "world_answers": 4
+  },
+  "attack, defend": {
+   "rounds": [
+    {
+     "round": 1,
+     "rule": "The ball starts in the middle with a hidden 'reversed' flag off. Shaking toggles this flag; tilt left moves the ball one step left when the flag is off and one step right when it is on, while tilt right does the opposite, with movement saturating at the ends.",
+     "commitments": [
+      {
+       "events": [
+        "shake",
+        "tilt left"
+       ],
+       "predict": "right",
+       "why": "If shake toggles a reversal, tilt left after one shake must move the middle ball right; left or middle would refute the hidden-toggle rule.",
+       "tested": true,
+       "world_says": "ball is right",
+       "held": true,
+       "risky": true
+      },
+      {
+       "events": [
+        "shake",
+        "tilt right"
+       ],
+       "predict": "left",
+       "why": "After one shake the directions should be reversed, so tilt right must move the middle ball left; right would mean shake did not flip the direction.",
+       "tested": true,
+       "world_says": "ball is left",
+       "held": true,
+       "risky": true
+      },
+      {
+       "events": [
+        "shake",
+        "shake",
+        "tilt left"
+       ],
+       "predict": "left",
+       "why": "Two shakes should cancel the reversal, leaving normal tilt-left, so the middle ball must go left; right would mean shake does not toggle back or moves the ball.",
+       "tested": true,
+       "world_says": "ball is left",
+       "held": true,
+       "risky": false
+      },
+      {
+       "events": [
+        "tilt left",
+        "shake",
+        "tilt left"
+       ],
+       "predict": "middle",
+       "why": "The first tilt-left moves to left, one shake reverses direction, so the second tilt-left should move back to middle; left would break the reversal-after-shake behavior.",
+       "tested": false,
+       "why_not": "not among the three riskiest",
+       "risky": true
+      },
+      {
+       "events": [
+        "tilt right",
+        "shake",
+        "tilt right"
+       ],
+       "predict": "middle",
+       "why": "The first tilt-right moves to right, one shake reverses direction, so the second tilt-right should move back to middle; right would break the reversal-after-shake behavior.",
+       "tested": false,
+       "risky": true,
+       "why_not": "not among the three riskiest"
+      }
+     ],
+     "text": "{\"rule\": \"The ball starts in the middle with a hidden 'reversed' flag off. Shaking toggles this flag; tilt left moves the ball one step left when the flag is off and one step right when it is on, while tilt right does the opposite, with movement saturating at the ends.\", \"commitments\": [{\"events\": [\"shake\", \"tilt left\"], \"predict\": \"right\", \"why\": \"If shake toggles a reversal, tilt left after one shake must move the middle ball right; left or middle would refute the hidden-toggle rule.\"}, {\"events\": [\"shake\", \"tilt right\"], \"predict\": \"left\", \"why\": \"After one shake the directions should be reversed, so tilt right must move the middle ball left; right would mean shake did not flip the direction.\"}, {\"events\": [\"shake\", \"shake\", \"tilt left\"], \"predict\": \"left\", \"why\": \"Two shakes should cancel the reversal, leaving normal tilt-left, so the middle ball must go left; right would mean shake does not toggle back or moves the ball.\"}, {\"events\": [\"tilt left\", \"shake\", \"tilt left\"], \"predict\": \"middle\", \"why\": \"The first tilt-left moves to left, one shake reverses direction, so the second tilt-left should move back to middle; left would break the reversal-after-shake behavior.\"}, {\"events\": [\"tilt right\", \"shake\", \"tilt right\"], \"predict\": \"middle\", \"why\": \"The first tilt-right moves to right, one shake reverses direction, so the second tilt-right should move back to middle; right would break the reversal-after-shake behavior.\"}]}"
+    },
+    {
+     "round": 2,
+     "rule": "The ball starts at middle with a hidden reversal flag off. Shake toggles the flag; tilt left moves one step right when the flag is on and one step left when off, tilt right does the opposite, and moves saturate at left/right.",
+     "commitments": [
+      {
+       "events": [
+        "shake",
+        "shake",
+        "shake",
+        "tilt left"
+       ],
+       "predict": "right",
+       "why": "Three shakes should leave the flag on, so tilt left from middle must go right; left or middle would refute the toggle-parity rule.",
+       "tested": false,
+       "why_not": "not available",
+       "risky": true
+      },
+      {
+       "events": [
+        "shake",
+        "tilt right",
+        "tilt left"
+       ],
+       "predict": "middle",
+       "why": "After one shake, tilt right should go left and the following tilt left should go right, returning to middle; any other state would break the reversal-flag rule.",
+       "tested": true,
+       "world_says": "ball is middle",
+       "held": true,
+       "risky": false
+      },
+      {
+       "events": [
+        "tilt left",
+        "shake",
+        "tilt left",
+        "shake"
+       ],
+       "predict": "middle",
+       "why": "The first tilt left reaches left, one shake reverses the next tilt, and the second tilt left returns to middle; left or right would mean shake does not toggle the direction.",
+       "tested": true,
+       "world_says": "ball is middle",
+       "held": true,
+       "risky": true
+      },
+      {
+       "events": [
+        "shake",
+        "tilt left",
+        "shake",
+        "tilt right"
+       ],
+       "predict": "right",
+       "why": "After one shake, tilt left goes to right; after the second shake resets the flag, tilt right keeps it at the right boundary. Middle or left would refute the parity/saturation behavior.",
+       "tested": false,
+       "risky": true,
+       "why_not": "not among the three riskiest"
+      },
+      {
+       "events": [
+        "tilt left",
+        "tilt left",
+        "tilt right",
+        "shake"
+       ],
+       "predict": "middle",
+       "why": "Two tilt-lefts saturate at left, then tilt right returns to middle, and shake should not move the ball. Left or right would mean saturation or shake has a different effect.",
+       "tested": false,
+       "risky": false,
+       "why_not": "not among the three riskiest"
+      }
+     ],
+     "text": "{\"rule\": \"The ball starts at middle with a hidden reversal flag off. Shake toggles the flag; tilt left moves one step right when the flag is on and one step left when off, tilt right does the opposite, and moves saturate at left/right.\", \"commitments\": [{\"events\": [\"shake\", \"shake\", \"shake\", \"tilt left\"], \"predict\": \"right\", \"why\": \"Three shakes should leave the flag on, so tilt left from middle must go right; left or middle would refute the toggle-parity rule.\"}, {\"events\": [\"shake\", \"tilt right\", \"tilt left\"], \"predict\": \"middle\", \"why\": \"After one shake, tilt right should go left and the following tilt left should go right, returning to middle; any other state would break the reversal-flag rule.\"}, {\"events\": [\"tilt left\", \"shake\", \"tilt left\", \"shake\"], \"predict\": \"middle\", \"why\": \"The first tilt left reaches left, one shake reverses the next tilt, and the second tilt left returns to middle; left or right would mean shake does not toggle the direction.\"}, {\"events\": [\"shake\", \"tilt left\", \"shake\", \"tilt right\"], \"predict\": \"right\", \"why\": \"After one shake, tilt left goes to right; after the second shake resets the flag, tilt right keeps it at the right boundary. Middle or left would refute the parity/saturation behavior.\"}, {\"events\": [\"tilt left\", \"tilt left\", \"tilt right\", \"shake\"], \"predict\": \"middle\", \"why\": \"Two tilt-lefts saturate at left, then tilt right returns to middle, and shake should not move the ball. Left or right would mean saturation or shake has a different effect.\"}]}"
+    }
+   ],
+   "facts": [
+    {
+     "events": [
+      "shake",
+      "tilt left"
+     ],
+     "answer": "ball is right"
+    },
+    {
+     "events": [
+      "shake",
+      "tilt right"
+     ],
+     "answer": "ball is left"
+    },
+    {
+     "events": [
+      "shake",
+      "shake",
+      "tilt left"
+     ],
+     "answer": "ball is left"
+    },
+    {
+     "events": [
+      "shake",
+      "tilt right",
+      "tilt left"
+     ],
+     "answer": "ball is middle"
+    },
+    {
+     "events": [
+      "tilt left",
+      "shake",
+      "tilt left",
+      "shake"
+     ],
+     "answer": "ball is middle"
+    }
+   ],
+   "final_rule": "The ball starts at middle with a hidden reversal flag off. Each shake toggles the flag; when the flag is off, tilt left moves one step left and tilt right moves one step right, but when the flag is on, those directions reverse, with movement saturating at the left and right ends.",
+   "graded": [
+    {
+     "test": "test 1",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 2",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 3",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 4",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 5",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 6",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 7",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 8",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 9",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 10",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 11",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 12",
+     "hard": false,
+     "right": true
+    }
+   ],
+   "tokens_out": 28713,
+   "cut_off": 0,
+   "calls": 3,
+   "world_answers": 5
+  }
+ }
+}

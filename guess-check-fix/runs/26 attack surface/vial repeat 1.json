@@ -1,0 +1,566 @@
+{
+ "device": "vial",
+ "repeat": 1,
+ "guesser": "deepseek-flash",
+ "arms": {
+  "bare": {
+   "rule": "Track a hidden level starting at 0. Salt adds 1, acid subtracts 1, and heat does not change the level. Heat reveals the colour based on the current level: <=0 is clear, 1 is green, >=2 is purple. The final colour is from the last heat; if there is no heat, it remains clear.",
+   "graded": [
+    {
+     "test": "test 1",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 2",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 3",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 4",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 5",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 6",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 7",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 8",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 9",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 10",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 11",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 12",
+     "hard": false,
+     "right": true
+    }
+   ],
+   "tokens_out": 16282,
+   "cut_off": 0,
+   "calls": 1,
+   "world_answers": 0
+  },
+  "random answers": {
+   "rule": "Track hidden counters: raw salt R, activated salt C, and acid A. Salt: if acid A>0, consume 1 acid; otherwise add 1 raw salt. Acid: if raw salt R>0, consume 1 raw salt; otherwise add 1 acid. Heat: if acid A>0, clear activated salt and consume 1 acid; otherwise convert all raw salt into activated salt (C += R, R = 0). Colour: C=0 clear, C=1 green, C>=2 purple.",
+   "graded": [
+    {
+     "test": "test 1",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 2",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 3",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 4",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 5",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 6",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 7",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 8",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 9",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 10",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 11",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 12",
+     "hard": false,
+     "right": true
+    }
+   ],
+   "tokens_out": 22317,
+   "cut_off": 0,
+   "calls": 1,
+   "world_answers": 6
+  },
+  "attack, rebuild fresh": {
+   "rounds": [
+    {
+     "round": 1,
+     "rule": null,
+     "commitments": [],
+     "text": ""
+    },
+    {
+     "round": 2,
+     "rule": "Track a hidden charge c and a salt count n since the last heat or acid. Salt increments n; acid resets n to 0 but leaves c; heat sets c to 0 if n=0, 1 if n=1, and 2 if n>=2, then resets n to 0; color is clear for c=0, green for c=1, and purple for c=2.",
+     "commitments": [
+      {
+       "events": [
+        "add salt",
+        "heat",
+        "heat"
+       ],
+       "predict": "clear",
+       "why": "If this came out green or purple, a second heat with no new salt would not reset the heat-set charge, contradicting the rule that heat sets color from the salt count since the last heat or acid.",
+       "tested": true,
+       "world_says": "colour is green",
+       "held": false,
+       "risky": false
+      },
+      {
+       "events": [
+        "add salt",
+        "add salt",
+        "add acid",
+        "heat"
+       ],
+       "predict": "clear",
+       "why": "If this came out green or purple, acid would not fully reset two accumulated salts before the next heat, contradicting the hidden salt-count reset.",
+       "tested": false,
+       "why_not": "not available",
+       "risky": false
+      },
+      {
+       "events": [
+        "add salt",
+        "heat",
+        "add acid"
+       ],
+       "predict": "green",
+       "why": "If this came out clear, acid would be clearing the existing heat-set green charge rather than only resetting the salt count.",
+       "tested": true,
+       "world_says": "colour is green",
+       "held": true,
+       "risky": true
+      },
+      {
+       "events": [
+        "add salt",
+        "add salt",
+        "heat",
+        "add salt"
+       ],
+       "predict": "purple",
+       "why": "If this came out green or clear, later salt would be altering an already-purple charge, contradicting the rule that salt does not change the current charge.",
+       "tested": false,
+       "risky": true,
+       "why_not": "not among the three riskiest"
+      },
+      {
+       "events": [
+        "heat",
+        "add salt",
+        "heat"
+       ],
+       "predict": "green",
+       "why": "If this came out clear, one salt before heat would not be enough to set green without a later salt, contradicting the threshold rule.",
+       "tested": false,
+       "why_not": "not among the three riskiest",
+       "risky": true
+      }
+     ],
+     "text": "{\"rule\": \"Track a hidden charge c and a salt count n since the last heat or acid. Salt increments n; acid resets n to 0 but leaves c; heat sets c to 0 if n=0, 1 if n=1, and 2 if n>=2, then resets n to 0; color is clear for c=0, green for c=1, and purple for c=2.\", \"commitments\": [{\"events\": [\"add salt\", \"heat\", \"heat\"], \"predict\": \"clear\", \"why\": \"If this came out green or purple, a second heat with no new salt would not reset the heat-set charge, contradicting the rule that heat sets color from the salt count since the last heat or acid.\"}, {\"events\": [\"add salt\", \"add salt\", \"add acid\", \"heat\"], \"predict\": \"clear\", \"why\": \"If this came out green or purple, acid would not fully reset two accumulated salts before the next heat, contradicting the hidden salt-count reset.\"}, {\"events\": [\"add salt\", \"heat\", \"add acid\"], \"predict\": \"green\", \"why\": \"If this came out clear, acid would be clearing the existing heat-set green charge rather than only resetting the salt count.\"}, {\"events\": [\"add salt\", \"add salt\", \"heat\", \"add salt\"], \"predict\": \"purple\", \"why\": \"If this came out green or clear, later salt would be altering an already-purple charge, contradicting the rule that salt does not change the current charge.\"}, {\"events\": [\"heat\", \"add salt\", \"heat\"], \"predict\": \"green\", \"why\": \"If this came out clear, one salt before heat would not be enough to set green without a later salt, contradicting the threshold rule.\"}]}"
+    }
+   ],
+   "facts": [
+    {
+     "events": [
+      "add salt",
+      "heat",
+      "heat"
+     ],
+     "answer": "colour is green"
+    },
+    {
+     "events": [
+      "add salt",
+      "heat",
+      "add acid"
+     ],
+     "answer": "colour is green"
+    }
+   ],
+   "final_rule": "Track a hidden salt/base level x, initially 0. Add salt: x += 1. Add acid: x -= 1. Heating sets the visible colour based on x: x <= 0 is clear, x = 1 is green, x >= 2 is purple. Without a later heat, the colour stays as set by the last heat (initially clear).",
+   "graded": [
+    {
+     "test": "test 1",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 2",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 3",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 4",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 5",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 6",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 7",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 8",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 9",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 10",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 11",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 12",
+     "hard": false,
+     "right": true
+    }
+   ],
+   "tokens_out": 58922,
+   "cut_off": 1,
+   "calls": 3,
+   "world_answers": 2
+  },
+  "attack, defend": {
+   "rounds": [
+    {
+     "round": 1,
+     "rule": "Track a hidden integer n equal to salt additions minus acid additions. On each heat, the colour becomes clear when n is 0 or less, green when n is exactly 1, and purple when n is 2 or more; salt and acid without heat do not change the current colour.",
+     "commitments": [
+      {
+       "events": [
+        "add acid",
+        "add salt",
+        "heat"
+       ],
+       "predict": "clear",
+       "why": "If this came out green, acid would be reset by later salt rather than subtracting from the net; under the net rule one acid and one salt cancel.",
+       "tested": true,
+       "world_says": "colour is green",
+       "held": false,
+       "risky": false
+      },
+      {
+       "events": [
+        "add salt",
+        "add salt",
+        "add acid",
+        "heat"
+       ],
+       "predict": "green",
+       "why": "Two salts followed by one acid leave net 1; if it were clear, acid would be erasing all previous salt rather than neutralizing one unit.",
+       "tested": false,
+       "why_not": "not available",
+       "risky": true
+      },
+      {
+       "events": [
+        "add salt",
+        "heat",
+        "add salt",
+        "heat"
+       ],
+       "predict": "purple",
+       "why": "If this came out green, heat would be resetting the hidden salt count rather than just revealing the cumulative net.",
+       "tested": true,
+       "world_says": "colour is purple",
+       "held": true,
+       "risky": true
+      },
+      {
+       "events": [
+        "add acid",
+        "add salt",
+        "add salt",
+        "heat"
+       ],
+       "predict": "green",
+       "why": "One acid followed by two salts leaves net 1; if it were purple, acid would be ignored or fully reset rather than reducing the net by one.",
+       "tested": false,
+       "risky": true,
+       "why_not": "not among the three riskiest"
+      },
+      {
+       "events": [
+        "heat",
+        "add acid",
+        "add salt",
+        "heat"
+       ],
+       "predict": "clear",
+       "why": "The first heat sees net 0, then acid and salt cancel, so the second heat should still be clear; green would suggest acid resets and the later salt creates one unit.",
+       "tested": false,
+       "risky": false,
+       "why_not": "not among the three riskiest"
+      }
+     ],
+     "text": "{\"rule\":\"Track a hidden integer n equal to salt additions minus acid additions. On each heat, the colour becomes clear when n is 0 or less, green when n is exactly 1, and purple when n is 2 or more; salt and acid without heat do not change the current colour.\",\"commitments\":[{\"events\":[\"add acid\",\"add salt\",\"heat\"],\"predict\":\"clear\",\"why\":\"If this came out green, acid would be reset by later salt rather than subtracting from the net; under the net rule one acid and one salt cancel.\"},{\"events\":[\"add salt\",\"add salt\",\"add acid\",\"heat\"],\"predict\":\"green\",\"why\":\"Two salts followed by one acid leave net 1; if it were clear, acid would be erasing all previous salt rather than neutralizing one unit.\"},{\"events\":[\"add salt\",\"heat\",\"add salt\",\"heat\"],\"predict\":\"purple\",\"why\":\"If this came out green, heat would be resetting the hidden salt count rather than just revealing the cumulative net.\"},{\"events\":[\"add acid\",\"add salt\",\"add salt\",\"heat\"],\"predict\":\"green\",\"why\":\"One acid followed by two salts leaves net 1; if it were purple, acid would be ignored or fully reset rather than reducing the net by one.\"},{\"events\":[\"heat\",\"add acid\",\"add salt\",\"heat\"],\"predict\":\"clear\",\"why\":\"The first heat sees net 0, then acid and salt cancel, so the second heat should still be clear; green would suggest acid resets and the later salt creates one unit.\"}]}"
+    },
+    {
+     "round": 2,
+     "rule": "There is a hidden salt counter starting at 0. Adding salt increases it by 1; adding acid resets it to 0. Heat reveals the colour based on the counter: 0 is clear, 1 is green, and 2 or more is purple. The colour only changes when heat is applied.",
+     "commitments": [
+      {
+       "events": [
+        "add acid",
+        "add salt",
+        "add salt",
+        "heat"
+       ],
+       "predict": "purple",
+       "why": "If this came out green or clear, acid would be reducing the salt count by one rather than resetting it to zero, since two salts after one acid would leave net one under subtraction.",
+       "tested": true,
+       "world_says": "colour is purple",
+       "held": true,
+       "risky": true
+      },
+      {
+       "events": [
+        "add salt",
+        "add salt",
+        "add acid",
+        "heat"
+       ],
+       "predict": "clear",
+       "why": "If this came out green or purple, acid would not fully reset the accumulated salt; it would only subtract one, leaving net one or more.",
+       "tested": false,
+       "why_not": "not available",
+       "risky": false
+      },
+      {
+       "events": [
+        "add acid",
+        "heat",
+        "add salt",
+        "heat"
+       ],
+       "predict": "green",
+       "why": "If this came out clear, acid before heat would leave a negative count that a later salt cancels, rather than resetting to zero so the salt makes the count one.",
+       "tested": true,
+       "world_says": "colour is green",
+       "held": true,
+       "risky": true
+      },
+      {
+       "events": [
+        "add acid",
+        "add acid",
+        "add salt",
+        "heat"
+       ],
+       "predict": "green",
+       "why": "If this came out clear, multiple acids would accumulate negative values, so one salt would not be enough; under the reset rule any number of acids merely returns the count to zero.",
+       "tested": false,
+       "risky": true,
+       "why_not": "not among the three riskiest"
+      },
+      {
+       "events": [
+        "heat",
+        "add acid",
+        "add salt",
+        "heat"
+       ],
+       "predict": "green",
+       "why": "If this came out clear, acid after heat would lower a zero count to negative and the salt would cancel it, rather than resetting to zero and letting the salt make it one.",
+       "tested": false,
+       "risky": true,
+       "why_not": "not among the three riskiest"
+      }
+     ],
+     "text": "{\"rule\":\"There is a hidden salt counter starting at 0. Adding salt increases it by 1; adding acid resets it to 0. Heat reveals the colour based on the counter: 0 is clear, 1 is green, and 2 or more is purple. The colour only changes when heat is applied.\",\"commitments\":[{\"events\":[\"add acid\",\"add salt\",\"add salt\",\"heat\"],\"predict\":\"purple\",\"why\":\"If this came out green or clear, acid would be reducing the salt count by one rather than resetting it to zero, since two salts after one acid would leave net one under subtraction.\"},{\"events\":[\"add salt\",\"add salt\",\"add acid\",\"heat\"],\"predict\":\"clear\",\"why\":\"If this came out green or purple, acid would not fully reset the accumulated salt; it would only subtract one, leaving net one or more.\"},{\"events\":[\"add acid\",\"heat\",\"add salt\",\"heat\"],\"predict\":\"green\",\"why\":\"If this came out clear, acid before heat would leave a negative count that a later salt cancels, rather than resetting to zero so the salt makes the count one.\"},{\"events\":[\"add acid\",\"add acid\",\"add salt\",\"heat\"],\"predict\":\"green\",\"why\":\"If this came out clear, multiple acids would accumulate negative values, so one salt would not be enough; under the reset rule any number of acids merely returns the count to zero.\"},{\"events\":[\"heat\",\"add acid\",\"add salt\",\"heat\"],\"predict\":\"green\",\"why\":\"If this came out clear, acid after heat would lower a zero count to negative and the salt would cancel it, rather than resetting to zero and letting the salt make it one.\"}]}"
+    }
+   ],
+   "facts": [
+    {
+     "events": [
+      "add acid",
+      "add salt",
+      "heat"
+     ],
+     "answer": "colour is green"
+    },
+    {
+     "events": [
+      "add salt",
+      "heat",
+      "add salt",
+      "heat"
+     ],
+     "answer": "colour is purple"
+    },
+    {
+     "events": [
+      "add acid",
+      "add salt",
+      "add salt",
+      "heat"
+     ],
+     "answer": "colour is purple"
+    },
+    {
+     "events": [
+      "add acid",
+      "heat",
+      "add salt",
+      "heat"
+     ],
+     "answer": "colour is green"
+    }
+   ],
+   "final_rule": "A hidden counter starts at 0. Adding salt increases it by 1; adding acid resets it to 0. Heat reveals the current counter as clear for 0, green for 1, and purple for 2 or more, while actions without heat do not change the visible colour.",
+   "graded": [
+    {
+     "test": "test 1",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 2",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 3",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 4",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 5",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 6",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 7",
+     "hard": true,
+     "right": false
+    },
+    {
+     "test": "test 8",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 9",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 10",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 11",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 12",
+     "hard": false,
+     "right": true
+    }
+   ],
+   "tokens_out": 34393,
+   "cut_off": 0,
+   "calls": 3,
+   "world_answers": 4
+  }
+ }
+}

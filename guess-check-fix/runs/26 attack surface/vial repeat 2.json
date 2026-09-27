@@ -1,0 +1,668 @@
+{
+ "device": "vial",
+ "repeat": 2,
+ "guesser": "deepseek-flash",
+ "arms": {
+  "bare": {
+   "rule": "Track hidden flags: acid, salt, activated (heated while salt is present and no acid), and extra salt added after activation. Add salt clears acid and sets salt; if already activated, it also sets extra-salt-after-activation. Add acid sets acid and clears salt, but does not by itself clear activation. Heat clears activation if acid is present; otherwise, if salt is present, it sets activation and clears extra-salt-after-activation. Color: acid -> clear; else extra-salt-after-activation -> green; else activation -> purple; otherwise clear.",
+   "graded": [
+    {
+     "test": "test 1",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 2",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 3",
+     "hard": true,
+     "right": false
+    },
+    {
+     "test": "test 4",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 5",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 6",
+     "hard": true,
+     "right": false
+    },
+    {
+     "test": "test 7",
+     "hard": true,
+     "right": false
+    },
+    {
+     "test": "test 8",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 9",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 10",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 11",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 12",
+     "hard": false,
+     "right": true
+    }
+   ],
+   "tokens_out": 26507,
+   "cut_off": 0,
+   "calls": 1,
+   "world_answers": 0
+  },
+  "random answers": {
+   "rule": "Track salt count S and acid count A. Salt and acid additions alone do not change the color. When heat is applied: if S=0, the color becomes clear; otherwise let d=|S-A|. If d=0, color is clear; if d=1, color is green; if d>=2, color is purple. The most recent heat result persists through later salt/acid additions.",
+   "graded": [
+    {
+     "test": "test 1",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 2",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 3",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 4",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 5",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 6",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 7",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 8",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 9",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 10",
+     "hard": false,
+     "right": false
+    },
+    {
+     "test": "test 11",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 12",
+     "hard": false,
+     "right": true
+    }
+   ],
+   "tokens_out": 24079,
+   "cut_off": 0,
+   "calls": 1,
+   "world_answers": 6
+  },
+  "attack, rebuild fresh": {
+   "rounds": [
+    {
+     "round": 1,
+     "rule": "Track hidden salt, base, and acid counts. Adding salt cancels one acid if any acid is present, otherwise it adds one salt; adding acid adds one acid; heating converts all accumulated salt to base. After the actions, base minus acid of 0 or less is clear, exactly 1 is green, and 2 or more is purple.",
+     "commitments": [
+      {
+       "events": [
+        "add salt",
+        "add acid",
+        "heat",
+        "add salt"
+       ],
+       "predict": "green",
+       "why": "This tests whether a later salt can cancel the acid after heat has already made one base; if it stayed clear, my salt-cancels-acid step would be wrong.",
+       "tested": true,
+       "world_says": "colour is clear",
+       "held": false,
+       "risky": false
+      },
+      {
+       "events": [
+        "add salt",
+        "add acid",
+        "add salt",
+        "heat"
+       ],
+       "predict": "green",
+       "why": "This tests whether acid leaves an earlier salt intact and the next salt merely cancels the acid; if it came out clear, acid would instead be destroying the salt before heat.",
+       "tested": true,
+       "world_says": "colour is green",
+       "held": true,
+       "risky": true
+      },
+      {
+       "events": [
+        "add salt",
+        "add salt",
+        "heat",
+        "add acid"
+       ],
+       "predict": "green",
+       "why": "This tests the threshold: two base units minus one acid should leave exactly one surplus base, i.e. green, not clear or purple.",
+       "tested": true,
+       "world_says": "colour is purple",
+       "held": false,
+       "risky": true
+      },
+      {
+       "events": [
+        "add salt",
+        "heat",
+        "add salt",
+        "heat"
+       ],
+       "predict": "purple",
+       "why": "This tests whether heat can accumulate base across two salt-and-heat cycles; if it came out green or clear, my accumulation rule would be wrong.",
+       "tested": false,
+       "risky": true,
+       "why_not": "not among the three riskiest"
+      },
+      {
+       "events": [
+        "add salt",
+        "add salt",
+        "add acid",
+        "heat"
+       ],
+       "predict": "green",
+       "why": "This tests whether acid before heat only offsets base rather than preventing heat from converting two salt units; if clear, acid would be blocking conversion.",
+       "tested": false,
+       "why_not": "not among the three riskiest",
+       "risky": true
+      }
+     ],
+     "text": "{\"rule\": \"Track hidden salt, base, and acid counts. Adding salt cancels one acid if any acid is present, otherwise it adds one salt; adding acid adds one acid; heating converts all accumulated salt to base. After the actions, base minus acid of 0 or less is clear, exactly 1 is green, and 2 or more is purple.\", \"commitments\": [{\"events\": [\"add salt\", \"add acid\", \"heat\", \"add salt\"], \"predict\": \"green\", \"why\": \"This tests whether a later salt can cancel the acid after heat has already made one base; if it stayed clear, my salt-cancels-acid step would be wrong.\"}, {\"events\": [\"add salt\", \"add acid\", \"add salt\", \"heat\"], \"predict\": \"green\", \"why\": \"This tests whether acid leaves an earlier salt intact and the next salt merely cancels the acid; if it came out clear, acid would instead be destroying the salt before heat.\"}, {\"events\": [\"add salt\", \"add salt\", \"heat\", \"add acid\"], \"predict\": \"green\", \"why\": \"This tests the threshold: two base units minus one acid should leave exactly one surplus base, i.e. green, not clear or purple.\"}, {\"events\": [\"add salt\", \"heat\", \"add salt\", \"heat\"], \"predict\": \"purple\", \"why\": \"This tests whether heat can accumulate base across two salt-and-heat cycles; if it came out green or clear, my accumulation rule would be wrong.\"}, {\"events\": [\"add salt\", \"add salt\", \"add acid\", \"heat\"], \"predict\": \"green\", \"why\": \"This tests whether acid before heat only offsets base rather than preventing heat from converting two salt units; if clear, acid would be blocking conversion.\"}]}"
+    },
+    {
+     "round": 2,
+     "rule": "Look only at the last heat: count consecutive salts immediately before it. No heat or zero preceding salts gives clear; exactly one preceding salt gives green; two or more consecutive preceding salts give purple. Actions after the last heat do not change the color.",
+     "commitments": [
+      {
+       "events": [
+        "acid",
+        "heat",
+        "salt",
+        "heat"
+       ],
+       "predict": "green",
+       "why": "If this came out clear, an earlier acid+heat would permanently clear or dominate a later salt+heat, contradicting the last-heat rule.",
+       "tested": false,
+       "why_not": "not a situation the device allows",
+       "risky": null
+      },
+      {
+       "events": [
+        "salt",
+        "heat",
+        "heat"
+       ],
+       "predict": "clear",
+       "why": "If this came out green, a later heat with no preceding salt would not overwrite the earlier green, which would falsify the last-heat rule.",
+       "tested": false,
+       "why_not": "not a situation the device allows",
+       "risky": null
+      },
+      {
+       "events": [
+        "salt",
+        "salt",
+        "heat",
+        "heat"
+       ],
+       "predict": "clear",
+       "why": "If this came out purple, purple would persist through a later heat with no preceding salt, contradicting that the last heat determines color.",
+       "tested": false,
+       "why_not": "not a situation the device allows",
+       "risky": null
+      },
+      {
+       "events": [
+        "salt",
+        "salt",
+        "acid",
+        "heat"
+       ],
+       "predict": "clear",
+       "why": "If this came out green or purple, acid would not reset the consecutive-salt count before heat, contradicting that only salts immediately before the last heat matter.",
+       "tested": false,
+       "why_not": "not among the three riskiest",
+       "risky": null
+      },
+      {
+       "events": [
+        "acid",
+        "salt",
+        "salt",
+        "heat"
+       ],
+       "predict": "purple",
+       "why": "If this came out clear, acid would be neutralizing or blocking the following salts before heat, contradicting that two consecutive salts before heat give purple.",
+       "tested": false,
+       "why_not": "not among the three riskiest",
+       "risky": null
+      }
+     ],
+     "text": "{\"rule\": \"Look only at the last heat: count consecutive salts immediately before it. No heat or zero preceding salts gives clear; exactly one preceding salt gives green; two or more consecutive preceding salts give purple. Actions after the last heat do not change the color.\", \"commitments\": [{\"events\": [\"acid\", \"heat\", \"salt\", \"heat\"], \"predict\": \"green\", \"why\": \"If this came out clear, an earlier acid+heat would permanently clear or dominate a later salt+heat, contradicting the last-heat rule.\"}, {\"events\": [\"salt\", \"heat\", \"heat\"], \"predict\": \"clear\", \"why\": \"If this came out green, a later heat with no preceding salt would not overwrite the earlier green, which would falsify the last-heat rule.\"}, {\"events\": [\"salt\", \"salt\", \"heat\", \"heat\"], \"predict\": \"clear\", \"why\": \"If this came out purple, purple would persist through a later heat with no preceding salt, contradicting that the last heat determines color.\"}, {\"events\": [\"salt\", \"salt\", \"acid\", \"heat\"], \"predict\": \"clear\", \"why\": \"If this came out green or purple, acid would not reset the consecutive-salt count before heat, contradicting that only salts immediately before the last heat matter.\"}, {\"events\": [\"acid\", \"salt\", \"salt\", \"heat\"], \"predict\": \"purple\", \"why\": \"If this came out clear, acid would be neutralizing or blocking the following salts before heat, contradicting that two consecutive salts before heat give purple.\"}]}"
+    }
+   ],
+   "facts": [
+    {
+     "events": [
+      "add salt",
+      "add acid",
+      "heat",
+      "add salt"
+     ],
+     "answer": "colour is clear"
+    },
+    {
+     "events": [
+      "add salt",
+      "add acid",
+      "add salt",
+      "heat"
+     ],
+     "answer": "colour is green"
+    },
+    {
+     "events": [
+      "add salt",
+      "add salt",
+      "heat",
+      "add acid"
+     ],
+     "answer": "colour is purple"
+    }
+   ],
+   "final_rule": null,
+   "graded": [
+    {
+     "test": "test 1",
+     "hard": true,
+     "right": false
+    },
+    {
+     "test": "test 2",
+     "hard": true,
+     "right": false
+    },
+    {
+     "test": "test 3",
+     "hard": true,
+     "right": false
+    },
+    {
+     "test": "test 4",
+     "hard": true,
+     "right": false
+    },
+    {
+     "test": "test 5",
+     "hard": true,
+     "right": false
+    },
+    {
+     "test": "test 6",
+     "hard": true,
+     "right": false
+    },
+    {
+     "test": "test 7",
+     "hard": true,
+     "right": false
+    },
+    {
+     "test": "test 8",
+     "hard": true,
+     "right": false
+    },
+    {
+     "test": "test 9",
+     "hard": false,
+     "right": false
+    },
+    {
+     "test": "test 10",
+     "hard": false,
+     "right": false
+    },
+    {
+     "test": "test 11",
+     "hard": false,
+     "right": false
+    },
+    {
+     "test": "test 12",
+     "hard": false,
+     "right": false
+    }
+   ],
+   "tokens_out": 68344,
+   "cut_off": 1,
+   "calls": 3,
+   "world_answers": 3
+  },
+  "attack, defend": {
+   "rounds": [
+    {
+     "round": 1,
+     "rule": "Salt adds to an unactivated salt pool; a heat normally moves the entire unactivated pool into active salt, but if acid has been added since the last heat, that heat instead clears both salt pools and the acid. Colour is clear with 0 active salt, green with 1, and purple with 2 or more.",
+     "commitments": [
+      {
+       "events": [
+        "heat",
+        "add salt",
+        "add salt",
+        "heat"
+       ],
+       "predict": "purple",
+       "why": "This tests whether a later heat activates all salt added after an earlier heat; if it came out clear or green, heat would not be committing the whole unactivated salt pool.",
+       "tested": true,
+       "world_says": "colour is purple",
+       "held": true,
+       "risky": true
+      },
+      {
+       "events": [
+        "add salt",
+        "heat",
+        "add salt",
+        "heat"
+       ],
+       "predict": "purple",
+       "why": "This tests whether salt added after a heat can be activated by a later heat; if it stayed green or clear, active salt would not accumulate across separate heat steps.",
+       "tested": true,
+       "world_says": "colour is purple",
+       "held": true,
+       "risky": true
+      },
+      {
+       "events": [
+        "add salt",
+        "add acid",
+        "heat",
+        "heat"
+       ],
+       "predict": "clear",
+       "why": "This tests whether acid plus heat wipes out the unactivated salt; if it came out green or purple, the salt would have survived the acid-heat reset and been activated by the second heat.",
+       "tested": true,
+       "world_says": "colour is clear",
+       "held": true,
+       "risky": false
+      },
+      {
+       "events": [
+        "add salt",
+        "add acid",
+        "add salt",
+        "heat"
+       ],
+       "predict": "clear",
+       "why": "This tests whether acid pending makes the next heat wipe out salt added after the acid; if it came out green or purple, acid would not prevent newly added salt from being activated.",
+       "tested": false,
+       "risky": false,
+       "why_not": "not among the three riskiest"
+      },
+      {
+       "events": [
+        "add salt",
+        "add salt",
+        "add salt",
+        "heat"
+       ],
+       "predict": "purple",
+       "why": "This tests whether three activated salts still give purple; if it came out clear or green, the colour would be cycling modulo a small number rather than saturating at purple.",
+       "tested": false,
+       "risky": true,
+       "why_not": "not among the three riskiest"
+      }
+     ],
+     "text": "{\"rule\":\"Salt adds to an unactivated salt pool; a heat normally moves the entire unactivated pool into active salt, but if acid has been added since the last heat, that heat instead clears both salt pools and the acid. Colour is clear with 0 active salt, green with 1, and purple with 2 or more.\",\"commitments\":[{\"events\":[\"heat\",\"add salt\",\"add salt\",\"heat\"],\"predict\":\"purple\",\"why\":\"This tests whether a later heat activates all salt added after an earlier heat; if it came out clear or green, heat would not be committing the whole unactivated salt pool.\"},{\"events\":[\"add salt\",\"heat\",\"add salt\",\"heat\"],\"predict\":\"purple\",\"why\":\"This tests whether salt added after a heat can be activated by a later heat; if it stayed green or clear, active salt would not accumulate across separate heat steps.\"},{\"events\":[\"add salt\",\"add acid\",\"heat\",\"heat\"],\"predict\":\"clear\",\"why\":\"This tests whether acid plus heat wipes out the unactivated salt; if it came out green or purple, the salt would have survived the acid-heat reset and been activated by the second heat.\"},{\"events\":[\"add salt\",\"add acid\",\"add salt\",\"heat\"],\"predict\":\"clear\",\"why\":\"This tests whether acid pending makes the next heat wipe out salt added after the acid; if it came out green or purple, acid would not prevent newly added salt from being activated.\"},{\"events\":[\"add salt\",\"add salt\",\"add salt\",\"heat\"],\"predict\":\"purple\",\"why\":\"This tests whether three activated salts still give purple; if it came out clear or green, the colour would be cycling modulo a small number rather than saturating at purple.\"}]}"
+    },
+    {
+     "round": 2,
+     "rule": "Salt adds to an unactivated salt pool. A heat with no acid pending moves the entire unactivated pool into active salt; a heat with acid pending instead clears both salt pools and clears the acid. Colour is clear for 0 active salt, green for 1 active salt, and purple for 2 or more active salt.",
+     "commitments": [
+      {
+       "events": [
+        "add acid",
+        "heat",
+        "add salt",
+        "heat"
+       ],
+       "predict": "green",
+       "why": "This tests whether the acid is cleared by the resetting heat; if the world came out clear, acid would still be pending and the final heat would wipe the new salt instead of activating it.",
+       "tested": true,
+       "world_says": "colour is green",
+       "held": true,
+       "risky": true
+      },
+      {
+       "events": [
+        "add acid",
+        "add salt",
+        "add salt",
+        "heat"
+       ],
+       "predict": "clear",
+       "why": "This tests whether acid before salt makes the next heat clear salt added after the acid; if it came out purple or green, the acid would not wipe post-acid latent salt.",
+       "tested": true,
+       "world_says": "colour is purple",
+       "held": false,
+       "risky": false
+      },
+      {
+       "events": [
+        "add salt",
+        "add salt",
+        "add salt",
+        "heat"
+       ],
+       "predict": "purple",
+       "why": "This tests whether three activated salts still give purple; if it came out clear or green, the colour would depend on a small cycle rather than saturating at two or more active salts.",
+       "tested": true,
+       "world_says": "colour is purple",
+       "held": true,
+       "risky": true
+      },
+      {
+       "events": [
+        "add salt",
+        "add salt",
+        "heat",
+        "heat"
+       ],
+       "predict": "purple",
+       "why": "This tests whether a heat with no new salt leaves active salt unchanged; if it came out clear or green, extra heat would decay or reset active salt.",
+       "tested": false,
+       "risky": true,
+       "why_not": "not among the three riskiest"
+      },
+      {
+       "events": [
+        "add salt",
+        "heat",
+        "heat",
+        "heat"
+       ],
+       "predict": "green",
+       "why": "This tests whether one active salt persists through repeated heats; if it came out clear or purple, heat without new salt would change the active-salt count.",
+       "tested": false,
+       "risky": true,
+       "why_not": "not among the three riskiest"
+      }
+     ],
+     "text": "{\"rule\":\"Salt adds to an unactivated salt pool. A heat with no acid pending moves the entire unactivated pool into active salt; a heat with acid pending instead clears both salt pools and clears the acid. Colour is clear for 0 active salt, green for 1 active salt, and purple for 2 or more active salt.\",\"commitments\":[{\"events\":[\"add acid\",\"heat\",\"add salt\",\"heat\"],\"predict\":\"green\",\"why\":\"This tests whether the acid is cleared by the resetting heat; if the world came out clear, acid would still be pending and the final heat would wipe the new salt instead of activating it.\"},{\"events\":[\"add acid\",\"add salt\",\"add salt\",\"heat\"],\"predict\":\"clear\",\"why\":\"This tests whether acid before salt makes the next heat clear salt added after the acid; if it came out purple or green, the acid would not wipe post-acid latent salt.\"},{\"events\":[\"add salt\",\"add salt\",\"add salt\",\"heat\"],\"predict\":\"purple\",\"why\":\"This tests whether three activated salts still give purple; if it came out clear or green, the colour would depend on a small cycle rather than saturating at two or more active salts.\"},{\"events\":[\"add salt\",\"add salt\",\"heat\",\"heat\"],\"predict\":\"purple\",\"why\":\"This tests whether a heat with no new salt leaves active salt unchanged; if it came out clear or green, extra heat would decay or reset active salt.\"},{\"events\":[\"add salt\",\"heat\",\"heat\",\"heat\"],\"predict\":\"green\",\"why\":\"This tests whether one active salt persists through repeated heats; if it came out clear or purple, heat without new salt would change the active-salt count.\"}]}"
+    }
+   ],
+   "facts": [
+    {
+     "events": [
+      "heat",
+      "add salt",
+      "add salt",
+      "heat"
+     ],
+     "answer": "colour is purple"
+    },
+    {
+     "events": [
+      "add salt",
+      "heat",
+      "add salt",
+      "heat"
+     ],
+     "answer": "colour is purple"
+    },
+    {
+     "events": [
+      "add salt",
+      "add acid",
+      "heat",
+      "heat"
+     ],
+     "answer": "colour is clear"
+    },
+    {
+     "events": [
+      "add acid",
+      "heat",
+      "add salt",
+      "heat"
+     ],
+     "answer": "colour is green"
+    },
+    {
+     "events": [
+      "add acid",
+      "add salt",
+      "add salt",
+      "heat"
+     ],
+     "answer": "colour is purple"
+    },
+    {
+     "events": [
+      "add salt",
+      "add salt",
+      "add salt",
+      "heat"
+     ],
+     "answer": "colour is purple"
+    }
+   ],
+   "final_rule": "Salt adds to a latent salt pool and cancels one acid if present. Acid adds to an acid pool. Heat: if acid is present, it consumes one acid and neutralizes one unit of latent or active salt; otherwise it converts all latent salt to active salt. Colour is clear with 0 active salt, green with 1, and purple with 2 or more.",
+   "graded": [
+    {
+     "test": "test 1",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 2",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 3",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 4",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 5",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 6",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 7",
+     "hard": true,
+     "right": false
+    },
+    {
+     "test": "test 8",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 9",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 10",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 11",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 12",
+     "hard": false,
+     "right": true
+    }
+   ],
+   "tokens_out": 66315,
+   "cut_off": 0,
+   "calls": 3,
+   "world_answers": 6
+  }
+ }
+}

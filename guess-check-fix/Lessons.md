@@ -59,6 +59,8 @@ Failures in building and testing, and how each was fixed. Only cases where somet
 | 40 | I protected "every shown job the current method repairs" without checking whether it could conflict with the aim to repair; on some starts the only repairs available break something, so no method could meet both. Found after the run. | The plan kept as written; the next plan checks its aims for conflict on the occasions before the run. |
 | 41 | My "method only" control still described the inputs the current method ignores, which points at the failure; it could not show what the record added. Found after the run. | Reported as a flaw; a cleaner control would need a description that does not hint. |
 | 41 | A 14,000-character record with the normal reply limit: two of three replies thought until the limit and gave no answer, as in logs 19 and 25. | The next run with a long prompt raises the reply limit, as log 19 did. |
+| 44 | Log 26's plan was written before logs 41 and 42 showed the default reply limit cutting off long thinking; I ran it unchanged, and six replies were cut off, two of them deciding conjecture 4. | Any plan that compares arms by their final answers raises the reply limit before it is committed. |
+| 44 | The automatic "rule changed between rounds" count compared wording, so rephrasing counted as change. Reported before the results, read by hand after. | A count of changed explanations is read by hand, or checked against what the rule predicts, not its words. |
 | 31 | Round 1's comparison used one pair of plain runs as the measure of chance; that pair happened to overlap more than any other. | Round 2 repeated two texts word for word, which showed it. |
 
 ## Traps
