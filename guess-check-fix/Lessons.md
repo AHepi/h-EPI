@@ -66,6 +66,9 @@ Failures in building and testing, and how each was fixed. Only cases where somet
 | 46 | My check that the reading list names no arm also read the list's heading, which names the plan file "46 Plan - rivals choose.md". Found by the test failing before the run. | A check for leaked labels reads only the lines that carry the content. |
 | 47 | I let the world answer only up to four actions while grading up to six, so the survivors were never tested where they differ most. Seen in the results. | When grading reaches further than the questions can, say so in the plan and say what it means for the result. |
 | 48 | When no rival survived, the final prompt still said "These rival explanations fit every observation above:" before an empty list; no test tried a run with no survivors. Found reading the records after the run. | Every prompt built from a list is tested with the list empty. |
+| 49 | I checked which wrong rules a new device separates, but not how many short situations show each hidden part; only one showed the heater's reset. Found after the run. | Before running a new device, count the situations that show each hidden part, and say the count in the plan. |
+| 49 | A test in my first draft ended with "or true", so it could never fail. Found reading the draft before the plan was committed. | A test's condition is read for anything that makes it always pass. |
+| 48, 49 | My waiting loops searched for the checks by name and matched their own command, so they never ended. | Wait on a file the checks write when they finish, not on a process name. |
 | 31 | Round 1's comparison used one pair of plain runs as the measure of chance; that pair happened to overlap more than any other. | Round 2 repeated two texts word for word, which showed it. |
 
 ## Traps

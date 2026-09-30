@@ -8,6 +8,7 @@ The idea in one line: an AI guesses, an ordinary program checks, and the fixing 
 
 ## Where things stand
 
+- **The blind spot holds on two devices** (logs 45, 48 and 49): every way of choosing the world's questions so far, DeepSeek's own or the program's from rival guesses, only looks where some current guess already points. On the heater, the one situation showing that waiting resets the cut-out was never asked, and no run found the true heater. Rivals choosing the questions helped on the grudge and did worst on the heater. See "49 Second device.md".
 - **Keeping surviving rivals has failed twice** (logs 47 and 48): tested too little, poor rivals survive; tested hard at six actions, nearly all die. A fresh DeepSeek shown only the facts did best both times. What the world is asked matters more than what is kept, and asking where the rivals split most misses the short situations that show a deep grudge. See "48 Ask at any length.md".
 - **Keeping rivals that survive did not help by itself** (log 47): a rival survives by fitting the few short situations the world was asked about, so the survivors can be the old habit or rules that break on longer sequences; DeepSeek, shown them, mostly copied one. The questions the world is asked are what moved the explanations, again. See "47 Keep the survivors.md".
 - **Rival explanations choose better questions** (log 46): when DeepSeek writes four rival rules as programs and the program asks the world where they disagree, the telling situations get asked (4 of 6 runs, against 1 of 12), and DeepSeek builds new kinds of explanation (5 of 6), the nearest yet to the true grudge (105 of 106). But none is the true grudge, and a rival that fitted everything was thrown away: the system has nothing that keeps survivors. See "46 Rivals choose.md".
@@ -466,9 +467,17 @@ Written up in "47 Keep the survivors.md".
 - Cost: $0.45 ($12.05 to $11.60).
 Written up in "48 Ask at any length.md".
 
+**49. A second device, the heater.** The owner said "Do it" (Decisions O32). A new made-up device, the heater (file "49 heater.js"): a dial with off, low and high, a safety cut-out when turned up on high, and only waiting resets it. My first design started the heater off, and an offline check showed a wrong rival fitting almost everything; fixed before the plan by starting it on low. Three arms, six repeats: bare, 6 random answers, and rivals choose (as log 46); every arm ended with a fresh DeepSeek writing one explanation as a program, graded on every sequence up to six actions. Plan and six conjectures committed first (files 49; `runs/49 second device`).
+- **No run found the true heater,** in any arm, and no rival was it.
+- **Rivals choose did worst,** the reverse of the grudge: long sequences right, random answers 5,049, bare 4,765, rivals choose 4,604 (of 5,832). The plan named this as counting against the grudge's pattern holding.
+- **The same blind spot as log 48, more plainly:** the only short situation that shows the reset ("up, up, wait, up") was asked in no run; no rival gave waiting that part, so the rivals never disagreed there. All five explanations that scored 105 of 106 miss exactly that one situation (checked after the results).
+- **Conjectures:** 1 and 2 not ruled out (the device was not too easy: bare got it in 0 of 6); 3 to 6 ruled out.
+- **Failures:** the fixed design shows the reset in only one short situation, which I did not check before the run; a test in my first draft ended with "or true" and could never fail, removed before the plan was committed; the cost was $0.90, above the plan's estimate.
+Written up in "49 Second device.md".
+
 ## Next step
 
-Take the grudge findings to a second device before trusting them. Build a new made-up device whose right explanation needs a hidden part that common talk gets wrong, check offline that the obvious explanation fits the first observations, then run bare DeepSeek against the best set-up so far (rivals choose the questions, the final DeepSeek sees the facts only, as in log 46), with the plan committed first. About $0.50. Every result since log 44 is about one device.
+Write logs 43 to 49 up as one plain page, as log 43 did for 25 to 42: the one finding that now holds on both devices (the world's answers only correct what some current guess already points at), what did not carry over, and what that means for your semantics. No runs; the choice of what to test next is yours, and it should be made from that page.
 
 ## Traps
 

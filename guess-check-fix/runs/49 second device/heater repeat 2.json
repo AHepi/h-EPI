@@ -1,0 +1,245 @@
+{
+ "device": "heater",
+ "repeat": 2,
+ "guesser": "deepseek-flash",
+ "reply_limit": 200000,
+ "arms": {
+  "bare": {
+   "short_right": 78,
+   "short_all": 106,
+   "long_right": 763,
+   "long_all": 972,
+   "hard_right": 10,
+   "hard_all": 23,
+   "code": "// Ignore waits; room is warm iff the turn sequence contains a down-then-up that is not preceded by up-up and not followed by down.\nfunction visible(actions) {\n  const turns = actions\n    .filter(a => a !== \"wait\")\n    .map(a => (a === \"turn up\" ? \"u\" : \"d\"))\n    .join(\"\");\n\n  for (let i = 0; i < turns.length - 1; i++) {\n    if (turns[i] === \"d\" && turns[i + 1] === \"u\") {\n      const precededByUU = i >= 2 && turns[i - 2] === \"u\" && turns[i - 1] === \"u\";\n      const followedByD = i + 2 < turns.length && turns[i + 2] === \"d\";\n      if (!precededByUU && !followedByD) {\n        return { room: \"warm\" };\n      }\n    }\n  }\n\n  return { room: \"cold\" };\n}",
+   "comment": "Ignore waits; room is warm iff the turn sequence contains a down-then-up that is not preceded by up-up and not followed by down.",
+   "problem": null,
+   "true_everywhere": false,
+   "facts": [],
+   "world_answers": 0,
+   "tokens_out": 85541,
+   "cut_off": 0,
+   "text": "```javascript\n// Ignore waits; room is warm iff the turn sequence contains a down-then-up that is not preceded by up-up and not followed by down.\nfunction visible(actions) {\n  const turns = actions\n    .filter(a => a !== \"wait\")\n    .map(a => (a === \"turn up\" ? \"u\" : \"d\"))\n    .join(\"\");\n\n  for (let i = 0; i < turns.length - 1; i++) {\n    if (turns[i] === \"d\" && turns[i + 1] === \"u\") {\n      const precededByUU = i >= 2 && turns[i - 2] === \"u\" && turns[i - 1] === \"u\";\n      const followedByD = i + 2 < turns.length && turns[i + 2] === \"d\";\n      if (!precededByUU && !followedByD) {\n        return { room: \"warm\" };\n      }\n    }\n  }\n\n  return { room: \"cold\" };\n}\n```"
+  },
+  "random answers": {
+   "short_right": 105,
+   "short_all": 106,
+   "long_right": 922,
+   "long_all": 972,
+   "hard_right": 23,
+   "hard_all": 23,
+   "code": "function visible(actions) {\n  // The dial starts at 2; turn up lowers it, turn down raises it (clamped 0..3).\n  // The room is warm iff the final dial is 1 or 2 and the dial never reached 0.\n  let dial = 2;\n  let visited0 = false;\n  for (const action of actions) {\n    if (action === \"turn up\") {\n      dial = Math.max(0, dial - 1);\n    } else if (action === \"turn down\") {\n      dial = Math.min(3, dial + 1);\n    }\n    // \"wait\" leaves the dial unchanged.\n    if (dial === 0) visited0 = true;\n  }\n  const warm = (dial === 1 || dial === 2) && !visited0;\n  return { room: warm ? \"warm\" : \"cold\" };\n}",
+   "comment": "The dial starts at 2; turn up lowers it, turn down raises it (clamped 0..3).",
+   "problem": null,
+   "true_everywhere": false,
+   "facts": [
+    {
+     "events": [
+      "turn up"
+     ],
+     "state": "warm"
+    },
+    {
+     "events": [
+      "wait",
+      "turn down",
+      "wait",
+      "turn down"
+     ],
+     "state": "cold"
+    },
+    {
+     "events": [
+      "turn down",
+      "turn up",
+      "turn up"
+     ],
+     "state": "warm"
+    },
+    {
+     "events": [
+      "turn down",
+      "wait",
+      "wait",
+      "wait"
+     ],
+     "state": "cold"
+    },
+    {
+     "events": [
+      "wait",
+      "turn down",
+      "turn up",
+      "wait"
+     ],
+     "state": "warm"
+    },
+    {
+     "events": [
+      "turn down",
+      "wait"
+     ],
+     "state": "cold"
+    }
+   ],
+   "world_answers": 6,
+   "tokens_out": 87955,
+   "cut_off": 0,
+   "text": "```javascript\nfunction visible(actions) {\n  // The dial starts at 2; turn up lowers it, turn down raises it (clamped 0..3).\n  // The room is warm iff the final dial is 1 or 2 and the dial never reached 0.\n  let dial = 2;\n  let visited0 = false;\n  for (const action of actions) {\n    if (action === \"turn up\") {\n      dial = Math.max(0, dial - 1);\n    } else if (action === \"turn down\") {\n      dial = Math.min(3, dial + 1);\n    }\n    // \"wait\" leaves the dial unchanged.\n    if (dial === 0) visited0 = true;\n  }\n  const warm = (dial === 1 || dial === 2) && !visited0;\n  return { room: warm ? \"warm\" : \"cold\" };\n}\n```"
+  },
+  "rivals choose": {
+   "short_right": 86,
+   "short_all": 106,
+   "long_right": 720,
+   "long_all": 972,
+   "hard_right": 23,
+   "hard_all": 23,
+   "code": "// Track dial position S = turn ups - turn downs; room is warm if S <= 1, except if the last action is turn down then only if the dial reached exactly 1.\nfunction visible(actions) {\n  let S = 0;\n  let maxS = 0;\n  let last = null;\n  for (const a of actions) {\n    if (a === \"turn up\") S += 1;\n    else if (a === \"turn down\") S -= 1;\n    // \"wait\" leaves S unchanged\n    if (S > maxS) maxS = S;\n    last = a;\n  }\n  const warm = S <= 1 && (last !== \"turn down\" || maxS === 1);\n  return { room: warm ? \"warm\" : \"cold\" };\n}",
+   "comment": "Track dial position S = turn ups - turn downs; room is warm if S <= 1, except if the last action is turn down then only if the dial reached exactly 1.",
+   "problem": null,
+   "true_everywhere": false,
+   "facts": [
+    {
+     "events": [
+      "turn down",
+      "turn up",
+      "wait",
+      "turn down"
+     ],
+     "state": "cold"
+    },
+    {
+     "events": [
+      "turn down",
+      "turn up",
+      "turn up",
+      "turn up"
+     ],
+     "state": "cold"
+    },
+    {
+     "events": [
+      "wait",
+      "turn down",
+      "turn up",
+      "turn down"
+     ],
+     "state": "cold"
+    },
+    {
+     "events": [
+      "turn down",
+      "turn down",
+      "turn up",
+      "wait"
+     ],
+     "state": "warm"
+    },
+    {
+     "events": [
+      "wait",
+      "wait",
+      "turn up",
+      "wait"
+     ],
+     "state": "warm"
+    },
+    {
+     "events": [
+      "turn down",
+      "turn up",
+      "turn down",
+      "turn up"
+     ],
+     "state": "warm"
+    }
+   ],
+   "world_answers": 6,
+   "tokens_out": 145712,
+   "cut_off": 0,
+   "text": "```javascript\n// Track dial position S = turn ups - turn downs; room is warm if S <= 1, except if the last action is turn down then only if the dial reached exactly 1.\nfunction visible(actions) {\n  let S = 0;\n  let maxS = 0;\n  let last = null;\n  for (const a of actions) {\n    if (a === \"turn up\") S += 1;\n    else if (a === \"turn down\") S -= 1;\n    // \"wait\" leaves S unchanged\n    if (S > maxS) maxS = S;\n    last = a;\n  }\n  const warm = S <= 1 && (last !== \"turn down\" || maxS === 1);\n  return { room: warm ? \"warm\" : \"cold\" };\n}\n```",
+   "rounds": [
+    {
+     "round": 1,
+     "rivals": [
+      {
+       "code": "// Hidden latch: a down-up pair sets warmth, but a down-up followed by down or an ending U-U-D-U cancels it.\nfunction visible(actions) {\n  const U = \"turn up\", D = \"turn down\";\n  let seenDU = false;\n  let bad = false;\n  for (let i = 0; i < actions.length - 1; i++) {\n    if (actions[i] === D && actions[i + 1] === U) {\n      seenDU = true;\n      if (i + 2 < actions.length && actions[i + 2] === D) bad = true;\n    }\n  }\n  const n = actions.length;\n  const endsUUDU = n >= 4 && actions[n - 4] === U && actions[n - 3] === U && actions[n - 2] === D && actions[n - 1] === U;\n  return { room: (seenDU && !bad && !endsUUDU) ? \"warm\" : \"cold\" };\n}",
+       "comment": "Hidden latch: a down-up pair sets warmth, but a down-up followed by down or an ending U-U-D-U cancels it.",
+       "problem": null,
+       "fits": true,
+       "true_everywhere": false
+      },
+      {
+       "code": "// Hidden dial: only the last down-turn followed by an up-turn can warm, except D-U-U-D resets to warm and U-U-D-U is a cold trap.\nfunction visible(actions) {\n  const U = \"turn up\", D = \"turn down\";\n  let lastD = -1;\n  for (let i = 0; i < actions.length; i++) if (actions[i] === D) lastD = i;\n  let warm = lastD !== -1 && lastD + 1 < actions.length && actions[lastD + 1] === U;\n  const n = actions.length;\n  if (warm && n === 4 && actions[0] === U && actions[1] === U && actions[2] === D && actions[3] === U) warm = false;\n  if (n === 4 && actions[0] === D && actions[1] === U && actions[2] === U && actions[3] === D) warm = true;\n  return { room: warm ? \"warm\" : \"cold\" };\n}",
+       "comment": "Hidden dial: only the last down-turn followed by an up-turn can warm, except D-U-U-D resets to warm and U-U-D-U is a cold trap.",
+       "problem": null,
+       "fits": true,
+       "true_everywhere": false
+      },
+      {
+       "code": "// Hidden first-down counter: warmth needs a down-up pair, the first down-turn within the first two actions, and no D-U-D-D pattern.\nfunction visible(actions) {\n  const U = \"turn up\", D = \"turn down\";\n  let firstD = -1;\n  for (let i = 0; i < actions.length; i++) if (actions[i] === D) { firstD = i; break; }\n  if (firstD === -1 || firstD > 1) return { room: \"cold\" };\n  let hasDU = false;\n  for (let i = 0; i < actions.length - 1; i++) if (actions[i] === D && actions[i + 1] === U) hasDU = true;\n  let hasDUDD = false;\n  for (let i = 0; i < actions.length - 3; i++) {\n    if (actions[i] === D && actions[i + 1] === U && actions[i + 2] === D && actions[i + 3] === D) hasDUDD = true;\n  }\n  return { room: (hasDU && !hasDUDD) ? \"warm\" : \"cold\" };\n}",
+       "comment": "Hidden first-down counter: warmth needs a down-up pair, the first down-turn within the first two actions, and no D-U-D-D pattern.",
+       "problem": null,
+       "fits": true,
+       "true_everywhere": false
+      },
+      {
+       "code": "// Hidden mode: the final action decides; ending on U warms only after D (unless U-U-D-U), while D and W endings warm only for D-U-U-D and D-U-U-W.\nfunction visible(actions) {\n  const U = \"turn up\", D = \"turn down\", W = \"wait\";\n  const n = actions.length;\n  if (n === 0) return { room: \"cold\" };\n  const last = actions[n - 1];\n  if (last === U) {\n    const prev = n >= 2 ? actions[n - 2] : null;\n    const isUUDU = n === 4 && actions[0] === U && actions[1] === U && actions[2] === D && actions[3] === U;\n    return { room: (prev === D && !isUUDU) ? \"warm\" : \"cold\" };\n  }\n  if (last === D) {\n    const isDUUD = n === 4 && actions[0] === D && actions[1] === U && actions[2] === U && actions[3] === D;\n    return { room: isDUUD ? \"warm\" : \"cold\" };\n  }\n  if (last === W) {\n    const isDUUW = n === 4 && actions[0] === D && actions[1] === U && actions[2] === U && actions[3] === W;\n    return { room: isDUUW ? \"warm\" : \"cold\" };\n  }\n  return { room: \"cold\" };\n}",
+       "comment": "Hidden mode: the final action decides; ending on U warms only after D (unless U-U-D-U), while D and W endings warm only for D-U-U-D and D-U-U-W.",
+       "problem": null,
+       "fits": true,
+       "true_everywhere": false
+      }
+     ],
+     "fitting": 4,
+     "asked": [
+      "turn down>turn up>wait>turn down",
+      "turn down>turn up>turn up>turn up",
+      "wait>turn down>turn up>turn down"
+     ],
+     "text": "```javascript\n// Hidden latch: a down-up pair sets warmth, but a down-up followed by down or an ending U-U-D-U cancels it.\nfunction visible(actions) {\n  const U = \"turn up\", D = \"turn down\";\n  let seenDU = false;\n  let bad = false;\n  for (let i = 0; i < actions.length - 1; i++) {\n    if (actions[i] === D && actions[i + 1] === U) {\n      seenDU = true;\n      if (i + 2 < actions.length && actions[i + 2] === D) bad = true;\n    }\n  }\n  const n = actions.length;\n  const endsUUDU = n >= 4 && actions[n - 4] === U && actions[n - 3] === U && actions[n - 2] === D && actions[n - 1] === U;\n  return { room: (seenDU && !bad && !endsUUDU) ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Hidden dial: only the last down-turn followed by an up-turn can warm, except D-U-U-D resets to warm and U-U-D-U is a cold trap.\nfunction visible(actions) {\n  const U = \"turn up\", D = \"turn down\";\n  let lastD = -1;\n  for (let i = 0; i < actions.length; i++) if (actions[i] === D) lastD = i;\n  let warm = lastD !== -1 && lastD + 1 < actions.length && actions[lastD + 1] === U;\n  const n = actions.length;\n  if (warm && n === 4 && actions[0] === U && actions[1] === U && actions[2] === D && actions[3] === U) warm = false;\n  if (n === 4 && actions[0] === D && actions[1] === U && actions[2] === U && actions[3] === D) warm = true;\n  return { room: warm ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Hidden first-down counter: warmth needs a down-up pair, the first down-turn within the first two actions, and no D-U-D-D pattern.\nfunction visible(actions) {\n  const U = \"turn up\", D = \"turn down\";\n  let firstD = -1;\n  for (let i = 0; i < actions.length; i++) if (actions[i] === D) { firstD = i; break; }\n  if (firstD === -1 || firstD > 1) return { room: \"cold\" };\n  let hasDU = false;\n  for (let i = 0; i < actions.length - 1; i++) if (actions[i] === D && actions[i + 1] === U) hasDU = true;\n  let hasDUDD = false;\n  for (let i = 0; i < actions.length - 3; i++) {\n    if (actions[i] === D && actions[i + 1] === U && actions[i + 2] === D && actions[i + 3] === D) hasDUDD = true;\n  }\n  return { room: (hasDU && !hasDUDD) ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Hidden mode: the final action decides; ending on U warms only after D (unless U-U-D-U), while D and W endings warm only for D-U-U-D and D-U-U-W.\nfunction visible(actions) {\n  const U = \"turn up\", D = \"turn down\", W = \"wait\";\n  const n = actions.length;\n  if (n === 0) return { room: \"cold\" };\n  const last = actions[n - 1];\n  if (last === U) {\n    const prev = n >= 2 ? actions[n - 2] : null;\n    const isUUDU = n === 4 && actions[0] === U && actions[1] === U && actions[2] === D && actions[3] === U;\n    return { room: (prev === D && !isUUDU) ? \"warm\" : \"cold\" };\n  }\n  if (last === D) {\n    const isDUUD = n === 4 && actions[0] === D && actions[1] === U && actions[2] === U && actions[3] === D;\n    return { room: isDUUD ? \"warm\" : \"cold\" };\n  }\n  if (last === W) {\n    const isDUUW = n === 4 && actions[0] === D && actions[1] === U && actions[2] === U && actions[3] === W;\n    return { room: isDUUW ? \"warm\" : \"cold\" };\n  }\n  return { room: \"cold\" };\n}\n```"
+    },
+    {
+     "round": 2,
+     "rivals": [
+      {
+       "code": "// Explanation: The heater hides an exact memory of the whole action history; observed histories map to room states, while unobserved histories default to warm for even length.\nfunction visible(actions) {\n  const obs = [\n    [[\"turn down\",\"turn up\",\"turn up\",\"turn down\"], \"warm\"],\n    [[\"turn down\",\"turn up\",\"turn up\",\"wait\"], \"warm\"],\n    [[\"wait\",\"wait\",\"turn down\"], \"cold\"],\n    [[\"turn down\",\"turn up\",\"turn down\",\"turn down\"], \"cold\"],\n    [[\"turn up\",\"turn down\",\"turn up\"], \"warm\"],\n    [[\"turn up\",\"turn up\",\"turn up\",\"wait\"], \"cold\"],\n    [[\"turn up\",\"turn up\",\"turn down\",\"turn up\"], \"cold\"],\n    [[\"wait\",\"wait\",\"turn up\",\"turn up\"], \"cold\"],\n    [[\"turn up\",\"wait\",\"turn up\"], \"cold\"],\n    [[\"turn up\",\"turn up\",\"turn down\",\"turn down\"], \"cold\"],\n    [[\"turn down\",\"turn down\",\"turn down\",\"turn up\"], \"warm\"],\n    [[\"turn up\",\"turn up\",\"turn up\"], \"cold\"],\n    [[\"wait\",\"turn down\",\"turn up\"], \"warm\"],\n    [[\"wait\",\"turn up\",\"turn up\",\"wait\"], \"cold\"],\n    [[\"turn down\",\"turn up\",\"wait\",\"turn down\"], \"cold\"],\n    [[\"turn down\",\"turn up\",\"turn up\",\"turn up\"], \"cold\"],\n    [[\"wait\",\"turn down\",\"turn up\",\"turn down\"], \"cold\"]\n  ];\n  const map = new Map();\n  for (const [seq, room] of obs) map.set(seq.join(\"|\"), room);\n  const key = actions.join(\"|\");\n  if (map.has(key)) return { room: map.get(key) };\n  return { room: actions.length % 2 === 0 ? \"warm\" : \"cold\" };\n}",
+       "comment": "Explanation: The heater hides an exact memory of the whole action history; observed histories map to room states, while unobserved histories default to warm for even length.",
+       "problem": null,
+       "fits": true,
+       "true_everywhere": false
+      },
+      {
+       "code": "// Explanation: The heater only remembers the last four actions; observed last-four windows map to room states, and unobserved windows default to warm if the oldest remembered action was \"turn up\".\nfunction visible(actions) {\n  const obs = [\n    [[\"turn down\",\"turn up\",\"turn up\",\"turn down\"], \"warm\"],\n    [[\"turn down\",\"turn up\",\"turn up\",\"wait\"], \"warm\"],\n    [[\"wait\",\"wait\",\"turn down\"], \"cold\"],\n    [[\"turn down\",\"turn up\",\"turn down\",\"turn down\"], \"cold\"],\n    [[\"turn up\",\"turn down\",\"turn up\"], \"warm\"],\n    [[\"turn up\",\"turn up\",\"turn up\",\"wait\"], \"cold\"],\n    [[\"turn up\",\"turn up\",\"turn down\",\"turn up\"], \"cold\"],\n    [[\"wait\",\"wait\",\"turn up\",\"turn up\"], \"cold\"],\n    [[\"turn up\",\"wait\",\"turn up\"], \"cold\"],\n    [[\"turn up\",\"turn up\",\"turn down\",\"turn down\"], \"cold\"],\n    [[\"turn down\",\"turn down\",\"turn down\",\"turn up\"], \"warm\"],\n    [[\"turn up\",\"turn up\",\"turn up\"], \"cold\"],\n    [[\"wait\",\"turn down\",\"turn up\"], \"warm\"],\n    [[\"wait\",\"turn up\",\"turn up\",\"wait\"], \"cold\"],\n    [[\"turn down\",\"turn up\",\"wait\",\"turn down\"], \"cold\"],\n    [[\"turn down\",\"turn up\",\"turn up\",\"turn up\"], \"cold\"],\n    [[\"wait\",\"turn down\",\"turn up\",\"turn down\"], \"cold\"]\n  ];\n  const map = new Map();\n  for (const [seq, room] of obs) map.set(seq.slice(-4).join(\"|\"), room);\n  const key = actions.slice(-4).join(\"|\");\n  if (map.has(key)) return { room: map.get(key) };\n  const last4 = actions.slice(-4);\n  return { room: last4[0] === \"turn up\" ? \"warm\" : \"cold\" };\n}",
+       "comment": "Explanation: The heater only remembers the last four actions; observed last-four windows map to room states, and unobserved windows default to warm if the oldest remembered action was \"turn up\".",
+       "problem": null,
+       "fits": true,
+       "true_everywhere": false
+      },
+      {
+       "code": "// Explanation: The heater tracks only length, first action, last action, and counts of up/down moves; observed summary states map to room states, and unobserved states default to warm when ups outnumber downs.\nfunction visible(actions) {\n  const obs = [\n    [[\"turn down\",\"turn up\",\"turn up\",\"turn down\"], \"warm\"],\n    [[\"turn down\",\"turn up\",\"turn up\",\"wait\"], \"warm\"],\n    [[\"wait\",\"wait\",\"turn down\"], \"cold\"],\n    [[\"turn down\",\"turn up\",\"turn down\",\"turn down\"], \"cold\"],\n    [[\"turn up\",\"turn down\",\"turn up\"], \"warm\"],\n    [[\"turn up\",\"turn up\",\"turn up\",\"wait\"], \"cold\"],\n    [[\"turn up\",\"turn up\",\"turn down\",\"turn up\"], \"cold\"],\n    [[\"wait\",\"wait\",\"turn up\",\"turn up\"], \"cold\"],\n    [[\"turn up\",\"wait\",\"turn up\"], \"cold\"],\n    [[\"turn up\",\"turn up\",\"turn down\",\"turn down\"], \"cold\"],\n    [[\"turn down\",\"turn down\",\"turn down\",\"turn up\"], \"warm\"],\n    [[\"turn up\",\"turn up\",\"turn up\"], \"cold\"],\n    [[\"wait\",\"turn down\",\"turn up\"], \"warm\"],\n    [[\"wait\",\"turn up\",\"turn up\",\"wait\"], \"cold\"],\n    [[\"turn down\",\"turn up\",\"wait\",\"turn down\"], \"cold\"],\n    [[\"turn down\",\"turn up\",\"turn up\",\"turn up\"], \"cold\"],\n    [[\"wait\",\"turn down\",\"turn up\",\"turn down\"], \"cold\"]\n  ];\n  function stateKey(seq) {\n    const length = seq.length;\n    const first = seq[0] || \"\";\n    const last = seq[seq.length - 1] || \"\";\n    let ups = 0, downs = 0;\n    for (const a of seq) {\n      if (a === \"turn up\") ups++;\n      else if (a === \"turn down\") downs++;\n    }\n    return `${length}|${first}|${last}|${ups}|${downs}`;\n  }\n  const map = new Map();\n  for (const [seq, room] of obs) map.set(stateKey(seq), room);\n  const key = stateKey(actions);\n  if (map.has(key)) return { room: map.get(key) };\n  let ups = 0, downs = 0;\n  for (const a of actions) {\n    if (a === \"turn up\") ups++;\n    else if (a === \"turn down\") downs++;\n  }\n  return { room: ups > downs ? \"warm\" : \"cold\" };\n}",
+       "comment": "Explanation: The heater tracks only length, first action, last action, and counts of up/down moves; observed summary states map to room states, and unobserved states default to warm when ups outnumber downs.",
+       "problem": null,
+       "fits": true,
+       "true_everywhere": false
+      },
+      {
+       "code": "// Explanation: The heater tracks first action, last action, and counts of all consecutive action pairs; observed pair-count states map to room states, and unobserved states default to warm when \"turn down, turn up\" pairs outnumber \"turn up, turn down\" pairs.\nfunction visible(actions) {\n  const obs = [\n    [[\"turn down\",\"turn up\",\"turn up\",\"turn down\"], \"warm\"],\n    [[\"turn down\",\"turn up\",\"turn up\",\"wait\"], \"warm\"],\n    [[\"wait\",\"wait\",\"turn down\"], \"cold\"],\n    [[\"turn down\",\"turn up\",\"turn down\",\"turn down\"], \"cold\"],\n    [[\"turn up\",\"turn down\",\"turn up\"], \"warm\"],\n    [[\"turn up\",\"turn up\",\"turn up\",\"wait\"], \"cold\"],\n    [[\"turn up\",\"turn up\",\"turn down\",\"turn up\"], \"cold\"],\n    [[\"wait\",\"wait\",\"turn up\",\"turn up\"], \"cold\"],\n    [[\"turn up\",\"wait\",\"turn up\"], \"cold\"],\n    [[\"turn up\",\"turn up\",\"turn down\",\"turn down\"], \"cold\"],\n    [[\"turn down\",\"turn down\",\"turn down\",\"turn up\"], \"warm\"],\n    [[\"turn up\",\"turn up\",\"turn up\"], \"cold\"],\n    [[\"wait\",\"turn down\",\"turn up\"], \"warm\"],\n    [[\"wait\",\"turn up\",\"turn up\",\"wait\"], \"cold\"],\n    [[\"turn down\",\"turn up\",\"wait\",\"turn down\"], \"cold\"],\n    [[\"turn down\",\"turn up\",\"turn up\",\"turn up\"], \"cold\"],\n    [[\"wait\",\"turn down\",\"turn up\",\"turn down\"], \"cold\"]\n  ];\n  const pairs = [\n    \"turn up,turn up\",\n    \"turn up,turn down\",\n    \"turn up,wait\",\n    \"turn down,turn up\",\n    \"turn down,turn down\",\n    \"turn down,wait\",\n    \"wait,turn up\",\n    \"wait,turn down\",\n    \"wait,wait\"\n  ];\n  function stateKey(seq) {\n    const first = seq[0] || \"\";\n    const last = seq[seq.length - 1] || \"\";\n    const counts = {};\n    for (const p of pairs) counts[p] = 0;\n    for (let i = 0; i < seq.length - 1; i++) {\n      const p = seq[i] + \",\" + seq[i + 1];\n      counts[p] = (counts[p] || 0) + 1;\n    }\n    return `${first}|${last}|` + pairs.map(p => counts[p]).join(\",\");\n  }\n  const map = new Map();\n  for (const [seq, room] of obs) map.set(stateKey(seq), room);\n  const key = stateKey(actions);\n  if (map.has(key)) return { room: map.get(key) };\n  let du = 0, ud = 0;\n  for (let i = 0; i < actions.length - 1; i++) {\n    if (actions[i] === \"turn down\" && actions[i + 1] === \"turn up\") du++;\n    if (actions[i] === \"turn up\" && actions[i + 1] === \"turn down\") ud++;\n  }\n  return { room: du > ud ? \"warm\" : \"cold\" };\n}",
+       "comment": "Explanation: The heater tracks first action, last action, and counts of all consecutive action pairs; observed pair-count states map to room states, and unobserved states default to warm when \"turn down, turn up\" pairs outnumber \"turn up, turn down\" pairs.",
+       "problem": null,
+       "fits": true,
+       "true_everywhere": false
+      }
+     ],
+     "fitting": 4,
+     "asked": [
+      "turn down>turn down>turn up>wait",
+      "wait>wait>turn up>wait",
+      "turn down>turn up>turn down>turn up"
+     ],
+     "text": "```javascript\n// Explanation: The heater hides an exact memory of the whole action history; observed histories map to room states, while unobserved histories default to warm for even length.\nfunction visible(actions) {\n  const obs = [\n    [[\"turn down\",\"turn up\",\"turn up\",\"turn down\"], \"warm\"],\n    [[\"turn down\",\"turn up\",\"turn up\",\"wait\"], \"warm\"],\n    [[\"wait\",\"wait\",\"turn down\"], \"cold\"],\n    [[\"turn down\",\"turn up\",\"turn down\",\"turn down\"], \"cold\"],\n    [[\"turn up\",\"turn down\",\"turn up\"], \"warm\"],\n    [[\"turn up\",\"turn up\",\"turn up\",\"wait\"], \"cold\"],\n    [[\"turn up\",\"turn up\",\"turn down\",\"turn up\"], \"cold\"],\n    [[\"wait\",\"wait\",\"turn up\",\"turn up\"], \"cold\"],\n    [[\"turn up\",\"wait\",\"turn up\"], \"cold\"],\n    [[\"turn up\",\"turn up\",\"turn down\",\"turn down\"], \"cold\"],\n    [[\"turn down\",\"turn down\",\"turn down\",\"turn up\"], \"warm\"],\n    [[\"turn up\",\"turn up\",\"turn up\"], \"cold\"],\n    [[\"wait\",\"turn down\",\"turn up\"], \"warm\"],\n    [[\"wait\",\"turn up\",\"turn up\",\"wait\"], \"cold\"],\n    [[\"turn down\",\"turn up\",\"wait\",\"turn down\"], \"cold\"],\n    [[\"turn down\",\"turn up\",\"turn up\",\"turn up\"], \"cold\"],\n    [[\"wait\",\"turn down\",\"turn up\",\"turn down\"], \"cold\"]\n  ];\n  const map = new Map();\n  for (const [seq, room] of obs) map.set(seq.join(\"|\"), room);\n  const key = actions.join(\"|\");\n  if (map.has(key)) return { room: map.get(key) };\n  return { room: actions.length % 2 === 0 ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Explanation: The heater only remembers the last four actions; observed last-four windows map to room states, and unobserved windows default to warm if the oldest remembered action was \"turn up\".\nfunction visible(actions) {\n  const obs = [\n    [[\"turn down\",\"turn up\",\"turn up\",\"turn down\"], \"warm\"],\n    [[\"turn down\",\"turn up\",\"turn up\",\"wait\"], \"warm\"],\n    [[\"wait\",\"wait\",\"turn down\"], \"cold\"],\n    [[\"turn down\",\"turn up\",\"turn down\",\"turn down\"], \"cold\"],\n    [[\"turn up\",\"turn down\",\"turn up\"], \"warm\"],\n    [[\"turn up\",\"turn up\",\"turn up\",\"wait\"], \"cold\"],\n    [[\"turn up\",\"turn up\",\"turn down\",\"turn up\"], \"cold\"],\n    [[\"wait\",\"wait\",\"turn up\",\"turn up\"], \"cold\"],\n    [[\"turn up\",\"wait\",\"turn up\"], \"cold\"],\n    [[\"turn up\",\"turn up\",\"turn down\",\"turn down\"], \"cold\"],\n    [[\"turn down\",\"turn down\",\"turn down\",\"turn up\"], \"warm\"],\n    [[\"turn up\",\"turn up\",\"turn up\"], \"cold\"],\n    [[\"wait\",\"turn down\",\"turn up\"], \"warm\"],\n    [[\"wait\",\"turn up\",\"turn up\",\"wait\"], \"cold\"],\n    [[\"turn down\",\"turn up\",\"wait\",\"turn down\"], \"cold\"],\n    [[\"turn down\",\"turn up\",\"turn up\",\"turn up\"], \"cold\"],\n    [[\"wait\",\"turn down\",\"turn up\",\"turn down\"], \"cold\"]\n  ];\n  const map = new Map();\n  for (const [seq, room] of obs) map.set(seq.slice(-4).join(\"|\"), room);\n  const key = actions.slice(-4).join(\"|\");\n  if (map.has(key)) return { room: map.get(key) };\n  const last4 = actions.slice(-4);\n  return { room: last4[0] === \"turn up\" ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Explanation: The heater tracks only length, first action, last action, and counts of up/down moves; observed summary states map to room states, and unobserved states default to warm when ups outnumber downs.\nfunction visible(actions) {\n  const obs = [\n    [[\"turn down\",\"turn up\",\"turn up\",\"turn down\"], \"warm\"],\n    [[\"turn down\",\"turn up\",\"turn up\",\"wait\"], \"warm\"],\n    [[\"wait\",\"wait\",\"turn down\"], \"cold\"],\n    [[\"turn down\",\"turn up\",\"turn down\",\"turn down\"], \"cold\"],\n    [[\"turn up\",\"turn down\",\"turn up\"], \"warm\"],\n    [[\"turn up\",\"turn up\",\"turn up\",\"wait\"], \"cold\"],\n    [[\"turn up\",\"turn up\",\"turn down\",\"turn up\"], \"cold\"],\n    [[\"wait\",\"wait\",\"turn up\",\"turn up\"], \"cold\"],\n    [[\"turn up\",\"wait\",\"turn up\"], \"cold\"],\n    [[\"turn up\",\"turn up\",\"turn down\",\"turn down\"], \"cold\"],\n    [[\"turn down\",\"turn down\",\"turn down\",\"turn up\"], \"warm\"],\n    [[\"turn up\",\"turn up\",\"turn up\"], \"cold\"],\n    [[\"wait\",\"turn down\",\"turn up\"], \"warm\"],\n    [[\"wait\",\"turn up\",\"turn up\",\"wait\"], \"cold\"],\n    [[\"turn down\",\"turn up\",\"wait\",\"turn down\"], \"cold\"],\n    [[\"turn down\",\"turn up\",\"turn up\",\"turn up\"], \"cold\"],\n    [[\"wait\",\"turn down\",\"turn up\",\"turn down\"], \"cold\"]\n  ];\n  function stateKey(seq) {\n    const length = seq.length;\n    const first = seq[0] || \"\";\n    const last = seq[seq.length - 1] || \"\";\n    let ups = 0, downs = 0;\n    for (const a of seq) {\n      if (a === \"turn up\") ups++;\n      else if (a === \"turn down\") downs++;\n    }\n    return `${length}|${first}|${last}|${ups}|${downs}`;\n  }\n  const map = new Map();\n  for (const [seq, room] of obs) map.set(stateKey(seq), room);\n  const key = stateKey(actions);\n  if (map.has(key)) return { room: map.get(key) };\n  let ups = 0, downs = 0;\n  for (const a of actions) {\n    if (a === \"turn up\") ups++;\n    else if (a === \"turn down\") downs++;\n  }\n  return { room: ups > downs ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Explanation: The heater tracks first action, last action, and counts of all consecutive action pairs; observed pair-count states map to room states, and unobserved states default to warm when \"turn down, turn up\" pairs outnumber \"turn up, turn down\" pairs.\nfunction visible(actions) {\n  const obs = [\n    [[\"turn down\",\"turn up\",\"turn up\",\"turn down\"], \"warm\"],\n    [[\"turn down\",\"turn up\",\"turn up\",\"wait\"], \"warm\"],\n    [[\"wait\",\"wait\",\"turn down\"], \"cold\"],\n    [[\"turn down\",\"turn up\",\"turn down\",\"turn down\"], \"cold\"],\n    [[\"turn up\",\"turn down\",\"turn up\"], \"warm\"],\n    [[\"turn up\",\"turn up\",\"turn up\",\"wait\"], \"cold\"],\n    [[\"turn up\",\"turn up\",\"turn down\",\"turn up\"], \"cold\"],\n    [[\"wait\",\"wait\",\"turn up\",\"turn up\"], \"cold\"],\n    [[\"turn up\",\"wait\",\"turn up\"], \"cold\"],\n    [[\"turn up\",\"turn up\",\"turn down\",\"turn down\"], \"cold\"],\n    [[\"turn down\",\"turn down\",\"turn down\",\"turn up\"], \"warm\"],\n    [[\"turn up\",\"turn up\",\"turn up\"], \"cold\"],\n    [[\"wait\",\"turn down\",\"turn up\"], \"warm\"],\n    [[\"wait\",\"turn up\",\"turn up\",\"wait\"], \"cold\"],\n    [[\"turn down\",\"turn up\",\"wait\",\"turn down\"], \"cold\"],\n    [[\"turn down\",\"turn up\",\"turn up\",\"turn up\"], \"cold\"],\n    [[\"wait\",\"turn down\",\"turn up\",\"turn down\"], \"cold\"]\n  ];\n  const pairs = [\n    \"turn up,turn up\",\n    \"turn up,turn down\",\n    \"turn up,wait\",\n    \"turn down,turn up\",\n    \"turn down,turn down\",\n    \"turn down,wait\",\n    \"wait,turn up\",\n    \"wait,turn down\",\n    \"wait,wait\"\n  ];\n  function stateKey(seq) {\n    const first = seq[0] || \"\";\n    const last = seq[seq.length - 1] || \"\";\n    const counts = {};\n    for (const p of pairs) counts[p] = 0;\n    for (let i = 0; i < seq.length - 1; i++) {\n      const p = seq[i] + \",\" + seq[i + 1];\n      counts[p] = (counts[p] || 0) + 1;\n    }\n    return `${first}|${last}|` + pairs.map(p => counts[p]).join(\",\");\n  }\n  const map = new Map();\n  for (const [seq, room] of obs) map.set(stateKey(seq), room);\n  const key = stateKey(actions);\n  if (map.has(key)) return { room: map.get(key) };\n  let du = 0, ud = 0;\n  for (let i = 0; i < actions.length - 1; i++) {\n    if (actions[i] === \"turn down\" && actions[i + 1] === \"turn up\") du++;\n    if (actions[i] === \"turn up\" && actions[i + 1] === \"turn down\") ud++;\n  }\n  return { room: du > ud ? \"warm\" : \"cold\" };\n}\n```"
+    }
+   ]
+  }
+ }
+}
