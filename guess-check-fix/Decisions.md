@@ -94,6 +94,9 @@ Every decision that shapes the project. The owner's decisions are quoted exactly
 **O30. Keep the surviving rivals from round to round.** (Log 47.)
 > "Ok do it."
 
+**O31. Let the world be asked where survivors disagree at any length up to six actions.** (Log 48.)
+> "Do it."
+
 ## Claude's routine choices
 
 **C1. A new small language of things and rules, rather than extending Strata.** Strata refused cause-and-effect sentences (log 01), its instructions drop causes, and its checker answers "does this follow?" while the hard-to-vary tests need "what happens when something is changed?".

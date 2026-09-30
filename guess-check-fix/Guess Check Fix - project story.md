@@ -8,6 +8,7 @@ The idea in one line: an AI guesses, an ordinary program checks, and the fixing 
 
 ## Where things stand
 
+- **Keeping surviving rivals has failed twice** (logs 47 and 48): tested too little, poor rivals survive; tested hard at six actions, nearly all die. A fresh DeepSeek shown only the facts did best both times. What the world is asked matters more than what is kept, and asking where the rivals split most misses the short situations that show a deep grudge. See "48 Ask at any length.md".
 - **Keeping rivals that survive did not help by itself** (log 47): a rival survives by fitting the few short situations the world was asked about, so the survivors can be the old habit or rules that break on longer sequences; DeepSeek, shown them, mostly copied one. The questions the world is asked are what moved the explanations, again. See "47 Keep the survivors.md".
 - **Rival explanations choose better questions** (log 46): when DeepSeek writes four rival rules as programs and the program asks the world where they disagree, the telling situations get asked (4 of 6 runs, against 1 of 12), and DeepSeek builds new kinds of explanation (5 of 6), the nearest yet to the true grudge (105 of 106). But none is the true grudge, and a rival that fitted everything was thrown away: the system has nothing that keeps survivors. See "46 Rivals choose.md".
 - **Telling DeepSeek its mistakes does not make it cling to its first answer** (logs 44 and 45): on the grudge, told "you predicted X; the world says Y" in the same conversation, it dropped its running score in 5 of 6 runs, more often than a fresh DeepSeek given only the facts (3 of 6). What moved it was the world contradicting a prediction, in either arm. No run found the true grudge; the best, the unresolved-insult count, is wrong on 2 of 120 sequences. Log 44 first seemed to show the opposite, from two cut-off replies and my misreading of the true rule. See "45 Grudge again.md" and "26 Attack surface.md".
@@ -456,9 +457,18 @@ Written up in "46 Rivals choose.md".
 - All 13 tests passed first time. Cost: $0.30 ($12.35 to $12.05).
 Written up in "47 Keep the survivors.md".
 
+**48. Ask at any length.** The owner asked what DeepSeek is best at and where it failed (answered in the chat: best at guesses that fit, building parts when the language allows, changing its mind when the world contradicts it, and imagining rivals when asked; it fails by reaching for the same habit, not finding mistakes in what it was not shown, not asking when it may stop, ignoring instructions, thinking itself out of an answer, and deferring to what it is handed), then said "Do it" to log 47's next step (Decisions O31). Log 47 again, with the world allowed to answer situations of up to six actions where the standing rivals disagreed. To do that, log 47's program gained a setting for question length, four by default, so log 47's own tests pass unchanged. Plan and six conjectures committed first (files 48; `runs/48 ask at any length`).
+- **Keeping the survivors did worse:** long sequences right, facts only 5,527, shown the survivors 5,028, vote 3,259 (of 5,832). The plan named this as counting against the idea.
+- **The long questions killed the rivals:** 38 of 54 questions were six actions long; two runs ended with no survivor, the rest with one or two, often strange ones.
+- **The facts helped the facts-only answer** on long sequences (5,527 against log 47's 5,282), but the telling short sequences were asked in 0 of 6 runs (log 47: 4 of 6), since the rivals always split most on long ones. No answer was the true grudge.
+- **Conjectures:** 1 and 2 not ruled out; 3 to 6 ruled out.
+- **Failures:** in the two runs with no survivors, the "shown the survivors" DeepSeek was told "These rival explanations fit every observation above:" followed by an empty list; my tests never tried a run with none. Records left as they are. The repository checks were slow today (minutes instead of under one) but passed.
+- Cost: $0.45 ($12.05 to $11.60).
+Written up in "48 Ask at any length.md".
+
 ## Next step
 
-Let the world be asked where the survivors disagree at any length up to six actions, not only up to four, so a survivor that falls apart on longer sequences can be refuted before the end. Same set-up as log 47 otherwise, planned and committed before running; about $0.40.
+Take the grudge findings to a second device before trusting them. Build a new made-up device whose right explanation needs a hidden part that common talk gets wrong, check offline that the obvious explanation fits the first observations, then run bare DeepSeek against the best set-up so far (rivals choose the questions, the final DeepSeek sees the facts only, as in log 46), with the plan committed first. About $0.50. Every result since log 44 is about one device.
 
 ## Traps
 

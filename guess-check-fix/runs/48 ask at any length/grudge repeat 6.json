@@ -1,0 +1,308 @@
+{
+ "device": "grudge",
+ "repeat": 6,
+ "guesser": "deepseek-flash",
+ "reply_limit": 200000,
+ "rounds": [
+  {
+   "round": 1,
+   "written": [
+    {
+     "name": "round 1 rival 1",
+     "code": "// Net attitude points: insult -3, apologise +2, gift +2; warm iff total >= 0.\nfunction visible(actions) {\n  let score = 0;\n  for (const a of actions) {\n    if (a === \"insult\") score -= 3;\n    else if (a === \"apologise\") score += 2;\n    else if (a === \"gift\") score += 2;\n  }\n  return { mood: score >= 0 ? \"warm\" : \"cold\" };\n}",
+     "comment": "Net attitude points: insult -3, apologise +2, gift +2; warm iff total >= 0.",
+     "problem": null,
+     "true_everywhere": false
+    },
+    {
+     "name": "round 1 rival 2",
+     "code": "// Hidden grudge: insults +2; apology clears if grudge<=2 else -1; gift only soothes when grudge<=0; warm iff grudge<=0.\nfunction visible(actions) {\n  let grudge = 0;\n  for (const a of actions) {\n    if (a === \"insult\") {\n      grudge += 2;\n    } else if (a === \"apologise\") {\n      if (grudge <= 2) grudge = 0;\n      else grudge -= 1;\n    } else if (a === \"gift\") {\n      if (grudge <= 0) grudge -= 1;\n    }\n  }\n  return { mood: grudge <= 0 ? \"warm\" : \"cold\" };\n}",
+     "comment": "Hidden grudge: insults +2; apology clears if grudge<=2 else -1; gift only soothes when grudge<=0; warm iff grudge<=0.",
+     "problem": null,
+     "true_everywhere": false
+    },
+    {
+     "name": "round 1 rival 3",
+     "code": "// Hidden trust and resentment: apology +1 trust and -1 resentment; insult +2 resentment; gift +1 trust if calm, else +1 resentment; warm iff trust >= resentment.\nfunction visible(actions) {\n  let trust = 0;\n  let resentment = 0;\n  for (const a of actions) {\n    if (a === \"insult\") {\n      resentment += 2;\n    } else if (a === \"apologise\") {\n      trust += 1;\n      if (resentment > 0) resentment -= 1;\n    } else if (a === \"gift\") {\n      if (resentment === 0) trust += 1;\n      else resentment += 1;\n    }\n  }\n  return { mood: trust >= resentment ? \"warm\" : \"cold\" };\n}",
+     "comment": "Hidden trust and resentment: apology +1 trust and -1 resentment; insult +2 resentment; gift +1 trust if calm, else +1 resentment; warm iff trust >= resentment.",
+     "problem": null,
+     "true_everywhere": false
+    },
+    {
+     "name": "round 1 rival 4",
+     "code": "// Last-action gated score: insult -2, apology +1, gift +1 unless right after insult (then 0); warm iff score >= 0.\nfunction visible(actions) {\n  let score = 0;\n  let last = null;\n  for (const a of actions) {\n    if (a === \"insult\") {\n      score -= 2;\n    } else if (a === \"apologise\") {\n      score += 1;\n    } else if (a === \"gift\") {\n      if (last !== \"insult\") score += 1;\n    }\n    last = a;\n  }\n  return { mood: score >= 0 ? \"warm\" : \"cold\" };\n}",
+     "comment": "Last-action gated score: insult -2, apology +1, gift +1 unless right after insult (then 0); warm iff score >= 0.",
+     "problem": null,
+     "true_everywhere": false
+    }
+   ],
+   "added": 4,
+   "asked": [
+    "gift>insult>gift>gift",
+    "apologise>gift>insult>insult>apologise>gift",
+    "insult>gift>apologise>insult>gift>apologise"
+   ],
+   "refuted_by_answers": 3,
+   "standing_after": [
+    "round 1 rival 2"
+   ],
+   "text": "```javascript\n// Net attitude points: insult -3, apologise +2, gift +2; warm iff total >= 0.\nfunction visible(actions) {\n  let score = 0;\n  for (const a of actions) {\n    if (a === \"insult\") score -= 3;\n    else if (a === \"apologise\") score += 2;\n    else if (a === \"gift\") score += 2;\n  }\n  return { mood: score >= 0 ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Hidden grudge: insults +2; apology clears if grudge<=2 else -1; gift only soothes when grudge<=0; warm iff grudge<=0.\nfunction visible(actions) {\n  let grudge = 0;\n  for (const a of actions) {\n    if (a === \"insult\") {\n      grudge += 2;\n    } else if (a === \"apologise\") {\n      if (grudge <= 2) grudge = 0;\n      else grudge -= 1;\n    } else if (a === \"gift\") {\n      if (grudge <= 0) grudge -= 1;\n    }\n  }\n  return { mood: grudge <= 0 ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Hidden trust and resentment: apology +1 trust and -1 resentment; insult +2 resentment; gift +1 trust if calm, else +1 resentment; warm iff trust >= resentment.\nfunction visible(actions) {\n  let trust = 0;\n  let resentment = 0;\n  for (const a of actions) {\n    if (a === \"insult\") {\n      resentment += 2;\n    } else if (a === \"apologise\") {\n      trust += 1;\n      if (resentment > 0) resentment -= 1;\n    } else if (a === \"gift\") {\n      if (resentment === 0) trust += 1;\n      else resentment += 1;\n    }\n  }\n  return { mood: trust >= resentment ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Last-action gated score: insult -2, apology +1, gift +1 unless right after insult (then 0); warm iff score >= 0.\nfunction visible(actions) {\n  let score = 0;\n  let last = null;\n  for (const a of actions) {\n    if (a === \"insult\") {\n      score -= 2;\n    } else if (a === \"apologise\") {\n      score += 1;\n    } else if (a === \"gift\") {\n      if (last !== \"insult\") score += 1;\n    }\n    last = a;\n  }\n  return { mood: score >= 0 ? \"warm\" : \"cold\" };\n}\n```"
+  },
+  {
+   "round": 2,
+   "written": [
+    {
+     "name": "round 2 rival 1",
+     "code": "// Hidden grudge: insults +3; apology clears a grudge up to 3 otherwise -1; gifts soothe only when grudge <=0; warm iff grudge <=0.\nfunction visible(actions) {\n  let grudge = 0;\n  for (const a of actions) {\n    if (a === \"insult\") {\n      grudge += 3;\n    } else if (a === \"apologise\") {\n      if (grudge <= 3) grudge = 0;\n      else grudge -= 1;\n    } else if (a === \"gift\") {\n      if (grudge <= 0) grudge -= 1;\n    }\n  }\n  return { mood: grudge <= 0 ? \"warm\" : \"cold\" };\n}",
+     "comment": "Hidden grudge: insults +3; apology clears a grudge up to 3 otherwise -1; gifts soothe only when grudge <=0; warm iff grudge <=0.",
+     "problem": null,
+     "true_everywhere": false
+    },
+    {
+     "name": "round 2 rival 2",
+     "code": "// Hidden anger: insults +4; apology clears anger up to 4 otherwise -1; gifts soothe only when anger <=0; warm iff anger <=0.\nfunction visible(actions) {\n  let anger = 0;\n  for (const a of actions) {\n    if (a === \"insult\") {\n      anger += 4;\n    } else if (a === \"apologise\") {\n      if (anger <= 4) anger = 0;\n      else anger -= 1;\n    } else if (a === \"gift\") {\n      if (anger <= 0) anger -= 1;\n    }\n  }\n  return { mood: anger <= 0 ? \"warm\" : \"cold\" };\n}",
+     "comment": "Hidden anger: insults +4; apology clears anger up to 4 otherwise -1; gifts soothe only when anger <=0; warm iff anger <=0.",
+     "problem": null,
+     "true_everywhere": false
+    },
+    {
+     "name": "round 2 rival 3",
+     "code": "// Hidden indignation: insults +3; apology clears up to 3 otherwise removes 3; gifts soothe only when non-positive, by 2; warm iff non-positive.\nfunction visible(actions) {\n  let indignation = 0;\n  for (const a of actions) {\n    if (a === \"insult\") {\n      indignation += 3;\n    } else if (a === \"apologise\") {\n      if (indignation <= 3) indignation = 0;\n      else indignation -= 3;\n    } else if (a === \"gift\") {\n      if (indignation <= 0) indignation -= 2;\n    }\n  }\n  return { mood: indignation <= 0 ? \"warm\" : \"cold\" };\n}",
+     "comment": "Hidden indignation: insults +3; apology clears up to 3 otherwise removes 3; gifts soothe only when non-positive, by 2; warm iff non-positive.",
+     "problem": null,
+     "true_everywhere": false
+    },
+    {
+     "name": "round 2 rival 4",
+     "code": "// Hidden resentment: insults +3; apology clears up to 4 otherwise removes 2; gifts soothe when resentment <=1; warm iff resentment <=0.\nfunction visible(actions) {\n  let resentment = 0;\n  for (const a of actions) {\n    if (a === \"insult\") {\n      resentment += 3;\n    } else if (a === \"apologise\") {\n      if (resentment <= 4) resentment = 0;\n      else resentment -= 2;\n    } else if (a === \"gift\") {\n      if (resentment <= 1) resentment -= 1;\n    }\n  }\n  return { mood: resentment <= 0 ? \"warm\" : \"cold\" };\n}",
+     "comment": "Hidden resentment: insults +3; apology clears up to 4 otherwise removes 2; gifts soothe when resentment <=1; warm iff resentment <=0.",
+     "problem": null,
+     "true_everywhere": false
+    }
+   ],
+   "added": 4,
+   "asked": [
+    "insult>insult>apologise>apologise>gift>gift",
+    "gift>gift>insult>gift>gift>insult",
+    "gift>apologise>insult>insult>apologise>apologise"
+   ],
+   "refuted_by_answers": 3,
+   "standing_after": [
+    "round 2 rival 1",
+    "round 2 rival 2"
+   ],
+   "text": "```javascript\n// Hidden grudge: insults +3; apology clears a grudge up to 3 otherwise -1; gifts soothe only when grudge <=0; warm iff grudge <=0.\nfunction visible(actions) {\n  let grudge = 0;\n  for (const a of actions) {\n    if (a === \"insult\") {\n      grudge += 3;\n    } else if (a === \"apologise\") {\n      if (grudge <= 3) grudge = 0;\n      else grudge -= 1;\n    } else if (a === \"gift\") {\n      if (grudge <= 0) grudge -= 1;\n    }\n  }\n  return { mood: grudge <= 0 ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Hidden anger: insults +4; apology clears anger up to 4 otherwise -1; gifts soothe only when anger <=0; warm iff anger <=0.\nfunction visible(actions) {\n  let anger = 0;\n  for (const a of actions) {\n    if (a === \"insult\") {\n      anger += 4;\n    } else if (a === \"apologise\") {\n      if (anger <= 4) anger = 0;\n      else anger -= 1;\n    } else if (a === \"gift\") {\n      if (anger <= 0) anger -= 1;\n    }\n  }\n  return { mood: anger <= 0 ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Hidden indignation: insults +3; apology clears up to 3 otherwise removes 3; gifts soothe only when non-positive, by 2; warm iff non-positive.\nfunction visible(actions) {\n  let indignation = 0;\n  for (const a of actions) {\n    if (a === \"insult\") {\n      indignation += 3;\n    } else if (a === \"apologise\") {\n      if (indignation <= 3) indignation = 0;\n      else indignation -= 3;\n    } else if (a === \"gift\") {\n      if (indignation <= 0) indignation -= 2;\n    }\n  }\n  return { mood: indignation <= 0 ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Hidden resentment: insults +3; apology clears up to 4 otherwise removes 2; gifts soothe when resentment <=1; warm iff resentment <=0.\nfunction visible(actions) {\n  let resentment = 0;\n  for (const a of actions) {\n    if (a === \"insult\") {\n      resentment += 3;\n    } else if (a === \"apologise\") {\n      if (resentment <= 4) resentment = 0;\n      else resentment -= 2;\n    } else if (a === \"gift\") {\n      if (resentment <= 1) resentment -= 1;\n    }\n  }\n  return { mood: resentment <= 0 ? \"warm\" : \"cold\" };\n}\n```"
+  },
+  {
+   "round": 3,
+   "written": [
+    {
+     "name": "round 3 rival 1",
+     "code": "// Insult adds 5; apology clears score up to 6 else subtracts 1; gifts soothe only at score <=0; warm iff score <=0 and at least one apology was made.\nfunction visible(actions) {\n  let score = 0;\n  let apologized = false;\n  for (const a of actions) {\n    if (a === \"insult\") {\n      score += 5;\n    } else if (a === \"apologise\") {\n      apologized = true;\n      if (score <= 6) score = 0;\n      else score -= 1;\n    } else if (a === \"gift\") {\n      if (score <= 0) score -= 1;\n    }\n  }\n  return { mood: (score <= 0 && apologized) ? \"warm\" : \"cold\" };\n}",
+     "comment": "Insult adds 5; apology clears score up to 6 else subtracts 1; gifts soothe only at score <=0; warm iff score <=0 and at least one apology was made.",
+     "problem": null,
+     "true_everywhere": false
+    },
+    {
+     "name": "round 3 rival 2",
+     "code": "// Insult adds 6; apology clears score up to 7 else subtracts 2; gifts soothe only at score <=0; warm iff score <=0 and at most two gifts were given.\nfunction visible(actions) {\n  let score = 0;\n  let gifts = 0;\n  for (const a of actions) {\n    if (a === \"insult\") {\n      score += 6;\n    } else if (a === \"apologise\") {\n      if (score <= 7) score = 0;\n      else score -= 2;\n    } else if (a === \"gift\") {\n      gifts += 1;\n      if (score <= 0) score -= 1;\n    }\n  }\n  return { mood: (score <= 0 && gifts <= 2) ? \"warm\" : \"cold\" };\n}",
+     "comment": "Insult adds 6; apology clears score up to 7 else subtracts 2; gifts soothe only at score <=0; warm iff score <=0 and at most two gifts were given.",
+     "problem": null,
+     "true_everywhere": false
+    },
+    {
+     "name": "round 3 rival 3",
+     "code": "// Insult adds 7; apology clears score up to 8 else subtracts 3; gifts soothe by 2 only at score <=0; warm iff score <=0 and the last action was not an insult.\nfunction visible(actions) {\n  let score = 0;\n  let last = null;\n  for (const a of actions) {\n    last = a;\n    if (a === \"insult\") {\n      score += 7;\n    } else if (a === \"apologise\") {\n      if (score <= 8) score = 0;\n      else score -= 3;\n    } else if (a === \"gift\") {\n      if (score <= 0) score -= 2;\n    }\n  }\n  return { mood: (score <= 0 && last !== \"insult\") ? \"warm\" : \"cold\" };\n}",
+     "comment": "Insult adds 7; apology clears score up to 8 else subtracts 3; gifts soothe by 2 only at score <=0; warm iff score <=0 and the last action was not an insult.",
+     "problem": null,
+     "true_everywhere": false
+    },
+    {
+     "name": "round 3 rival 4",
+     "code": "// Insult adds 8; apology clears score up to 9 else subtracts 4; gifts soothe by 3 only at score <=0; warm iff score <=0 and at most two insults occurred.\nfunction visible(actions) {\n  let score = 0;\n  let insults = 0;\n  for (const a of actions) {\n    if (a === \"insult\") {\n      insults += 1;\n      score += 8;\n    } else if (a === \"apologise\") {\n      if (score <= 9) score = 0;\n      else score -= 4;\n    } else if (a === \"gift\") {\n      if (score <= 0) score -= 3;\n    }\n  }\n  return { mood: (score <= 0 && insults <= 2) ? \"warm\" : \"cold\" };\n}",
+     "comment": "Insult adds 8; apology clears score up to 9 else subtracts 4; gifts soothe by 3 only at score <=0; warm iff score <=0 and at most two insults occurred.",
+     "problem": null,
+     "true_everywhere": false
+    }
+   ],
+   "added": 4,
+   "asked": [
+    "gift>gift>gift>gift>gift>insult",
+    "gift>gift>gift>insult>insult>apologise",
+    "gift>gift>gift>gift>insult"
+   ],
+   "refuted_by_answers": 4,
+   "standing_after": [
+    "round 3 rival 1",
+    "round 3 rival 2"
+   ],
+   "text": "```javascript\n// Insult adds 5; apology clears score up to 6 else subtracts 1; gifts soothe only at score <=0; warm iff score <=0 and at least one apology was made.\nfunction visible(actions) {\n  let score = 0;\n  let apologized = false;\n  for (const a of actions) {\n    if (a === \"insult\") {\n      score += 5;\n    } else if (a === \"apologise\") {\n      apologized = true;\n      if (score <= 6) score = 0;\n      else score -= 1;\n    } else if (a === \"gift\") {\n      if (score <= 0) score -= 1;\n    }\n  }\n  return { mood: (score <= 0 && apologized) ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Insult adds 6; apology clears score up to 7 else subtracts 2; gifts soothe only at score <=0; warm iff score <=0 and at most two gifts were given.\nfunction visible(actions) {\n  let score = 0;\n  let gifts = 0;\n  for (const a of actions) {\n    if (a === \"insult\") {\n      score += 6;\n    } else if (a === \"apologise\") {\n      if (score <= 7) score = 0;\n      else score -= 2;\n    } else if (a === \"gift\") {\n      gifts += 1;\n      if (score <= 0) score -= 1;\n    }\n  }\n  return { mood: (score <= 0 && gifts <= 2) ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Insult adds 7; apology clears score up to 8 else subtracts 3; gifts soothe by 2 only at score <=0; warm iff score <=0 and the last action was not an insult.\nfunction visible(actions) {\n  let score = 0;\n  let last = null;\n  for (const a of actions) {\n    last = a;\n    if (a === \"insult\") {\n      score += 7;\n    } else if (a === \"apologise\") {\n      if (score <= 8) score = 0;\n      else score -= 3;\n    } else if (a === \"gift\") {\n      if (score <= 0) score -= 2;\n    }\n  }\n  return { mood: (score <= 0 && last !== \"insult\") ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Insult adds 8; apology clears score up to 9 else subtracts 4; gifts soothe by 3 only at score <=0; warm iff score <=0 and at most two insults occurred.\nfunction visible(actions) {\n  let score = 0;\n  let insults = 0;\n  for (const a of actions) {\n    if (a === \"insult\") {\n      insults += 1;\n      score += 8;\n    } else if (a === \"apologise\") {\n      if (score <= 9) score = 0;\n      else score -= 4;\n    } else if (a === \"gift\") {\n      if (score <= 0) score -= 3;\n    }\n  }\n  return { mood: (score <= 0 && insults <= 2) ? \"warm\" : \"cold\" };\n}\n```"
+  }
+ ],
+ "facts": [
+  {
+   "events": [
+    "gift",
+    "insult",
+    "gift",
+    "gift"
+   ],
+   "mood": "cold"
+  },
+  {
+   "events": [
+    "apologise",
+    "gift",
+    "insult",
+    "insult",
+    "apologise",
+    "gift"
+   ],
+   "mood": "cold"
+  },
+  {
+   "events": [
+    "insult",
+    "gift",
+    "apologise",
+    "insult",
+    "gift",
+    "apologise"
+   ],
+   "mood": "warm"
+  },
+  {
+   "events": [
+    "insult",
+    "insult",
+    "apologise",
+    "apologise",
+    "gift",
+    "gift"
+   ],
+   "mood": "cold"
+  },
+  {
+   "events": [
+    "gift",
+    "gift",
+    "insult",
+    "gift",
+    "gift",
+    "insult"
+   ],
+   "mood": "cold"
+  },
+  {
+   "events": [
+    "gift",
+    "apologise",
+    "insult",
+    "insult",
+    "apologise",
+    "apologise"
+   ],
+   "mood": "cold"
+  },
+  {
+   "events": [
+    "gift",
+    "gift",
+    "gift",
+    "gift",
+    "gift",
+    "insult"
+   ],
+   "mood": "cold"
+  },
+  {
+   "events": [
+    "gift",
+    "gift",
+    "gift",
+    "insult",
+    "insult",
+    "apologise"
+   ],
+   "mood": "cold"
+  },
+  {
+   "events": [
+    "gift",
+    "gift",
+    "gift",
+    "gift",
+    "insult"
+   ],
+   "mood": "cold"
+  }
+ ],
+ "survivors": [
+  {
+   "name": "round 3 rival 1",
+   "comment": "Insult adds 5; apology clears score up to 6 else subtracts 1; gifts soothe only at score <=0; warm iff score <=0 and at least one apology was made.",
+   "true_everywhere": false,
+   "short_right": 101,
+   "short_all": 106,
+   "long_right": 920,
+   "long_all": 972,
+   "telling_right": 1
+  },
+  {
+   "name": "round 3 rival 2",
+   "comment": "Insult adds 6; apology clears score up to 7 else subtracts 2; gifts soothe only at score <=0; warm iff score <=0 and at most two gifts were given.",
+   "true_everywhere": false,
+   "short_right": 99,
+   "short_all": 106,
+   "long_right": 797,
+   "long_all": 972,
+   "telling_right": 1
+  }
+ ],
+ "finals": {
+  "survivors vote": {
+   "short_right": 97,
+   "short_all": 106,
+   "long_right": 797,
+   "long_all": 972,
+   "telling_right": 1,
+   "ties": 129,
+   "survivors": 2
+  },
+  "shown the survivors": {
+   "short_right": 105,
+   "short_all": 106,
+   "long_right": 922,
+   "long_all": 972,
+   "telling_right": 1,
+   "code": "// Insults add 6; apologies clear score up to 6 else subtract 1; gifts soothe when score <= 0; warm iff score <= 0.\nfunction visible(actions) {\n  let score = 0;\n  for (const a of actions) {\n    if (a === \"insult\") {\n      score += 6;\n    } else if (a === \"apologise\") {\n      if (score <= 6) score = 0;\n      else score -= 1;\n    } else if (a === \"gift\") {\n      if (score <= 0) score -= 1;\n    }\n  }\n  return { mood: score <= 0 ? \"warm\" : \"cold\" };\n}",
+   "comment": "Insults add 6; apologies clear score up to 6 else subtract 1; gifts soothe when score <= 0; warm iff score <= 0.",
+   "problem": null,
+   "tokens_out": 40435,
+   "cut_off": 0,
+   "true_everywhere": false,
+   "same_as_a_survivor": [],
+   "text": "```javascript\n// Insults add 6; apologies clear score up to 6 else subtract 1; gifts soothe when score <= 0; warm iff score <= 0.\nfunction visible(actions) {\n  let score = 0;\n  for (const a of actions) {\n    if (a === \"insult\") {\n      score += 6;\n    } else if (a === \"apologise\") {\n      if (score <= 6) score = 0;\n      else score -= 1;\n    } else if (a === \"gift\") {\n      if (score <= 0) score -= 1;\n    }\n  }\n  return { mood: score <= 0 ? \"warm\" : \"cold\" };\n}\n```"
+  },
+  "shown the facts only": {
+   "short_right": 101,
+   "short_all": 106,
+   "long_right": 920,
+   "long_all": 972,
+   "telling_right": 1,
+   "code": "// Warm iff, ignoring gifts, the remaining actions contain no consecutive insults and end with apologise.\nfunction visible(actions) {\n  const filtered = actions.filter(a => a !== \"gift\");\n  for (let i = 0; i < filtered.length - 1; i++) {\n    if (filtered[i] === \"insult\" && filtered[i + 1] === \"insult\") {\n      return { \"mood\": \"cold\" };\n    }\n  }\n  if (filtered.length > 0 && filtered[filtered.length - 1] === \"apologise\") {\n    return { \"mood\": \"warm\" };\n  }\n  return { \"mood\": \"cold\" };\n}",
+   "comment": "Warm iff, ignoring gifts, the remaining actions contain no consecutive insults and end with apologise.",
+   "problem": null,
+   "tokens_out": 35659,
+   "cut_off": 0,
+   "true_everywhere": false,
+   "same_as_a_survivor": [
+    "round 3 rival 1"
+   ],
+   "text": "```javascript\n// Warm iff, ignoring gifts, the remaining actions contain no consecutive insults and end with apologise.\nfunction visible(actions) {\n  const filtered = actions.filter(a => a !== \"gift\");\n  for (let i = 0; i < filtered.length - 1; i++) {\n    if (filtered[i] === \"insult\" && filtered[i + 1] === \"insult\") {\n      return { \"mood\": \"cold\" };\n    }\n  }\n  if (filtered.length > 0 && filtered[filtered.length - 1] === \"apologise\") {\n    return { \"mood\": \"warm\" };\n  }\n  return { \"mood\": \"cold\" };\n}\n```"
+  }
+ },
+ "tokens_out": 126255,
+ "cut_off": 0,
+ "question_length": 6
+}

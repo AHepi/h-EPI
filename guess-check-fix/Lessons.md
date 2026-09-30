@@ -65,6 +65,7 @@ Failures in building and testing, and how each was fixed. Only cases where somet
 | 45 | My scramble of the rules for blind reading grouped them by arm, in blocks of six; the test checked only that no arm was named. Found on opening the key. | A blind list is tested for mixing too: no two neighbours sharing an arm more often than chance would allow. |
 | 46 | My check that the reading list names no arm also read the list's heading, which names the plan file "46 Plan - rivals choose.md". Found by the test failing before the run. | A check for leaked labels reads only the lines that carry the content. |
 | 47 | I let the world answer only up to four actions while grading up to six, so the survivors were never tested where they differ most. Seen in the results. | When grading reaches further than the questions can, say so in the plan and say what it means for the result. |
+| 48 | When no rival survived, the final prompt still said "These rival explanations fit every observation above:" before an empty list; no test tried a run with no survivors. Found reading the records after the run. | Every prompt built from a list is tested with the list empty. |
 | 31 | Round 1's comparison used one pair of plain runs as the measure of chance; that pair happened to overlap more than any other. | Round 2 repeated two texts word for word, which showed it. |
 
 ## Traps
