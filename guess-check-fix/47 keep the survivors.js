@@ -79,9 +79,10 @@ function predictions_of(code) {
 const comment_of = code => (code.match(/^\s*\/\/\s*(.*)$/m) || [])[1] || null;
 const fits_all = (said, known) => !!said && known.every(k => said[key_of(k.events)] === k.mood);
 
-function most_disputed(standing, known_keys, refused_keys, how_many, salt) {
+// pool: the situations the world may be asked about (up to four actions unless a run says otherwise, as log 48 does).
+function most_disputed(standing, known_keys, refused_keys, how_many, salt, pool = SHORT) {
   if (standing.length < 2) return [];
-  return SHORT.filter(s => !known_keys.has(key_of(s)) && !refused_keys.has(key_of(s)))
+  return pool.filter(s => !known_keys.has(key_of(s)) && !refused_keys.has(key_of(s)))
     .map(s => { const warm = standing.filter(r => r.said[key_of(s)] === 'warm').length; return { events: s, split: Math.min(warm, standing.length - warm), order: mix(`${salt}|${key_of(s)}`) }; })
     .filter(x => x.split > 0)
     .sort((a, b) => b.split - a.split || a.order - b.order)
@@ -120,7 +121,11 @@ async function final_function(D, observations, facts, survivors) {
   return { code, comment: code ? comment_of(code) : null, problem: p.problem || null, said: p.said || null, tokens_out: g.counts.tokens_out, cut_off: g.counts.cut_off, text };
 }
 
-async function run_repeat(D, repeat) {
+// options.question_length: the longest situation the world may be asked about (default 4, as in log 47);
+// options.label: the name used in the fixed scramble that breaks ties (default 'log 47').
+async function run_repeat(D, repeat, options = {}) {
+  const pool = options.question_length ? K.sequences(device.world.events, options.question_length) : SHORT;
+  const label = options.label || 'log 47';
   const { observations, test_keys } = G.setting();
   const observation_keys = new Set(observations.map(o => key_of(o.events)));
   const known = observations.map(o => ({ events: o.events, mood: o.expect[0].split(' is ')[1] }));
@@ -136,7 +141,7 @@ async function run_repeat(D, repeat) {
     const all_known = known.concat(facts);
     const added = fresh.filter(r => fits_all(r.said, all_known));
     standing = standing.concat(added);
-    const asked = most_disputed(standing, new Set(all_known.map(k => key_of(k.events))), test_keys, ASKED_PER_ROUND, `log 47 ${repeat} ${round}`);
+    const asked = most_disputed(standing, new Set(all_known.map(k => key_of(k.events))), test_keys, ASKED_PER_ROUND, `${label} ${repeat} ${round}`, pool);
     for (const events of asked) facts.push({ events, mood: truth(events) });
     const before = standing.length;
     standing = standing.filter(r => fits_all(r.said, known.concat(facts)));
