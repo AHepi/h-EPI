@@ -1,0 +1,578 @@
+{
+ "device": "gate",
+ "repeat": 3,
+ "guesser": "deepseek-flash",
+ "arms": {
+  "bare": {
+   "rule": "Track the parity of knocks and rings. Starting fresh, the gate is open exactly when the number of knocks is odd and the number of rings is even; otherwise it is shut.",
+   "graded": [
+    {
+     "test": "test 1",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 2",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 3",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 4",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 5",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 6",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 7",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 8",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 9",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 10",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 11",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 12",
+     "hard": false,
+     "right": true
+    }
+   ],
+   "tokens_out": 8557,
+   "cut_off": 0,
+   "calls": 1,
+   "world_answers": 0
+  },
+  "random answers": {
+   "rule": "The gate is open exactly when the number of knocks is odd and the number of rings is even; otherwise it is shut.",
+   "graded": [
+    {
+     "test": "test 1",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 2",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 3",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 4",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 5",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 6",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 7",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 8",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 9",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 10",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 11",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 12",
+     "hard": false,
+     "right": true
+    }
+   ],
+   "tokens_out": 7655,
+   "cut_off": 0,
+   "calls": 1,
+   "world_answers": 4
+  },
+  "attack, rebuild fresh": {
+   "rounds": [
+    {
+     "round": 1,
+     "rule": "The gate opens exactly when the number of knocks is odd and the number of rings is even; all other combinations leave it shut.",
+     "commitments": [
+      {
+       "events": [
+        "ring",
+        "knock",
+        "ring"
+       ],
+       "predict": "open",
+       "why": "If this were shut, it would contradict the rule because it has 1 knock (odd) and 2 rings (even), and it would show that openings cannot start with ring.",
+       "tested": false,
+       "why_not": "not available",
+       "risky": false
+      },
+      {
+       "events": [
+        "ring",
+        "ring",
+        "knock"
+       ],
+       "predict": "open",
+       "why": "If this were shut, it would contradict the rule because it has 1 knock (odd) and 2 rings (even), suggesting the first action or order matters instead of parity.",
+       "tested": false,
+       "why_not": "not available",
+       "risky": false
+      },
+      {
+       "events": [
+        "knock",
+        "knock",
+        "ring"
+       ],
+       "predict": "shut",
+       "why": "If this were open, it would contradict the rule because it has 2 knocks (even) and 1 ring (odd), so the required parity is not met.",
+       "tested": true,
+       "world_says": "gate is shut",
+       "held": true,
+       "risky": true
+      },
+      {
+       "events": [
+        "knock",
+        "ring",
+        "knock"
+       ],
+       "predict": "shut",
+       "why": "If this were open, it would contradict the rule because it has 2 knocks (even) and 1 ring (odd), so the required parity is not met.",
+       "tested": false,
+       "why_not": "not among the three riskiest",
+       "risky": true
+      },
+      {
+       "events": [
+        "knock",
+        "ring",
+        "ring",
+        "ring"
+       ],
+       "predict": "shut",
+       "why": "If this were open, it would contradict the rule because it has 1 knock (odd) but 3 rings (odd); the even-ring condition would be wrong.",
+       "tested": false,
+       "risky": true,
+       "why_not": "not among the three riskiest"
+      }
+     ],
+     "text": "{\"rule\": \"The gate opens exactly when the number of knocks is odd and the number of rings is even; all other combinations leave it shut.\", \"commitments\": [{\"events\": [\"ring\", \"knock\", \"ring\"], \"predict\": \"open\", \"why\": \"If this were shut, it would contradict the rule because it has 1 knock (odd) and 2 rings (even), and it would show that openings cannot start with ring.\"}, {\"events\": [\"ring\", \"ring\", \"knock\"], \"predict\": \"open\", \"why\": \"If this were shut, it would contradict the rule because it has 1 knock (odd) and 2 rings (even), suggesting the first action or order matters instead of parity.\"}, {\"events\": [\"knock\", \"knock\", \"ring\"], \"predict\": \"shut\", \"why\": \"If this were open, it would contradict the rule because it has 2 knocks (even) and 1 ring (odd), so the required parity is not met.\"}, {\"events\": [\"knock\", \"ring\", \"knock\"], \"predict\": \"shut\", \"why\": \"If this were open, it would contradict the rule because it has 2 knocks (even) and 1 ring (odd), so the required parity is not met.\"}, {\"events\": [\"knock\", \"ring\", \"ring\", \"ring\"], \"predict\": \"shut\", \"why\": \"If this were open, it would contradict the rule because it has 1 knock (odd) but 3 rings (odd); the even-ring condition would be wrong.\"}]}"
+    },
+    {
+     "round": 2,
+     "rule": "The gate opens exactly when the number of knocks made so far is odd and the number of rings made so far is even; otherwise it is shut. Equivalently, a knock toggles one hidden bit and a ring toggles another, with open meaning the knock bit is on and the ring bit is off.",
+     "commitments": [
+      {
+       "events": [
+        "ring",
+        "knock",
+        "ring"
+       ],
+       "predict": "open",
+       "why": "This has the same counts as observed 'knock, ring, ring' (one knock, two rings), which is open; if it came out shut, then order matters and the count-parity rule would be wrong.",
+       "tested": false,
+       "why_not": "not available",
+       "risky": false
+      },
+      {
+       "events": [
+        "ring",
+        "ring",
+        "knock"
+       ],
+       "predict": "open",
+       "why": "This also has one knock and two rings, the same open-producing counts as 'knock, ring, ring'; if it were shut, the rule cannot depend only on counts.",
+       "tested": false,
+       "why_not": "not available",
+       "risky": false
+      },
+      {
+       "events": [
+        "knock",
+        "ring",
+        "knock"
+       ],
+       "predict": "shut",
+       "why": "This has two knocks and one ring, the same shut-producing counts as observed 'knock, knock, ring'; if it were open, order or last-action effects would contradict the rule.",
+       "tested": false,
+       "why_not": "not available",
+       "risky": true
+      },
+      {
+       "events": [
+        "knock",
+        "knock",
+        "ring",
+        "knock"
+       ],
+       "predict": "shut",
+       "why": "This has three knocks and one ring, the same shut-producing counts as observed 'ring, knock, knock, knock'; if it were open, the rule would fail to be order-independent or would mishandle odd rings.",
+       "tested": false,
+       "risky": true,
+       "why_not": "not among the three riskiest"
+      },
+      {
+       "events": [
+        "ring"
+       ],
+       "predict": "shut",
+       "why": "There is no odd knock count here, so the rule requires shut; if a single ring opened the gate, the knock/ring parity rule would be wrong.",
+       "tested": false,
+       "why_not": "not among the three riskiest",
+       "risky": false
+      }
+     ],
+     "text": "{\"rule\": \"The gate opens exactly when the number of knocks made so far is odd and the number of rings made so far is even; otherwise it is shut. Equivalently, a knock toggles one hidden bit and a ring toggles another, with open meaning the knock bit is on and the ring bit is off.\", \"commitments\": [{\"events\": [\"ring\", \"knock\", \"ring\"], \"predict\": \"open\", \"why\": \"This has the same counts as observed 'knock, ring, ring' (one knock, two rings), which is open; if it came out shut, then order matters and the count-parity rule would be wrong.\"}, {\"events\": [\"ring\", \"ring\", \"knock\"], \"predict\": \"open\", \"why\": \"This also has one knock and two rings, the same open-producing counts as 'knock, ring, ring'; if it were shut, the rule cannot depend only on counts.\"}, {\"events\": [\"knock\", \"ring\", \"knock\"], \"predict\": \"shut\", \"why\": \"This has two knocks and one ring, the same shut-producing counts as observed 'knock, knock, ring'; if it were open, order or last-action effects would contradict the rule.\"}, {\"events\": [\"knock\", \"knock\", \"ring\", \"knock\"], \"predict\": \"shut\", \"why\": \"This has three knocks and one ring, the same shut-producing counts as observed 'ring, knock, knock, knock'; if it were open, the rule would fail to be order-independent or would mishandle odd rings.\"}, {\"events\": [\"ring\"], \"predict\": \"shut\", \"why\": \"There is no odd knock count here, so the rule requires shut; if a single ring opened the gate, the knock/ring parity rule would be wrong.\"}]}"
+    }
+   ],
+   "facts": [
+    {
+     "events": [
+      "knock",
+      "knock",
+      "ring"
+     ],
+     "answer": "gate is shut"
+    }
+   ],
+   "final_rule": "The gate is open exactly when the number of knocks is odd and the number of rings is even.",
+   "graded": [
+    {
+     "test": "test 1",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 2",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 3",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 4",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 5",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 6",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 7",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 8",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 9",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 10",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 11",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 12",
+     "hard": false,
+     "right": true
+    }
+   ],
+   "tokens_out": 29729,
+   "cut_off": 0,
+   "calls": 3,
+   "world_answers": 1
+  },
+  "attack, defend": {
+   "rounds": [
+    {
+     "round": 1,
+     "rule": "The gate ends open exactly when the total number of knocks is odd and the total number of rings is even; otherwise it ends shut.",
+     "commitments": [
+      {
+       "events": [
+        "ring",
+        "ring",
+        "knock"
+       ],
+       "predict": "open",
+       "why": "This unobserved sequence has two rings and one knock, so the parity rule predicts open; if it instead ended shut, the rule would be falsified.",
+       "tested": false,
+       "why_not": "not available",
+       "risky": false
+      },
+      {
+       "events": [
+        "ring",
+        "knock",
+        "ring"
+       ],
+       "predict": "open",
+       "why": "This unobserved sequence has one knock and two rings, which satisfies odd knocks/even rings; a shut result would contradict the rule.",
+       "tested": false,
+       "why_not": "not available",
+       "risky": false
+      },
+      {
+       "events": [
+        "knock",
+        "knock",
+        "knock",
+        "ring"
+       ],
+       "predict": "shut",
+       "why": "Three knocks alone would open, but the single ring makes the ring count odd, so the parity rule requires shut; if it opened, ring parity would be wrong.",
+       "tested": false,
+       "why_not": "not available",
+       "risky": true
+      },
+      {
+       "events": [
+        "knock",
+        "knock",
+        "ring"
+       ],
+       "predict": "shut",
+       "why": "The even knock count and odd ring count violate the rule, so it must end shut; an open result would point to a different rule.",
+       "tested": false,
+       "risky": true,
+       "why_not": "not among the three riskiest"
+      },
+      {
+       "events": [
+        "ring",
+        "knock",
+        "knock"
+       ],
+       "predict": "shut",
+       "why": "The even knock count and odd ring count violate the rule, so it must end shut; if it opened, the parity account would be wrong.",
+       "tested": false,
+       "risky": true,
+       "why_not": "not among the three riskiest"
+      }
+     ],
+     "text": "{\"rule\":\"The gate ends open exactly when the total number of knocks is odd and the total number of rings is even; otherwise it ends shut.\",\"commitments\":[{\"events\":[\"ring\",\"ring\",\"knock\"],\"predict\":\"open\",\"why\":\"This unobserved sequence has two rings and one knock, so the parity rule predicts open; if it instead ended shut, the rule would be falsified.\"},{\"events\":[\"ring\",\"knock\",\"ring\"],\"predict\":\"open\",\"why\":\"This unobserved sequence has one knock and two rings, which satisfies odd knocks/even rings; a shut result would contradict the rule.\"},{\"events\":[\"knock\",\"knock\",\"knock\",\"ring\"],\"predict\":\"shut\",\"why\":\"Three knocks alone would open, but the single ring makes the ring count odd, so the parity rule requires shut; if it opened, ring parity would be wrong.\"},{\"events\":[\"knock\",\"knock\",\"ring\"],\"predict\":\"shut\",\"why\":\"The even knock count and odd ring count violate the rule, so it must end shut; an open result would point to a different rule.\"},{\"events\":[\"ring\",\"knock\",\"knock\"],\"predict\":\"shut\",\"why\":\"The even knock count and odd ring count violate the rule, so it must end shut; if it opened, the parity account would be wrong.\"}]}"
+    },
+    {
+     "round": 2,
+     "rule": "The gate ends open exactly when the total number of knocks is odd and the total number of rings is even; otherwise it ends shut.",
+     "commitments": [
+      {
+       "events": [
+        "ring",
+        "knock",
+        "ring"
+       ],
+       "predict": "open",
+       "why": "This has one knock and two rings, so the parity rule predicts open; if it instead ended shut, the rule would be wrong and a first-action-based rule would gain support.",
+       "tested": false,
+       "why_not": "not available",
+       "risky": false
+      },
+      {
+       "events": [
+        "ring",
+        "ring",
+        "knock"
+       ],
+       "predict": "open",
+       "why": "One knock and two rings satisfy the odd-knocks/even-rings condition, so it must open; a shut result would contradict the parity rule.",
+       "tested": false,
+       "why_not": "not available",
+       "risky": false
+      },
+      {
+       "events": [
+        "knock",
+        "knock",
+        "ring"
+       ],
+       "predict": "shut",
+       "why": "Two knocks and one ring violate the condition, so it must shut; if it opened, the parity rule would be falsified.",
+       "tested": true,
+       "world_says": "gate is shut",
+       "held": true,
+       "risky": true
+      },
+      {
+       "events": [
+        "knock",
+        "ring",
+        "knock"
+       ],
+       "predict": "shut",
+       "why": "Two knocks and one ring again predict shut; an open result would cast doubt on the parity rule.",
+       "tested": false,
+       "why_not": "not among the three riskiest",
+       "risky": true
+      },
+      {
+       "events": [
+        "ring",
+        "knock",
+        "knock"
+       ],
+       "predict": "shut",
+       "why": "Two knocks and one ring predict shut; an open result would contradict the parity rule.",
+       "tested": false,
+       "risky": true,
+       "why_not": "not among the three riskiest"
+      }
+     ],
+     "text": "{\"rule\":\"The gate ends open exactly when the total number of knocks is odd and the total number of rings is even; otherwise it ends shut.\",\"commitments\":[{\"events\":[\"ring\",\"knock\",\"ring\"],\"predict\":\"open\",\"why\":\"This has one knock and two rings, so the parity rule predicts open; if it instead ended shut, the rule would be wrong and a first-action-based rule would gain support.\"},{\"events\":[\"ring\",\"ring\",\"knock\"],\"predict\":\"open\",\"why\":\"One knock and two rings satisfy the odd-knocks/even-rings condition, so it must open; a shut result would contradict the parity rule.\"},{\"events\":[\"knock\",\"knock\",\"ring\"],\"predict\":\"shut\",\"why\":\"Two knocks and one ring violate the condition, so it must shut; if it opened, the parity rule would be falsified.\"},{\"events\":[\"knock\",\"ring\",\"knock\"],\"predict\":\"shut\",\"why\":\"Two knocks and one ring again predict shut; an open result would cast doubt on the parity rule.\"},{\"events\":[\"ring\",\"knock\",\"knock\"],\"predict\":\"shut\",\"why\":\"Two knocks and one ring predict shut; an open result would contradict the parity rule.\"}]}"
+    }
+   ],
+   "facts": [
+    {
+     "events": [
+      "knock",
+      "knock",
+      "ring"
+     ],
+     "answer": "gate is shut"
+    }
+   ],
+   "final_rule": "The gate opens exactly when the number of knocks is odd and the number of rings is even; otherwise it stays shut.",
+   "graded": [
+    {
+     "test": "test 1",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 2",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 3",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 4",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 5",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 6",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 7",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 8",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 9",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 10",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 11",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 12",
+     "hard": false,
+     "right": true
+    }
+   ],
+   "tokens_out": 21334,
+   "cut_off": 0,
+   "calls": 3,
+   "world_answers": 1
+  }
+ }
+}

@@ -1,0 +1,326 @@
+{
+ "world": "lighthouse-story",
+ "kind": "a story whose ending must follow",
+ "repeat": 2,
+ "guesser": "deepseek-flash",
+ "started": "2026-09-23T22:28:11.654Z",
+ "finished": "2026-09-23T22:29:03.210Z",
+ "first_guess": {
+  "reused_from": "runs/18 ten worlds after the fixes/lighthouse-story repeat 2.json",
+  "raw": {
+   "things": {
+    "mara": [
+     "at lighthouse",
+     "gone to city",
+     "staying for good"
+    ],
+    "lamp": [
+     "dark",
+     "lit"
+    ],
+    "storm_night": [
+     "unseen",
+     "seen"
+    ]
+   },
+   "events": [
+    "storm",
+    "mara lights lamp",
+    "mara finds letter"
+   ],
+   "start": {
+    "mara": "at lighthouse",
+    "lamp": "dark",
+    "storm_night": "unseen"
+   },
+   "rules": [
+    {
+     "name": "storm night seen",
+     "when": [
+      "storm happens"
+     ],
+     "then": "storm_night is seen"
+    },
+    {
+     "name": "Mara lights the lamp",
+     "when": [
+      "mara lights lamp happens"
+     ],
+     "then": "lamp is lit"
+    },
+    {
+     "name": "Mara leaves if no storm night",
+     "when": [
+      "mara finds letter happens",
+      "storm_night is unseen"
+     ],
+     "then": "mara is gone to city"
+    },
+    {
+     "name": "Mara stays after storm night",
+     "when": [
+      "mara finds letter happens",
+      "storm_night is seen"
+     ],
+     "then": "mara is staying for good"
+    }
+   ]
+  },
+  "log": [
+   {
+    "asked": "Task: A story: Mara keeps a lighthouse with her brother Tev. Tev hides a letter offering Mara a job in the city. A storm comes; Tev fails to light the lamp and a boat is nearly lost; Mara lights it. Mara finds the letter. Ending: Mara stays, because she has seen Tev cannot keep the light alone. If she had not seen the storm night, finding the letter would have made her leave.\n\nThings and states to use:\n  mara: at lighthouse, gone to city, staying for good\n  lamp: dark, lit\nEvents to use: storm, mara lights lamp, mara finds letter\n\nThe checker will test your model on these jobs:\n- \"the story as told\": events in order: storm, then mara lights lamp, then mara finds letter; expected at the end: mara is staying for good.\n- \"no storm night\": events in order: mara finds letter; expected at the end: mara is gone to city.\n- \"letter never found\": events in order: storm, then mara lights lamp; expected at the end: mara is at lighthouse.\n\nWrite the model.",
+    "replied": "{\"things\": {\"mara\": [\"at lighthouse\", \"gone to city\", \"staying for good\"], \"lamp\": [\"dark\", \"lit\"], \"storm_night\": [\"unseen\", \"seen\"]}, \"events\": [\"storm\", \"mara lights lamp\", \"mara finds letter\"], \"start\": {\"mara\": \"at lighthouse\", \"lamp\": \"dark\", \"storm_night\": \"unseen\"}, \"rules\": [{\"name\": \"storm night seen\", \"when\": [\"storm happens\"], \"then\": \"storm_night is seen\"}, {\"name\": \"Mara lights the lamp\", \"when\": [\"mara lights lamp happens\"], \"then\": \"lamp is lit\"}, {\"name\": \"Mara leaves if no storm night\", \"when\": [\"mara finds letter happens\", \"storm_night is unseen\"], \"then\": \"mara is gone to city\"}, {\"name\": \"Mara stays after storm night\", \"when\": [\"mara finds letter happens\", \"storm_night is seen\"], \"then\": \"mara is staying for good\"}]}",
+    "seconds": 33
+   }
+  ]
+ },
+ "counts": {
+  "requests": 1,
+  "replies": 1,
+  "cut_off": 0,
+  "plain_form": 0,
+  "refused": 0,
+  "thinking_characters": 49854,
+  "answer_characters": 741,
+  "tokens_in": 1162,
+  "tokens_out": 12120
+ },
+ "results": {
+  "review first": {
+   "world": "lighthouse-story",
+   "mode": "review first",
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "3/3",
+     "problems": 0
+    },
+    {
+     "step": "self review",
+     "verdict": "no change",
+     "kept": true,
+     "lost": [],
+     "seen": "3/3"
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 2,
+     "seen": "5/5"
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 1,
+     "seen": "6/6"
+    },
+    {
+     "step": "look for surprises",
+     "added": 4,
+     "surprises": 0,
+     "seen": "10/10"
+    },
+    {
+     "step": "look for surprises",
+     "added": 0,
+     "surprises": 0,
+     "seen": "10/10"
+    }
+   ],
+   "added_jobs": [
+    {
+     "job": {
+      "name": "world answer 1",
+      "start": {},
+      "events": [
+       "mara lights lamp",
+       "mara finds letter"
+      ],
+      "expect": [
+       "mara is gone to city"
+      ],
+      "from": "given"
+     },
+     "why": "loose rule \"storm night seen\": condition \"storm happens\" changed to \"mara lights lamp happens\""
+    },
+    {
+     "job": {
+      "name": "world answer 2",
+      "start": {},
+      "events": [
+       "mara lights lamp",
+       "storm",
+       "mara lights lamp",
+       "mara finds letter"
+      ],
+      "expect": [
+       "mara is gone to city"
+      ],
+      "from": "given"
+     },
+     "why": "loose rule \"storm night seen\": condition \"lamp is dark\" left out"
+    },
+    {
+     "job": {
+      "name": "world answer 3",
+      "start": {},
+      "events": [
+       "mara finds letter",
+       "storm",
+       "mara lights lamp",
+       "mara finds letter"
+      ],
+      "expect": [
+       "mara is gone to city"
+      ],
+      "from": "given"
+     },
+     "why": "loose rule \"storm night seen\": condition \"mara is not gone to city\" left out"
+    },
+    {
+     "job": {
+      "name": "world answer 4",
+      "start": {},
+      "events": [
+       "storm",
+       "mara finds letter"
+      ],
+      "expect": [
+       "mara is staying for good"
+      ],
+      "from": "given"
+     },
+     "why": "look for surprises: the situation of job \"the story as told\", but \"mara lights lamp\" does not happen",
+     "surprise": false
+    },
+    {
+     "job": {
+      "name": "world answer 5",
+      "start": {},
+      "events": [],
+      "expect": [
+       "mara is at lighthouse"
+      ],
+      "from": "given"
+     },
+     "why": "look for surprises: the situation of job \"no storm night\", but \"mara finds letter\" does not happen",
+     "surprise": false
+    },
+    {
+     "job": {
+      "name": "world answer 6",
+      "start": {},
+      "events": [
+       "mara lights lamp"
+      ],
+      "expect": [
+       "mara is at lighthouse"
+      ],
+      "from": "given"
+     },
+     "why": "look for surprises: the situation of job \"letter never found\", but \"storm\" does not happen",
+     "surprise": false
+    },
+    {
+     "job": {
+      "name": "world answer 7",
+      "start": {},
+      "events": [
+       "storm"
+      ],
+      "expect": [
+       "mara is at lighthouse"
+      ],
+      "from": "given"
+     },
+     "why": "look for surprises: the situation of job \"letter never found\", but \"mara lights lamp\" does not happen",
+     "surprise": false
+    }
+   ],
+   "questions_to_world": 7,
+   "guesser_calls": 1,
+   "final": {
+    "original_seen_passed": 3,
+    "original_seen_total": 3,
+    "all_seen_passed": 10,
+    "all_seen_total": 10,
+    "held_back_passed": 2,
+    "held_back_total": 2,
+    "held_back_failed": [],
+    "problems": [],
+    "held_back_asked": []
+   },
+   "model": {
+    "things": {
+     "mara": [
+      "at lighthouse",
+      "gone to city",
+      "staying for good"
+     ],
+     "lamp": [
+      "dark",
+      "lit"
+     ],
+     "storm_night": [
+      "unseen",
+      "seen"
+     ]
+    },
+    "events": [
+     "storm",
+     "mara lights lamp",
+     "mara finds letter"
+    ],
+    "start": {
+     "mara": "at lighthouse",
+     "lamp": "dark",
+     "storm_night": "unseen"
+    },
+    "rules": [
+     {
+      "name": "storm night seen",
+      "when": [
+       "storm happens",
+       "lamp is dark",
+       "mara is not gone to city"
+      ],
+      "then": "storm_night is seen"
+     },
+     {
+      "name": "Mara lights the lamp",
+      "when": [
+       "mara lights lamp happens"
+      ],
+      "then": "lamp is lit"
+     },
+     {
+      "name": "Mara leaves if no storm night",
+      "when": [
+       "mara finds letter happens",
+       "storm_night is unseen"
+      ],
+      "then": "mara is gone to city"
+     },
+     {
+      "name": "Mara stays after storm night",
+      "when": [
+       "mara finds letter happens",
+       "storm_night is seen"
+      ],
+      "then": "mara is staying for good"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "Task: A story: Mara keeps a lighthouse with her brother Tev. Tev hides a letter offering Mara a job in the city. A storm comes; Tev fails to light the lamp and a boat is nearly lost; Mara lights it. Mara finds the letter. Ending: Mara stays, because she has seen Tev cannot keep the light alone. If she had not seen the storm night, finding the letter would have made her leave.\n\nThings and states to use:\n  mara: at lighthouse, gone to city, staying for good\n  lamp: dark, lit\nEvents to use: storm, mara lights lamp, mara finds letter\n\nThe checker will test your model on these jobs:\n- \"the story as told\": events in order: storm, then mara lights lamp, then mara finds letter; expected at the end: mara is staying for good.\n- \"no storm night\": events in order: mara finds letter; expected at the end: mara is gone to city.\n- \"letter never found\": events in order: storm, then mara lights lamp; expected at the end: mara is at lighthouse.\n\nWrite the model.",
+     "replied": "{\"things\": {\"mara\": [\"at lighthouse\", \"gone to city\", \"staying for good\"], \"lamp\": [\"dark\", \"lit\"], \"storm_night\": [\"unseen\", \"seen\"]}, \"events\": [\"storm\", \"mara lights lamp\", \"mara finds letter\"], \"start\": {\"mara\": \"at lighthouse\", \"lamp\": \"dark\", \"storm_night\": \"unseen\"}, \"rules\": [{\"name\": \"storm night seen\", \"when\": [\"storm happens\"], \"then\": \"storm_night is seen\"}, {\"name\": \"Mara lights the lamp\", \"when\": [\"mara lights lamp happens\"], \"then\": \"lamp is lit\"}, {\"name\": \"Mara leaves if no storm night\", \"when\": [\"mara finds letter happens\", \"storm_night is unseen\"], \"then\": \"mara is gone to city\"}, {\"name\": \"Mara stays after storm night\", \"when\": [\"mara finds letter happens\", \"storm_night is seen\"], \"then\": \"mara is staying for good\"}]}",
+     "seconds": 33
+    },
+    {
+     "asked": "Task: A story: Mara keeps a lighthouse with her brother Tev. Tev hides a letter offering Mara a job in the city. A storm comes; Tev fails to light the lamp and a boat is nearly lost; Mara lights it. Mara finds the letter. Ending: Mara stays, because she has seen Tev cannot keep the light alone. If she had not seen the storm night, finding the letter would have made her leave.\n\nThings and states to use:\n  mara: at lighthouse, gone to city, staying for good\n  lamp: dark, lit\nEvents to use: storm, mara lights lamp, mara finds letter\n\nThe checker will test your model on these jobs:\n- \"the story as told\": events in order: storm, then mara lights lamp, then mara finds letter; expected at the end: mara is staying for good.\n- \"no storm night\": events in order: mara finds letter; expected at the end: mara is gone to city.\n- \"letter never found\": events in order: storm, then mara lights lamp; expected at the end: mara is at lighthouse.\n\nHere is a model for this task. It may contain mistakes, including mistakes the jobs above do not catch.\n\n{\"things\":{\"mara\":[\"at lighthouse\",\"gone to city\",\"staying for good\"],\"lamp\":[\"dark\",\"lit\"],\"storm_night\":[\"unseen\",\"seen\"]},\"events\":[\"storm\",\"mara lights lamp\",\"mara finds letter\"],\"start\":{\"mara\":\"at lighthouse\",\"lamp\":\"dark\",\"storm_night\":\"unseen\"},\"rules\":[{\"name\":\"storm night seen\",\"when\":[\"storm happens\"],\"then\":\"storm_night is seen\",\"made_by\":\"guesser first guess\"},{\"name\":\"Mara lights the lamp\",\"when\":[\"mara lights lamp happens\"],\"then\":\"lamp is lit\",\"made_by\":\"guesser first guess\"},{\"name\":\"Mara leaves if no storm night\",\"when\":[\"mara finds letter happens\",\"storm_night is unseen\"],\"then\":\"mara is gone to city\",\"made_by\":\"guesser first guess\"},{\"name\":\"Mara stays after storm night\",\"when\":[\"mara finds letter happens\",\"storm_night is seen\"],\"then\":\"mara is staying for good\",\"made_by\":\"guesser first guess\"}]}\n\nGo through the task sentence by sentence and check that every part of it is in the model, and that every rule does what the task says, in every situation the task describes, not only in the jobs. Correct every mistake you find. Write the whole corrected model. If you find no mistake, write it unchanged.",
+     "replied": "{\"things\":{\"mara\":[\"at lighthouse\",\"gone to city\",\"staying for good\"],\"lamp\":[\"dark\",\"lit\"],\"storm_night\":[\"unseen\",\"seen\"]},\"events\":[\"storm\",\"mara lights lamp\",\"mara finds letter\"],\"start\":{\"mara\":\"at lighthouse\",\"lamp\":\"dark\",\"storm_night\":\"unseen\"},\"rules\":[{\"name\":\"storm night seen\",\"when\":[\"storm happens\",\"lamp is dark\",\"mara is not gone to city\"],\"then\":\"storm_night is seen\"},{\"name\":\"Mara lights the lamp\",\"when\":[\"mara lights lamp happens\"],\"then\":\"lamp is lit\"},{\"name\":\"Mara leaves if no storm night\",\"when\":[\"mara finds letter happens\",\"storm_night is unseen\"],\"then\":\"mara is gone to city\"},{\"name\":\"Mara stays after storm night\",\"when\":[\"mara finds letter happens\",\"storm_night is seen\"],\"then\":\"mara is staying for good\"}]}",
+     "seconds": 51
+    }
+   ]
+  }
+ }
+}

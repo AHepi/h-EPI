@@ -1,0 +1,967 @@
+{
+ "world": "hidden-ball",
+ "planted": {
+  "kind": "needs a new thing",
+  "how": "written by hand",
+  "description": "no \"where the ball really is\": what is seen follows only what was seen before",
+  "form": {
+   "things": {
+    "screen": [
+     "down",
+     "up"
+    ],
+    "seen": [
+     "at 1",
+     "at 2",
+     "at 3",
+     "at 4",
+     "nothing"
+    ]
+   },
+   "events": [],
+   "start": {
+    "screen": "down",
+    "seen": "at 1"
+   },
+   "rules": [
+    {
+     "name": "a",
+     "when": [
+      "seen is at 1",
+      "screen is down"
+     ],
+     "then": "seen is at 2"
+    },
+    {
+     "name": "b",
+     "when": [
+      "seen is at 2"
+     ],
+     "then": "seen is at 3"
+    },
+    {
+     "name": "c",
+     "when": [
+      "seen is at 3"
+     ],
+     "then": "seen is at 4"
+    },
+    {
+     "name": "hide",
+     "when": [
+      "seen is at 1",
+      "screen is up"
+     ],
+     "then": "seen is nothing"
+    }
+   ]
+  },
+  "before": {
+   "shown": "3/5",
+   "held_back": "2/3",
+   "nearby": {
+    "tried": 10,
+    "differ": 3,
+    "cannot_run": 0,
+    "examples": [
+     "the situation of job \"screen up, ends at 4\": seen nothing, world says at 4",
+     "the situation of job \"no screen, ends at 4\", but seen starts nothing: seen nothing, world says at 4",
+     "the situation of job \"screen up, ends at 4\", but seen starts nothing: seen nothing, world says at 4"
+    ]
+   }
+  }
+ },
+ "guesser": "deepseek-flash",
+ "counts": {
+  "requests": 5,
+  "replies": 5,
+  "cut_off": 0,
+  "plain_form": 0,
+  "refused": 0,
+  "thinking_characters": 327303,
+  "answer_characters": 4943,
+  "tokens_in": 6295,
+  "tokens_out": 93553
+ },
+ "results": [
+  {
+   "corrector": "checker alone",
+   "shown": "3/5",
+   "held_back": "2/3",
+   "held_back_asked": [],
+   "questions_to_world": 0,
+   "deepseek_asked": 0,
+   "nearby": {
+    "tried": 10,
+    "differ": 3,
+    "cannot_run": 0,
+    "examples": [
+     "the situation of job \"screen up, ends at 4\": seen nothing, world says at 4",
+     "the situation of job \"no screen, ends at 4\", but seen starts nothing: seen nothing, world says at 4",
+     "the situation of job \"screen up, ends at 4\", but seen starts nothing: seen nothing, world says at 4"
+    ]
+   },
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "3/5",
+     "problems": 0
+    }
+   ],
+   "model": {
+    "things": {
+     "screen": [
+      "down",
+      "up"
+     ],
+     "seen": [
+      "at 1",
+      "at 2",
+      "at 3",
+      "at 4",
+      "nothing"
+     ]
+    },
+    "events": [],
+    "start": {
+     "screen": "down",
+     "seen": "at 1"
+    },
+    "rules": [
+     {
+      "name": "a",
+      "when": [
+       "seen is at 1",
+       "screen is down"
+      ],
+      "then": "seen is at 2",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "b",
+      "when": [
+       "seen is at 2"
+      ],
+      "then": "seen is at 3",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "c",
+      "when": [
+       "seen is at 3"
+      ],
+      "then": "seen is at 4",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "hide",
+      "when": [
+       "seen is at 1",
+       "screen is up"
+      ],
+      "then": "seen is nothing",
+      "made_by": "guesser first guess"
+     }
+    ]
+   },
+   "log": []
+  },
+  {
+   "corrector": "rewrite",
+   "shown": "5/5",
+   "held_back": "2/3",
+   "held_back_asked": [],
+   "questions_to_world": 0,
+   "deepseek_asked": 1,
+   "nearby": {
+    "tried": 10,
+    "differ": 0,
+    "cannot_run": 0,
+    "examples": []
+   },
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "3/5",
+     "problems": 0
+    },
+    {
+     "step": "rewrite",
+     "verdict": "accepted",
+     "repaired": [
+      "no screen, seen at 3 on step 3",
+      "screen up, ends at 4"
+     ],
+     "lost": [],
+     "seen": "5/5"
+    }
+   ],
+   "model": {
+    "things": {
+     "screen": [
+      "down",
+      "up"
+     ],
+     "ball": [
+      "at 1",
+      "at 2",
+      "at 3",
+      "at 4"
+     ],
+     "seen": [
+      "at 1",
+      "at 2",
+      "at 3",
+      "at 4",
+      "nothing"
+     ]
+    },
+    "events": [],
+    "start": {
+     "screen": "down",
+     "ball": "at 1",
+     "seen": "at 1"
+    },
+    "rules": [
+     {
+      "name": "ball moves 1 to 2",
+      "when": [
+       "ball is at 1"
+      ],
+      "then": "ball is at 2"
+     },
+     {
+      "name": "hide ball at 2",
+      "when": [
+       "ball is at 2",
+       "screen is up"
+      ],
+      "then": "seen is nothing"
+     },
+     {
+      "name": "ball moves 2 to 3",
+      "when": [
+       "ball is at 2"
+      ],
+      "then": "ball is at 3"
+     },
+     {
+      "name": "show ball at 3",
+      "when": [
+       "ball is at 3",
+       "screen is down"
+      ],
+      "then": "seen is at 3"
+     },
+     {
+      "name": "ball moves 3 to 4",
+      "when": [
+       "ball is at 3"
+      ],
+      "then": "ball is at 4"
+     },
+     {
+      "name": "show ball at 4 when down",
+      "when": [
+       "ball is at 4",
+       "screen is down"
+      ],
+      "then": "seen is at 4"
+     },
+     {
+      "name": "show ball at 4 when up",
+      "when": [
+       "ball is at 4",
+       "screen is up"
+      ],
+      "then": "seen is at 4"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "The checker ran your model.\n\nPASS: job \"no screen, ends at 4\"\nFAIL: job \"no screen, seen at 3 on step 3\"\n  - What happened: step 1: a made seen at 2; step 2: b made seen at 3; step 3: c made seen at 4.\n  - Wanted seen is at 3 at step 3; got seen at 4.\n  - Rule \"b\" made seen at 3 at step 2, then at step 3 rule \"c\" changed it to at 4.\nFAIL: job \"screen up, ends at 4\"\n  - What happened: step 1: hide made seen nothing.\n  - Wanted seen is at 4 at the end; got seen nothing.\n  - Rule \"c\" never fired: \"seen is at 3\" was never true.\nPASS: job \"screen up, nothing on step 2\"\nPASS: job \"screen up, nothing on step 3\"\n3 of 5 jobs pass.\n\nNO SMALL CHANGE to the existing rules repairs \"no screen, seen at 3 on step 3\", \"screen up, ends at 4\". Something new is needed: a new rule, or a new thing to keep track of.\n\nWrite the whole model again so that the failing jobs pass. Keep every rule that already works. Give every thing a start state.",
+     "replied": "{\n  \"things\": {\n    \"screen\": [\"down\", \"up\"],\n    \"ball\": [\"at 1\", \"at 2\", \"at 3\", \"at 4\"],\n    \"seen\": [\"at 1\", \"at 2\", \"at 3\", \"at 4\", \"nothing\"]\n  },\n  \"events\": [],\n  \"start\": {\n    \"screen\": \"down\",\n    \"ball\": \"at 1\",\n    \"seen\": \"at 1\"\n  },\n  \"rules\": [\n    {\n      \"name\": \"ball moves 1 to 2\",\n      \"when\": [\"ball is at 1\"],\n      \"then\": \"ball is at 2\"\n    },\n    {\n      \"name\": \"hide ball at 2\",\n      \"when\": [\"ball is at 2\", \"screen is up\"],\n      \"then\": \"seen is nothing\"\n    },\n    {\n      \"name\": \"ball moves 2 to 3\",\n      \"when\": [\"ball is at 2\"],\n      \"then\": \"ball is at 3\"\n    },\n    {\n      \"name\": \"show ball at 3\",\n      \"when\": [\"ball is at 3\", \"screen is down\"],\n      \"then\": \"seen is at 3\"\n    },\n    {\n      \"name\": \"ball moves 3 to 4\",\n      \"when\": [\"ball is at 3\"],\n      \"then\": \"ball is at 4\"\n    },\n    {\n      \"name\": \"show ball at 4 when down\",\n      \"when\": [\"ball is at 4\", \"screen is down\"],\n      \"then\": \"seen is at 4\"\n    },\n    {\n      \"name\": \"show ball at 4 when up\",\n      \"when\": [\"ball is at 4\", \"screen is up\"],\n      \"then\": \"seen is at 4\"\n    }\n  ]\n}",
+     "seconds": 84
+    }
+   ]
+  },
+  {
+   "corrector": "self review",
+   "shown": "3/5",
+   "held_back": "2/3",
+   "held_back_asked": [],
+   "questions_to_world": 0,
+   "deepseek_asked": 1,
+   "nearby": {
+    "tried": 10,
+    "differ": 3,
+    "cannot_run": 0,
+    "examples": [
+     "the situation of job \"screen up, ends at 4\": seen nothing, world says at 4",
+     "the situation of job \"no screen, ends at 4\", but seen starts nothing: seen nothing, world says at 4",
+     "the situation of job \"screen up, ends at 4\", but seen starts nothing: seen nothing, world says at 4"
+    ]
+   },
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "3/5",
+     "problems": 0
+    },
+    {
+     "step": "self review",
+     "verdict": "trade",
+     "kept": false,
+     "lost": [
+      "screen up, nothing on step 3"
+     ],
+     "seen": "3/5"
+    }
+   ],
+   "model": {
+    "things": {
+     "screen": [
+      "down",
+      "up"
+     ],
+     "seen": [
+      "at 1",
+      "at 2",
+      "at 3",
+      "at 4",
+      "nothing"
+     ]
+    },
+    "events": [],
+    "start": {
+     "screen": "down",
+     "seen": "at 1"
+    },
+    "rules": [
+     {
+      "name": "a",
+      "when": [
+       "seen is at 1",
+       "screen is down"
+      ],
+      "then": "seen is at 2",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "b",
+      "when": [
+       "seen is at 2"
+      ],
+      "then": "seen is at 3",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "c",
+      "when": [
+       "seen is at 3"
+      ],
+      "then": "seen is at 4",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "hide",
+      "when": [
+       "seen is at 1",
+       "screen is up"
+      ],
+      "then": "seen is nothing",
+      "made_by": "guesser first guess"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "Task: A ball rolls from spot 1 to spot 4, one spot per step. A screen can hide spots 2 and 3. We only see where the ball is when it is not hidden. Predict what we see.\n\nThings and states to use:\n  screen: down, up\n  seen: at 1, at 2, at 3, at 4, nothing\nEvents to use: (none)\n\nThe checker will test your model on these jobs:\n- \"no screen, ends at 4\": start with screen is down, seen is at 1; no events; expected at the end: seen is at 4.\n- \"no screen, seen at 3 on step 3\": start with screen is down, seen is at 1; no events; expected at step 3: seen is at 3.\n- \"screen up, ends at 4\": start with screen is up, seen is at 1; no events; expected at the end: seen is at 4.\n- \"screen up, nothing on step 2\": start with screen is up, seen is at 1; no events; expected at step 2: seen is nothing.\n- \"screen up, nothing on step 3\": start with screen is up, seen is at 1; no events; expected at step 3: seen is nothing.\n\nHere is a model for this task. It may contain mistakes, including mistakes the jobs above do not catch.\n\n{\"things\":{\"screen\":[\"down\",\"up\"],\"seen\":[\"at 1\",\"at 2\",\"at 3\",\"at 4\",\"nothing\"]},\"events\":[],\"start\":{\"screen\":\"down\",\"seen\":\"at 1\"},\"rules\":[{\"name\":\"a\",\"when\":[\"seen is at 1\",\"screen is down\"],\"then\":\"seen is at 2\",\"made_by\":\"guesser first guess\"},{\"name\":\"b\",\"when\":[\"seen is at 2\"],\"then\":\"seen is at 3\",\"made_by\":\"guesser first guess\"},{\"name\":\"c\",\"when\":[\"seen is at 3\"],\"then\":\"seen is at 4\",\"made_by\":\"guesser first guess\"},{\"name\":\"hide\",\"when\":[\"seen is at 1\",\"screen is up\"],\"then\":\"seen is nothing\",\"made_by\":\"guesser first guess\"}]}\n\nGo through the task sentence by sentence and check that every part of it is in the model, and that every rule does what the task says, in every situation the task describes, not only in the jobs. Correct every mistake you find. Write the whole corrected model. If you find no mistake, write it unchanged.",
+     "replied": "{\n  \"things\": {\n    \"screen\": [\"down\", \"up\"],\n    \"seen\": [\"at 1\", \"at 2\", \"at 3\", \"at 4\", \"nothing\"],\n    \"ball\": [\"spot 1\", \"spot 2\", \"spot 3\", \"spot 4\"]\n  },\n  \"events\": [],\n  \"start\": {\n    \"screen\": \"down\",\n    \"seen\": \"at 1\",\n    \"ball\": \"spot 1\"\n  },\n  \"rules\": [\n    {\"name\": \"ball advances from 1 to 2\", \"when\": [\"ball is spot 1\"], \"then\": \"ball is spot 2\"},\n    {\"name\": \"seen at 2 when screen down\", \"when\": [\"ball is spot 1\", \"screen is down\"], \"then\": \"seen is at 2\"},\n    {\"name\": \"seen nothing when screen up at 2\", \"when\": [\"ball is spot 1\", \"screen is up\"], \"then\": \"seen is nothing\"},\n    {\"name\": \"ball advances from 2 to 3\", \"when\": [\"ball is spot 2\"], \"then\": \"ball is spot 3\"},\n    {\"name\": \"seen at 3 when screen down\", \"when\": [\"ball is spot 2\", \"screen is down\"], \"then\": \"seen is at 3\"},\n    {\"name\": \"seen nothing when screen up at 3\", \"when\": [\"ball is spot 2\", \"screen is up\"], \"then\": \"seen is nothing\"},\n    {\"name\": \"ball advances from 3 to 4\", \"when\": [\"ball is spot 3\"], \"then\": \"ball is spot 4\"},\n    {\"name\": \"seen at 4 when ball reaches 4\", \"when\": [\"ball is spot 3\"], \"then\": \"seen is at 4\"}\n  ]\n}",
+     "seconds": 54
+    }
+   ]
+  },
+  {
+   "corrector": "guess and fix",
+   "shown": "5/5",
+   "held_back": "3/3",
+   "held_back_asked": [],
+   "questions_to_world": 0,
+   "deepseek_asked": 1,
+   "nearby": {
+    "tried": 10,
+    "differ": 0,
+    "cannot_run": 0,
+    "examples": []
+   },
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "3/5",
+     "problems": 0
+    },
+    {
+     "step": "new part",
+     "verdict": "accepted",
+     "kept": true,
+     "kind": "new thing (construction)",
+     "added_rules": [
+      "ball to 2",
+      "ball to 3",
+      "ball to 4",
+      "keep seen at 1 down",
+      "keep seen at 1 up",
+      "show 2",
+      "show 3",
+      "show 4",
+      "hide 2",
+      "hide 3"
+     ],
+     "added_things": [
+      "ball"
+     ],
+     "repaired": [
+      "no screen, seen at 3 on step 3",
+      "screen up, ends at 4"
+     ],
+     "lost": [],
+     "tuned_by_checker": 0,
+     "old_rules_cleared_out": [],
+     "seen": "5/5"
+    }
+   ],
+   "model": {
+    "things": {
+     "screen": [
+      "down",
+      "up"
+     ],
+     "seen": [
+      "at 1",
+      "at 2",
+      "at 3",
+      "at 4",
+      "nothing"
+     ],
+     "ball": [
+      "at 1",
+      "at 2",
+      "at 3",
+      "at 4"
+     ]
+    },
+    "events": [],
+    "start": {
+     "screen": "down",
+     "seen": "at 1",
+     "ball": "at 1"
+    },
+    "rules": [
+     {
+      "name": "a",
+      "when": [
+       "seen is at 1",
+       "screen is down"
+      ],
+      "then": "seen is at 2",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "b",
+      "when": [
+       "seen is at 2"
+      ],
+      "then": "seen is at 3",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "c",
+      "when": [
+       "seen is at 3"
+      ],
+      "then": "seen is at 4",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "hide",
+      "when": [
+       "seen is at 1",
+       "screen is up"
+      ],
+      "then": "seen is nothing",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "ball to 2",
+      "when": [
+       "ball is at 1"
+      ],
+      "then": "ball is at 2",
+      "made_by": "guesser new part"
+     },
+     {
+      "name": "ball to 3",
+      "when": [
+       "ball is at 2"
+      ],
+      "then": "ball is at 3",
+      "made_by": "guesser new part"
+     },
+     {
+      "name": "ball to 4",
+      "when": [
+       "ball is at 3"
+      ],
+      "then": "ball is at 4",
+      "made_by": "guesser new part"
+     },
+     {
+      "name": "keep seen at 1 down",
+      "when": [
+       "seen is at 1",
+       "ball is at 1",
+       "screen is down"
+      ],
+      "then": "seen is at 1",
+      "made_by": "guesser new part"
+     },
+     {
+      "name": "keep seen at 1 up",
+      "when": [
+       "seen is at 1",
+       "ball is at 1",
+       "screen is up"
+      ],
+      "then": "seen is at 1",
+      "made_by": "guesser new part"
+     },
+     {
+      "name": "show 2",
+      "when": [
+       "ball is at 2",
+       "screen is down"
+      ],
+      "then": "seen is at 2",
+      "made_by": "guesser new part"
+     },
+     {
+      "name": "show 3",
+      "when": [
+       "ball is at 3",
+       "screen is down"
+      ],
+      "then": "seen is at 3",
+      "made_by": "guesser new part"
+     },
+     {
+      "name": "show 4",
+      "when": [
+       "ball is at 4"
+      ],
+      "then": "seen is at 4",
+      "made_by": "guesser new part"
+     },
+     {
+      "name": "hide 2",
+      "when": [
+       "ball is at 2",
+       "screen is up"
+      ],
+      "then": "seen is nothing",
+      "made_by": "guesser new part"
+     },
+     {
+      "name": "hide 3",
+      "when": [
+       "ball is at 3",
+       "screen is up"
+      ],
+      "then": "seen is nothing",
+      "made_by": "guesser new part"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "Task: A ball rolls from spot 1 to spot 4, one spot per step. A screen can hide spots 2 and 3. We only see where the ball is when it is not hidden. Predict what we see.\n\nThings and states to use:\n  screen: down, up\n  seen: at 1, at 2, at 3, at 4, nothing\nEvents to use: (none)\n\nThe checker will test your model on these jobs:\n- \"no screen, ends at 4\": start with screen is down, seen is at 1; no events; expected at the end: seen is at 4.\n- \"no screen, seen at 3 on step 3\": start with screen is down, seen is at 1; no events; expected at step 3: seen is at 3.\n- \"screen up, ends at 4\": start with screen is up, seen is at 1; no events; expected at the end: seen is at 4.\n- \"screen up, nothing on step 2\": start with screen is up, seen is at 1; no events; expected at step 2: seen is nothing.\n- \"screen up, nothing on step 3\": start with screen is up, seen is at 1; no events; expected at step 3: seen is nothing.\n\nThe current model has these things: screen (down, up; starts down); seen (at 1, at 2, at 3, at 4, nothing; starts at 1).\nIts rules:\n- \"a\": when seen is at 1 and screen is down, seen is at 2\n- \"b\": when seen is at 2, seen is at 3\n- \"c\": when seen is at 3, seen is at 4\n- \"hide\": when seen is at 1 and screen is up, seen is nothing\n\nThis job fails:\n- \"no screen, seen at 3 on step 3\": start with screen is down, seen is at 1; no events; expected at step 3: seen is at 3.\nWhat the checker saw:\n- What happened: step 1: a made seen at 2; step 2: b made seen at 3; step 3: c made seen at 4.\n- Wanted seen is at 3 at step 3; got seen at 4.\n- Rule \"b\" made seen at 3 at step 2, then at step 3 rule \"c\" changed it to at 4.\n\nNo small change to the existing rules makes this job pass, so something is missing. Write only the new parts: new rules, and new things (with their states and start) whenever you need to keep track of something the task does not show directly.",
+     "replied": "{\"new_things\":{\"ball\":[\"at 1\",\"at 2\",\"at 3\",\"at 4\"]},\"new_start\":{\"ball\":\"at 1\"},\"new_rules\":[{\"name\":\"ball to 2\",\"when\":[\"ball is at 1\"],\"then\":\"ball is at 2\"},{\"name\":\"ball to 3\",\"when\":[\"ball is at 2\"],\"then\":\"ball is at 3\"},{\"name\":\"ball to 4\",\"when\":[\"ball is at 3\"],\"then\":\"ball is at 4\"},{\"name\":\"keep seen at 1 down\",\"when\":[\"seen is at 1\",\"ball is at 1\",\"screen is down\"],\"then\":\"seen is at 1\"},{\"name\":\"keep seen at 1 up\",\"when\":[\"seen is at 1\",\"ball is at 1\",\"screen is up\"],\"then\":\"seen is at 1\"},{\"name\":\"show 2\",\"when\":[\"ball is at 2\",\"screen is down\"],\"then\":\"seen is at 2\"},{\"name\":\"show 3\",\"when\":[\"ball is at 3\",\"screen is down\"],\"then\":\"seen is at 3\"},{\"name\":\"show 4\",\"when\":[\"ball is at 4\"],\"then\":\"seen is at 4\"},{\"name\":\"hide 2\",\"when\":[\"ball is at 2\",\"screen is up\"],\"then\":\"seen is nothing\"},{\"name\":\"hide 3\",\"when\":[\"ball is at 3\",\"screen is up\"],\"then\":\"seen is nothing\"}]}",
+     "seconds": 58
+    }
+   ]
+  },
+  {
+   "corrector": "full loop",
+   "shown": "5/5",
+   "held_back": "3/3",
+   "held_back_asked": [
+    "no screen, never nothing",
+    "no screen, seen at 2 at some point"
+   ],
+   "questions_to_world": 7,
+   "deepseek_asked": 1,
+   "nearby": {
+    "tried": 10,
+    "differ": 0,
+    "cannot_run": 0,
+    "examples": []
+   },
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "3/5",
+     "problems": 0
+    },
+    {
+     "step": "new part",
+     "verdict": "accepted",
+     "kept": true,
+     "kind": "new thing (construction)",
+     "added_rules": [
+      "ball rolls 1 to 2",
+      "ball rolls 2 to 3",
+      "ball rolls 3 to 4",
+      "keep seen at 1 when down",
+      "reveal at 4 when up"
+     ],
+     "added_things": [
+      "ball"
+     ],
+     "repaired": [
+      "no screen, seen at 3 on step 3",
+      "screen up, ends at 4"
+     ],
+     "lost": [],
+     "tuned_by_checker": 0,
+     "old_rules_cleared_out": [],
+     "seen": "5/5"
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 3,
+     "seen": "8/8"
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 2,
+     "seen": "9/10"
+    },
+    {
+     "step": "small fix",
+     "what": "in rule \"reveal at 4 when up\": condition \"screen is up\" left out",
+     "repaired": [
+      "world answer 5"
+     ],
+     "seen": "10/10"
+    },
+    {
+     "step": "look for surprises",
+     "added": 2,
+     "surprises": 0,
+     "seen": "12/12"
+    },
+    {
+     "step": "look for surprises",
+     "added": 0,
+     "surprises": 0,
+     "seen": "12/12"
+    }
+   ],
+   "model": {
+    "things": {
+     "screen": [
+      "down",
+      "up"
+     ],
+     "seen": [
+      "at 1",
+      "at 2",
+      "at 3",
+      "at 4",
+      "nothing"
+     ],
+     "ball": [
+      "at 1",
+      "at 2",
+      "at 3",
+      "at 4"
+     ]
+    },
+    "events": [],
+    "start": {
+     "screen": "down",
+     "seen": "at 1",
+     "ball": "at 1"
+    },
+    "rules": [
+     {
+      "name": "a",
+      "when": [
+       "seen is at 1",
+       "screen is down"
+      ],
+      "then": "seen is at 2",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "b",
+      "when": [
+       "seen is at 2"
+      ],
+      "then": "seen is at 3",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "c",
+      "when": [
+       "seen is at 3"
+      ],
+      "then": "seen is at 4",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "hide",
+      "when": [
+       "seen is at 1",
+       "screen is up"
+      ],
+      "then": "seen is nothing",
+      "made_by": "guesser first guess"
+     },
+     {
+      "name": "ball rolls 1 to 2",
+      "when": [
+       "ball is at 1"
+      ],
+      "then": "ball is at 2",
+      "made_by": "guesser new part"
+     },
+     {
+      "name": "ball rolls 2 to 3",
+      "when": [
+       "ball is at 2"
+      ],
+      "then": "ball is at 3",
+      "made_by": "guesser new part"
+     },
+     {
+      "name": "ball rolls 3 to 4",
+      "when": [
+       "ball is at 3"
+      ],
+      "then": "ball is at 4",
+      "made_by": "guesser new part"
+     },
+     {
+      "name": "keep seen at 1 when down",
+      "when": [
+       "ball is at 1",
+       "screen is down",
+       "seen is at 1"
+      ],
+      "then": "seen is at 1",
+      "made_by": "guesser new part"
+     },
+     {
+      "name": "reveal at 4 when up",
+      "when": [
+       "ball is at 4"
+      ],
+      "then": "seen is at 4",
+      "made_by": "checker small fix"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "Task: A ball rolls from spot 1 to spot 4, one spot per step. A screen can hide spots 2 and 3. We only see where the ball is when it is not hidden. Predict what we see.\n\nThings and states to use:\n  screen: down, up\n  seen: at 1, at 2, at 3, at 4, nothing\nEvents to use: (none)\n\nThe checker will test your model on these jobs:\n- \"no screen, ends at 4\": start with screen is down, seen is at 1; no events; expected at the end: seen is at 4.\n- \"no screen, seen at 3 on step 3\": start with screen is down, seen is at 1; no events; expected at step 3: seen is at 3.\n- \"screen up, ends at 4\": start with screen is up, seen is at 1; no events; expected at the end: seen is at 4.\n- \"screen up, nothing on step 2\": start with screen is up, seen is at 1; no events; expected at step 2: seen is nothing.\n- \"screen up, nothing on step 3\": start with screen is up, seen is at 1; no events; expected at step 3: seen is nothing.\n\nThe current model has these things: screen (down, up; starts down); seen (at 1, at 2, at 3, at 4, nothing; starts at 1).\nIts rules:\n- \"a\": when seen is at 1 and screen is down, seen is at 2\n- \"b\": when seen is at 2, seen is at 3\n- \"c\": when seen is at 3, seen is at 4\n- \"hide\": when seen is at 1 and screen is up, seen is nothing\n\nThis job fails:\n- \"no screen, seen at 3 on step 3\": start with screen is down, seen is at 1; no events; expected at step 3: seen is at 3.\nWhat the checker saw:\n- What happened: step 1: a made seen at 2; step 2: b made seen at 3; step 3: c made seen at 4.\n- Wanted seen is at 3 at step 3; got seen at 4.\n- Rule \"b\" made seen at 3 at step 2, then at step 3 rule \"c\" changed it to at 4.\n\nNo small change to the existing rules makes this job pass, so something is missing. Write only the new parts: new rules, and new things (with their states and start) whenever you need to keep track of something the task does not show directly.",
+     "replied": "{\"new_things\":{\"ball\":[\"at 1\",\"at 2\",\"at 3\",\"at 4\"]},\"new_start\":{\"ball\":\"at 1\"},\"new_rules\":[{\"name\":\"ball rolls 1 to 2\",\"when\":[\"ball is at 1\"],\"then\":\"ball is at 2\"},{\"name\":\"ball rolls 2 to 3\",\"when\":[\"ball is at 2\"],\"then\":\"ball is at 3\"},{\"name\":\"ball rolls 3 to 4\",\"when\":[\"ball is at 3\"],\"then\":\"ball is at 4\"},{\"name\":\"keep seen at 1 when down\",\"when\":[\"ball is at 1\",\"screen is down\",\"seen is at 1\"],\"then\":\"seen is at 1\"},{\"name\":\"reveal at 4 when up\",\"when\":[\"ball is at 4\",\"screen is up\"],\"then\":\"seen is at 4\"}]}",
+     "seconds": 91
+    }
+   ]
+  },
+  {
+   "corrector": "full loop, guesser first",
+   "shown": "5/5",
+   "held_back": "3/3",
+   "held_back_asked": [
+    "no screen, never nothing",
+    "no screen, seen at 2 at some point"
+   ],
+   "questions_to_world": 3,
+   "deepseek_asked": 1,
+   "nearby": {
+    "tried": 10,
+    "differ": 0,
+    "cannot_run": 0,
+    "examples": []
+   },
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "3/5",
+     "problems": 0
+    },
+    {
+     "step": "guesser rewrites first",
+     "verdict": "accepted",
+     "repaired": [
+      "no screen, seen at 3 on step 3",
+      "screen up, ends at 4"
+     ],
+     "lost": [],
+     "seen": "5/5"
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 2,
+     "seen": "7/7"
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 0,
+     "seen": "7/7"
+    },
+    {
+     "step": "look for surprises",
+     "added": 1,
+     "surprises": 0,
+     "seen": "8/8"
+    },
+    {
+     "step": "look for surprises",
+     "added": 0,
+     "surprises": 0,
+     "seen": "8/8"
+    }
+   ],
+   "model": {
+    "things": {
+     "screen": [
+      "down",
+      "up"
+     ],
+     "ball": [
+      "at 1",
+      "at 2",
+      "at 3",
+      "at 4"
+     ],
+     "seen": [
+      "at 1",
+      "at 2",
+      "at 3",
+      "at 4",
+      "nothing"
+     ],
+     "ready": [
+      "no",
+      "yes"
+     ]
+    },
+    "events": [],
+    "start": {
+     "screen": "down",
+     "ball": "at 1",
+     "seen": "at 1",
+     "ready": "no"
+    },
+    "rules": [
+     {
+      "name": "ready",
+      "when": [
+       "ready is no"
+      ],
+      "then": "ready is yes"
+     },
+     {
+      "name": "ball 1 to 2",
+      "when": [
+       "ready is yes",
+       "ball is at 1"
+      ],
+      "then": "ball is at 2"
+     },
+     {
+      "name": "ball 2 to 3",
+      "when": [
+       "ready is yes",
+       "ball is at 2"
+      ],
+      "then": "ball is at 3"
+     },
+     {
+      "name": "ball 3 to 4",
+      "when": [
+       "ready is yes",
+       "ball is at 3"
+      ],
+      "then": "ball is at 4"
+     },
+     {
+      "name": "seen down 1 to 2",
+      "when": [
+       "ready is yes",
+       "ball is at 1",
+       "screen is down"
+      ],
+      "then": "seen is at 2"
+     },
+     {
+      "name": "seen down 2 to 3",
+      "when": [
+       "ready is yes",
+       "ball is at 2",
+       "screen is down"
+      ],
+      "then": "seen is at 3"
+     },
+     {
+      "name": "seen down 3 to 4",
+      "when": [
+       "ready is yes",
+       "ball is at 3",
+       "screen is down"
+      ],
+      "then": "seen is at 4"
+     },
+     {
+      "name": "seen up 1 to 2",
+      "when": [
+       "ready is yes",
+       "ball is at 1",
+       "screen is up"
+      ],
+      "then": "seen is nothing"
+     },
+     {
+      "name": "seen up 2 to 3",
+      "when": [
+       "ready is yes",
+       "ball is at 2",
+       "screen is up"
+      ],
+      "then": "seen is nothing"
+     },
+     {
+      "name": "seen up 3 to 4",
+      "when": [
+       "ready is yes",
+       "ball is at 3",
+       "screen is up"
+      ],
+      "then": "seen is at 4"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "Task: A ball rolls from spot 1 to spot 4, one spot per step. A screen can hide spots 2 and 3. We only see where the ball is when it is not hidden. Predict what we see.\n\nThings and states to use:\n  screen: down, up\n  seen: at 1, at 2, at 3, at 4, nothing\nEvents to use: (none)\n\nThe checker will test your model on these jobs:\n- \"no screen, ends at 4\": start with screen is down, seen is at 1; no events; expected at the end: seen is at 4.\n- \"no screen, seen at 3 on step 3\": start with screen is down, seen is at 1; no events; expected at step 3: seen is at 3.\n- \"screen up, ends at 4\": start with screen is up, seen is at 1; no events; expected at the end: seen is at 4.\n- \"screen up, nothing on step 2\": start with screen is up, seen is at 1; no events; expected at step 2: seen is nothing.\n- \"screen up, nothing on step 3\": start with screen is up, seen is at 1; no events; expected at step 3: seen is nothing.\n\nThe current model:\n{\"things\":{\"screen\":[\"down\",\"up\"],\"seen\":[\"at 1\",\"at 2\",\"at 3\",\"at 4\",\"nothing\"]},\"events\":[],\"start\":{\"screen\":\"down\",\"seen\":\"at 1\"},\"rules\":[{\"name\":\"a\",\"when\":[\"seen is at 1\",\"screen is down\"],\"then\":\"seen is at 2\",\"made_by\":\"guesser first guess\"},{\"name\":\"b\",\"when\":[\"seen is at 2\"],\"then\":\"seen is at 3\",\"made_by\":\"guesser first guess\"},{\"name\":\"c\",\"when\":[\"seen is at 3\"],\"then\":\"seen is at 4\",\"made_by\":\"guesser first guess\"},{\"name\":\"hide\",\"when\":[\"seen is at 1\",\"screen is up\"],\"then\":\"seen is nothing\",\"made_by\":\"guesser first guess\"}]}\n\nThe checker ran it.\n\nPASS: job \"no screen, ends at 4\"\nFAIL: job \"no screen, seen at 3 on step 3\"\n  - What happened: step 1: a made seen at 2; step 2: b made seen at 3; step 3: c made seen at 4.\n  - Wanted seen is at 3 at step 3; got seen at 4.\n  - Rule \"b\" made seen at 3 at step 2, then at step 3 rule \"c\" changed it to at 4.\nFAIL: job \"screen up, ends at 4\"\n  - What happened: step 1: hide made seen nothing.\n  - Wanted seen is at 4 at the end; got seen nothing.\n  - Rule \"c\" never fired: \"seen is at 3\" was never true.\nPASS: job \"screen up, nothing on step 2\"\nPASS: job \"screen up, nothing on step 3\"\n3 of 5 jobs pass.\n\nNO SMALL CHANGE to the existing rules repairs \"no screen, seen at 3 on step 3\", \"screen up, ends at 4\". Something new is needed: a new rule, or a new thing to keep track of.\n\nWrite the whole model again so that every job passes. Keep every rule that already works. Give every thing a start state.",
+     "replied": "{\"things\": {\"screen\": [\"down\", \"up\"], \"ball\": [\"at 1\", \"at 2\", \"at 3\", \"at 4\"], \"seen\": [\"at 1\", \"at 2\", \"at 3\", \"at 4\", \"nothing\"], \"ready\": [\"no\", \"yes\"]}, \"events\": [], \"start\": {\"screen\": \"down\", \"ball\": \"at 1\", \"seen\": \"at 1\", \"ready\": \"no\"}, \"rules\": [{\"name\": \"ready\", \"when\": [\"ready is no\"], \"then\": \"ready is yes\"}, {\"name\": \"ball 1 to 2\", \"when\": [\"ready is yes\", \"ball is at 1\"], \"then\": \"ball is at 2\"}, {\"name\": \"ball 2 to 3\", \"when\": [\"ready is yes\", \"ball is at 2\"], \"then\": \"ball is at 3\"}, {\"name\": \"ball 3 to 4\", \"when\": [\"ready is yes\", \"ball is at 3\"], \"then\": \"ball is at 4\"}, {\"name\": \"seen down 1 to 2\", \"when\": [\"ready is yes\", \"ball is at 1\", \"screen is down\"], \"then\": \"seen is at 2\"}, {\"name\": \"seen down 2 to 3\", \"when\": [\"ready is yes\", \"ball is at 2\", \"screen is down\"], \"then\": \"seen is at 3\"}, {\"name\": \"seen down 3 to 4\", \"when\": [\"ready is yes\", \"ball is at 3\", \"screen is down\"], \"then\": \"seen is at 4\"}, {\"name\": \"seen up 1 to 2\", \"when\": [\"ready is yes\", \"ball is at 1\", \"screen is up\"], \"then\": \"seen is nothing\"}, {\"name\": \"seen up 2 to 3\", \"when\": [\"ready is yes\", \"ball is at 2\", \"screen is up\"], \"then\": \"seen is nothing\"}, {\"name\": \"seen up 3 to 4\", \"when\": [\"ready is yes\", \"ball is at 3\", \"screen is up\"], \"then\": \"seen is at 4\"}]}",
+     "seconds": 40
+    }
+   ]
+  }
+ ]
+}

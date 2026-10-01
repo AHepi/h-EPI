@@ -84,6 +84,7 @@ python tools/run_conformance_pilot.py fills    --observations-dir forge/conforma
 | `docs/reviews/` | Five literature reviews on checks whose verdicts have come loose from what they judge, kept as advisory external syntheses; their README lists what the harness took from them and what it did not. |
 | `docs/mini/` | Mini's request, design, specification, delivery table, register, and audit response; `SPEC.md` is the reference, written from the code, and `FAILURE_MODES.md` the register of what its live runs showed, the harness's own checks under its blind-spot loop included. |
 | `docs/history.md` | Where this came from and how to recover the earlier project. |
+| `guess-check-fix/` | Guess Check Fix, a separate project in its own folder (Node, no dependencies): a guesser model writes small rule models of a request, an ordinary checker runs them against jobs, and the fixing is split between them. Run with DeepSeek V4.1 Flash on ten worlds and 32 planted mistakes. Start with its project story; it does not touch the harness. |
 
 ## Rules of the machine
 

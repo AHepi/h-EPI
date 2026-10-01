@@ -1,0 +1,639 @@
+{
+ "device": "grudge",
+ "repeat": 3,
+ "guesser": "deepseek-flash",
+ "arms": {
+  "bare": {
+   "rule": "Warm if (#apologise + #gift) > #insult; otherwise cold. Each insult counts -1, while apologise and gift each count +1, starting from 0 and requiring a strictly positive final total to be warm.",
+   "graded": [
+    {
+     "test": "test 1",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 2",
+     "hard": true,
+     "right": false
+    },
+    {
+     "test": "test 3",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 4",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 5",
+     "hard": true,
+     "right": false
+    },
+    {
+     "test": "test 6",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 7",
+     "hard": true,
+     "right": false
+    },
+    {
+     "test": "test 8",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 9",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 10",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 11",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 12",
+     "hard": false,
+     "right": true
+    }
+   ],
+   "tokens_out": 24648,
+   "cut_off": 0,
+   "calls": 1,
+   "world_answers": 0
+  },
+  "random answers": {
+   "rule": "Track a hidden count of unresolved insults. Start at 0. Insult: +1. Apologise: -1, but never below 0. Gift: no change. Robin is warm at the end iff the count is 0; otherwise cold.",
+   "graded": [
+    {
+     "test": "test 1",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 2",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 3",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 4",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 5",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 6",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 7",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 8",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 9",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 10",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 11",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 12",
+     "hard": false,
+     "right": true
+    }
+   ],
+   "tokens_out": 9695,
+   "cut_off": 0,
+   "calls": 1,
+   "world_answers": 6
+  },
+  "attack, rebuild fresh": {
+   "rounds": [
+    {
+     "round": 1,
+     "rule": "Robin tracks a hidden score starting at 0; each insult subtracts 2, while each apology or gift adds 1, and the visible mood is warm exactly when the score is at least 0.",
+     "commitments": [
+      {
+       "events": [
+        "insult",
+        "gift",
+        "gift"
+       ],
+       "predict": "warm",
+       "why": "If this came out cold, two gifts would fail to offset one insult, so the gift value or threshold in the score rule would be wrong.",
+       "tested": false,
+       "why_not": "not available",
+       "risky": false
+      },
+      {
+       "events": [
+        "insult",
+        "apologise",
+        "gift"
+       ],
+       "predict": "warm",
+       "why": "If this came out cold, an apology plus a gift would not balance one insult, contradicting the 2:1 repair rule.",
+       "tested": true,
+       "world_says": "mood is warm",
+       "held": true,
+       "risky": false
+      },
+      {
+       "events": [
+        "apologise",
+        "insult"
+       ],
+       "predict": "cold",
+       "why": "If this came out warm, a single apology would cancel an insult, contradicting the rule that one insult needs two positive actions.",
+       "tested": true,
+       "world_says": "mood is cold",
+       "held": true,
+       "risky": false
+      },
+      {
+       "events": [
+        "apologise",
+        "insult",
+        "apologise"
+       ],
+       "predict": "warm",
+       "why": "If this came out cold, two apologies would not exactly offset one insult, so the threshold or weights would be wrong.",
+       "tested": false,
+       "risky": false,
+       "why_not": "not among the three riskiest"
+      },
+      {
+       "events": [
+        "gift",
+        "insult",
+        "gift"
+       ],
+       "predict": "warm",
+       "why": "If this came out cold, the two gifts would not balance the insult, indicating a different gift effect or ordering rule.",
+       "tested": false,
+       "risky": false,
+       "why_not": "not among the three riskiest"
+      }
+     ],
+     "text": "{\"rule\":\"Robin tracks a hidden score starting at 0; each insult subtracts 2, while each apology or gift adds 1, and the visible mood is warm exactly when the score is at least 0.\",\"commitments\":[{\"events\":[\"insult\",\"gift\",\"gift\"],\"predict\":\"warm\",\"why\":\"If this came out cold, two gifts would fail to offset one insult, so the gift value or threshold in the score rule would be wrong.\"},{\"events\":[\"insult\",\"apologise\",\"gift\"],\"predict\":\"warm\",\"why\":\"If this came out cold, an apology plus a gift would not balance one insult, contradicting the 2:1 repair rule.\"},{\"events\":[\"apologise\",\"insult\"],\"predict\":\"cold\",\"why\":\"If this came out warm, a single apology would cancel an insult, contradicting the rule that one insult needs two positive actions.\"},{\"events\":[\"apologise\",\"insult\",\"apologise\"],\"predict\":\"warm\",\"why\":\"If this came out cold, two apologies would not exactly offset one insult, so the threshold or weights would be wrong.\"},{\"events\":[\"gift\",\"insult\",\"gift\"],\"predict\":\"warm\",\"why\":\"If this came out cold, the two gifts would not balance the insult, indicating a different gift effect or ordering rule.\"}]}"
+    },
+    {
+     "round": 2,
+     "rule": "Start with a hidden goodwill score of 0; each insult subtracts 1, each apology and each gift adds 1, and Robin is warm exactly when the score is positive.",
+     "commitments": [
+      {
+       "events": [
+        "gift",
+        "gift",
+        "insult"
+       ],
+       "predict": "warm",
+       "why": "If this came out cold, two gifts would fail to outweigh one insult, contradicting the equal +1 gift / -1 insult accounting; it also tests whether a final insult can ever leave Robin warm.",
+       "tested": true,
+       "world_says": "mood is cold",
+       "held": false,
+       "risky": true
+      },
+      {
+       "events": [
+        "apologise",
+        "apologise",
+        "insult"
+       ],
+       "predict": "warm",
+       "why": "If this came out cold, two apologies would fail to outweigh one insult, contradicting the equal +1 apology / -1 insult accounting; it also tests whether a final insult can ever leave Robin warm.",
+       "tested": true,
+       "world_says": "mood is cold",
+       "held": false,
+       "risky": true
+      },
+      {
+       "events": [
+        "insult",
+        "gift",
+        "gift"
+       ],
+       "predict": "warm",
+       "why": "If this came out cold, two gifts after an insult would not reach a positive score, which would mean gifts are weaker than the rule assumes.",
+       "tested": false,
+       "why_not": "not available",
+       "risky": false
+      },
+      {
+       "events": [
+        "insult",
+        "apologise",
+        "apologise"
+       ],
+       "predict": "warm",
+       "why": "If this came out cold, two apologies after an insult would not reach a positive score, which would mean apologies are weaker than the rule assumes.",
+       "tested": false,
+       "risky": false,
+       "why_not": "not among the three riskiest"
+      },
+      {
+       "events": [
+        "gift"
+       ],
+       "predict": "warm",
+       "why": "If this came out cold, a single gift from neutral would not produce a positive score, contradicting the rule that gift adds +1 from the start.",
+       "tested": false,
+       "risky": false,
+       "why_not": "not among the three riskiest"
+      }
+     ],
+     "text": "{\"rule\": \"Start with a hidden goodwill score of 0; each insult subtracts 1, each apology and each gift adds 1, and Robin is warm exactly when the score is positive.\", \"commitments\": [{\"events\": [\"gift\", \"gift\", \"insult\"], \"predict\": \"warm\", \"why\": \"If this came out cold, two gifts would fail to outweigh one insult, contradicting the equal +1 gift / -1 insult accounting; it also tests whether a final insult can ever leave Robin warm.\"}, {\"events\": [\"apologise\", \"apologise\", \"insult\"], \"predict\": \"warm\", \"why\": \"If this came out cold, two apologies would fail to outweigh one insult, contradicting the equal +1 apology / -1 insult accounting; it also tests whether a final insult can ever leave Robin warm.\"}, {\"events\": [\"insult\", \"gift\", \"gift\"], \"predict\": \"warm\", \"why\": \"If this came out cold, two gifts after an insult would not reach a positive score, which would mean gifts are weaker than the rule assumes.\"}, {\"events\": [\"insult\", \"apologise\", \"apologise\"], \"predict\": \"warm\", \"why\": \"If this came out cold, two apologies after an insult would not reach a positive score, which would mean apologies are weaker than the rule assumes.\"}, {\"events\": [\"gift\"], \"predict\": \"warm\", \"why\": \"If this came out cold, a single gift from neutral would not produce a positive score, contradicting the rule that gift adds +1 from the start.\"}]}"
+    }
+   ],
+   "facts": [
+    {
+     "events": [
+      "insult",
+      "apologise",
+      "gift"
+     ],
+     "answer": "mood is warm"
+    },
+    {
+     "events": [
+      "apologise",
+      "insult"
+     ],
+     "answer": "mood is cold"
+    },
+    {
+     "events": [
+      "gift",
+      "gift",
+      "insult"
+     ],
+     "answer": "mood is cold"
+    },
+    {
+     "events": [
+      "apologise",
+      "apologise",
+      "insult"
+     ],
+     "answer": "mood is cold"
+    }
+   ],
+   "final_rule": null,
+   "graded": [
+    {
+     "test": "test 1",
+     "hard": true,
+     "right": false
+    },
+    {
+     "test": "test 2",
+     "hard": true,
+     "right": false
+    },
+    {
+     "test": "test 3",
+     "hard": true,
+     "right": false
+    },
+    {
+     "test": "test 4",
+     "hard": true,
+     "right": false
+    },
+    {
+     "test": "test 5",
+     "hard": true,
+     "right": false
+    },
+    {
+     "test": "test 6",
+     "hard": true,
+     "right": false
+    },
+    {
+     "test": "test 7",
+     "hard": true,
+     "right": false
+    },
+    {
+     "test": "test 8",
+     "hard": true,
+     "right": false
+    },
+    {
+     "test": "test 9",
+     "hard": false,
+     "right": false
+    },
+    {
+     "test": "test 10",
+     "hard": false,
+     "right": false
+    },
+    {
+     "test": "test 11",
+     "hard": false,
+     "right": false
+    },
+    {
+     "test": "test 12",
+     "hard": false,
+     "right": false
+    }
+   ],
+   "tokens_out": 76395,
+   "cut_off": 1,
+   "calls": 3,
+   "world_answers": 4
+  },
+  "attack, defend": {
+   "rounds": [
+    {
+     "round": 1,
+     "rule": "Robin keeps a hidden score starting at 0; insult subtracts 1, while apologise and gift each add 1, and Robin is warm only if the score is greater than 0 (cold at 0 or below).",
+     "commitments": [
+      {
+       "events": [
+        "apologise",
+        "apologise",
+        "insult"
+       ],
+       "predict": "warm",
+       "why": "Under the rule this is +1; if it came out cold, one insult would outweigh two apologies or the final insult would override a positive score.",
+       "tested": true,
+       "world_says": "mood is cold",
+       "held": false,
+       "risky": true
+      },
+      {
+       "events": [
+        "insult",
+        "apologise",
+        "apologise"
+       ],
+       "predict": "warm",
+       "why": "Under the rule this is +1; if it came out cold, an insult would not be fully offset by two later apologies, contradicting the equal-weight score.",
+       "tested": true,
+       "world_says": "mood is warm",
+       "held": true,
+       "risky": false
+      },
+      {
+       "events": [
+        "apologise",
+        "gift",
+        "insult"
+       ],
+       "predict": "warm",
+       "why": "Under the rule this is +1; if it came out cold, a mixed gift/apology pair would not offset one insult, suggesting insult has larger weight or order matters.",
+       "tested": true,
+       "world_says": "mood is cold",
+       "held": false,
+       "risky": true
+      },
+      {
+       "events": [
+        "gift"
+       ],
+       "predict": "warm",
+       "why": "Under the rule gift alone adds 1 and should make Robin warm; if it came out cold, gift would not be a positive standalone action like apology.",
+       "tested": false,
+       "risky": false,
+       "why_not": "not among the three riskiest"
+      },
+      {
+       "events": [
+        "apologise",
+        "apologise",
+        "insult",
+        "insult"
+       ],
+       "predict": "cold",
+       "why": "Under the rule this is 0, which is cold; if it came out warm, the threshold would be 0 or order would matter, contradicting the observed balanced cold cases.",
+       "tested": false,
+       "risky": false,
+       "why_not": "not among the three riskiest"
+      }
+     ],
+     "text": "{\"rule\":\"Robin keeps a hidden score starting at 0; insult subtracts 1, while apologise and gift each add 1, and Robin is warm only if the score is greater than 0 (cold at 0 or below).\",\"commitments\":[{\"events\":[\"apologise\",\"apologise\",\"insult\"],\"predict\":\"warm\",\"why\":\"Under the rule this is +1; if it came out cold, one insult would outweigh two apologies or the final insult would override a positive score.\"},{\"events\":[\"insult\",\"apologise\",\"apologise\"],\"predict\":\"warm\",\"why\":\"Under the rule this is +1; if it came out cold, an insult would not be fully offset by two later apologies, contradicting the equal-weight score.\"},{\"events\":[\"apologise\",\"gift\",\"insult\"],\"predict\":\"warm\",\"why\":\"Under the rule this is +1; if it came out cold, a mixed gift/apology pair would not offset one insult, suggesting insult has larger weight or order matters.\"},{\"events\":[\"gift\"],\"predict\":\"warm\",\"why\":\"Under the rule gift alone adds 1 and should make Robin warm; if it came out cold, gift would not be a positive standalone action like apology.\"},{\"events\":[\"apologise\",\"apologise\",\"insult\",\"insult\"],\"predict\":\"cold\",\"why\":\"Under the rule this is 0, which is cold; if it came out warm, the threshold would be 0 or order would matter, contradicting the observed balanced cold cases.\"}]}"
+    },
+    {
+     "round": 2,
+     "rule": "Robin keeps a hidden score starting at 0; each insult subtracts 1, while each apology or gift adds 1, and Robin is warm only if the final score is strictly positive and the last action was not an insult.",
+     "commitments": [
+      {
+       "events": [
+        "gift",
+        "apologise",
+        "insult"
+       ],
+       "predict": "cold",
+       "why": "This has a positive net score but ends with insult, so my rule says the final insult still forces cold; if it came out warm, the final-insult override would be wrong.",
+       "tested": true,
+       "world_says": "mood is cold",
+       "held": true,
+       "risky": false
+      },
+      {
+       "events": [
+        "gift"
+       ],
+       "predict": "warm",
+       "why": "A gift alone should count as a positive action and make the score +1; if it came out cold, gifts would not be positive or would need prior apology.",
+       "tested": true,
+       "world_says": "mood is warm",
+       "held": true,
+       "risky": false
+      },
+      {
+       "events": [
+        "insult",
+        "gift",
+        "apologise"
+       ],
+       "predict": "warm",
+       "why": "This nets to +1 with a non-insult last action; if it came out cold, a gift would not help offset an insult enough to cross the threshold.",
+       "tested": true,
+       "world_says": "mood is warm",
+       "held": true,
+       "risky": false
+      },
+      {
+       "events": [
+        "insult",
+        "insult",
+        "apologise"
+       ],
+       "predict": "cold",
+       "why": "This nets to -1 despite ending with apology; if it came out warm, the final apology would outweigh two insults or the threshold would be lower.",
+       "tested": false,
+       "why_not": "not among the three riskiest",
+       "risky": true
+      },
+      {
+       "events": [
+        "insult",
+        "apologise"
+       ],
+       "predict": "cold",
+       "why": "This nets to 0 and should be cold if warm requires a strictly positive score; if it came out warm, one apology would exactly repair one insult or the threshold would be 0.",
+       "tested": false,
+       "risky": true,
+       "why_not": "not among the three riskiest"
+      }
+     ],
+     "text": "{\"rule\":\"Robin keeps a hidden score starting at 0; each insult subtracts 1, while each apology or gift adds 1, and Robin is warm only if the final score is strictly positive and the last action was not an insult.\",\"commitments\":[{\"events\":[\"gift\",\"apologise\",\"insult\"],\"predict\":\"cold\",\"why\":\"This has a positive net score but ends with insult, so my rule says the final insult still forces cold; if it came out warm, the final-insult override would be wrong.\"},{\"events\":[\"gift\"],\"predict\":\"warm\",\"why\":\"A gift alone should count as a positive action and make the score +1; if it came out cold, gifts would not be positive or would need prior apology.\"},{\"events\":[\"insult\",\"gift\",\"apologise\"],\"predict\":\"warm\",\"why\":\"This nets to +1 with a non-insult last action; if it came out cold, a gift would not help offset an insult enough to cross the threshold.\"},{\"events\":[\"insult\",\"insult\",\"apologise\"],\"predict\":\"cold\",\"why\":\"This nets to -1 despite ending with apology; if it came out warm, the final apology would outweigh two insults or the threshold would be lower.\"},{\"events\":[\"insult\",\"apologise\"],\"predict\":\"cold\",\"why\":\"This nets to 0 and should be cold if warm requires a strictly positive score; if it came out warm, one apology would exactly repair one insult or the threshold would be 0.\"}]}"
+    }
+   ],
+   "facts": [
+    {
+     "events": [
+      "apologise",
+      "apologise",
+      "insult"
+     ],
+     "answer": "mood is cold"
+    },
+    {
+     "events": [
+      "insult",
+      "apologise",
+      "apologise"
+     ],
+     "answer": "mood is warm"
+    },
+    {
+     "events": [
+      "apologise",
+      "gift",
+      "insult"
+     ],
+     "answer": "mood is cold"
+    },
+    {
+     "events": [
+      "gift",
+      "apologise",
+      "insult"
+     ],
+     "answer": "mood is cold"
+    },
+    {
+     "events": [
+      "gift"
+     ],
+     "answer": "mood is warm"
+    },
+    {
+     "events": [
+      "insult",
+      "gift",
+      "apologise"
+     ],
+     "answer": "mood is warm"
+    }
+   ],
+   "final_rule": "Robin keeps a hidden score starting at 0: each apology or gift adds 1, each insult subtracts 1. Robin ends warm only if the final score is positive and the last action was not an insult; otherwise Robin is cold.",
+   "graded": [
+    {
+     "test": "test 1",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 2",
+     "hard": true,
+     "right": false
+    },
+    {
+     "test": "test 3",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 4",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 5",
+     "hard": true,
+     "right": false
+    },
+    {
+     "test": "test 6",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 7",
+     "hard": true,
+     "right": false
+    },
+    {
+     "test": "test 8",
+     "hard": true,
+     "right": true
+    },
+    {
+     "test": "test 9",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 10",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 11",
+     "hard": false,
+     "right": true
+    },
+    {
+     "test": "test 12",
+     "hard": false,
+     "right": true
+    }
+   ],
+   "tokens_out": 30001,
+   "cut_off": 0,
+   "calls": 3,
+   "world_answers": 6
+  }
+ }
+}

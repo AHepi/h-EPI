@@ -1,0 +1,197 @@
+{
+ "world": "reminder-app",
+ "planted": {
+  "kind": "needs a new thing",
+  "how": "written by hand",
+  "description": "no count of put-offs: one put-off makes a task urgent",
+  "form": {
+   "things": {
+    "task": [
+     "new",
+     "urgent",
+     "overdue",
+     "done"
+    ]
+   },
+   "events": [
+    "snooze",
+    "finish",
+    "day passes"
+   ],
+   "start": {
+    "task": "new"
+   },
+   "rules": [
+    {
+     "name": "put off",
+     "when": [
+      "snooze happens",
+      "task is new"
+     ],
+     "then": "task is urgent"
+    },
+    {
+     "name": "overdue",
+     "when": [
+      "day passes happens",
+      "task is urgent"
+     ],
+     "then": "task is overdue"
+    },
+    {
+     "name": "finish",
+     "when": [
+      "finish happens"
+     ],
+     "then": "task is done"
+    }
+   ]
+  },
+  "before": {
+   "shown": "3/3",
+   "held_back": "3/4",
+   "nearby": {
+    "tried": 400,
+    "differ": 44,
+    "cannot_run": 0,
+    "examples": [
+     "the situation of job \"put off once\": task urgent, world says new",
+     "the situation of job \"put off twice\", but the first \"snooze\" does not happen: task urgent, world says new",
+     "the situation of job \"put off twice\", but \"day passes\" also happens after \"snooze\": task overdue, world says urgent"
+    ]
+   }
+  }
+ },
+ "guesser": "deepseek-flash",
+ "counts": {
+  "requests": 2,
+  "replies": 2,
+  "cut_off": 0,
+  "plain_form": 0,
+  "refused": 0,
+  "thinking_characters": 47236,
+  "answer_characters": 899,
+  "tokens_in": 2367,
+  "tokens_out": 11519
+ },
+ "results": [
+  {
+   "corrector": "review first",
+   "shown": "3/3",
+   "held_back": "1/4",
+   "held_back_asked": [],
+   "questions_to_world": 5,
+   "deepseek_asked": 2,
+   "nearby": {
+    "tried": 400,
+    "differ": 128,
+    "cannot_run": 0,
+    "examples": [
+     "the situation of job \"put off once\": task urgent, world says new",
+     "the situation of job \"put off twice then a day\": task urgent, world says overdue",
+     "the situation of job \"a day passes on a new task\": task urgent, world says new"
+    ]
+   },
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "3/3",
+     "problems": 0
+    },
+    {
+     "step": "self review",
+     "verdict": "no change",
+     "kept": true,
+     "lost": [],
+     "seen": "3/3"
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 1,
+     "seen": "4/4"
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 0,
+     "seen": "4/4"
+    },
+    {
+     "step": "look for surprises",
+     "added": 4,
+     "surprises": 1,
+     "seen": "7/8"
+    },
+    {
+     "step": "guesser rewrites first",
+     "verdict": "accepted",
+     "repaired": [
+      "world answer 5"
+     ],
+     "lost": [],
+     "seen": "8/8"
+    },
+    {
+     "step": "look for surprises",
+     "added": 0,
+     "surprises": 1,
+     "seen": "8/8"
+    }
+   ],
+   "model": {
+    "things": {
+     "task": [
+      "new",
+      "urgent",
+      "overdue",
+      "done"
+     ]
+    },
+    "events": [
+     "snooze",
+     "finish",
+     "day passes"
+    ],
+    "start": {
+     "task": "new"
+    },
+    "rules": [
+     {
+      "name": "put off",
+      "when": [
+       "snooze happens",
+       "task is new"
+      ],
+      "then": "task is urgent"
+     },
+     {
+      "name": "day passes makes new urgent",
+      "when": [
+       "day passes happens",
+       "task is new"
+      ],
+      "then": "task is urgent"
+     },
+     {
+      "name": "finish",
+      "when": [
+       "finish happens"
+      ],
+      "then": "task is done"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "Task: I want a to-do app where things I keep putting off get more urgent, and done things go away.\n\nThings and states to use:\n  task: new, urgent, overdue, done\nEvents to use: snooze, finish, day passes\n\nThe checker will test your model on these jobs:\n- \"finish a new task\": events in order: finish; expected at the end: task is done.\n- \"put off twice\": events in order: snooze, then snooze; expected at the end: task is urgent.\n- \"nothing happens\": no events; expected at the end: task is new.\n\nHere is a model for this task. It may contain mistakes, including mistakes the jobs above do not catch.\n\n{\"things\":{\"task\":[\"new\",\"urgent\",\"overdue\",\"done\"]},\"events\":[\"snooze\",\"finish\",\"day passes\"],\"start\":{\"task\":\"new\"},\"rules\":[{\"name\":\"put off\",\"when\":[\"snooze happens\",\"task is new\"],\"then\":\"task is urgent\",\"made_by\":\"guesser first guess\"},{\"name\":\"overdue\",\"when\":[\"day passes happens\",\"task is urgent\"],\"then\":\"task is overdue\",\"made_by\":\"guesser first guess\"},{\"name\":\"finish\",\"when\":[\"finish happens\"],\"then\":\"task is done\",\"made_by\":\"guesser first guess\"}]}\n\nGo through the task sentence by sentence and check that every part of it is in the model, and that every rule does what the task says, in every situation the task describes, not only in the jobs. Correct every mistake you find. Write the whole corrected model. If you find no mistake, write it unchanged.",
+     "replied": "{\"things\": {\"task\": [\"new\", \"urgent\", \"overdue\", \"done\"]}, \"events\": [\"snooze\", \"finish\", \"day passes\"], \"start\": {\"task\": \"new\"}, \"rules\": [{\"name\": \"put off\", \"when\": [\"snooze happens\", \"task is new\"], \"then\": \"task is urgent\"}, {\"name\": \"day passes makes new urgent\", \"when\": [\"day passes happens\", \"task is new\"], \"then\": \"task is urgent\"}, {\"name\": \"overdue\", \"when\": [\"day passes happens\", \"task is urgent\"], \"then\": \"task is overdue\"}, {\"name\": \"finish\", \"when\": [\"finish happens\"], \"then\": \"task is done\"}]}",
+     "seconds": 45
+    },
+    {
+     "asked": "Task: I want a to-do app where things I keep putting off get more urgent, and done things go away.\n\nThings and states to use:\n  task: new, urgent, overdue, done\nEvents to use: snooze, finish, day passes\n\nThe checker will test your model on these jobs:\n- \"finish a new task\": events in order: finish; expected at the end: task is done.\n- \"put off twice\": events in order: snooze, then snooze; expected at the end: task is urgent.\n- \"nothing happens\": no events; expected at the end: task is new.\n- \"world answer 1\": events in order: finish, then snooze; expected at the end: task is done.\n- \"world answer 2\": events in order: snooze, then finish; expected at the end: task is done.\n- \"world answer 3\": events in order: day passes, then finish; expected at the end: task is done.\n- \"world answer 4\": events in order: day passes, then snooze, then snooze; expected at the end: task is urgent.\n- \"world answer 5\": events in order: snooze, then day passes, then snooze; expected at the end: task is urgent.\n\nThe current model:\n{\"things\":{\"task\":[\"new\",\"urgent\",\"overdue\",\"done\"]},\"events\":[\"snooze\",\"finish\",\"day passes\"],\"start\":{\"task\":\"new\"},\"rules\":[{\"name\":\"put off\",\"when\":[\"snooze happens\",\"task is new\"],\"then\":\"task is urgent\"},{\"name\":\"day passes makes new urgent\",\"when\":[\"day passes happens\",\"task is new\"],\"then\":\"task is urgent\"},{\"name\":\"overdue\",\"when\":[\"day passes happens\",\"task is urgent\"],\"then\":\"task is overdue\"},{\"name\":\"finish\",\"when\":[\"finish happens\"],\"then\":\"task is done\"}]}\n\nThe checker ran it.\n\nPASS: job \"finish a new task\"\nPASS: job \"put off twice\"\nPASS: job \"nothing happens\"\nPASS: job \"world answer 1\"\nPASS: job \"world answer 2\"\nPASS: job \"world answer 3\"\nPASS: job \"world answer 4\"\nFAIL: job \"world answer 5\"\n  - What happened: step 1: put off made task urgent; step 2: overdue made task overdue.\n  - Wanted task is urgent at the end; got task overdue.\n  - Rule \"put off\" made task urgent at step 1, then at step 2 rule \"overdue\" changed it to overdue.\n  - Rule \"day passes makes new urgent\" never fired: each of its conditions was true at some step, but never all at the same step.\n7 of 8 jobs pass.\n\nSMALL FIX FOUND: in rule \"overdue\": condition \"task is urgent\" changed to \"task is overdue\" repairs \"world answer 5\" and breaks nothing.\nSMALL FIX FOUND: in rule \"overdue\": condition \"task is urgent\" changed to \"task is done\" repairs \"world answer 5\" and breaks nothing.\nSMALL FIX FOUND: in rule \"overdue\": result \"task is overdue\" changed to \"task is new\" repairs \"world answer 5\" and breaks nothing.\nSMALL FIX FOUND: in rule \"overdue\": result \"task is overdue\" changed to \"task is urgent\" repairs \"world answer 5\" and breaks nothing.\nSMALL FIX FOUND: in rule \"overdue\": rule \"overdue\" removed repairs \"world answer 5\" and breaks nothing.\n\nWrite the whole model again so that every job passes. Keep every rule that already works. Give every thing a start state.",
+     "replied": "{\"things\":{\"task\":[\"new\",\"urgent\",\"overdue\",\"done\"]},\"events\":[\"snooze\",\"finish\",\"day passes\"],\"start\":{\"task\":\"new\"},\"rules\":[{\"name\":\"put off\",\"when\":[\"snooze happens\",\"task is new\"],\"then\":\"task is urgent\"},{\"name\":\"day passes makes new urgent\",\"when\":[\"day passes happens\",\"task is new\"],\"then\":\"task is urgent\"},{\"name\":\"finish\",\"when\":[\"finish happens\"],\"then\":\"task is done\"}]}",
+     "seconds": 7
+    }
+   ]
+  }
+ ]
+}

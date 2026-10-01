@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<!--
+  WHAT THIS FILE DOES, IN PLAIN WORDS
+  The template for the Sonnet page. The build script ("16 build the Sonnet page.js") copies the
+  project's code files into the marked place below and writes "16 Sonnet page.html".
+  Change the page here, then rebuild. Change the checker, worlds, loop or guesser in their own files.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Guess Check Fix: Sonnet as the guesser</title>
+<style>
+  :root {
+    --paper: #EEF2EF; --ink: #1D2622; --muted: #56655E; --line: #C3CEC8; --well: #E1E8E4;
+    --pass: #2D6A4F; --fail: #A63D2F; --accent: #2B4C7E; --accent-ink: #FFFFFF;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --paper: #141A17; --ink: #E3EAE6; --muted: #9AA9A1; --line: #33403A; --well: #1D2521;
+      --pass: #6FBF98; --fail: #E58473; --accent: #8EAAE2; --accent-ink: #0F1512; }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--paper); color: var(--ink);
+    font-family: Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
+    font-size: 17px; line-height: 1.55; font-variant-numeric: tabular-nums;
+    padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px); }
+  main { max-width: 46rem; margin: 0 auto; padding: 1.5rem 1.1rem 3rem; }
+  h1 { font-size: 1.7rem; line-height: 1.2; margin: 0 0 .6rem; font-weight: 600; letter-spacing: -.01em; }
+  h2 { font-size: 1.15rem; margin: 2.2rem 0 .5rem; font-weight: 600; }
+  p { margin: .5rem 0; max-width: 38rem; }
+  .quiet { color: var(--muted); font-size: .92rem; }
+  .controls { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin: 1.2rem 0 .8rem; }
+  select, button { font: inherit; font-size: 1rem; border-radius: 6px; }
+  select { padding: .5rem .6rem; background: var(--well); color: var(--ink); border: 1px solid var(--line); }
+  button { padding: .55rem 1.2rem; border: 0; background: var(--accent); color: var(--accent-ink); font-weight: 600; cursor: pointer; }
+  button.plain { background: transparent; color: var(--accent); border: 1px solid var(--accent); font-weight: 500; }
+  button:disabled { opacity: .45; cursor: default; }
+  button:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  #now { min-height: 3.2em; padding: .7rem .9rem; background: var(--well); border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; }
+  #now.stopped { border-left-color: var(--fail); }
+  #counts { margin-top: .4rem; }
+
+  /* The results grid: the one strong element on the page. */
+  .world { margin: 1.1rem 0 0; }
+  .world h3 { font-size: 1.05rem; margin: 0 0 .2rem; font-weight: 600; }
+  table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+  th, td { text-align: left; vertical-align: top; padding: .45rem .4rem .45rem 0; border-bottom: 1px solid var(--line); }
+  thead th { font-weight: 400; font-size: .78rem; color: var(--muted); padding-bottom: .25rem; }
+  thead th:first-child, tbody th { width: 40%; }
+  tbody th { font-weight: 600; font-size: .88rem; line-height: 1.3; }
+  td { font-size: .85rem; }
+  .measure { display: grid; grid-template-columns: 1fr auto; gap: .45rem; align-items: center; }
+  .bar { height: .55rem; background: var(--well); border: 1px solid var(--line); border-radius: 3px; overflow: hidden; }
+  .bar > span { display: block; height: 100%; background: var(--pass); }
+  .bar.short > span { background: var(--fail); }
+  .asked { display: block; color: var(--muted); font-size: .76rem; font-weight: 400; margin-top: .15rem; }
+  .waiting { color: var(--muted); }
+  .error { color: var(--fail); }
+
+  details { border-bottom: 1px solid var(--line); padding: .5rem 0; }
+  summary { cursor: pointer; font-weight: 600; }
+  ol.steps { margin: .4rem 0 .6rem; padding-left: 1.3rem; font-size: .88rem; }
+  textarea { width: 100%; min-height: 9rem; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .75rem;
+    background: var(--well); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: .6rem; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Sonnet tries the five test worlds</h1>
+  <p>Sonnet writes a first guess for each world. The checker then runs it four ways, from that same guess: the guess alone; Sonnet rewriting it from the checker's report; the checker's small fixes with Sonnet adding only missing parts; and that plus questions to the world.</p>
+  <p class="quiet">All five worlds take up to about 50 requests to Sonnet, out of your own Claude usage, and roughly 10 to 20 minutes. Keep this page open while it runs. Nothing is saved when it closes, so copy the results at the end.</p>
+
+  <div class="controls">
+    <select id="which" aria-label="Which worlds to run"></select>
+    <button id="run">Run</button>
+  </div>
+  <div id="now" role="status" aria-live="polite">Press Run to start.</div>
+  <div id="counts" class="quiet"></div>
+
+  <h2>Results</h2>
+  <p class="quiet">Shown jobs: the ones Sonnet saw. Held back: kept from Sonnet until the end, to catch guesses that only fit what they were shown. Asked again: requests to Sonnet after its first guess.</p>
+  <div id="grid"></div>
+
+  <h2>What happened, step by step</h2>
+  <div id="story"><p class="quiet">Fills in as each world finishes.</p></div>
+
+  <h2>Results to paste back into the chat</h2>
+  <p class="quiet">Copy this box and paste it into the chat. It holds each final model, each step, and Sonnet's replies.</p>
+  <textarea id="results" readonly placeholder="Appears when the run ends."></textarea>
+  <div class="controls"><button id="copy" class="plain" disabled>Copy results</button><span id="copied" class="quiet"></span></div>
+</main>
+
+<script>
+  // Lets the project's code files run in the page unchanged: each one is handed its own "module" and "require".
+  const page_files = {};
+  function page_require(name) {
+    const key = name.replace(/^\.\//, '');
+    if (key === 'fs') return null;
+    if (!(key in page_files)) throw new Error(`The page is missing the file ${name}`);
+    return page_files[key];
+  }
+</script>
+<!-- PROJECT CODE -->
+<script>
+  const C = page_files['03 checker.js'];
+  const WORLDS = page_files['03 test worlds.js'];
+  const L = page_files['09 loop.js'];
+  const S = page_files['16 Sonnet guesser.js'];
+
+  const WORLD_NAMES = { 'ball-and-wall': 'Ball and wall', 'hidden-ball': 'Hidden ball', 'door-game': 'Door game', 'lighthouse-story': 'Lighthouse story', 'reminder-app': 'To-do app' };
+  const WAY_NAMES = { 'one guess': 'Guess alone', 'rewrite': 'Rewrite from report', 'guess and fix': 'Guess and fix', 'full loop': 'Full loop' };
+  const STEP_WORDS = { 'guess': 'first guess', 'rewrite': 'Sonnet rewrote the model', 'owner words added': 'owner’s word list added', 'small fix': 'checker small fix', 'new part': 'Sonnet asked for a new part',
+    'checker new rule': 'checker searched for one new rule', 'ask world to choose': 'world asked to choose between fixes', 'ask world about loose rules': 'world asked about loose rules' };
+  const $ = id => document.getElementById(id);
+  const pause = () => new Promise(resolve => setTimeout(resolve, 30));
+
+  async function send_to_sonnet(body) {
+    const response = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    let data = null;
+    try { data = await response.json(); } catch (e) { data = null; }
+    if (!response.ok) throw new Error(`Sonnet refused the request (code ${response.status})${data && data.error ? `: ${data.error.message}` : ''}`);
+    return data;
+  }
+  const guesser = S.make_sonnet_guesser(send_to_sonnet);
+
+  // Controls
+  $('which').innerHTML = `<option value="all">All five worlds</option>` + WORLDS.map(w => `<option value="${w.id}">${WORLD_NAMES[w.id]} only</option>`).join('');
+
+  // One small table per world: a row for each way of running, with shown jobs and held-back jobs side by side.
+  const row_id = (id, mode) => `row-${id}-${mode.replace(/ /g, '-')}`;
+  function draw_grid(ids) {
+    $('grid').innerHTML = ids.map(id => `<section class="world"><h3>${WORLD_NAMES[id]}</h3><table aria-label="${WORLD_NAMES[id]}">
+      <thead><tr><th>Way of running</th><th>Shown jobs</th><th>Held back</th></tr></thead><tbody>
+      ${L.WAYS_OF_RUNNING.map(m => `<tr id="${row_id(id, m)}"><th scope="row">${WAY_NAMES[m]}<span class="asked"></span></th><td colspan="2" class="waiting">waiting</td></tr>`).join('')}
+      </tbody></table></section>`).join('');
+  }
+  function measure(passed, total) {
+    const share = total ? Math.round(100 * passed / total) : 0;
+    return `<td><div class="measure"><div class="bar${passed < total ? ' short' : ''}"><span style="width:${share}%"></span></div><span>${passed}/${total}</span></div></td>`;
+  }
+  function fill_cell(id, mode, r) {
+    const f = r.final;
+    const row = $(row_id(id, mode));
+    row.querySelectorAll('td').forEach(td => td.remove());
+    row.querySelector('.asked').textContent = `asked again: ${r.guesser_calls}${r.questions_to_world ? `, world asked: ${r.questions_to_world}` : ''}`;
+    row.insertAdjacentHTML('beforeend', measure(f.original_seen_passed, f.original_seen_total) + measure(f.held_back_passed, f.held_back_total));
+  }
+  function mark_cells(id, text) {
+    for (const m of L.WAYS_OF_RUNNING) { const cell = $(row_id(id, m)).querySelector('td.waiting'); if (cell) { cell.classList.remove('waiting'); cell.innerHTML = `<span class="error">${text}</span>`; } }
+  }
+  function show_counts() {
+    const k = guesser.counts;
+    $('counts').textContent = `Requests to Sonnet: ${k.requests}. Replies cut off at the length cap: ${k.cut_off}. Requests retried in the plainer form: ${k.plain_form}.`;
+  }
+  function tell(text, stopped) { $('now').textContent = text; $('now').classList.toggle('stopped', !!stopped); }
+
+  function step_line(x) {
+    const words = STEP_WORDS[x.step] || x.step;
+    const detail = x.what ? `: ${x.what}` : x.verdict ? ` (${x.verdict}${x.kept ? ', kept' : ''})` : x.added && Array.isArray(x.added) ? `: ${x.added.join(', ')}` : '';
+    return `<li>${words}${detail}. Shown jobs passing: ${x.seen || 'n/a'}.</li>`;
+  }
+  function add_story(id, world_result) {
+    if (!$('story').dataset.started) { $('story').innerHTML = ''; $('story').dataset.started = 'yes'; }
+    const parts = world_result.error ? `<p class="error">${world_result.error}</p>`
+      : L.WAYS_OF_RUNNING.filter(m => world_result.ways[m]).map(m => `<p><b>${WAY_NAMES[m]}</b></p><ol class="steps">${world_result.ways[m].rounds.map(step_line).join('')}</ol>`).join('');
+    const d = document.createElement('details');
+    d.innerHTML = `<summary>${WORLD_NAMES[id]}</summary>${world_result.first_guess_readable === false ? '<p class="error">Sonnet’s first guess could not be read as a model.</p>' : ''}${parts}`;
+    $('story').appendChild(d);
+  }
+
+  async function run() {
+    $('run').disabled = true; $('which').disabled = true; $('copy').disabled = true; $('results').value = ''; $('copied').textContent = '';
+    $('story').innerHTML = '<p class="quiet">Fills in as each world finishes.</p>'; delete $('story').dataset.started;
+    const choice = $('which').value;
+    const worlds = choice === 'all' ? WORLDS : WORLDS.filter(w => w.id === choice);
+    draw_grid(worlds.map(w => w.id));
+    const results = { made: new Date().toISOString(), guesser: S.MODEL_NAME, reply_limit: S.REPLY_LIMIT, summary: [], worlds: [], counts: null };
+    let stop = false;
+    for (let i = 0; i < worlds.length && !stop; i++) {
+      const world = worlds[i];
+      const where = `World ${i + 1} of ${worlds.length}, ${WORLD_NAMES[world.id].toLowerCase()}`;
+      const world_result = { world: world.id, ways: {} };
+      try {
+        tell(`${where}: asking Sonnet for a first guess.`); await pause();
+        const guess = await L.first_guess(world, { guesser });
+        world_result.first_guess_readable = !!guess.raw;
+        world_result.first_guess_reply = (guess.log[0] && guess.log[0].replied || '').slice(0, 4000);
+        show_counts();
+        for (const mode of L.WAYS_OF_RUNNING) {
+          tell(`${where}: ${WAY_NAMES[mode].toLowerCase()}.`); await pause();
+          const r = await L.run_task(world, mode, { guesser, on_progress: rec => { const last = rec.rounds[rec.rounds.length - 1]; tell(`${where}: ${WAY_NAMES[mode].toLowerCase()}, ${STEP_WORDS[last.step] || last.step}. Shown jobs passing: ${last.seen || 'n/a'}.`); show_counts(); } }, guess);
+          world_result.ways[mode] = { final: r.final, rounds: r.rounds, added_jobs: r.added_jobs, questions_to_world: r.questions_to_world, asked_again: r.guesser_calls, model: r.model,
+            replies: r.log.slice(1).map(e => String(e.replied).slice(0, 1500)) };
+          results.summary.push(`${world.id} | ${mode} | shown ${r.final.original_seen_passed}/${r.final.original_seen_total} | held back ${r.final.held_back_passed}/${r.final.held_back_total} | asked again ${r.guesser_calls} | world asked ${r.questions_to_world}`);
+          fill_cell(world.id, mode, r); show_counts(); await pause();
+        }
+      } catch (problem) {
+        world_result.error = problem.message;
+        results.summary.push(`${world.id} | stopped: ${problem.message}`);
+        mark_cells(world.id, 'stopped');
+        if (/could not be reached/.test(problem.message) && !Object.keys(world_result.ways).length) {
+          stop = true;
+          tell(`Stopped: ${problem.message}. The page could not get an answer from Sonnet, so the other worlds were not run.`, true);
+        }
+      }
+      results.worlds.push(world_result);
+      add_story(world.id, world_result);
+    }
+    results.counts = guesser.counts;
+    $('results').value = JSON.stringify(results, null, 1);
+    $('copy').disabled = false; $('run').disabled = false; $('which').disabled = false;
+    if (!stop) tell(`Finished ${worlds.length === 1 ? 'the world' : `all ${worlds.length} worlds`}. Copy the results below and paste them into the chat.`);
+  }
+
+  async function copy_results() {
+    const box = $('results');
+    try { await navigator.clipboard.writeText(box.value); $('copied').textContent = 'Copied.'; }
+    catch (e) {
+      box.focus(); box.select();
+      let ok = false; try { ok = document.execCommand('copy'); } catch (e2) { ok = false; }
+      $('copied').textContent = ok ? 'Copied.' : 'Selected. Use your device’s Copy.';
+    }
+  }
+  $('run').addEventListener('click', run);
+  $('copy').addEventListener('click', copy_results);
+  draw_grid(WORLDS.map(w => w.id));
+</script>
+</body>
+</html>

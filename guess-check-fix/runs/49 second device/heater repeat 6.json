@@ -1,0 +1,248 @@
+{
+ "device": "heater",
+ "repeat": 6,
+ "guesser": "deepseek-flash",
+ "reply_limit": 200000,
+ "arms": {
+  "bare": {
+   "short_right": 105,
+   "short_all": 106,
+   "long_right": 922,
+   "long_all": 972,
+   "hard_right": 23,
+   "hard_all": 23,
+   "code": "// The dial starts at 1 (positions 0-3). Turning up past 3 overheats the heater, making the room permanently cold. Otherwise, the room is warm if the dial is at 1 or 2, and cold if it is at 0.\nfunction visible(actions) {\n  let dial = 1;\n  let overheated = false;\n  for (const action of actions) {\n    if (action === \"turn up\") {\n      dial = Math.min(dial + 1, 3);\n    } else if (action === \"turn down\") {\n      dial = Math.max(dial - 1, 0);\n    }\n    // \"wait\" leaves the dial unchanged\n    if (dial === 3) {\n      overheated = true;\n    }\n  }\n  if (overheated) {\n    return { room: \"cold\" };\n  }\n  return { room: (dial === 1 || dial === 2) ? \"warm\" : \"cold\" };\n}",
+   "comment": "The dial starts at 1 (positions 0-3). Turning up past 3 overheats the heater, making the room permanently cold. Otherwise, the room is warm if the dial is at 1 or 2, and cold if it is at 0.",
+   "problem": null,
+   "true_everywhere": false,
+   "facts": [],
+   "world_answers": 0,
+   "tokens_out": 70428,
+   "cut_off": 0,
+   "text": "```javascript\n// The dial starts at 1 (positions 0-3). Turning up past 3 overheats the heater, making the room permanently cold. Otherwise, the room is warm if the dial is at 1 or 2, and cold if it is at 0.\nfunction visible(actions) {\n  let dial = 1;\n  let overheated = false;\n  for (const action of actions) {\n    if (action === \"turn up\") {\n      dial = Math.min(dial + 1, 3);\n    } else if (action === \"turn down\") {\n      dial = Math.max(dial - 1, 0);\n    }\n    // \"wait\" leaves the dial unchanged\n    if (dial === 3) {\n      overheated = true;\n    }\n  }\n  if (overheated) {\n    return { room: \"cold\" };\n  }\n  return { room: (dial === 1 || dial === 2) ? \"warm\" : \"cold\" };\n}\n```"
+  },
+  "random answers": {
+   "short_right": 77,
+   "short_all": 106,
+   "long_right": 713,
+   "long_all": 972,
+   "hard_right": 10,
+   "hard_all": 23,
+   "code": "// Wait is a no-op; track a hidden 5-state machine where C1,C2,C3 are cold and W1,W2 are warm, with transitions as coded.\nfunction visible(actions) {\n  let state = 'START';\n  for (let a of actions) {\n    if (a === 'wait') continue;\n    if (state === 'START') {\n      state = a === 'turn up' ? 'C3' : 'C1';\n    } else if (state === 'C1') {\n      if (a === 'turn up') state = 'W1';\n      // turn down stays C1\n    } else if (state === 'C3') {\n      state = a === 'turn up' ? 'C2' : 'C1';\n    } else if (state === 'W1') {\n      state = a === 'turn up' ? 'W2' : 'C2';\n    }\n    // C2 and W2 are sinks: C2 stays cold, W2 stays warm\n  }\n  return { room: (state === 'W1' || state === 'W2') ? 'warm' : 'cold' };\n}",
+   "comment": "Wait is a no-op; track a hidden 5-state machine where C1,C2,C3 are cold and W1,W2 are warm, with transitions as coded.",
+   "problem": null,
+   "true_everywhere": false,
+   "facts": [
+    {
+     "events": [
+      "wait",
+      "turn down",
+      "turn down",
+      "turn up"
+     ],
+     "state": "warm"
+    },
+    {
+     "events": [
+      "wait",
+      "turn down",
+      "wait"
+     ],
+     "state": "cold"
+    },
+    {
+     "events": [
+      "turn down",
+      "turn up",
+      "wait",
+      "wait"
+     ],
+     "state": "warm"
+    },
+    {
+     "events": [
+      "wait",
+      "turn down",
+      "wait",
+      "wait"
+     ],
+     "state": "cold"
+    },
+    {
+     "events": [
+      "turn up",
+      "turn down",
+      "turn up",
+      "wait"
+     ],
+     "state": "warm"
+    },
+    {
+     "events": [
+      "turn down",
+      "turn down",
+      "turn up",
+      "turn down"
+     ],
+     "state": "cold"
+    }
+   ],
+   "world_answers": 6,
+   "tokens_out": 88992,
+   "cut_off": 0,
+   "text": "```javascript\n// Wait is a no-op; track a hidden 5-state machine where C1,C2,C3 are cold and W1,W2 are warm, with transitions as coded.\nfunction visible(actions) {\n  let state = 'START';\n  for (let a of actions) {\n    if (a === 'wait') continue;\n    if (state === 'START') {\n      state = a === 'turn up' ? 'C3' : 'C1';\n    } else if (state === 'C1') {\n      if (a === 'turn up') state = 'W1';\n      // turn down stays C1\n    } else if (state === 'C3') {\n      state = a === 'turn up' ? 'C2' : 'C1';\n    } else if (state === 'W1') {\n      state = a === 'turn up' ? 'W2' : 'C2';\n    }\n    // C2 and W2 are sinks: C2 stays cold, W2 stays warm\n  }\n  return { room: (state === 'W1' || state === 'W2') ? 'warm' : 'cold' };\n}\n```"
+  },
+  "rivals choose": {
+   "short_right": 87,
+   "short_all": 106,
+   "long_right": 764,
+   "long_all": 972,
+   "hard_right": 10,
+   "hard_all": 23,
+   "code": "// The dial stays between 0 and 2; turning down to 0 sets a latch. Cold at 0; at 2 warm only if latched; at 1 warm if latched or the last action wasn't \"turn down\".\nfunction visible(actions) {\n  let dial = 0;\n  let primed = false;\n  let lastAction = null;\n\n  for (const action of actions) {\n    if (action === \"turn up\") {\n      dial = Math.min(2, dial + 1);\n    } else if (action === \"turn down\") {\n      dial = Math.max(0, dial - 1);\n      if (dial === 0) primed = true;\n    }\n    lastAction = action;\n  }\n\n  let room;\n  if (dial === 0) {\n    room = \"cold\";\n  } else if (dial === 2) {\n    room = primed ? \"warm\" : \"cold\";\n  } else {\n    room = (primed || lastAction !== \"turn down\") ? \"warm\" : \"cold\";\n  }\n\n  return { room };\n}",
+   "comment": "The dial stays between 0 and 2; turning down to 0 sets a latch. Cold at 0; at 2 warm only if latched; at 1 warm if latched or the last action wasn't \"turn down\".",
+   "problem": null,
+   "true_everywhere": false,
+   "facts": [
+    {
+     "events": [
+      "wait",
+      "turn up",
+      "turn down",
+      "turn up"
+     ],
+     "state": "warm"
+    },
+    {
+     "events": [
+      "turn down",
+      "turn up"
+     ],
+     "state": "warm"
+    },
+    {
+     "events": [
+      "turn down",
+      "turn down",
+      "turn up",
+      "turn up"
+     ],
+     "state": "warm"
+    },
+    {
+     "events": [
+      "turn up",
+      "turn up",
+      "turn up",
+      "turn down"
+     ],
+     "state": "cold"
+    },
+    {
+     "events": [
+      "wait",
+      "turn down",
+      "turn up",
+      "turn up"
+     ],
+     "state": "warm"
+    },
+    {
+     "events": [
+      "wait",
+      "wait",
+      "turn up",
+      "wait"
+     ],
+     "state": "warm"
+    }
+   ],
+   "world_answers": 6,
+   "tokens_out": 123568,
+   "cut_off": 0,
+   "text": "```javascript\n// The dial stays between 0 and 2; turning down to 0 sets a latch. Cold at 0; at 2 warm only if latched; at 1 warm if latched or the last action wasn't \"turn down\".\nfunction visible(actions) {\n  let dial = 0;\n  let primed = false;\n  let lastAction = null;\n\n  for (const action of actions) {\n    if (action === \"turn up\") {\n      dial = Math.min(2, dial + 1);\n    } else if (action === \"turn down\") {\n      dial = Math.max(0, dial - 1);\n      if (dial === 0) primed = true;\n    }\n    lastAction = action;\n  }\n\n  let room;\n  if (dial === 0) {\n    room = \"cold\";\n  } else if (dial === 2) {\n    room = primed ? \"warm\" : \"cold\";\n  } else {\n    room = (primed || lastAction !== \"turn down\") ? \"warm\" : \"cold\";\n  }\n\n  return { room };\n}\n```",
+   "rounds": [
+    {
+     "round": 1,
+     "rivals": [
+      {
+       "code": "// Explanation 1: A D-U-U pattern latches a hidden ready flag; otherwise a final D-U warms only if no U-U has occurred before that D.\nfunction visible(actions) {\n  let permanent = false;\n  let seenUU = false;\n  let lastD_atNoUU = false;\n\n  for (let i = 0; i < actions.length; i++) {\n    const a = actions[i];\n\n    if (a === \"turn up\" && i >= 1 && actions[i - 1] === \"turn up\") {\n      seenUU = true;\n    }\n\n    if (a === \"turn down\") {\n      lastD_atNoUU = !seenUU;\n    }\n\n    if (\n      a === \"turn up\" &&\n      i >= 2 &&\n      actions[i - 1] === \"turn up\" &&\n      actions[i - 2] === \"turn down\"\n    ) {\n      permanent = true;\n    }\n  }\n\n  const n = actions.length;\n  const endsDU =\n    n >= 2 &&\n    actions[n - 2] === \"turn down\" &&\n    actions[n - 1] === \"turn up\";\n\n  return {\n    room: permanent || (endsDU && lastD_atNoUU) ? \"warm\" : \"cold\"\n  };\n}",
+       "comment": "Explanation 1: A D-U-U pattern latches a hidden ready flag; otherwise a final D-U warms only if no U-U has occurred before that D.",
+       "problem": null,
+       "fits": true,
+       "true_everywhere": false
+      },
+      {
+       "code": "// Explanation 2: The heater has a 4-action sliding memory; warm only when the final 4-action window, or final 3 if shorter, matches a warming pattern.\nfunction visible(actions) {\n  const n = actions.length;\n\n  if (n >= 4) {\n    const w = actions.slice(-4).join(\"|\");\n    const warm4 = [\n      \"turn down|turn up|turn up|turn down\",\n      \"turn down|turn up|turn up|wait\",\n      \"turn down|turn down|turn down|turn up\"\n    ];\n    return { room: warm4.includes(w) ? \"warm\" : \"cold\" };\n  }\n\n  if (n === 3) {\n    const w = actions.join(\"|\");\n    const warm3 = [\n      \"turn up|turn down|turn up\",\n      \"wait|turn down|turn up\"\n    ];\n    return { room: warm3.includes(w) ? \"warm\" : \"cold\" };\n  }\n\n  return { room: \"cold\" };\n}",
+       "comment": "Explanation 2: The heater has a 4-action sliding memory; warm only when the final 4-action window, or final 3 if shorter, matches a warming pattern.",
+       "problem": null,
+       "fits": true,
+       "true_everywhere": false
+      },
+      {
+       "code": "// Explanation 3: Warm if a D-U-U has ever occurred, or if the number of turn-downs is odd, no two turn-ups ever occurred, and the last action is turn-up.\nfunction visible(actions) {\n  let downParity = 0;\n  let maxUU = false;\n  let dUU = false;\n\n  for (let i = 0; i < actions.length; i++) {\n    const a = actions[i];\n\n    if (a === \"turn down\") {\n      downParity ^= 1;\n    }\n\n    if (a === \"turn up\" && i >= 1 && actions[i - 1] === \"turn up\") {\n      maxUU = true;\n    }\n\n    if (\n      a === \"turn up\" &&\n      i >= 2 &&\n      actions[i - 1] === \"turn up\" &&\n      actions[i - 2] === \"turn down\"\n    ) {\n      dUU = true;\n    }\n  }\n\n  const lastU =\n    actions.length > 0 &&\n    actions[actions.length - 1] === \"turn up\";\n\n  return {\n    room:\n      dUU || (downParity === 1 && !maxUU && lastU)\n        ? \"warm\"\n        : \"cold\"\n  };\n}",
+       "comment": "Explanation 3: Warm if a D-U-U has ever occurred, or if the number of turn-downs is odd, no two turn-ups ever occurred, and the last action is turn-up.",
+       "problem": null,
+       "fits": true,
+       "true_everywhere": false
+      },
+      {
+       "code": "// Explanation 4: The heater locks onto the first action and total length; warm only for the specific first-action/length patterns observed.\nfunction visible(actions) {\n  const n = actions.length;\n\n  if (n === 0) {\n    return { room: \"cold\" };\n  }\n\n  const first = actions[0];\n\n  if (n === 3) {\n    if (\n      first === \"turn up\" &&\n      actions[1] === \"turn down\" &&\n      actions[2] === \"turn up\"\n    ) {\n      return { room: \"warm\" };\n    }\n\n    if (\n      first === \"wait\" &&\n      actions[1] === \"turn down\" &&\n      actions[2] === \"turn up\"\n    ) {\n      return { room: \"warm\" };\n    }\n\n    return { room: \"cold\" };\n  }\n\n  if (n === 4) {\n    const s = actions.join(\"|\");\n\n    if (s === \"turn down|turn up|turn up|turn down\") {\n      return { room: \"warm\" };\n    }\n\n    if (s === \"turn down|turn up|turn up|wait\") {\n      return { room: \"warm\" };\n    }\n\n    if (s === \"turn down|turn down|turn down|turn up\") {\n      return { room: \"warm\" };\n    }\n\n    return { room: \"cold\" };\n  }\n\n  return { room: \"cold\" };\n}",
+       "comment": "Explanation 4: The heater locks onto the first action and total length; warm only for the specific first-action/length patterns observed.",
+       "problem": null,
+       "fits": true,
+       "true_everywhere": false
+      }
+     ],
+     "fitting": 4,
+     "asked": [
+      "wait>turn up>turn down>turn up",
+      "turn down>turn up",
+      "turn down>turn down>turn up>turn up"
+     ],
+     "text": "```javascript\n// Explanation 1: A D-U-U pattern latches a hidden ready flag; otherwise a final D-U warms only if no U-U has occurred before that D.\nfunction visible(actions) {\n  let permanent = false;\n  let seenUU = false;\n  let lastD_atNoUU = false;\n\n  for (let i = 0; i < actions.length; i++) {\n    const a = actions[i];\n\n    if (a === \"turn up\" && i >= 1 && actions[i - 1] === \"turn up\") {\n      seenUU = true;\n    }\n\n    if (a === \"turn down\") {\n      lastD_atNoUU = !seenUU;\n    }\n\n    if (\n      a === \"turn up\" &&\n      i >= 2 &&\n      actions[i - 1] === \"turn up\" &&\n      actions[i - 2] === \"turn down\"\n    ) {\n      permanent = true;\n    }\n  }\n\n  const n = actions.length;\n  const endsDU =\n    n >= 2 &&\n    actions[n - 2] === \"turn down\" &&\n    actions[n - 1] === \"turn up\";\n\n  return {\n    room: permanent || (endsDU && lastD_atNoUU) ? \"warm\" : \"cold\"\n  };\n}\n```\n\n```javascript\n// Explanation 2: The heater has a 4-action sliding memory; warm only when the final 4-action window, or final 3 if shorter, matches a warming pattern.\nfunction visible(actions) {\n  const n = actions.length;\n\n  if (n >= 4) {\n    const w = actions.slice(-4).join(\"|\");\n    const warm4 = [\n      \"turn down|turn up|turn up|turn down\",\n      \"turn down|turn up|turn up|wait\",\n      \"turn down|turn down|turn down|turn up\"\n    ];\n    return { room: warm4.includes(w) ? \"warm\" : \"cold\" };\n  }\n\n  if (n === 3) {\n    const w = actions.join(\"|\");\n    const warm3 = [\n      \"turn up|turn down|turn up\",\n      \"wait|turn down|turn up\"\n    ];\n    return { room: warm3.includes(w) ? \"warm\" : \"cold\" };\n  }\n\n  return { room: \"cold\" };\n}\n```\n\n```javascript\n// Explanation 3: Warm if a D-U-U has ever occurred, or if the number of turn-downs is odd, no two turn-ups ever occurred, and the last action is turn-up.\nfunction visible(actions) {\n  let downParity = 0;\n  let maxUU = false;\n  let dUU = false;\n\n  for (let i = 0; i < actions.length; i++) {\n    const a = actions[i];\n\n    if (a === \"turn down\") {\n      downParity ^= 1;\n    }\n\n    if (a === \"turn up\" && i >= 1 && actions[i - 1] === \"turn up\") {\n      maxUU = true;\n    }\n\n    if (\n      a === \"turn up\" &&\n      i >= 2 &&\n      actions[i - 1] === \"turn up\" &&\n      actions[i - 2] === \"turn down\"\n    ) {\n      dUU = true;\n    }\n  }\n\n  const lastU =\n    actions.length > 0 &&\n    actions[actions.length - 1] === \"turn up\";\n\n  return {\n    room:\n      dUU || (downParity === 1 && !maxUU && lastU)\n        ? \"warm\"\n        : \"cold\"\n  };\n}\n```\n\n```javascript\n// Explanation 4: The heater locks onto the first action and total length; warm only for the specific first-action/length patterns observed.\nfunction visible(actions) {\n  const n = actions.length;\n\n  if (n === 0) {\n    return { room: \"cold\" };\n  }\n\n  const first = actions[0];\n\n  if (n === 3) {\n    if (\n      first === \"turn up\" &&\n      actions[1] === \"turn down\" &&\n      actions[2] === \"turn up\"\n    ) {\n      return { room: \"warm\" };\n    }\n\n    if (\n      first === \"wait\" &&\n      actions[1] === \"turn down\" &&\n      actions[2] === \"turn up\"\n    ) {\n      return { room: \"warm\" };\n    }\n\n    return { room: \"cold\" };\n  }\n\n  if (n === 4) {\n    const s = actions.join(\"|\");\n\n    if (s === \"turn down|turn up|turn up|turn down\") {\n      return { room: \"warm\" };\n    }\n\n    if (s === \"turn down|turn up|turn up|wait\") {\n      return { room: \"warm\" };\n    }\n\n    if (s === \"turn down|turn down|turn down|turn up\") {\n      return { room: \"warm\" };\n    }\n\n    return { room: \"cold\" };\n  }\n\n  return { room: \"cold\" };\n}\n```"
+    },
+    {
+     "round": 2,
+     "rivals": [
+      {
+       "code": "// Explanation: A hidden dial (0..2) plus a priming flag that turns on if you turn down before ever turning up; warm if dial is 1, or dial is 2 and primed.\nfunction visible(actions) {\n  let dial = 0;\n  let primed = false;\n  let seenUp = false;\n\n  for (const a of actions) {\n    if (a === \"turn down\") {\n      if (!seenUp) primed = true;\n      if (dial > 0) dial--;\n    } else if (a === \"turn up\") {\n      seenUp = true;\n      if (dial < 2) dial++;\n    }\n  }\n\n  const warm = (dial === 1) || (dial === 2 && primed);\n  return { room: warm ? \"warm\" : \"cold\" };\n}",
+       "comment": "Explanation: A hidden dial (0..2) plus a priming flag that turns on if you turn down before ever turning up; warm if dial is 1, or dial is 2 and primed.",
+       "problem": null,
+       "fits": true,
+       "true_everywhere": false
+      },
+      {
+       "code": "// Explanation: A hidden dial (0..3) and memory of the very first action; warm if dial is 1, or dial is 2 and the first action was turn down.\nfunction visible(actions) {\n  let dial = 0;\n  const first = actions.length > 0 ? actions[0] : null;\n\n  for (const a of actions) {\n    if (a === \"turn up\") {\n      if (dial < 3) dial++;\n    } else if (a === \"turn down\") {\n      if (dial > 0) dial--;\n    }\n  }\n\n  const warm = (dial === 1) || (dial === 2 && first === \"turn down\");\n  return { room: warm ? \"warm\" : \"cold\" };\n}",
+       "comment": "Explanation: A hidden dial (0..3) and memory of the very first action; warm if dial is 1, or dial is 2 and the first action was turn down.",
+       "problem": null,
+       "fits": true,
+       "true_everywhere": false
+      },
+      {
+       "code": "// Explanation: A hidden dial (0..2) plus counters of turn-ups and turn-downs; warm if dial is 1, or dial is 2 and you turned up exactly twice and turned down at least once.\nfunction visible(actions) {\n  let dial = 0;\n  let up = 0;\n  let down = 0;\n\n  for (const a of actions) {\n    if (a === \"turn up\") {\n      up++;\n      if (dial < 2) dial++;\n    } else if (a === \"turn down\") {\n      down++;\n      if (dial > 0) dial--;\n    }\n  }\n\n  const warm = (dial === 1) || (dial === 2 && up === 2 && down >= 1);\n  return { room: warm ? \"warm\" : \"cold\" };\n}",
+       "comment": "Explanation: A hidden dial (0..2) plus counters of turn-ups and turn-downs; warm if dial is 1, or dial is 2 and you turned up exactly twice and turned down at least once.",
+       "problem": null,
+       "fits": true,
+       "true_everywhere": false
+      },
+      {
+       "code": "// Explanation: A hidden dial (0..3) and an accumulated heat-debt value; each transition changes the debt by a fixed amount, and the room is warm exactly when the debt is positive.\nfunction visible(actions) {\n  let p = 0;\n  let h = 0;\n\n  for (const a of actions) {\n    if (a === \"turn up\") {\n      if (p === 0) { p = 1; h += 2; }\n      else if (p === 1) { p = 2; h -= 1; }\n      else if (p === 2) { p = 3; h -= 1; }\n      else { p = 3; h += 0; }\n    } else if (a === \"turn down\") {\n      if (p === 0) { p = 0; h += 0; }\n      else if (p === 1) { p = 0; h -= 2; }\n      else if (p === 2) { p = 1; h += 0; }\n      else { p = 2; h += 0; }\n    } else if (a === \"wait\") {\n      if (p === 0) h -= 1;\n      else if (p === 1) h -= 1;\n      else if (p === 2) h += 0;\n      else h += 0;\n    }\n  }\n\n  return { room: h > 0 ? \"warm\" : \"cold\" };\n}",
+       "comment": "Explanation: A hidden dial (0..3) and an accumulated heat-debt value; each transition changes the debt by a fixed amount, and the room is warm exactly when the debt is positive.",
+       "problem": null,
+       "fits": true,
+       "true_everywhere": false
+      }
+     ],
+     "fitting": 4,
+     "asked": [
+      "turn up>turn up>turn up>turn down",
+      "wait>turn down>turn up>turn up",
+      "wait>wait>turn up>wait"
+     ],
+     "text": "```javascript\n// Explanation: A hidden dial (0..2) plus a priming flag that turns on if you turn down before ever turning up; warm if dial is 1, or dial is 2 and primed.\nfunction visible(actions) {\n  let dial = 0;\n  let primed = false;\n  let seenUp = false;\n\n  for (const a of actions) {\n    if (a === \"turn down\") {\n      if (!seenUp) primed = true;\n      if (dial > 0) dial--;\n    } else if (a === \"turn up\") {\n      seenUp = true;\n      if (dial < 2) dial++;\n    }\n  }\n\n  const warm = (dial === 1) || (dial === 2 && primed);\n  return { room: warm ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Explanation: A hidden dial (0..3) and memory of the very first action; warm if dial is 1, or dial is 2 and the first action was turn down.\nfunction visible(actions) {\n  let dial = 0;\n  const first = actions.length > 0 ? actions[0] : null;\n\n  for (const a of actions) {\n    if (a === \"turn up\") {\n      if (dial < 3) dial++;\n    } else if (a === \"turn down\") {\n      if (dial > 0) dial--;\n    }\n  }\n\n  const warm = (dial === 1) || (dial === 2 && first === \"turn down\");\n  return { room: warm ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Explanation: A hidden dial (0..2) plus counters of turn-ups and turn-downs; warm if dial is 1, or dial is 2 and you turned up exactly twice and turned down at least once.\nfunction visible(actions) {\n  let dial = 0;\n  let up = 0;\n  let down = 0;\n\n  for (const a of actions) {\n    if (a === \"turn up\") {\n      up++;\n      if (dial < 2) dial++;\n    } else if (a === \"turn down\") {\n      down++;\n      if (dial > 0) dial--;\n    }\n  }\n\n  const warm = (dial === 1) || (dial === 2 && up === 2 && down >= 1);\n  return { room: warm ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Explanation: A hidden dial (0..3) and an accumulated heat-debt value; each transition changes the debt by a fixed amount, and the room is warm exactly when the debt is positive.\nfunction visible(actions) {\n  let p = 0;\n  let h = 0;\n\n  for (const a of actions) {\n    if (a === \"turn up\") {\n      if (p === 0) { p = 1; h += 2; }\n      else if (p === 1) { p = 2; h -= 1; }\n      else if (p === 2) { p = 3; h -= 1; }\n      else { p = 3; h += 0; }\n    } else if (a === \"turn down\") {\n      if (p === 0) { p = 0; h += 0; }\n      else if (p === 1) { p = 0; h -= 2; }\n      else if (p === 2) { p = 1; h += 0; }\n      else { p = 2; h += 0; }\n    } else if (a === \"wait\") {\n      if (p === 0) h -= 1;\n      else if (p === 1) h -= 1;\n      else if (p === 2) h += 0;\n      else h += 0;\n    }\n  }\n\n  return { room: h > 0 ? \"warm\" : \"cold\" };\n}\n```"
+    }
+   ]
+  }
+ }
+}

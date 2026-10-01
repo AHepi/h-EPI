@@ -1,0 +1,292 @@
+{
+ "device": "grudge",
+ "repeat": 4,
+ "guesser": "deepseek-flash",
+ "reply_limit": 200000,
+ "rounds": [
+  {
+   "round": 1,
+   "written": [
+    {
+     "name": "round 1 rival 1",
+     "code": "// Robin keeps an apology balance: apology +1, insult -1, gift ignored; warm only if the balance is positive.\nfunction visible(actions) {\n  let balance = 0;\n  for (const action of actions) {\n    if (action === \"apologise\") balance += 1;\n    else if (action === \"insult\") balance -= 1;\n    // gift has no effect\n  }\n  return { mood: balance > 0 ? \"warm\" : \"cold\" };\n}",
+     "comment": "Robin keeps an apology balance: apology +1, insult -1, gift ignored; warm only if the balance is positive.",
+     "problem": null,
+     "true_everywhere": false
+    },
+    {
+     "name": "round 1 rival 2",
+     "code": "// Robin keeps a benefit balance: apology +1, gift +1, insult -1; warm only if the balance is positive.\nfunction visible(actions) {\n  let balance = 0;\n  for (const action of actions) {\n    if (action === \"apologise\") balance += 1;\n    else if (action === \"gift\") balance += 1;\n    else if (action === \"insult\") balance -= 1;\n  }\n  return { mood: balance > 0 ? \"warm\" : \"cold\" };\n}",
+     "comment": "Robin keeps a benefit balance: apology +1, gift +1, insult -1; warm only if the balance is positive.",
+     "problem": null,
+     "true_everywhere": false
+    },
+    {
+     "name": "round 1 rival 3",
+     "code": "// If Robin's first action is insult, Robin stays cold; otherwise Robin is cold only if two insults occur consecutively.\nfunction visible(actions) {\n  if (actions.length === 0) return { mood: \"warm\" };\n  if (actions[0] === \"insult\") return { mood: \"cold\" };\n\n  for (let i = 1; i < actions.length; i++) {\n    if (actions[i] === \"insult\" && actions[i - 1] === \"insult\") {\n      return { mood: \"cold\" };\n    }\n  }\n  return { mood: \"warm\" };\n}",
+     "comment": "If Robin's first action is insult, Robin stays cold; otherwise Robin is cold only if two insults occur consecutively.",
+     "problem": null,
+     "true_everywhere": false
+    },
+    {
+     "name": "round 1 rival 4",
+     "code": "// Robin starts with grudge 1; insults raise grudge, apologies lower it only while grudge is below 2, gifts do nothing; warm at grudge 0 or less.\nfunction visible(actions) {\n  let grudge = 1;\n\n  for (const action of actions) {\n    if (action === \"insult\") {\n      grudge += 1;\n    } else if (action === \"apologise\") {\n      if (grudge < 2) {\n        grudge -= 1;\n        if (grudge < 0) grudge = 0;\n      }\n    }\n    // gift has no effect\n  }\n\n  return { mood: grudge <= 0 ? \"warm\" : \"cold\" };\n}",
+     "comment": "Robin starts with grudge 1; insults raise grudge, apologies lower it only while grudge is below 2, gifts do nothing; warm at grudge 0 or less.",
+     "problem": null,
+     "true_everywhere": false
+    }
+   ],
+   "added": 4,
+   "asked": [
+    "apologise>apologise>apologise>insult>insult>apologise",
+    "insult>apologise>apologise>gift",
+    "insult>insult>gift>apologise>apologise>apologise"
+   ],
+   "refuted_by_answers": 4,
+   "standing_after": [],
+   "text": "```javascript\n// Robin keeps an apology balance: apology +1, insult -1, gift ignored; warm only if the balance is positive.\nfunction visible(actions) {\n  let balance = 0;\n  for (const action of actions) {\n    if (action === \"apologise\") balance += 1;\n    else if (action === \"insult\") balance -= 1;\n    // gift has no effect\n  }\n  return { mood: balance > 0 ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Robin keeps a benefit balance: apology +1, gift +1, insult -1; warm only if the balance is positive.\nfunction visible(actions) {\n  let balance = 0;\n  for (const action of actions) {\n    if (action === \"apologise\") balance += 1;\n    else if (action === \"gift\") balance += 1;\n    else if (action === \"insult\") balance -= 1;\n  }\n  return { mood: balance > 0 ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// If Robin's first action is insult, Robin stays cold; otherwise Robin is cold only if two insults occur consecutively.\nfunction visible(actions) {\n  if (actions.length === 0) return { mood: \"warm\" };\n  if (actions[0] === \"insult\") return { mood: \"cold\" };\n\n  for (let i = 1; i < actions.length; i++) {\n    if (actions[i] === \"insult\" && actions[i - 1] === \"insult\") {\n      return { mood: \"cold\" };\n    }\n  }\n  return { mood: \"warm\" };\n}\n```\n\n```javascript\n// Robin starts with grudge 1; insults raise grudge, apologies lower it only while grudge is below 2, gifts do nothing; warm at grudge 0 or less.\nfunction visible(actions) {\n  let grudge = 1;\n\n  for (const action of actions) {\n    if (action === \"insult\") {\n      grudge += 1;\n    } else if (action === \"apologise\") {\n      if (grudge < 2) {\n        grudge -= 1;\n        if (grudge < 0) grudge = 0;\n      }\n    }\n    // gift has no effect\n  }\n\n  return { mood: grudge <= 0 ? \"warm\" : \"cold\" };\n}\n```"
+  },
+  {
+   "round": 2,
+   "written": [
+    {
+     "name": "round 2 rival 1",
+     "code": "// Explanation: Robin has a cumulative emotional balance; apology +10, gift +15, insult -21; warm if balance is positive.\nfunction visible(actions) {\n  let balance = 0;\n  for (const action of actions) {\n    if (action === \"insult\") balance -= 21;\n    else if (action === \"apologise\") balance += 10;\n    else if (action === \"gift\") balance += 15;\n  }\n  return { mood: balance > 0 ? \"warm\" : \"cold\" };\n}",
+     "comment": "Explanation: Robin has a cumulative emotional balance; apology +10, gift +15, insult -21; warm if balance is positive.",
+     "problem": null,
+     "true_everywhere": false
+    },
+    {
+     "name": "round 2 rival 2",
+     "code": "// Explanation: Robin has a hidden grudge counter; insult adds 4, apology subtracts 2, gift subtracts 3; warm only if grudge is negative.\nfunction visible(actions) {\n  let grudge = 0;\n  for (const action of actions) {\n    if (action === \"insult\") grudge += 4;\n    else if (action === \"apologise\") grudge -= 2;\n    else if (action === \"gift\") grudge -= 3;\n  }\n  return { mood: grudge < 0 ? \"warm\" : \"cold\" };\n}",
+     "comment": "Explanation: Robin has a hidden grudge counter; insult adds 4, apology subtracts 2, gift subtracts 3; warm only if grudge is negative.",
+     "problem": null,
+     "true_everywhere": false
+    },
+    {
+     "name": "round 2 rival 3",
+     "code": "// Explanation: Robin has a hidden patience reserve; apology +1, gift +2, insult -2; warm if patience is positive.\nfunction visible(actions) {\n  let patience = 0;\n  for (const action of actions) {\n    if (action === \"insult\") patience -= 2;\n    else if (action === \"apologise\") patience += 1;\n    else if (action === \"gift\") patience += 2;\n  }\n  return { mood: patience > 0 ? \"warm\" : \"cold\" };\n}",
+     "comment": "Explanation: Robin has a hidden patience reserve; apology +1, gift +2, insult -2; warm if patience is positive.",
+     "problem": null,
+     "true_everywhere": false
+    },
+    {
+     "name": "round 2 rival 4",
+     "code": "// Explanation: Robin tracks separate trust and annoyance; insult raises annoyance by 5 and lowers trust by 1, apology raises trust by 2 and lowers annoyance by 1, gift raises trust by 3 and lowers annoyance by 1; warm if trust exceeds annoyance.\nfunction visible(actions) {\n  let trust = 0;\n  let annoyance = 0;\n  for (const action of actions) {\n    if (action === \"insult\") {\n      annoyance += 5;\n      trust -= 1;\n    } else if (action === \"apologise\") {\n      trust += 2;\n      annoyance -= 1;\n    } else if (action === \"gift\") {\n      trust += 3;\n      annoyance -= 1;\n    }\n  }\n  return { mood: trust > annoyance ? \"warm\" : \"cold\" };\n}",
+     "comment": "Explanation: Robin tracks separate trust and annoyance; insult raises annoyance by 5 and lowers trust by 1, apology raises trust by 2 and lowers annoyance by 1, gift raises trust by 3 and lowers annoyance by 1; warm if trust exceeds annoyance.",
+     "problem": null,
+     "true_everywhere": false
+    }
+   ],
+   "added": 4,
+   "asked": [
+    "insult>apologise>gift>gift>insult",
+    "gift>insult>gift>apologise>insult",
+    "gift>gift>insult>gift>insult"
+   ],
+   "refuted_by_answers": 3,
+   "standing_after": [
+    "round 2 rival 4"
+   ],
+   "text": "```javascript\n// Explanation: Robin has a cumulative emotional balance; apology +10, gift +15, insult -21; warm if balance is positive.\nfunction visible(actions) {\n  let balance = 0;\n  for (const action of actions) {\n    if (action === \"insult\") balance -= 21;\n    else if (action === \"apologise\") balance += 10;\n    else if (action === \"gift\") balance += 15;\n  }\n  return { mood: balance > 0 ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Explanation: Robin has a hidden grudge counter; insult adds 4, apology subtracts 2, gift subtracts 3; warm only if grudge is negative.\nfunction visible(actions) {\n  let grudge = 0;\n  for (const action of actions) {\n    if (action === \"insult\") grudge += 4;\n    else if (action === \"apologise\") grudge -= 2;\n    else if (action === \"gift\") grudge -= 3;\n  }\n  return { mood: grudge < 0 ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Explanation: Robin has a hidden patience reserve; apology +1, gift +2, insult -2; warm if patience is positive.\nfunction visible(actions) {\n  let patience = 0;\n  for (const action of actions) {\n    if (action === \"insult\") patience -= 2;\n    else if (action === \"apologise\") patience += 1;\n    else if (action === \"gift\") patience += 2;\n  }\n  return { mood: patience > 0 ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Explanation: Robin tracks separate trust and annoyance; insult raises annoyance by 5 and lowers trust by 1, apology raises trust by 2 and lowers annoyance by 1, gift raises trust by 3 and lowers annoyance by 1; warm if trust exceeds annoyance.\nfunction visible(actions) {\n  let trust = 0;\n  let annoyance = 0;\n  for (const action of actions) {\n    if (action === \"insult\") {\n      annoyance += 5;\n      trust -= 1;\n    } else if (action === \"apologise\") {\n      trust += 2;\n      annoyance -= 1;\n    } else if (action === \"gift\") {\n      trust += 3;\n      annoyance -= 1;\n    }\n  }\n  return { mood: trust > annoyance ? \"warm\" : \"cold\" };\n}\n```"
+  },
+  {
+   "round": 3,
+   "written": [
+    {
+     "name": "round 3 rival 1",
+     "code": "// Explanation: Robin weights recent actions more, using insult -6, apology +3, gift +4, with each earlier action multiplied by 0.7.\nfunction visible(actions) {\n  let score = 0;\n  for (let i = 0; i < actions.length; i++) {\n    const w = Math.pow(0.7, actions.length - 1 - i);\n    const a = actions[i];\n    if (a === \"insult\") score -= 6 * w;\n    else if (a === \"apologise\") score += 3 * w;\n    else if (a === \"gift\") score += 4 * w;\n  }\n  return { mood: score > 0 ? \"warm\" : \"cold\" };\n}",
+     "comment": "Explanation: Robin weights recent actions more, using insult -6, apology +3, gift +4, with each earlier action multiplied by 0.7.",
+     "problem": null,
+     "true_everywhere": false
+    },
+    {
+     "name": "round 3 rival 2",
+     "code": "// Explanation: Robin tracks a running score; consecutive insults hurt extra, and a gift after two insults helps extra.\nfunction visible(actions) {\n  let score = 0;\n  let prev1 = null;\n  let prev2 = null;\n  for (const a of actions) {\n    if (a === \"insult\") {\n      score -= 6;\n      if (prev1 === \"insult\") score -= 1;\n    } else if (a === \"apologise\") {\n      score += 3;\n    } else if (a === \"gift\") {\n      score += 4;\n      if (prev1 === \"insult\" && prev2 === \"insult\") score += 2;\n    }\n    prev2 = prev1;\n    prev1 = a;\n  }\n  return { mood: score > 0 ? \"warm\" : \"cold\" };\n}",
+     "comment": "Explanation: Robin tracks a running score; consecutive insults hurt extra, and a gift after two insults helps extra.",
+     "problem": null,
+     "true_everywhere": false
+    },
+    {
+     "name": "round 3 rival 3",
+     "code": "// Explanation: Robin tracks a running score; a gift right after an apology is slightly more effective (+5 instead of +4).\nfunction visible(actions) {\n  let score = 0;\n  let prev = null;\n  for (const a of actions) {\n    if (a === \"insult\") {\n      score -= 6;\n    } else if (a === \"apologise\") {\n      score += 3;\n    } else if (a === \"gift\") {\n      score += prev === \"apologise\" ? 5 : 4;\n    }\n    prev = a;\n  }\n  return { mood: score > 0 ? \"warm\" : \"cold\" };\n}",
+     "comment": "Explanation: Robin tracks a running score; a gift right after an apology is slightly more effective (+5 instead of +4).",
+     "problem": null,
+     "true_everywhere": false
+    },
+    {
+     "name": "round 3 rival 4",
+     "code": "// Explanation: Robin tracks a running score; an insult right after a gift is worse (-7 instead of -6).\nfunction visible(actions) {\n  let score = 0;\n  let prev = null;\n  for (const a of actions) {\n    if (a === \"insult\") {\n      score -= prev === \"gift\" ? 7 : 6;\n    } else if (a === \"apologise\") {\n      score += 3;\n    } else if (a === \"gift\") {\n      score += 4;\n    }\n    prev = a;\n  }\n  return { mood: score > 0 ? \"warm\" : \"cold\" };\n}",
+     "comment": "Explanation: Robin tracks a running score; an insult right after a gift is worse (-7 instead of -6).",
+     "problem": null,
+     "true_everywhere": false
+    }
+   ],
+   "added": 4,
+   "asked": [
+    "apologise>apologise>gift>apologise>insult>insult",
+    "insult>apologise>apologise>apologise>gift>insult",
+    "gift>insult>apologise>apologise>gift>insult"
+   ],
+   "refuted_by_answers": 4,
+   "standing_after": [
+    "round 3 rival 1"
+   ],
+   "text": "```javascript\n// Explanation: Robin weights recent actions more, using insult -6, apology +3, gift +4, with each earlier action multiplied by 0.7.\nfunction visible(actions) {\n  let score = 0;\n  for (let i = 0; i < actions.length; i++) {\n    const w = Math.pow(0.7, actions.length - 1 - i);\n    const a = actions[i];\n    if (a === \"insult\") score -= 6 * w;\n    else if (a === \"apologise\") score += 3 * w;\n    else if (a === \"gift\") score += 4 * w;\n  }\n  return { mood: score > 0 ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Explanation: Robin tracks a running score; consecutive insults hurt extra, and a gift after two insults helps extra.\nfunction visible(actions) {\n  let score = 0;\n  let prev1 = null;\n  let prev2 = null;\n  for (const a of actions) {\n    if (a === \"insult\") {\n      score -= 6;\n      if (prev1 === \"insult\") score -= 1;\n    } else if (a === \"apologise\") {\n      score += 3;\n    } else if (a === \"gift\") {\n      score += 4;\n      if (prev1 === \"insult\" && prev2 === \"insult\") score += 2;\n    }\n    prev2 = prev1;\n    prev1 = a;\n  }\n  return { mood: score > 0 ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Explanation: Robin tracks a running score; a gift right after an apology is slightly more effective (+5 instead of +4).\nfunction visible(actions) {\n  let score = 0;\n  let prev = null;\n  for (const a of actions) {\n    if (a === \"insult\") {\n      score -= 6;\n    } else if (a === \"apologise\") {\n      score += 3;\n    } else if (a === \"gift\") {\n      score += prev === \"apologise\" ? 5 : 4;\n    }\n    prev = a;\n  }\n  return { mood: score > 0 ? \"warm\" : \"cold\" };\n}\n```\n\n```javascript\n// Explanation: Robin tracks a running score; an insult right after a gift is worse (-7 instead of -6).\nfunction visible(actions) {\n  let score = 0;\n  let prev = null;\n  for (const a of actions) {\n    if (a === \"insult\") {\n      score -= prev === \"gift\" ? 7 : 6;\n    } else if (a === \"apologise\") {\n      score += 3;\n    } else if (a === \"gift\") {\n      score += 4;\n    }\n    prev = a;\n  }\n  return { mood: score > 0 ? \"warm\" : \"cold\" };\n}\n```"
+  }
+ ],
+ "facts": [
+  {
+   "events": [
+    "apologise",
+    "apologise",
+    "apologise",
+    "insult",
+    "insult",
+    "apologise"
+   ],
+   "mood": "cold"
+  },
+  {
+   "events": [
+    "insult",
+    "apologise",
+    "apologise",
+    "gift"
+   ],
+   "mood": "warm"
+  },
+  {
+   "events": [
+    "insult",
+    "insult",
+    "gift",
+    "apologise",
+    "apologise",
+    "apologise"
+   ],
+   "mood": "warm"
+  },
+  {
+   "events": [
+    "insult",
+    "apologise",
+    "gift",
+    "gift",
+    "insult"
+   ],
+   "mood": "cold"
+  },
+  {
+   "events": [
+    "gift",
+    "insult",
+    "gift",
+    "apologise",
+    "insult"
+   ],
+   "mood": "cold"
+  },
+  {
+   "events": [
+    "gift",
+    "gift",
+    "insult",
+    "gift",
+    "insult"
+   ],
+   "mood": "cold"
+  },
+  {
+   "events": [
+    "apologise",
+    "apologise",
+    "gift",
+    "apologise",
+    "insult",
+    "insult"
+   ],
+   "mood": "cold"
+  },
+  {
+   "events": [
+    "insult",
+    "apologise",
+    "apologise",
+    "apologise",
+    "gift",
+    "insult"
+   ],
+   "mood": "cold"
+  },
+  {
+   "events": [
+    "gift",
+    "insult",
+    "apologise",
+    "apologise",
+    "gift",
+    "insult"
+   ],
+   "mood": "cold"
+  }
+ ],
+ "survivors": [
+  {
+   "name": "round 3 rival 1",
+   "comment": "Explanation: Robin weights recent actions more, using insult -6, apology +3, gift +4, with each earlier action multiplied by 0.7.",
+   "true_everywhere": false,
+   "short_right": 90,
+   "short_all": 106,
+   "long_right": 753,
+   "long_all": 972,
+   "telling_right": 1
+  }
+ ],
+ "finals": {
+  "survivors vote": {
+   "short_right": 90,
+   "short_all": 106,
+   "long_right": 753,
+   "long_all": 972,
+   "telling_right": 1,
+   "ties": 0,
+   "survivors": 1
+  },
+  "shown the survivors": {
+   "short_right": 90,
+   "short_all": 106,
+   "long_right": 753,
+   "long_all": 972,
+   "telling_right": 1,
+   "code": "// Robin weights recent actions more: insult -6, apology +3, gift +4, with each earlier action multiplied by 0.7.\nfunction visible(actions) {\n  let score = 0;\n  for (let i = 0; i < actions.length; i++) {\n    const w = Math.pow(0.7, actions.length - 1 - i);\n    const a = actions[i];\n    if (a === \"insult\") score -= 6 * w;\n    else if (a === \"apologise\") score += 3 * w;\n    else if (a === \"gift\") score += 4 * w;\n  }\n  return { mood: score > 0 ? \"warm\" : \"cold\" };\n}",
+   "comment": "Robin weights recent actions more: insult -6, apology +3, gift +4, with each earlier action multiplied by 0.7.",
+   "problem": null,
+   "tokens_out": 26084,
+   "cut_off": 0,
+   "true_everywhere": false,
+   "same_as_a_survivor": [
+    "round 3 rival 1"
+   ],
+   "text": "```javascript\n// Robin weights recent actions more: insult -6, apology +3, gift +4, with each earlier action multiplied by 0.7.\nfunction visible(actions) {\n  let score = 0;\n  for (let i = 0; i < actions.length; i++) {\n    const w = Math.pow(0.7, actions.length - 1 - i);\n    const a = actions[i];\n    if (a === \"insult\") score -= 6 * w;\n    else if (a === \"apologise\") score += 3 * w;\n    else if (a === \"gift\") score += 4 * w;\n  }\n  return { mood: score > 0 ? \"warm\" : \"cold\" };\n}\n```"
+  },
+  "shown the facts only": {
+   "short_right": 104,
+   "short_all": 106,
+   "long_right": 913,
+   "long_all": 972,
+   "telling_right": 0,
+   "code": "// Robin tracks hidden anger: insults +1, apologies -1 (never below 0), gifts do nothing; warm iff anger is 0.\nfunction visible(actions) {\n  let anger = 0;\n  for (const action of actions) {\n    if (action === \"insult\") {\n      anger++;\n    } else if (action === \"apologise\") {\n      anger = Math.max(0, anger - 1);\n    }\n    // \"gift\" has no effect\n  }\n  return { mood: anger === 0 ? \"warm\" : \"cold\" };\n}",
+   "comment": "Robin tracks hidden anger: insults +1, apologies -1 (never below 0), gifts do nothing; warm iff anger is 0.",
+   "problem": null,
+   "tokens_out": 6426,
+   "cut_off": 0,
+   "true_everywhere": false,
+   "same_as_a_survivor": [],
+   "text": "```javascript\n// Robin tracks hidden anger: insults +1, apologies -1 (never below 0), gifts do nothing; warm iff anger is 0.\nfunction visible(actions) {\n  let anger = 0;\n  for (const action of actions) {\n    if (action === \"insult\") {\n      anger++;\n    } else if (action === \"apologise\") {\n      anger = Math.max(0, anger - 1);\n    }\n    // \"gift\" has no effect\n  }\n  return { mood: anger === 0 ? \"warm\" : \"cold\" };\n}\n```"
+  }
+ },
+ "tokens_out": 101335,
+ "cut_off": 0,
+ "question_length": 6
+}

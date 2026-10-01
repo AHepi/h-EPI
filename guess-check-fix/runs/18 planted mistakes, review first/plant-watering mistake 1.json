@@ -1,0 +1,277 @@
+{
+ "world": "plant-watering",
+ "planted": {
+  "kind": "visible",
+  "how": "picked by the fixed shuffle",
+  "description": "in rule \"water wets dry soil\": result \"soil is damp\" changed to \"soil is soaked\"",
+  "form": {
+   "things": {
+    "soil": [
+     "dry",
+     "damp",
+     "soaked"
+    ],
+    "forecast": [
+     "clear",
+     "rain"
+    ],
+    "valve": [
+     "closed",
+     "open"
+    ]
+   },
+   "events": [
+    "morning check",
+    "rain falls",
+    "sunny day"
+   ],
+   "start": {
+    "soil": "dry",
+    "forecast": "clear",
+    "valve": "closed"
+   },
+   "rules": [
+    {
+     "name": "open when dry and no rain coming",
+     "when": [
+      "morning check happens",
+      "soil is dry",
+      "forecast is clear"
+     ],
+     "then": "valve is open"
+    },
+    {
+     "name": "water wets dry soil",
+     "when": [
+      "valve is open",
+      "soil is dry"
+     ],
+     "then": "soil is soaked"
+    },
+    {
+     "name": "close once damp",
+     "when": [
+      "valve is open",
+      "soil is damp"
+     ],
+     "then": "valve is closed"
+    },
+    {
+     "name": "rain on dry soil",
+     "when": [
+      "rain falls happens",
+      "soil is dry"
+     ],
+     "then": "soil is damp"
+    },
+    {
+     "name": "rain on damp soil",
+     "when": [
+      "rain falls happens",
+      "soil is damp"
+     ],
+     "then": "soil is soaked"
+    },
+    {
+     "name": "sun dries damp soil",
+     "when": [
+      "sunny day happens",
+      "soil is damp"
+     ],
+     "then": "soil is dry"
+    },
+    {
+     "name": "sun dries soaked soil",
+     "when": [
+      "sunny day happens",
+      "soil is soaked"
+     ],
+     "then": "soil is damp"
+    }
+   ]
+  },
+  "before": {
+   "shown": "3/4",
+   "held_back": "1/4",
+   "nearby": {
+    "tried": 400,
+    "differ": 101,
+    "cannot_run": 0,
+    "examples": [
+     "the situation of job \"dry soil, clear sky\": soil soaked, world says damp; valve open, world says closed",
+     "the situation of job \"two checks do not flood\": soil soaked, world says damp; valve open, world says closed",
+     "the situation of job \"dried by the sun, then watered\": soil soaked, world says damp; valve open, world says closed"
+    ]
+   }
+  }
+ },
+ "guesser": "deepseek-flash",
+ "counts": {
+  "requests": 1,
+  "replies": 1,
+  "cut_off": 0,
+  "plain_form": 0,
+  "refused": 0,
+  "thinking_characters": 82344,
+  "answer_characters": 1026,
+  "tokens_in": 1236,
+  "tokens_out": 19557
+ },
+ "results": [
+  {
+   "corrector": "review first",
+   "shown": "4/4",
+   "held_back": "4/4",
+   "held_back_asked": [],
+   "questions_to_world": 11,
+   "deepseek_asked": 1,
+   "nearby": {
+    "tried": 400,
+    "differ": 131,
+    "cannot_run": 0,
+    "examples": [
+     "the situation of job \"dry soil, clear sky\", but \"rain falls\" also happens after \"morning check\": soil damp, world says soaked",
+     "the situation of job \"damp soil needs nothing\", but \"rain falls\" also happens first: soil damp, world says soaked",
+     "the situation of job \"damp soil needs nothing\", but \"rain falls\" also happens after \"morning check\": soil damp, world says soaked"
+    ]
+   },
+   "rounds": [
+    {
+     "step": "guess",
+     "seen": "3/4",
+     "problems": 0
+    },
+    {
+     "step": "self review",
+     "verdict": "accepted",
+     "kept": true,
+     "lost": [],
+     "seen": "4/4"
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 3,
+     "seen": "7/7"
+    },
+    {
+     "step": "ask world about loose rules",
+     "added": 0,
+     "seen": "7/7"
+    },
+    {
+     "step": "look for surprises",
+     "added": 4,
+     "surprises": 0,
+     "seen": "11/11"
+    },
+    {
+     "step": "look for surprises",
+     "added": 4,
+     "surprises": 0,
+     "seen": "15/15"
+    }
+   ],
+   "model": {
+    "things": {
+     "soil": [
+      "dry",
+      "damp",
+      "soaked"
+     ],
+     "forecast": [
+      "clear",
+      "rain"
+     ],
+     "valve": [
+      "closed",
+      "open"
+     ]
+    },
+    "events": [
+     "morning check",
+     "rain falls",
+     "sunny day"
+    ],
+    "start": {
+     "soil": "dry",
+     "forecast": "clear",
+     "valve": "closed"
+    },
+    "rules": [
+     {
+      "name": "open when dry and no rain coming",
+      "when": [
+       "morning check happens",
+       "soil is dry",
+       "forecast is clear"
+      ],
+      "then": "valve is open"
+     },
+     {
+      "name": "close if rain forecast",
+      "when": [
+       "forecast is rain",
+       "valve is open"
+      ],
+      "then": "valve is closed"
+     },
+     {
+      "name": "water wets dry soil",
+      "when": [
+       "valve is open",
+       "soil is dry"
+      ],
+      "then": "soil is damp"
+     },
+     {
+      "name": "close once damp",
+      "when": [
+       "valve is open",
+       "soil is damp"
+      ],
+      "then": "valve is closed"
+     },
+     {
+      "name": "close once soaked",
+      "when": [
+       "valve is open",
+       "soil is soaked"
+      ],
+      "then": "valve is closed"
+     },
+     {
+      "name": "rain on dry soil",
+      "when": [
+       "rain falls happens",
+       "soil is dry"
+      ],
+      "then": "soil is damp"
+     },
+     {
+      "name": "sun dries damp soil",
+      "when": [
+       "sunny day happens",
+       "soil is damp"
+      ],
+      "then": "soil is dry"
+     },
+     {
+      "name": "sun dries soaked soil",
+      "when": [
+       "sunny day happens",
+       "soil is soaked"
+      ],
+      "then": "soil is damp"
+     }
+    ]
+   },
+   "log": [
+    {
+     "asked": "Task: Water my plants when they need it, but don't waste water if it's going to rain. And never flood them.\n\nThings and states to use:\n  soil: dry, damp, soaked\n  forecast: clear, rain\n  valve: closed, open\nEvents to use: morning check, rain falls, sunny day\n\nThe checker will test your model on these jobs:\n- \"dry soil, clear sky\": start with soil is dry, forecast is clear; events in order: morning check; expected at the end: soil is damp.\n- \"dry soil, rain on the way\": start with soil is dry, forecast is rain; events in order: morning check; expected at the end: soil is dry.\n- \"damp soil needs nothing\": start with soil is damp, forecast is clear; events in order: morning check; expected at the end: soil is damp.\n- \"rain after skipping\": start with soil is dry, forecast is rain; events in order: morning check, then rain falls; expected at the end: soil is damp.\n\nHere is a model for this task. It may contain mistakes, including mistakes the jobs above do not catch.\n\n{\"things\":{\"soil\":[\"dry\",\"damp\",\"soaked\"],\"forecast\":[\"clear\",\"rain\"],\"valve\":[\"closed\",\"open\"]},\"events\":[\"morning check\",\"rain falls\",\"sunny day\"],\"start\":{\"soil\":\"dry\",\"forecast\":\"clear\",\"valve\":\"closed\"},\"rules\":[{\"name\":\"open when dry and no rain coming\",\"when\":[\"morning check happens\",\"soil is dry\",\"forecast is clear\"],\"then\":\"valve is open\",\"made_by\":\"guesser first guess\"},{\"name\":\"water wets dry soil\",\"when\":[\"valve is open\",\"soil is dry\"],\"then\":\"soil is soaked\",\"made_by\":\"guesser first guess\"},{\"name\":\"close once damp\",\"when\":[\"valve is open\",\"soil is damp\"],\"then\":\"valve is closed\",\"made_by\":\"guesser first guess\"},{\"name\":\"rain on dry soil\",\"when\":[\"rain falls happens\",\"soil is dry\"],\"then\":\"soil is damp\",\"made_by\":\"guesser first guess\"},{\"name\":\"rain on damp soil\",\"when\":[\"rain falls happens\",\"soil is damp\"],\"then\":\"soil is soaked\",\"made_by\":\"guesser first guess\"},{\"name\":\"sun dries damp soil\",\"when\":[\"sunny day happens\",\"soil is damp\"],\"then\":\"soil is dry\",\"made_by\":\"guesser first guess\"},{\"name\":\"sun dries soaked soil\",\"when\":[\"sunny day happens\",\"soil is soaked\"],\"then\":\"soil is damp\",\"made_by\":\"guesser first guess\"}]}\n\nGo through the task sentence by sentence and check that every part of it is in the model, and that every rule does what the task says, in every situation the task describes, not only in the jobs. Correct every mistake you find. Write the whole corrected model. If you find no mistake, write it unchanged.",
+     "replied": "{\"things\":{\"soil\":[\"dry\",\"damp\",\"soaked\"],\"forecast\":[\"clear\",\"rain\"],\"valve\":[\"closed\",\"open\"]},\"events\":[\"morning check\",\"rain falls\",\"sunny day\"],\"start\":{\"soil\":\"dry\",\"forecast\":\"clear\",\"valve\":\"closed\"},\"rules\":[{\"name\":\"open when dry and no rain coming\",\"when\":[\"morning check happens\",\"soil is dry\",\"forecast is clear\"],\"then\":\"valve is open\"},{\"name\":\"close if rain forecast\",\"when\":[\"forecast is rain\",\"valve is open\"],\"then\":\"valve is closed\"},{\"name\":\"water wets dry soil\",\"when\":[\"valve is open\",\"soil is dry\"],\"then\":\"soil is damp\"},{\"name\":\"close once damp\",\"when\":[\"valve is open\",\"soil is damp\"],\"then\":\"valve is closed\"},{\"name\":\"close once soaked\",\"when\":[\"valve is open\",\"soil is soaked\"],\"then\":\"valve is closed\"},{\"name\":\"rain on dry soil\",\"when\":[\"rain falls happens\",\"soil is dry\"],\"then\":\"soil is damp\"},{\"name\":\"sun dries damp soil\",\"when\":[\"sunny day happens\",\"soil is damp\"],\"then\":\"soil is dry\"},{\"name\":\"sun dries soaked soil\",\"when\":[\"sunny day happens\",\"soil is soaked\"],\"then\":\"soil is damp\"}]}",
+     "seconds": 90
+    }
+   ]
+  }
+ ]
+}
