@@ -8,6 +8,7 @@ The idea in one line: an AI guesses, an ordinary program checks, and the fixing 
 
 ## Where things stand
 
+- **One-page summary of logs 43 to 49** (log 50): "50 Summary - logs 43 to 49.md". Start there.
 - **The blind spot holds on two devices** (logs 45, 48 and 49): every way of choosing the world's questions so far, DeepSeek's own or the program's from rival guesses, only looks where some current guess already points. On the heater, the one situation showing that waiting resets the cut-out was never asked, and no run found the true heater. Rivals choosing the questions helped on the grudge and did worst on the heater. See "49 Second device.md".
 - **Keeping surviving rivals has failed twice** (logs 47 and 48): tested too little, poor rivals survive; tested hard at six actions, nearly all die. A fresh DeepSeek shown only the facts did best both times. What the world is asked matters more than what is kept, and asking where the rivals split most misses the short situations that show a deep grudge. See "48 Ask at any length.md".
 - **Keeping rivals that survive did not help by itself** (log 47): a rival survives by fitting the few short situations the world was asked about, so the survivors can be the old habit or rules that break on longer sequences; DeepSeek, shown them, mostly copied one. The questions the world is asked are what moved the explanations, again. See "47 Keep the survivors.md".
@@ -475,9 +476,11 @@ Written up in "48 Ask at any length.md".
 - **Failures:** the fixed design shows the reset in only one short situation, which I did not check before the run; a test in my first draft ended with "or true" and could never fail, removed before the plan was committed; the cost was $0.90, above the plan's estimate.
 Written up in "49 Second device.md".
 
+**50. One summary of logs 43 to 49. No runs.** The owner said "Do it!" (Decisions O33). Written as "50 Summary - logs 43 to 49.md": the finding that holds on both devices (the world's answers correct DeepSeek only where they land, and they land only where some current guess already points), what did not carry over (rivals choosing the questions; DeepSeek's single strong habit), where DeepSeek sits in the semantics, three claims of mine that went too far, what people still supplied, and four open questions. Checking the draft against the records before committing, two of my sentences went too far and were corrected: that DeepSeek changed its rule whenever contradicted "in logs 45 to 49" (only log 45 measured it), and that no record shows it inventing a part nothing showed it (log 46's first-round rivals did).
+
 ## Next step
 
-Write logs 43 to 49 up as one plain page, as log 43 did for 25 to 42: the one finding that now holds on both devices (the world's answers only correct what some current guess already points at), what did not carry over, and what that means for your semantics. No runs; the choice of what to test next is yours, and it should be made from that page.
+Test whether anything can aim the world's questions outside the current guesses: a question-chooser that ignores the guesses and asks about the situation least like any observed so far, judged by which actions follow which, against random answers and rivals choose, on the grudge and the heater, six repeats each. Plan and conjectures committed first; about $1.50.
 
 ## Traps
 

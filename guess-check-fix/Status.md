@@ -23,7 +23,7 @@
 - DeepSeek balance after log 49: $10.70.
 - The project lives in the h-EPI repository, folder `guess-check-fix`, on the branch `claude/deepseek-v4-project-j9k1ap`, waiting for the owner to merge it.
 
-**Waiting on:** nothing. Next: one plain page on logs 43 to 49.
+**Waiting on:** nothing. Next: a question-chooser that ignores the guesses, on both devices.
 
 **Open questions:**
 - To explore later (log 33): is humanity, with its writing and institutions, the universal explainer, and individual humans creative agents whose coming together produces it? Deutsch holds each person is one; what would a single person lack?
